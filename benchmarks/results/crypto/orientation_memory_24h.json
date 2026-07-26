@@ -1,0 +1,1485 @@
+{
+  "benchmark": "full-coverage causal orientation memory",
+  "methodology": {
+    "data": "verified Binance USD-M 4h archives",
+    "horizon": "24h",
+    "sampling": "one non-overlapping forecast per 24h horizon",
+    "test_folds": [
+      [
+        "2024-01-01",
+        "2024-07-01"
+      ],
+      [
+        "2024-07-01",
+        "2025-01-01"
+      ],
+      [
+        "2025-01-01",
+        "2025-07-01"
+      ],
+      [
+        "2025-07-01",
+        "2026-01-01"
+      ],
+      [
+        "2026-01-01",
+        "2026-07-01"
+      ]
+    ],
+    "online_rule": "Orientation memory observes a target only after target_at is not later than the next query's observed_at.",
+    "admission": "At least 70% accuracy, at least 100 signals, Wilson low at least 65%, every fold and supported symbol at least 60%."
+  },
+  "assets": [
+    "AAVEUSDT",
+    "ADAUSDT",
+    "ALGOUSDT",
+    "ATOMUSDT",
+    "AVAXUSDT",
+    "BCHUSDT",
+    "BNBUSDT",
+    "BTCUSDT",
+    "COMPUSDT",
+    "DASHUSDT",
+    "DOGEUSDT",
+    "DOTUSDT",
+    "ETCUSDT",
+    "ETHUSDT",
+    "FILUSDT",
+    "GRTUSDT",
+    "HBARUSDT",
+    "LINKUSDT",
+    "LTCUSDT",
+    "MANAUSDT",
+    "RUNEUSDT",
+    "SANDUSDT",
+    "SOLUSDT",
+    "THETAUSDT",
+    "TRXUSDT",
+    "UNIUSDT",
+    "VETUSDT",
+    "XLMUSDT",
+    "XMRUSDT",
+    "XRPUSDT",
+    "XTZUSDT",
+    "ZECUSDT"
+  ],
+  "summaries": [
+    {
+      "engine": "always_up",
+      "signals": 29152,
+      "hits": 14411,
+      "accuracy": 0.4943400109769484,
+      "wilson_low_95": 0.48860187225050133,
+      "by_fold": [
+        {
+          "fold_index": 0,
+          "signals": 5824,
+          "hits": 2925,
+          "accuracy": 0.5022321428571429
+        },
+        {
+          "fold_index": 1,
+          "signals": 5888,
+          "hits": 2977,
+          "accuracy": 0.5056046195652174
+        },
+        {
+          "fold_index": 2,
+          "signals": 5792,
+          "hits": 2947,
+          "accuracy": 0.5088052486187845
+        },
+        {
+          "fold_index": 3,
+          "signals": 5888,
+          "hits": 2903,
+          "accuracy": 0.4930366847826087
+        },
+        {
+          "fold_index": 4,
+          "signals": 5760,
+          "hits": 2659,
+          "accuracy": 0.46163194444444444
+        }
+      ],
+      "by_symbol": [
+        {
+          "symbol": "AAVEUSDT",
+          "signals": 911,
+          "hits": 448,
+          "accuracy": 0.49176728869374314
+        },
+        {
+          "symbol": "ADAUSDT",
+          "signals": 911,
+          "hits": 434,
+          "accuracy": 0.47639956092206365
+        },
+        {
+          "symbol": "ALGOUSDT",
+          "signals": 911,
+          "hits": 430,
+          "accuracy": 0.47200878155872666
+        },
+        {
+          "symbol": "ATOMUSDT",
+          "signals": 911,
+          "hits": 437,
+          "accuracy": 0.4796926454445664
+        },
+        {
+          "symbol": "AVAXUSDT",
+          "signals": 911,
+          "hits": 453,
+          "accuracy": 0.4972557628979144
+        },
+        {
+          "symbol": "BCHUSDT",
+          "signals": 911,
+          "hits": 446,
+          "accuracy": 0.48957189901207465
+        },
+        {
+          "symbol": "BNBUSDT",
+          "signals": 911,
+          "hits": 489,
+          "accuracy": 0.5367727771679474
+        },
+        {
+          "symbol": "BTCUSDT",
+          "signals": 911,
+          "hits": 480,
+          "accuracy": 0.5268935236004391
+        },
+        {
+          "symbol": "COMPUSDT",
+          "signals": 911,
+          "hits": 453,
+          "accuracy": 0.4972557628979144
+        },
+        {
+          "symbol": "DASHUSDT",
+          "signals": 911,
+          "hits": 451,
+          "accuracy": 0.4950603732162459
+        },
+        {
+          "symbol": "DOGEUSDT",
+          "signals": 911,
+          "hits": 446,
+          "accuracy": 0.48957189901207465
+        },
+        {
+          "symbol": "DOTUSDT",
+          "signals": 911,
+          "hits": 427,
+          "accuracy": 0.46871569703622395
+        },
+        {
+          "symbol": "ETCUSDT",
+          "signals": 911,
+          "hits": 442,
+          "accuracy": 0.48518111964873767
+        },
+        {
+          "symbol": "ETHUSDT",
+          "signals": 911,
+          "hits": 476,
+          "accuracy": 0.5225027442371021
+        },
+        {
+          "symbol": "FILUSDT",
+          "signals": 911,
+          "hits": 446,
+          "accuracy": 0.48957189901207465
+        },
+        {
+          "symbol": "GRTUSDT",
+          "signals": 911,
+          "hits": 427,
+          "accuracy": 0.46871569703622395
+        },
+        {
+          "symbol": "HBARUSDT",
+          "signals": 911,
+          "hits": 421,
+          "accuracy": 0.4621295279912184
+        },
+        {
+          "symbol": "LINKUSDT",
+          "signals": 911,
+          "hits": 452,
+          "accuracy": 0.4961580680570801
+        },
+        {
+          "symbol": "LTCUSDT",
+          "signals": 911,
+          "hits": 476,
+          "accuracy": 0.5225027442371021
+        },
+        {
+          "symbol": "MANAUSDT",
+          "signals": 911,
+          "hits": 444,
+          "accuracy": 0.48737650933040616
+        },
+        {
+          "symbol": "RUNEUSDT",
+          "signals": 911,
+          "hits": 450,
+          "accuracy": 0.49396267837541163
+        },
+        {
+          "symbol": "SANDUSDT",
+          "signals": 911,
+          "hits": 444,
+          "accuracy": 0.48737650933040616
+        },
+        {
+          "symbol": "SOLUSDT",
+          "signals": 911,
+          "hits": 468,
+          "accuracy": 0.5137211855104281
+        },
+        {
+          "symbol": "THETAUSDT",
+          "signals": 911,
+          "hits": 443,
+          "accuracy": 0.4862788144895719
+        },
+        {
+          "symbol": "TRXUSDT",
+          "signals": 911,
+          "hits": 501,
+          "accuracy": 0.5499451152579583
+        },
+        {
+          "symbol": "UNIUSDT",
+          "signals": 911,
+          "hits": 449,
+          "accuracy": 0.49286498353457736
+        },
+        {
+          "symbol": "VETUSDT",
+          "signals": 911,
+          "hits": 431,
+          "accuracy": 0.47310647639956094
+        },
+        {
+          "symbol": "XLMUSDT",
+          "signals": 911,
+          "hits": 430,
+          "accuracy": 0.47200878155872666
+        },
+        {
+          "symbol": "XMRUSDT",
+          "signals": 911,
+          "hits": 490,
+          "accuracy": 0.5378704720087816
+        },
+        {
+          "symbol": "XRPUSDT",
+          "signals": 911,
+          "hits": 447,
+          "accuracy": 0.49066959385290887
+        },
+        {
+          "symbol": "XTZUSDT",
+          "signals": 911,
+          "hits": 427,
+          "accuracy": 0.46871569703622395
+        },
+        {
+          "symbol": "ZECUSDT",
+          "signals": 911,
+          "hits": 453,
+          "accuracy": 0.4972557628979144
+        }
+      ],
+      "worst_fold_accuracy": 0.46163194444444444,
+      "worst_supported_symbol_accuracy": 0.4621295279912184,
+      "admitted_70": false
+    },
+    {
+      "engine": "guarded_state",
+      "signals": 29152,
+      "hits": 14479,
+      "accuracy": 0.4966726125137212,
+      "wilson_low_95": 0.4909339258392186,
+      "by_fold": [
+        {
+          "fold_index": 0,
+          "signals": 5824,
+          "hits": 2833,
+          "accuracy": 0.48643543956043955
+        },
+        {
+          "fold_index": 1,
+          "signals": 5888,
+          "hits": 2805,
+          "accuracy": 0.47639266304347827
+        },
+        {
+          "fold_index": 2,
+          "signals": 5792,
+          "hits": 2759,
+          "accuracy": 0.4763466850828729
+        },
+        {
+          "fold_index": 3,
+          "signals": 5888,
+          "hits": 2998,
+          "accuracy": 0.509171195652174
+        },
+        {
+          "fold_index": 4,
+          "signals": 5760,
+          "hits": 3084,
+          "accuracy": 0.5354166666666667
+        }
+      ],
+      "by_symbol": [
+        {
+          "symbol": "AAVEUSDT",
+          "signals": 911,
+          "hits": 456,
+          "accuracy": 0.5005488474204172
+        },
+        {
+          "symbol": "ADAUSDT",
+          "signals": 911,
+          "hits": 471,
+          "accuracy": 0.5170142700329309
+        },
+        {
+          "symbol": "ALGOUSDT",
+          "signals": 911,
+          "hits": 466,
+          "accuracy": 0.5115257958287596
+        },
+        {
+          "symbol": "ATOMUSDT",
+          "signals": 911,
+          "hits": 460,
+          "accuracy": 0.5049396267837541
+        },
+        {
+          "symbol": "AVAXUSDT",
+          "signals": 911,
+          "hits": 451,
+          "accuracy": 0.4950603732162459
+        },
+        {
+          "symbol": "BCHUSDT",
+          "signals": 911,
+          "hits": 460,
+          "accuracy": 0.5049396267837541
+        },
+        {
+          "symbol": "BNBUSDT",
+          "signals": 911,
+          "hits": 429,
+          "accuracy": 0.47091108671789245
+        },
+        {
+          "symbol": "BTCUSDT",
+          "signals": 911,
+          "hits": 417,
+          "accuracy": 0.45773874862788144
+        },
+        {
+          "symbol": "COMPUSDT",
+          "signals": 911,
+          "hits": 442,
+          "accuracy": 0.48518111964873767
+        },
+        {
+          "symbol": "DASHUSDT",
+          "signals": 911,
+          "hits": 445,
+          "accuracy": 0.4884742041712404
+        },
+        {
+          "symbol": "DOGEUSDT",
+          "signals": 911,
+          "hits": 448,
+          "accuracy": 0.49176728869374314
+        },
+        {
+          "symbol": "DOTUSDT",
+          "signals": 911,
+          "hits": 465,
+          "accuracy": 0.5104281009879253
+        },
+        {
+          "symbol": "ETCUSDT",
+          "signals": 911,
+          "hits": 449,
+          "accuracy": 0.49286498353457736
+        },
+        {
+          "symbol": "ETHUSDT",
+          "signals": 911,
+          "hits": 443,
+          "accuracy": 0.4862788144895719
+        },
+        {
+          "symbol": "FILUSDT",
+          "signals": 911,
+          "hits": 460,
+          "accuracy": 0.5049396267837541
+        },
+        {
+          "symbol": "GRTUSDT",
+          "signals": 911,
+          "hits": 490,
+          "accuracy": 0.5378704720087816
+        },
+        {
+          "symbol": "HBARUSDT",
+          "signals": 911,
+          "hits": 477,
+          "accuracy": 0.5236004390779363
+        },
+        {
+          "symbol": "LINKUSDT",
+          "signals": 911,
+          "hits": 440,
+          "accuracy": 0.4829857299670692
+        },
+        {
+          "symbol": "LTCUSDT",
+          "signals": 911,
+          "hits": 404,
+          "accuracy": 0.4434687156970362
+        },
+        {
+          "symbol": "MANAUSDT",
+          "signals": 911,
+          "hits": 470,
+          "accuracy": 0.5159165751920965
+        },
+        {
+          "symbol": "RUNEUSDT",
+          "signals": 911,
+          "hits": 460,
+          "accuracy": 0.5049396267837541
+        },
+        {
+          "symbol": "SANDUSDT",
+          "signals": 911,
+          "hits": 451,
+          "accuracy": 0.4950603732162459
+        },
+        {
+          "symbol": "SOLUSDT",
+          "signals": 911,
+          "hits": 441,
+          "accuracy": 0.4840834248079034
+        },
+        {
+          "symbol": "THETAUSDT",
+          "signals": 911,
+          "hits": 487,
+          "accuracy": 0.5345773874862788
+        },
+        {
+          "symbol": "TRXUSDT",
+          "signals": 911,
+          "hits": 434,
+          "accuracy": 0.47639956092206365
+        },
+        {
+          "symbol": "UNIUSDT",
+          "signals": 911,
+          "hits": 453,
+          "accuracy": 0.4972557628979144
+        },
+        {
+          "symbol": "VETUSDT",
+          "signals": 911,
+          "hits": 468,
+          "accuracy": 0.5137211855104281
+        },
+        {
+          "symbol": "XLMUSDT",
+          "signals": 911,
+          "hits": 467,
+          "accuracy": 0.5126234906695939
+        },
+        {
+          "symbol": "XMRUSDT",
+          "signals": 911,
+          "hits": 394,
+          "accuracy": 0.43249176728869376
+        },
+        {
+          "symbol": "XRPUSDT",
+          "signals": 911,
+          "hits": 456,
+          "accuracy": 0.5005488474204172
+        },
+        {
+          "symbol": "XTZUSDT",
+          "signals": 911,
+          "hits": 476,
+          "accuracy": 0.5225027442371021
+        },
+        {
+          "symbol": "ZECUSDT",
+          "signals": 911,
+          "hits": 449,
+          "accuracy": 0.49286498353457736
+        }
+      ],
+      "worst_fold_accuracy": 0.4763466850828729,
+      "worst_supported_symbol_accuracy": 0.43249176728869376,
+      "admitted_70": false
+    },
+    {
+      "engine": "inverse_guarded_state",
+      "signals": 29152,
+      "hits": 14673,
+      "accuracy": 0.5033273874862788,
+      "wilson_low_95": 0.49758782400484014,
+      "by_fold": [
+        {
+          "fold_index": 0,
+          "signals": 5824,
+          "hits": 2991,
+          "accuracy": 0.5135645604395604
+        },
+        {
+          "fold_index": 1,
+          "signals": 5888,
+          "hits": 3083,
+          "accuracy": 0.5236073369565217
+        },
+        {
+          "fold_index": 2,
+          "signals": 5792,
+          "hits": 3033,
+          "accuracy": 0.5236533149171271
+        },
+        {
+          "fold_index": 3,
+          "signals": 5888,
+          "hits": 2890,
+          "accuracy": 0.4908288043478261
+        },
+        {
+          "fold_index": 4,
+          "signals": 5760,
+          "hits": 2676,
+          "accuracy": 0.46458333333333335
+        }
+      ],
+      "by_symbol": [
+        {
+          "symbol": "AAVEUSDT",
+          "signals": 911,
+          "hits": 455,
+          "accuracy": 0.4994511525795829
+        },
+        {
+          "symbol": "ADAUSDT",
+          "signals": 911,
+          "hits": 440,
+          "accuracy": 0.4829857299670692
+        },
+        {
+          "symbol": "ALGOUSDT",
+          "signals": 911,
+          "hits": 445,
+          "accuracy": 0.4884742041712404
+        },
+        {
+          "symbol": "ATOMUSDT",
+          "signals": 911,
+          "hits": 451,
+          "accuracy": 0.4950603732162459
+        },
+        {
+          "symbol": "AVAXUSDT",
+          "signals": 911,
+          "hits": 460,
+          "accuracy": 0.5049396267837541
+        },
+        {
+          "symbol": "BCHUSDT",
+          "signals": 911,
+          "hits": 451,
+          "accuracy": 0.4950603732162459
+        },
+        {
+          "symbol": "BNBUSDT",
+          "signals": 911,
+          "hits": 482,
+          "accuracy": 0.5290889132821076
+        },
+        {
+          "symbol": "BTCUSDT",
+          "signals": 911,
+          "hits": 494,
+          "accuracy": 0.5422612513721186
+        },
+        {
+          "symbol": "COMPUSDT",
+          "signals": 911,
+          "hits": 469,
+          "accuracy": 0.5148188803512623
+        },
+        {
+          "symbol": "DASHUSDT",
+          "signals": 911,
+          "hits": 466,
+          "accuracy": 0.5115257958287596
+        },
+        {
+          "symbol": "DOGEUSDT",
+          "signals": 911,
+          "hits": 463,
+          "accuracy": 0.5082327113062569
+        },
+        {
+          "symbol": "DOTUSDT",
+          "signals": 911,
+          "hits": 446,
+          "accuracy": 0.48957189901207465
+        },
+        {
+          "symbol": "ETCUSDT",
+          "signals": 911,
+          "hits": 462,
+          "accuracy": 0.5071350164654226
+        },
+        {
+          "symbol": "ETHUSDT",
+          "signals": 911,
+          "hits": 468,
+          "accuracy": 0.5137211855104281
+        },
+        {
+          "symbol": "FILUSDT",
+          "signals": 911,
+          "hits": 451,
+          "accuracy": 0.4950603732162459
+        },
+        {
+          "symbol": "GRTUSDT",
+          "signals": 911,
+          "hits": 421,
+          "accuracy": 0.4621295279912184
+        },
+        {
+          "symbol": "HBARUSDT",
+          "signals": 911,
+          "hits": 434,
+          "accuracy": 0.47639956092206365
+        },
+        {
+          "symbol": "LINKUSDT",
+          "signals": 911,
+          "hits": 471,
+          "accuracy": 0.5170142700329309
+        },
+        {
+          "symbol": "LTCUSDT",
+          "signals": 911,
+          "hits": 507,
+          "accuracy": 0.5565312843029637
+        },
+        {
+          "symbol": "MANAUSDT",
+          "signals": 911,
+          "hits": 441,
+          "accuracy": 0.4840834248079034
+        },
+        {
+          "symbol": "RUNEUSDT",
+          "signals": 911,
+          "hits": 451,
+          "accuracy": 0.4950603732162459
+        },
+        {
+          "symbol": "SANDUSDT",
+          "signals": 911,
+          "hits": 460,
+          "accuracy": 0.5049396267837541
+        },
+        {
+          "symbol": "SOLUSDT",
+          "signals": 911,
+          "hits": 470,
+          "accuracy": 0.5159165751920965
+        },
+        {
+          "symbol": "THETAUSDT",
+          "signals": 911,
+          "hits": 424,
+          "accuracy": 0.4654226125137212
+        },
+        {
+          "symbol": "TRXUSDT",
+          "signals": 911,
+          "hits": 477,
+          "accuracy": 0.5236004390779363
+        },
+        {
+          "symbol": "UNIUSDT",
+          "signals": 911,
+          "hits": 458,
+          "accuracy": 0.5027442371020856
+        },
+        {
+          "symbol": "VETUSDT",
+          "signals": 911,
+          "hits": 443,
+          "accuracy": 0.4862788144895719
+        },
+        {
+          "symbol": "XLMUSDT",
+          "signals": 911,
+          "hits": 444,
+          "accuracy": 0.48737650933040616
+        },
+        {
+          "symbol": "XMRUSDT",
+          "signals": 911,
+          "hits": 517,
+          "accuracy": 0.5675082327113062
+        },
+        {
+          "symbol": "XRPUSDT",
+          "signals": 911,
+          "hits": 455,
+          "accuracy": 0.4994511525795829
+        },
+        {
+          "symbol": "XTZUSDT",
+          "signals": 911,
+          "hits": 435,
+          "accuracy": 0.4774972557628979
+        },
+        {
+          "symbol": "ZECUSDT",
+          "signals": 911,
+          "hits": 462,
+          "accuracy": 0.5071350164654226
+        }
+      ],
+      "worst_fold_accuracy": 0.46458333333333335,
+      "worst_supported_symbol_accuracy": 0.4621295279912184,
+      "admitted_70": false
+    },
+    {
+      "engine": "mean_reversion",
+      "signals": 29152,
+      "hits": 15219,
+      "accuracy": 0.5220568057080132,
+      "wilson_low_95": 0.5163202337492276,
+      "by_fold": [
+        {
+          "fold_index": 0,
+          "signals": 5824,
+          "hits": 3213,
+          "accuracy": 0.5516826923076923
+        },
+        {
+          "fold_index": 1,
+          "signals": 5888,
+          "hits": 2887,
+          "accuracy": 0.49031929347826086
+        },
+        {
+          "fold_index": 2,
+          "signals": 5792,
+          "hits": 3054,
+          "accuracy": 0.5272790055248618
+        },
+        {
+          "fold_index": 3,
+          "signals": 5888,
+          "hits": 3148,
+          "accuracy": 0.5346467391304348
+        },
+        {
+          "fold_index": 4,
+          "signals": 5760,
+          "hits": 2917,
+          "accuracy": 0.5064236111111111
+        }
+      ],
+      "by_symbol": [
+        {
+          "symbol": "AAVEUSDT",
+          "signals": 911,
+          "hits": 470,
+          "accuracy": 0.5159165751920965
+        },
+        {
+          "symbol": "ADAUSDT",
+          "signals": 911,
+          "hits": 481,
+          "accuracy": 0.5279912184412733
+        },
+        {
+          "symbol": "ALGOUSDT",
+          "signals": 911,
+          "hits": 460,
+          "accuracy": 0.5049396267837541
+        },
+        {
+          "symbol": "ATOMUSDT",
+          "signals": 911,
+          "hits": 475,
+          "accuracy": 0.5214050493962679
+        },
+        {
+          "symbol": "AVAXUSDT",
+          "signals": 911,
+          "hits": 464,
+          "accuracy": 0.5093304061470911
+        },
+        {
+          "symbol": "BCHUSDT",
+          "signals": 911,
+          "hits": 475,
+          "accuracy": 0.5214050493962679
+        },
+        {
+          "symbol": "BNBUSDT",
+          "signals": 911,
+          "hits": 477,
+          "accuracy": 0.5236004390779363
+        },
+        {
+          "symbol": "BTCUSDT",
+          "signals": 911,
+          "hits": 476,
+          "accuracy": 0.5225027442371021
+        },
+        {
+          "symbol": "COMPUSDT",
+          "signals": 911,
+          "hits": 480,
+          "accuracy": 0.5268935236004391
+        },
+        {
+          "symbol": "DASHUSDT",
+          "signals": 911,
+          "hits": 473,
+          "accuracy": 0.5192096597145993
+        },
+        {
+          "symbol": "DOGEUSDT",
+          "signals": 911,
+          "hits": 494,
+          "accuracy": 0.5422612513721186
+        },
+        {
+          "symbol": "DOTUSDT",
+          "signals": 911,
+          "hits": 496,
+          "accuracy": 0.544456641053787
+        },
+        {
+          "symbol": "ETCUSDT",
+          "signals": 911,
+          "hits": 479,
+          "accuracy": 0.5257958287596048
+        },
+        {
+          "symbol": "ETHUSDT",
+          "signals": 911,
+          "hits": 482,
+          "accuracy": 0.5290889132821076
+        },
+        {
+          "symbol": "FILUSDT",
+          "signals": 911,
+          "hits": 479,
+          "accuracy": 0.5257958287596048
+        },
+        {
+          "symbol": "GRTUSDT",
+          "signals": 911,
+          "hits": 447,
+          "accuracy": 0.49066959385290887
+        },
+        {
+          "symbol": "HBARUSDT",
+          "signals": 911,
+          "hits": 462,
+          "accuracy": 0.5071350164654226
+        },
+        {
+          "symbol": "LINKUSDT",
+          "signals": 911,
+          "hits": 483,
+          "accuracy": 0.5301866081229418
+        },
+        {
+          "symbol": "LTCUSDT",
+          "signals": 911,
+          "hits": 482,
+          "accuracy": 0.5290889132821076
+        },
+        {
+          "symbol": "MANAUSDT",
+          "signals": 911,
+          "hits": 465,
+          "accuracy": 0.5104281009879253
+        },
+        {
+          "symbol": "RUNEUSDT",
+          "signals": 911,
+          "hits": 472,
+          "accuracy": 0.5181119648737651
+        },
+        {
+          "symbol": "SANDUSDT",
+          "signals": 911,
+          "hits": 473,
+          "accuracy": 0.5192096597145993
+        },
+        {
+          "symbol": "SOLUSDT",
+          "signals": 911,
+          "hits": 484,
+          "accuracy": 0.531284302963776
+        },
+        {
+          "symbol": "THETAUSDT",
+          "signals": 911,
+          "hits": 477,
+          "accuracy": 0.5236004390779363
+        },
+        {
+          "symbol": "TRXUSDT",
+          "signals": 911,
+          "hits": 461,
+          "accuracy": 0.5060373216245884
+        },
+        {
+          "symbol": "UNIUSDT",
+          "signals": 911,
+          "hits": 481,
+          "accuracy": 0.5279912184412733
+        },
+        {
+          "symbol": "VETUSDT",
+          "signals": 911,
+          "hits": 467,
+          "accuracy": 0.5126234906695939
+        },
+        {
+          "symbol": "XLMUSDT",
+          "signals": 911,
+          "hits": 471,
+          "accuracy": 0.5170142700329309
+        },
+        {
+          "symbol": "XMRUSDT",
+          "signals": 911,
+          "hits": 507,
+          "accuracy": 0.5565312843029637
+        },
+        {
+          "symbol": "XRPUSDT",
+          "signals": 911,
+          "hits": 485,
+          "accuracy": 0.5323819978046103
+        },
+        {
+          "symbol": "XTZUSDT",
+          "signals": 911,
+          "hits": 473,
+          "accuracy": 0.5192096597145993
+        },
+        {
+          "symbol": "ZECUSDT",
+          "signals": 911,
+          "hits": 468,
+          "accuracy": 0.5137211855104281
+        }
+      ],
+      "worst_fold_accuracy": 0.49031929347826086,
+      "worst_supported_symbol_accuracy": 0.49066959385290887,
+      "admitted_70": false
+    },
+    {
+      "engine": "momentum",
+      "signals": 29152,
+      "hits": 13933,
+      "accuracy": 0.47794319429198684,
+      "wilson_low_95": 0.47221243456887035,
+      "by_fold": [
+        {
+          "fold_index": 0,
+          "signals": 5824,
+          "hits": 2611,
+          "accuracy": 0.4483173076923077
+        },
+        {
+          "fold_index": 1,
+          "signals": 5888,
+          "hits": 3001,
+          "accuracy": 0.5096807065217391
+        },
+        {
+          "fold_index": 2,
+          "signals": 5792,
+          "hits": 2738,
+          "accuracy": 0.4727209944751381
+        },
+        {
+          "fold_index": 3,
+          "signals": 5888,
+          "hits": 2740,
+          "accuracy": 0.46535326086956524
+        },
+        {
+          "fold_index": 4,
+          "signals": 5760,
+          "hits": 2843,
+          "accuracy": 0.4935763888888889
+        }
+      ],
+      "by_symbol": [
+        {
+          "symbol": "AAVEUSDT",
+          "signals": 911,
+          "hits": 441,
+          "accuracy": 0.4840834248079034
+        },
+        {
+          "symbol": "ADAUSDT",
+          "signals": 911,
+          "hits": 430,
+          "accuracy": 0.47200878155872666
+        },
+        {
+          "symbol": "ALGOUSDT",
+          "signals": 911,
+          "hits": 451,
+          "accuracy": 0.4950603732162459
+        },
+        {
+          "symbol": "ATOMUSDT",
+          "signals": 911,
+          "hits": 436,
+          "accuracy": 0.47859495060373214
+        },
+        {
+          "symbol": "AVAXUSDT",
+          "signals": 911,
+          "hits": 447,
+          "accuracy": 0.49066959385290887
+        },
+        {
+          "symbol": "BCHUSDT",
+          "signals": 911,
+          "hits": 436,
+          "accuracy": 0.47859495060373214
+        },
+        {
+          "symbol": "BNBUSDT",
+          "signals": 911,
+          "hits": 434,
+          "accuracy": 0.47639956092206365
+        },
+        {
+          "symbol": "BTCUSDT",
+          "signals": 911,
+          "hits": 435,
+          "accuracy": 0.4774972557628979
+        },
+        {
+          "symbol": "COMPUSDT",
+          "signals": 911,
+          "hits": 431,
+          "accuracy": 0.47310647639956094
+        },
+        {
+          "symbol": "DASHUSDT",
+          "signals": 911,
+          "hits": 438,
+          "accuracy": 0.4807903402854007
+        },
+        {
+          "symbol": "DOGEUSDT",
+          "signals": 911,
+          "hits": 417,
+          "accuracy": 0.45773874862788144
+        },
+        {
+          "symbol": "DOTUSDT",
+          "signals": 911,
+          "hits": 415,
+          "accuracy": 0.45554335894621295
+        },
+        {
+          "symbol": "ETCUSDT",
+          "signals": 911,
+          "hits": 432,
+          "accuracy": 0.47420417124039516
+        },
+        {
+          "symbol": "ETHUSDT",
+          "signals": 911,
+          "hits": 429,
+          "accuracy": 0.47091108671789245
+        },
+        {
+          "symbol": "FILUSDT",
+          "signals": 911,
+          "hits": 432,
+          "accuracy": 0.47420417124039516
+        },
+        {
+          "symbol": "GRTUSDT",
+          "signals": 911,
+          "hits": 464,
+          "accuracy": 0.5093304061470911
+        },
+        {
+          "symbol": "HBARUSDT",
+          "signals": 911,
+          "hits": 449,
+          "accuracy": 0.49286498353457736
+        },
+        {
+          "symbol": "LINKUSDT",
+          "signals": 911,
+          "hits": 428,
+          "accuracy": 0.4698133918770582
+        },
+        {
+          "symbol": "LTCUSDT",
+          "signals": 911,
+          "hits": 429,
+          "accuracy": 0.47091108671789245
+        },
+        {
+          "symbol": "MANAUSDT",
+          "signals": 911,
+          "hits": 446,
+          "accuracy": 0.48957189901207465
+        },
+        {
+          "symbol": "RUNEUSDT",
+          "signals": 911,
+          "hits": 439,
+          "accuracy": 0.4818880351262349
+        },
+        {
+          "symbol": "SANDUSDT",
+          "signals": 911,
+          "hits": 438,
+          "accuracy": 0.4807903402854007
+        },
+        {
+          "symbol": "SOLUSDT",
+          "signals": 911,
+          "hits": 427,
+          "accuracy": 0.46871569703622395
+        },
+        {
+          "symbol": "THETAUSDT",
+          "signals": 911,
+          "hits": 434,
+          "accuracy": 0.47639956092206365
+        },
+        {
+          "symbol": "TRXUSDT",
+          "signals": 911,
+          "hits": 450,
+          "accuracy": 0.49396267837541163
+        },
+        {
+          "symbol": "UNIUSDT",
+          "signals": 911,
+          "hits": 430,
+          "accuracy": 0.47200878155872666
+        },
+        {
+          "symbol": "VETUSDT",
+          "signals": 911,
+          "hits": 444,
+          "accuracy": 0.48737650933040616
+        },
+        {
+          "symbol": "XLMUSDT",
+          "signals": 911,
+          "hits": 440,
+          "accuracy": 0.4829857299670692
+        },
+        {
+          "symbol": "XMRUSDT",
+          "signals": 911,
+          "hits": 404,
+          "accuracy": 0.4434687156970362
+        },
+        {
+          "symbol": "XRPUSDT",
+          "signals": 911,
+          "hits": 426,
+          "accuracy": 0.4676180021953897
+        },
+        {
+          "symbol": "XTZUSDT",
+          "signals": 911,
+          "hits": 438,
+          "accuracy": 0.4807903402854007
+        },
+        {
+          "symbol": "ZECUSDT",
+          "signals": 911,
+          "hits": 443,
+          "accuracy": 0.4862788144895719
+        }
+      ],
+      "worst_fold_accuracy": 0.4483173076923077,
+      "worst_supported_symbol_accuracy": 0.4434687156970362,
+      "admitted_70": false
+    },
+    {
+      "engine": "orientation_memory",
+      "signals": 29152,
+      "hits": 14158,
+      "accuracy": 0.48566136114160263,
+      "wilson_low_95": 0.479926358312574,
+      "by_fold": [
+        {
+          "fold_index": 0,
+          "signals": 5824,
+          "hits": 2964,
+          "accuracy": 0.5089285714285714
+        },
+        {
+          "fold_index": 1,
+          "signals": 5888,
+          "hits": 2938,
+          "accuracy": 0.49898097826086957
+        },
+        {
+          "fold_index": 2,
+          "signals": 5792,
+          "hits": 2715,
+          "accuracy": 0.46875
+        },
+        {
+          "fold_index": 3,
+          "signals": 5888,
+          "hits": 2654,
+          "accuracy": 0.4507472826086957
+        },
+        {
+          "fold_index": 4,
+          "signals": 5760,
+          "hits": 2887,
+          "accuracy": 0.5012152777777777
+        }
+      ],
+      "by_symbol": [
+        {
+          "symbol": "AAVEUSDT",
+          "signals": 911,
+          "hits": 427,
+          "accuracy": 0.46871569703622395
+        },
+        {
+          "symbol": "ADAUSDT",
+          "signals": 911,
+          "hits": 424,
+          "accuracy": 0.4654226125137212
+        },
+        {
+          "symbol": "ALGOUSDT",
+          "signals": 911,
+          "hits": 413,
+          "accuracy": 0.45334796926454446
+        },
+        {
+          "symbol": "ATOMUSDT",
+          "signals": 911,
+          "hits": 466,
+          "accuracy": 0.5115257958287596
+        },
+        {
+          "symbol": "AVAXUSDT",
+          "signals": 911,
+          "hits": 431,
+          "accuracy": 0.47310647639956094
+        },
+        {
+          "symbol": "BCHUSDT",
+          "signals": 911,
+          "hits": 442,
+          "accuracy": 0.48518111964873767
+        },
+        {
+          "symbol": "BNBUSDT",
+          "signals": 911,
+          "hits": 463,
+          "accuracy": 0.5082327113062569
+        },
+        {
+          "symbol": "BTCUSDT",
+          "signals": 911,
+          "hits": 434,
+          "accuracy": 0.47639956092206365
+        },
+        {
+          "symbol": "COMPUSDT",
+          "signals": 911,
+          "hits": 450,
+          "accuracy": 0.49396267837541163
+        },
+        {
+          "symbol": "DASHUSDT",
+          "signals": 911,
+          "hits": 441,
+          "accuracy": 0.4840834248079034
+        },
+        {
+          "symbol": "DOGEUSDT",
+          "signals": 911,
+          "hits": 426,
+          "accuracy": 0.4676180021953897
+        },
+        {
+          "symbol": "DOTUSDT",
+          "signals": 911,
+          "hits": 465,
+          "accuracy": 0.5104281009879253
+        },
+        {
+          "symbol": "ETCUSDT",
+          "signals": 911,
+          "hits": 448,
+          "accuracy": 0.49176728869374314
+        },
+        {
+          "symbol": "ETHUSDT",
+          "signals": 911,
+          "hits": 431,
+          "accuracy": 0.47310647639956094
+        },
+        {
+          "symbol": "FILUSDT",
+          "signals": 911,
+          "hits": 456,
+          "accuracy": 0.5005488474204172
+        },
+        {
+          "symbol": "GRTUSDT",
+          "signals": 911,
+          "hits": 427,
+          "accuracy": 0.46871569703622395
+        },
+        {
+          "symbol": "HBARUSDT",
+          "signals": 911,
+          "hits": 432,
+          "accuracy": 0.47420417124039516
+        },
+        {
+          "symbol": "LINKUSDT",
+          "signals": 911,
+          "hits": 461,
+          "accuracy": 0.5060373216245884
+        },
+        {
+          "symbol": "LTCUSDT",
+          "signals": 911,
+          "hits": 473,
+          "accuracy": 0.5192096597145993
+        },
+        {
+          "symbol": "MANAUSDT",
+          "signals": 911,
+          "hits": 446,
+          "accuracy": 0.48957189901207465
+        },
+        {
+          "symbol": "RUNEUSDT",
+          "signals": 911,
+          "hits": 458,
+          "accuracy": 0.5027442371020856
+        },
+        {
+          "symbol": "SANDUSDT",
+          "signals": 911,
+          "hits": 451,
+          "accuracy": 0.4950603732162459
+        },
+        {
+          "symbol": "SOLUSDT",
+          "signals": 911,
+          "hits": 427,
+          "accuracy": 0.46871569703622395
+        },
+        {
+          "symbol": "THETAUSDT",
+          "signals": 911,
+          "hits": 446,
+          "accuracy": 0.48957189901207465
+        },
+        {
+          "symbol": "TRXUSDT",
+          "signals": 911,
+          "hits": 443,
+          "accuracy": 0.4862788144895719
+        },
+        {
+          "symbol": "UNIUSDT",
+          "signals": 911,
+          "hits": 414,
+          "accuracy": 0.4544456641053787
+        },
+        {
+          "symbol": "VETUSDT",
+          "signals": 911,
+          "hits": 421,
+          "accuracy": 0.4621295279912184
+        },
+        {
+          "symbol": "XLMUSDT",
+          "signals": 911,
+          "hits": 441,
+          "accuracy": 0.4840834248079034
+        },
+        {
+          "symbol": "XMRUSDT",
+          "signals": 911,
+          "hits": 476,
+          "accuracy": 0.5225027442371021
+        },
+        {
+          "symbol": "XRPUSDT",
+          "signals": 911,
+          "hits": 443,
+          "accuracy": 0.4862788144895719
+        },
+        {
+          "symbol": "XTZUSDT",
+          "signals": 911,
+          "hits": 435,
+          "accuracy": 0.4774972557628979
+        },
+        {
+          "symbol": "ZECUSDT",
+          "signals": 911,
+          "hits": 447,
+          "accuracy": 0.49066959385290887
+        }
+      ],
+      "worst_fold_accuracy": 0.4507472826086957,
+      "worst_supported_symbol_accuracy": 0.45334796926454446,
+      "admitted_70": false
+    }
+  ],
+  "admitted_engines": []
+}

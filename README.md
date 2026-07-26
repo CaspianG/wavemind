@@ -94,6 +94,25 @@ remains rejected. See the
 [original holdout report](benchmarks/results/crypto/capitulation_field_24h.md)
 and [replication report](benchmarks/results/crypto/capitulation_field_replication_24h.md).
 
+### Universal direction gate
+
+The sparse 83.1% result is not counted as daily market accuracy. A separate
+full-coverage benchmark forces an up/down decision on every independent
+24-hour window across 32 assets and five half-year folds:
+
+| engine | independent forecasts | accuracy | Wilson low 95% | worst fold | worst asset |
+|---|---:|---:|---:|---:|---:|
+| guarded state | 29,152 | 49.7% | 49.1% | 47.6% | 43.2% |
+| inverted guarded state | 29,152 | 50.3% | 49.8% | 46.5% | 46.2% |
+| mean reversion | 29,152 | **52.2%** | **51.6%** | 49.0% | 49.1% |
+| causal orientation memory | 29,152 | 48.6% | 48.0% | 45.1% | 45.3% |
+
+No full-coverage engine passes 70%. In particular, the live model cannot be
+turned from 25% into a valid 75% model by inverting its predictions after
+seeing their outcomes. The
+[universal-direction report](benchmarks/results/crypto/orientation_memory_24h.md)
+keeps that distinction explicit.
+
 Full reports:
 
 - [Core assets 4h target benchmark](benchmarks/results/crypto/core_assets_4h_price_target.md)
@@ -126,6 +145,7 @@ Full reports:
 - [Nested OKX perpetual signal transfer](benchmarks/results/crypto/okx_perp_signal_transfer.md)
 - [Frozen asset-transfer capitulation field](benchmarks/results/crypto/capitulation_field_24h.md)
 - [Frozen asset and time replication](benchmarks/results/crypto/capitulation_field_replication_24h.md)
+- [Universal full-coverage direction gate](benchmarks/results/crypto/orientation_memory_24h.md)
 
 ### Latest causal ablations
 

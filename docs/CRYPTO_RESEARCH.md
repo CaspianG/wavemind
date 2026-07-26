@@ -350,6 +350,34 @@ Reproducible outputs:
 - `benchmarks/results/crypto/capitulation_field_replication_24h.json`
 - `benchmarks/results/crypto/capitulation_field_replication_24h.md`
 
+### Universal full-coverage direction gate
+
+`benchmarks/crypto_orientation_memory_benchmark.py` tests the stronger claim
+that the system can remain above 70% while predicting every independent
+24-hour window. It uses 32 assets, non-overlapping horizons, five half-year
+folds, and 29,152 forecasts per engine.
+
+The causal orientation-memory arm tracks whether the guarded-state rule has
+recently been right or wrong globally, per asset, and per observable regime.
+It may invert the guard only after the corresponding target has matured.
+
+| engine | accuracy | Wilson low 95% | worst fold | worst asset | admitted 70% |
+|---|---:|---:|---:|---:|---:|
+| guarded state | 0.497 | 0.491 | 0.476 | 0.432 | no |
+| inverted guarded state | 0.503 | 0.498 | 0.465 | 0.462 | no |
+| mean reversion | 0.522 | 0.516 | 0.490 | 0.491 | no |
+| causal orientation memory | 0.486 | 0.480 | 0.451 | 0.453 | no |
+
+This rejects the idea that the current 25% live sample can be repaired by
+simply reversing its predictions. It also provides direct evidence that the
+83.1% capitulation result is a sparse conditional edge, not universal daily
+accuracy.
+
+Reproducible outputs:
+
+- `benchmarks/results/crypto/orientation_memory_24h.json`
+- `benchmarks/results/crypto/orientation_memory_24h.md`
+
 ### Official Binance USD-M derivatives benchmark
 
 The derivatives-cache milestone is now complete on official Binance Data
@@ -1028,9 +1056,12 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
     early-2023 stress has just three signals, so the stability gate and every
     live-trading claim remain rejected. The next validation must add another
     exchange and a genuinely post-freeze forward period.
-37. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
-    volatility filters, DTW on smaller samples, matrix-profile style analogues,
-    and ML classifiers.
-38. Add signal construction only after retrieval quality is stable.
-39. Publish results separately from the main README to avoid confusing memory
+37. Done, negative: added a 32-asset, 29,152-window universal direction gate.
+    Guard inversion reaches only `0.503`, mean reversion `0.522`, and causal
+    orientation memory `0.486`. This rejects post-hoc inversion as a repair for
+    the live sample and keeps every full-coverage 70% claim disabled.
+38. Add remaining richer baselines: moving-average crossovers, volatility
+    filters, DTW on smaller samples, and matrix-profile style analogues.
+39. Add signal construction only after retrieval quality is stable.
+40. Publish results separately from the main README to avoid confusing memory
     benchmarks with market-performance claims.
