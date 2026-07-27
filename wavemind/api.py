@@ -1424,19 +1424,44 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
         items: list[RememberBatchItemResponse] = []
         invalidated_namespaces: set[str] = set()
         with _api_operation(app, "remember_batch"):
-            for index, item in enumerate(request.items):
-                remember_result = app.state.mind.remember(
-                    item.text,
-                    namespace=item.namespace,
-                    tags=item.tags,
-                    ttl_seconds=item.ttl_seconds,
-                    metadata=item.metadata,
-                    priority=item.priority,
-                )
+            payloads = [
+                {
+                    "text": item.text,
+                    "namespace": item.namespace,
+                    "tags": item.tags,
+                    "ttl_seconds": item.ttl_seconds,
+                    "metadata": item.metadata,
+                    "priority": item.priority,
+                }
+                for item in request.items
+            ]
+            remember_batch_method = getattr(app.state.mind, "remember_batch", None)
+            if callable(remember_batch_method):
+                remembered_ids = [
+                    _remember_response_id(value)
+                    for value in remember_batch_method(payloads)
+                ]
+            else:
+                remembered_ids = [
+                    _remember_response_id(
+                        app.state.mind.remember(
+                            item.text,
+                            namespace=item.namespace,
+                            tags=item.tags,
+                            ttl_seconds=item.ttl_seconds,
+                            metadata=item.metadata,
+                            priority=item.priority,
+                        )
+                    )
+                    for item in request.items
+                ]
+            for index, (item, memory_id) in enumerate(
+                zip(request.items, remembered_ids)
+            ):
                 items.append(
                     RememberBatchItemResponse(
                         index=index,
-                        id=_remember_response_id(remember_result),
+                        id=memory_id,
                         text=item.text,
                         namespace=item.namespace,
                     )

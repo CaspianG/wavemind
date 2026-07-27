@@ -80,10 +80,18 @@ def _advantage_payload() -> dict:
     }
 
 
-def _public_payload(query_count: int) -> dict:
-    return {
+def _public_payload(
+    query_count: int,
+    *,
+    longmemeval_v2: bool = False,
+) -> dict:
+    payload = {
         "source_sha": SHA,
-        "scenario": {"queries": query_count},
+        "scenario": {
+            "queries": query_count,
+            "full_small_run": longmemeval_v2,
+            "question_images_supported": longmemeval_v2,
+        },
         "results": [
             {
                 "engine": "WaveMind",
@@ -95,15 +103,32 @@ def _public_payload(query_count: int) -> dict:
                 "execution_mode": "memory_os_direct_feedback_free",
                 "worker_runs": 10,
                 "worker_errors": 0,
+                "evaluation_mode": (
+                    "official_answer_local_reader"
+                    if longmemeval_v2
+                    else "retrieval"
+                ),
+                "scored_queries": query_count if longmemeval_v2 else 0,
+                "task_success_rate": 0.50 if longmemeval_v2 else None,
             },
         ],
     }
+    if longmemeval_v2:
+        payload["schema"] = "wavemind.longmemeval_v2_small.v1"
+    return payload
 
 
 def _write_passing_evidence(root: Path) -> None:
     _write_json(root, ADVANTAGE_ARTIFACT, _advantage_payload())
-    for artifact, min_queries in PUBLIC_ARTIFACTS.values():
-        _write_json(root, artifact, _public_payload(min_queries))
+    for name, (artifact, min_queries) in PUBLIC_ARTIFACTS.items():
+        _write_json(
+            root,
+            artifact,
+            _public_payload(
+                min_queries,
+                longmemeval_v2=name == "longmemeval_v2_small",
+            ),
+        )
 
 
 def test_admission_blocks_without_required_artifacts(tmp_path):

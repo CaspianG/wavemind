@@ -6,8 +6,16 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import numpy as np
+import pytest
 
-from wavemind import HashingTextEncoder, QueryResult, SQLiteMemoryStore, WaveField, WaveMind
+from wavemind import (
+    HashingTextEncoder,
+    MemoryRecord,
+    QueryResult,
+    SQLiteMemoryStore,
+    WaveField,
+    WaveMind,
+)
 
 
 def make_mind(db_path: Path, **kwargs) -> WaveMind:
@@ -71,6 +79,22 @@ def test_wave_field_evolve_remains_finite_after_repeated_strong_feedback():
     assert np.max(np.abs(field.state)) <= 12.0
 
 
+def test_hash_encoder_skips_character_scan_when_weight_is_zero(monkeypatch):
+    encoder = HashingTextEncoder(vector_dim=32, char_ngram_weight=0.0)
+    features: list[str] = []
+    original = encoder._add_feature
+
+    def track_feature(vector, feature, weight):
+        features.append(feature)
+        original(vector, feature, weight)
+
+    monkeypatch.setattr(encoder, "_add_feature", track_feature)
+    encoder.encode_vector("alpha beta " * 1_000)
+
+    assert features
+    assert all(feature.startswith("tok:") for feature in features)
+
+
 def test_remember_query_persist_and_load(tmp_path):
     db_path = tmp_path / "memory.sqlite3"
     mind = make_mind(db_path)
@@ -96,6 +120,86 @@ def test_remember_query_persist_and_load(tmp_path):
     reloaded.load()
     reloaded_results = reloaded.query("кошка", namespace="pets", top_k=1)
     assert reloaded_results[0].text == "кошка сидит на подоконнике"
+
+
+def test_remember_batch_persists_audits_and_journals_as_one_operation(tmp_path):
+    db_path = tmp_path / "batch.sqlite3"
+    journal_path = tmp_path / "batch.recovery.jsonl"
+    mind = make_mind(
+        db_path,
+        recovery_journal_path=journal_path,
+        evolve_on_feed=0,
+    )
+    try:
+        ids = mind.remember_batch(
+            [
+                {
+                    "text": "Andrey is a trader",
+                    "namespace": "profile",
+                    "tags": ["identity"],
+                    "metadata": {"source": "batch"},
+                },
+                {
+                    "text": "The budget is 2000 dollars",
+                    "namespace": "profile",
+                    "ttl_seconds": 60,
+                    "priority": 2.0,
+                },
+            ]
+        )
+
+        assert len(ids) == 2
+        assert len(set(ids)) == 2
+        assert mind.query("trader", namespace="profile", top_k=1)[0].id == ids[0]
+        assert mind.store.get(ids[1]).priority == 2.0
+        events = mind.audit_events(
+            namespace="profile",
+            action="remember",
+            limit=10,
+        )
+        assert {event.memory_id for event in events} == set(ids)
+        assert all(event.metadata["batch"] is True for event in events)
+        journal_rows = [
+            json.loads(line)
+            for line in journal_path.read_text(encoding="utf-8").splitlines()
+        ]
+        assert len(journal_rows) == 1
+        assert len(journal_rows[0]["records"]) == 2
+        assert journal_rows[0]["metadata"] == {"batch": True, "count": 2}
+    finally:
+        mind.close()
+
+    reloaded = make_mind(db_path, evolve_on_feed=0)
+    try:
+        assert reloaded.query("budget", namespace="profile", top_k=1)[0].id == ids[1]
+    finally:
+        reloaded.close()
+
+
+def test_sqlite_insert_many_rolls_back_the_entire_batch(tmp_path):
+    store = SQLiteMemoryStore(tmp_path / "atomic-batch.sqlite3")
+    good = MemoryRecord(
+        text="valid",
+        namespace="atomic",
+        vector=np.ones(4, dtype=np.float32),
+        pattern=np.ones((2, 2), dtype=np.float32),
+    )
+    invalid = MemoryRecord(
+        text="invalid metadata",
+        namespace="atomic",
+        metadata={"not_json": object()},
+        vector=np.ones(4, dtype=np.float32),
+        pattern=np.ones((2, 2), dtype=np.float32),
+    )
+    try:
+        with pytest.raises(TypeError):
+            store.insert_many([good, invalid])
+
+        assert store.count(namespace="atomic") == 0
+        assert good.id is None
+        assert invalid.id is None
+    finally:
+        store.close()
 
 
 def test_namespace_tags_threshold_ttl_and_forget(tmp_path):

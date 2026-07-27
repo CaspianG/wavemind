@@ -263,15 +263,41 @@ def _validate_public_artifact(
         core = _result_by_engine(payload, "WaveMind Core")
     source_sha = str(payload.get("source_sha") or "")
     query_count = _as_int(scenario.get("queries") or scenario.get("query_count"))
-    memory_os_quality = _as_float(
-        memory_os.get("precision_at_1"),
-        default=_as_float(memory_os.get("evidence_recall_at_k"), default=-1.0),
-    )
-    core_quality = _as_float(
-        core.get("precision_at_1"),
-        default=_as_float(core.get("evidence_recall_at_k"), default=-1.0),
-    )
+    if name == "longmemeval_v2_small":
+        memory_os_quality = _as_float(
+            memory_os.get("task_success_rate"),
+            default=-1.0,
+        )
+        core_quality = _as_float(core.get("task_success_rate"), default=-1.0)
+    else:
+        memory_os_quality = _as_float(
+            memory_os.get("precision_at_1"),
+            default=_as_float(
+                memory_os.get("evidence_recall_at_k"),
+                default=-1.0,
+            ),
+        )
+        core_quality = _as_float(
+            core.get("precision_at_1"),
+            default=_as_float(
+                core.get("evidence_recall_at_k"),
+                default=-1.0,
+            ),
+        )
     worker_errors = _as_int(memory_os.get("worker_errors"))
+    requires_answer_eval = name == "longmemeval_v2_small"
+    answer_eval_ok = (
+        not requires_answer_eval
+        or (
+            payload.get("schema") == "wavemind.longmemeval_v2_small.v1"
+            and scenario.get("full_small_run") is True
+            and scenario.get("question_images_supported") is True
+            and _as_int(memory_os.get("scored_queries")) >= min_queries
+            and memory_os.get("evaluation_mode")
+            == "official_answer_local_reader"
+            and memory_os.get("task_success_rate") is not None
+        )
+    )
     passed = (
         bool(_GIT_SHA_RE.fullmatch(source_sha))
         and (expected_source_sha is None or source_sha == expected_source_sha)
@@ -280,6 +306,7 @@ def _validate_public_artifact(
         and _as_int(memory_os.get("worker_runs")) > 0
         and worker_errors == 0
         and memory_os_quality >= core_quality - 0.01
+        and answer_eval_ok
     )
     return _check(
         f"public-{name}",
@@ -293,6 +320,12 @@ def _validate_public_artifact(
             "worker_errors": worker_errors,
             "memory_os_quality": memory_os_quality,
             "core_quality": core_quality,
+            "evaluation_mode": memory_os.get("evaluation_mode"),
+            "scored_queries": memory_os.get("scored_queries"),
+            "full_small_run": scenario.get("full_small_run"),
+            "question_images_supported": scenario.get(
+                "question_images_supported"
+            ),
         },
         target={
             "min_queries": min_queries,
@@ -300,6 +333,11 @@ def _validate_public_artifact(
             "worker_runs": "> 0",
             "worker_errors": 0,
             "quality_regression": "<= 0.01",
+            "answer_evaluation": (
+                "local reader on all 451 questions with image support"
+                if requires_answer_eval
+                else "not required by this retrieval-evidence artifact"
+            ),
         },
         issue=f"{name} does not contain complete direct Memory OS evidence",
     )

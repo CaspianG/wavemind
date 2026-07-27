@@ -275,6 +275,141 @@ class WaveMind:
         self._append_recovery_journal("remember", [record])
         return id
 
+    def remember_batch(
+        self,
+        items: Iterable[Mapping[str, Any]],
+    ) -> list[int]:
+        """Remember heterogeneous items using one storage transaction."""
+        normalized = [dict(item) for item in items]
+        if not normalized:
+            return []
+        texts = [str(item["text"]) for item in normalized]
+        with trace_span(
+            "wavemind.remember_batch.encode",
+            {
+                "wavemind.batch_size": len(normalized),
+                "wavemind.vector_dim": self.encoder.vector_dim,
+            },
+        ):
+            vectors = np.asarray(
+                self.encoder.encode_vectors(texts),
+                dtype=np.float32,
+            )
+            expected_shape = (len(normalized), self.encoder.vector_dim)
+            if vectors.shape != expected_shape:
+                raise ValueError(
+                    "encoder returned batch shape "
+                    f"{vectors.shape}, expected {expected_shape}"
+                )
+            patterns = [
+                self.projector.to_pattern(vector)
+                for vector in vectors
+            ]
+
+        now = time.time()
+        records: list[MemoryRecord] = []
+        strengths: list[float] = []
+        ttl_values: list[float | None] = []
+        for item, text, vector, pattern in zip(
+            normalized,
+            texts,
+            vectors,
+            patterns,
+        ):
+            ttl_seconds = item.get("ttl_seconds")
+            ttl = (
+                float(ttl_seconds)
+                if ttl_seconds is not None
+                else None
+            )
+            priority = float(item.get("priority", 1.0))
+            records.append(
+                MemoryRecord(
+                    text=text,
+                    namespace=str(item.get("namespace", "default")),
+                    tags=tuple(item.get("tags") or ()),
+                    metadata=dict(item.get("metadata") or {}),
+                    vector=vector,
+                    pattern=pattern,
+                    expires_at=now + ttl if ttl is not None else None,
+                    priority=priority,
+                )
+            )
+            strengths.append(float(item.get("strength", 1.0)))
+            ttl_values.append(ttl)
+
+        with trace_span(
+            "wavemind.remember_batch.store",
+            {"wavemind.batch_size": len(records)},
+        ):
+            insert_many = getattr(self.store, "insert_many", None)
+            if callable(insert_many):
+                ids = [int(value) for value in insert_many(records)]
+            else:
+                ids = [int(self.store.insert(record)) for record in records]
+        if len(ids) != len(records):
+            raise RuntimeError(
+                f"store inserted {len(ids)} records for a batch of {len(records)}"
+            )
+
+        for record, memory_id in zip(records, ids):
+            record.id = memory_id
+            self._cache_record(record)
+            self.index.add(memory_id, record.vector)
+        self._mark_graph_dirty()
+        with trace_span(
+            "wavemind.remember_batch.field",
+            {
+                "wavemind.batch_size": len(records),
+                "wavemind.evolve_steps": self._evolve_n,
+            },
+        ):
+            for record, strength in zip(records, strengths):
+                self.field.feed(
+                    record.pattern,
+                    strength=strength * record.priority,
+                )
+                self.field.evolve(self._evolve_n)
+            self._refresh_field_magnitude()
+
+        audit_events = [
+            AuditEvent(
+                action="remember",
+                created_at=time.time(),
+                namespace=record.namespace,
+                memory_id=memory_id,
+                metadata={
+                    "tags": list(record.tags),
+                    "ttl_seconds": ttl_seconds,
+                    "priority": float(record.priority),
+                    "text_length": len(record.text),
+                    "batch": True,
+                },
+            )
+            for record, memory_id, ttl_seconds in zip(
+                records,
+                ids,
+                ttl_values,
+            )
+        ]
+        log_audit_events = getattr(self.store, "log_audit_events", None)
+        if callable(log_audit_events):
+            log_audit_events(audit_events)
+        else:
+            for event in audit_events:
+                self.store.log_audit_event(
+                    event.action,
+                    namespace=event.namespace,
+                    memory_id=event.memory_id,
+                    metadata=event.metadata,
+                )
+        self._append_recovery_journal(
+            "remember",
+            records,
+            metadata={"batch": True, "count": len(records)},
+        )
+        return ids
+
     def query(
         self,
         text: str,

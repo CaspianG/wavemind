@@ -185,14 +185,15 @@ class HashingTextEncoder:
         for token in tokens:
             self._add_feature(vector, f"tok:{token}", self.token_weight)
 
-        compact = re.sub(r"\s+", " ", text)
-        for size in (2, 3):
-            for i in range(max(0, len(compact) - size + 1)):
-                self._add_feature(
-                    vector,
-                    f"ch{size}:{compact[i:i + size]}",
-                    self.char_ngram_weight,
-                )
+        if self.char_ngram_weight > 0.0:
+            compact = re.sub(r"\s+", " ", text)
+            for size in (2, 3):
+                for i in range(max(0, len(compact) - size + 1)):
+                    self._add_feature(
+                        vector,
+                        f"ch{size}:{compact[i:i + size]}",
+                        self.char_ngram_weight,
+                    )
 
         return _l2_normalize(vector)
 

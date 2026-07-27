@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from wavemind import HashingTextEncoder, PostgresMemoryStore, WaveMind, create_memory_store
-from wavemind.storage import MemoryRecord
+from wavemind.storage import AuditEvent, MemoryRecord
 
 
 class FakeResult:
@@ -251,6 +251,36 @@ def test_postgres_store_contract(fake_psycopg):
     store.close()
     assert fake_psycopg.connections[-1].committed is True
     assert fake_psycopg.connections[-1].closed is True
+
+
+def test_postgres_store_batch_contract(fake_psycopg):
+    store = create_memory_store("postgres")
+    first = make_record("first batch memory")
+    second = make_record("second batch memory")
+
+    ids = store.insert_many([first, second])
+    store.log_audit_events(
+        [
+            AuditEvent(
+                action="remember",
+                created_at=1.0,
+                namespace="pg",
+                memory_id=memory_id,
+                metadata={"batch": True},
+            )
+            for memory_id in ids
+        ]
+    )
+
+    assert ids == [1, 2]
+    assert first.id == 1
+    assert second.id == 2
+    assert [record.text for record in store.list(namespace="pg")] == [
+        "first batch memory",
+        "second batch memory",
+    ]
+    assert store.audit_count(namespace="pg", action="remember") == 2
+    store.close()
 
 
 def test_wavemind_runs_on_postgres_store(fake_psycopg):
