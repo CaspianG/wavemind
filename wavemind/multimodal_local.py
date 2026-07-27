@@ -276,6 +276,12 @@ class LocalClipMediaEncoder:
                     f"`{modality}` payload `{path}` produced no decodable content."
                 )
         vectors = _encode_sentence_values(self.model, values, vector_dim=self.vector_dim)
+        if modality == "text":
+            return _weighted_mean_vectors(
+                vectors,
+                _clip_text_view_weights(text),
+                vector_dim=self.vector_dim,
+            )
         return _mean_unit_vectors(vectors, vector_dim=self.vector_dim)
 
     def encode_query(
@@ -309,20 +315,36 @@ class LocalClipMediaEncoder:
         ):
             return self._encode_mixed_payload_batch(selected)
         flattened: list[Any] = []
-        spans: list[tuple[int, int]] = []
+        spans: list[tuple[int, int, tuple[float, ...] | None]] = []
         for payload in selected:
             values = self._payload_values(payload)
             start = len(flattened)
             flattened.extend(values)
-            spans.append((start, len(flattened)))
+            weights = (
+                _clip_text_view_weights(payload.text)
+                if normalize_modality(payload.kind) == "text"
+                else None
+            )
+            spans.append((start, len(flattened), weights))
         matrix = _encode_sentence_values(
             self.model,
             flattened,
             vector_dim=self.vector_dim,
         )
         return [
-            _mean_unit_vectors(matrix[start:end], vector_dim=self.vector_dim)
-            for start, end in spans
+            (
+                _weighted_mean_vectors(
+                    matrix[start:end],
+                    weights,
+                    vector_dim=self.vector_dim,
+                )
+                if weights is not None
+                else _mean_unit_vectors(
+                    matrix[start:end],
+                    vector_dim=self.vector_dim,
+                )
+            )
+            for start, end, weights in spans
         ]
 
     def _encode_mixed_payload_batch(
@@ -1231,7 +1253,7 @@ def _weighted_mean_vectors(
     *,
     vector_dim: int,
 ) -> np.ndarray:
-    if not vectors or len(vectors) != len(weights):
+    if len(vectors) == 0 or len(vectors) != len(weights):
         raise ValueError("Weighted fusion requires equally sized vector and weight lists.")
     total = float(sum(weights))
     if not math.isfinite(total) or total <= 0.0:
@@ -1275,12 +1297,17 @@ def _clip_text_views(text: str) -> tuple[str, ...]:
         return (normalized,)
     return (
         normalized,
-        normalized,
-        f"a photo of {focus}",
         f"a photo of {focus}",
         f"a video of {focus}",
         f"a 3D model of {focus}",
     )
+
+
+def _clip_text_view_weights(text: str) -> tuple[float, ...]:
+    views = _clip_text_views(text)
+    if len(views) == 1:
+        return (1.0,)
+    return (2.0, 2.0, 1.0, 1.0)
 
 
 def _clip_query_views(text: str, *, target_modality: str | None) -> tuple[str, ...]:

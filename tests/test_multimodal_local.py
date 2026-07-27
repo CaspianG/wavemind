@@ -23,7 +23,12 @@ from wavemind import (
     no_inference_context,
     video_payload,
 )
-from wavemind.multimodal_local import _read_off_geometry, _sample_mesh_pointcloud
+from wavemind.multimodal_local import (
+    _clip_text_view_weights,
+    _clip_text_views,
+    _read_off_geometry,
+    _sample_mesh_pointcloud,
+)
 
 
 _TEXT_REVISION = "a" * 40
@@ -278,6 +283,18 @@ def test_bundled_openshape_rejects_an_unaligned_clip_space():
             model_revision=_CLIP_REVISION,
             model=_ContentModel(),
         )
+
+
+def test_clip_text_ensemble_weights_unique_views_without_duplicate_inference():
+    views = _clip_text_views("A bridge crosses the river.")
+
+    assert len(views) == len(set(views)) == 4
+    assert _clip_text_view_weights("A bridge crosses the river.") == (
+        2.0,
+        2.0,
+        1.0,
+        1.0,
+    )
 
 
 def test_clap_text_encoding_always_truncates_to_model_limit():
