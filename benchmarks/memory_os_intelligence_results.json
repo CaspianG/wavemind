@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.memory_os_intelligence_report.v1",
-  "generated_at": "2026-07-09T22:45:10Z",
-  "source_ref": "23edad3b172f",
+  "generated_at": "2026-07-27T10:52:52Z",
+  "source_ref": "807faf0fdd6d",
   "source_files": [
     "benchmarks/scale_readiness_results.json",
     "benchmarks/memory_os_agent_quality_results.json",
@@ -26,7 +26,7 @@
     "positive_feedback_priority_delta": 0.3999999999999999,
     "negative_feedback_priority_delta": -0.30000000000000004,
     "priority_predictions": 2,
-    "priority_boost_total": 0.19999992046342835,
+    "priority_boost_total": 0.19999998581409556,
     "forgetting_demotions": 4,
     "forgetting_decay_total": 0.4,
     "policy_status": "architecture_required",
@@ -95,8 +95,8 @@
     "quality_check_count": 7,
     "memory_os_task_success_uplift": 0.125,
     "memory_os_stale_suppression_uplift": 0.125,
-    "memory_os_p95_latency_delta_ms": -0.4281999863451347,
-    "memory_os_p95_latency_regression_ratio": -0.08768121613057815
+    "memory_os_p95_latency_delta_ms": -0.010475999999925989,
+    "memory_os_p95_latency_regression_ratio": -0.01803656898866327
   },
   "checks": [
     {
@@ -318,14 +318,14 @@
     },
     {
       "name": "quality_p95_delta",
-      "value": -0.4281999863451347,
+      "value": -0.010475999999925989,
       "target": 5.0,
       "op": "<=",
       "pass": true
     },
     {
       "name": "quality_p95_ratio",
-      "value": -0.08768121613057815,
+      "value": -0.01803656898866327,
       "target": 0.2,
       "op": "<=",
       "pass": true
@@ -400,7 +400,7 @@
           "to_query": "risk limits",
           "count": 1,
           "probability": 1.0,
-          "last_seen": 1783637014.8730922
+          "last_seen": 1785149547.4111986
         }
       ],
       "transition_prefetch_hit": true,
@@ -411,7 +411,7 @@
       "positive_feedback_priority_delta": 0.3999999999999999,
       "negative_feedback_priority_delta": -0.30000000000000004,
       "priority_predictions": 2,
-      "priority_boost_total": 0.19999992046342835,
+      "priority_boost_total": 0.19999998581409556,
       "forgetting_demotions": 4,
       "forgetting_decay_total": 0.4,
       "architecture_advice_status": "architecture_required",
@@ -547,7 +547,7 @@
         "Architecture advisor: [action_required] Run a sustained production load profile - Run the external HTTP cluster load workflow against real API nodes before publishing the SLO.",
         "Architecture advisor: [watch] Validate multimodal and structured payload retrieval - Use typed payload helpers and run structured retrieval checks before exposing multimodal claims."
       ],
-      "run_ms": 77.4466000002576
+      "run_ms": 13.10643700000469
     },
     "redis_memory_os": {
       "engine": "WaveMind Redis hot cache",
@@ -574,7 +574,7 @@
           "to_query": "risk limits",
           "count": 1,
           "probability": 1.0,
-          "last_seen": 1783637014.1264112
+          "last_seen": 1785149547.2564452
         }
       ],
       "memory_os_transition_prefetch_hit": true,
@@ -583,7 +583,7 @@
       "memory_os_positive_feedback_priority_delta": 0.3999999999999999,
       "memory_os_negative_feedback_priority_delta": -0.30000000000000004,
       "memory_os_priority_predictions": 2,
-      "memory_os_priority_boost_total": 0.1999999350591051,
+      "memory_os_priority_boost_total": 0.19999998439131084,
       "memory_os_forgetting_demotions": 4,
       "memory_os_forgetting_decay_total": 0.4,
       "memory_os_architecture_advice_status": "architecture_required",
@@ -597,7 +597,7 @@
         "multimodal-payloads"
       ],
       "memory_os_cross_worker_hit": true,
-      "memory_os_run_ms": 57.681599995703436,
+      "memory_os_run_ms": 14.475173999997537,
       "namespace_invalidation_removed": true,
       "redis_keys": 8,
       "writer_hits": 0,
@@ -605,8 +605,8 @@
       "reader_hits": 1,
       "os_hits": 0,
       "os_reader_hits": 2,
-      "avg_lookup_ms": 0.08960000195656903,
-      "p99_lookup_ms": 0.10010000551119447
+      "avg_lookup_ms": 0.03125599999975748,
+      "p99_lookup_ms": 0.035362000005534355
     },
     "agent_memory_os": {
       "worker_ok": true,
@@ -646,7 +646,7 @@
             "namespace": "agent-a",
             "query": "budget recall",
             "frequency": 2,
-            "last_seen": 1783973104.5681689
+            "last_seen": 1785149511.3599913
           }
         ],
         "expired_purged": 5,
@@ -654,7 +654,7 @@
         "concepts_created": 0,
         "concept_ids": [],
         "priority_predictions": 5,
-        "priority_boost_total": 0.49999684816212575,
+        "priority_boost_total": 0.49999908290419753,
         "priority_boosted_ids": [
           10,
           94,
@@ -698,7 +698,7 @@
               "to_query": "risk limits",
               "count": 1,
               "probability": 1.0,
-              "last_seen": 1783973104.5614846
+              "last_seen": 1785149511.3583753
             }
           ],
           "ok": true
@@ -708,7 +708,7 @@
           "expired_memories": 5,
           "total_memories": 402,
           "audit_events": 407,
-          "field_energy": 271683.71875,
+          "field_energy": 271694.90625,
           "clusters": 1,
           "field_shape": "64x64x3",
           "index": "numpy-exact",
@@ -746,7 +746,7 @@
           "expired_memories": 0,
           "total_memories": 397,
           "audit_events": 419,
-          "field_energy": 414318.15625,
+          "field_energy": 414158.9375,
           "clusters": 1,
           "field_shape": "64x64x3",
           "index": "numpy-exact",
@@ -865,6 +865,7 @@
           "duplicate": false,
           "completed": false,
           "reason": null,
+          "in_doubt": false,
           "ok": true
         },
         "actions": [
@@ -1064,7 +1065,7 @@
       "passed_checks": 6,
       "check_count": 6,
       "failed_check_ids": [],
-      "hot_query_count": 16,
+      "hot_query_count": 5,
       "worker_actions": [
         "purge_expired",
         "consolidate_field",
@@ -1072,12 +1073,11 @@
         "predict_priority",
         "prewarm_cache",
         "predictive_prefetch",
-        "advise_architecture",
-        "escalate_policy_history"
+        "advise_architecture"
       ],
       "prewarm_warmed": 5,
       "predictive_warmed": 15,
-      "priority_predictions": 8,
+      "priority_predictions": 6,
       "expired_purged": 1,
       "admission_status": "admitted",
       "admitted": true
@@ -1133,18 +1133,18 @@
       "failed_check_ids": []
     },
     "quality_metrics": {
-      "memory_os_task_success": 1,
+      "memory_os_task_success": 1.0,
       "baseline_task_success": 0.875,
       "task_success_uplift": 0.125,
-      "memory_os_stale_error_rate": 0,
+      "memory_os_stale_error_rate": 0.0,
       "baseline_stale_error_rate": 0.125,
       "stale_suppression_uplift": 0.125,
-      "memory_os_p95_latency_ms": 4.455400005099364,
-      "baseline_p95_latency_ms": 4.883599991444498,
-      "p95_latency_delta_ms": -0.4281999863451347,
-      "p95_latency_regression_ratio": -0.08768121613057815,
-      "cold_p95_latency_delta_ms": -0.11059999815188348,
-      "cold_p95_latency_regression_ratio": -0.02268717911403815
+      "memory_os_p95_latency_ms": 0.5703439999962256,
+      "baseline_p95_latency_ms": 0.5808199999961516,
+      "p95_latency_delta_ms": -0.010475999999925989,
+      "p95_latency_regression_ratio": -0.01803656898866327,
+      "cold_p95_latency_delta_ms": 0.004947999997284569,
+      "cold_p95_latency_regression_ratio": 0.008283750250711739
     }
   }
 }

@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.structured_memory_report.v1",
-  "generated_at": "2026-07-09T22:45:10Z",
-  "source_ref": "e9b8896f2e2f",
+  "generated_at": "2026-07-27T13:29:25Z",
+  "source_ref": "f3a23b2fc832",
   "source_file": "benchmarks/scale_readiness_results.json",
   "claim_boundary": "Structured-memory rows come from the checked-in scale-readiness artifact. They prove typed payload routing, provenance, persistence, temporal recall, and graph traversal on the deterministic fixture; they do not claim full production multimodal model quality.",
   "summary": {
@@ -19,21 +19,25 @@
     "query_count": 7,
     "precision_at_1": 1.0,
     "cross_modal_precision_at_1": 1.0,
+    "cross_modal_space_id": "wavemind.descriptor.v1.d64",
+    "cross_modal_space_production_eligible": false,
     "cross_modal_vectors_persisted_rate": 1.0,
     "cross_modal_provenance_rate": 1.0,
     "precomputed_vector_precision_at_1": 1.0,
     "precomputed_vector_persisted_rate": 1.0,
+    "precomputed_vector_space_id": "scale-readiness:external-precomputed.v1",
+    "same_dimension_space_mismatch_rejected": true,
     "encoder_contract_ok": true,
     "encoder_contract_target_precision_at_1": 1.0,
     "encoder_contract_global_precision_at_1": 1.0,
-    "encoder_contract_margin": 0.8113164444259024,
+    "encoder_contract_margin": 0.811328690622853,
     "encoder_contract_min_required_margin": 0.2,
     "encoder_health_ok": true,
     "encoder_health_global_precision_at_1": 1.0,
     "encoder_health_target_modality_routing_rate": 1.0,
     "encoder_health_dimension_match_rate": 1.0,
-    "encoder_health_payload_encode_p95_ms": 8.334220002143411,
-    "encoder_health_query_encode_p95_ms": 1.5152499952819198,
+    "encoder_health_payload_encode_p95_ms": 3.103920003923122,
+    "encoder_health_query_encode_p95_ms": 0.8351299984497018,
     "encoder_health_margin": 0.24988913536071777,
     "encoder_health_min_required_margin": 0.01,
     "temporal_event_precision_at_1": 1.0,
@@ -43,10 +47,10 @@
     "knowledge_graph_path_precision_at_1": 1.0,
     "knowledge_graph_persistence_rate": 1.0,
     "knowledge_graph_provenance_rate": 1.0,
-    "avg_latency_ms": 1.9594857138664727,
-    "cross_modal_avg_latency_ms": 4.714814283943269,
-    "temporal_event_avg_latency_ms": 2.565499999036547,
-    "knowledge_graph_avg_latency_ms": 2.338574999157572,
+    "avg_latency_ms": 2.2998714287366187,
+    "cross_modal_avg_latency_ms": 3.447385714805153,
+    "temporal_event_avg_latency_ms": 2.840524997736793,
+    "knowledge_graph_avg_latency_ms": 2.4531499984732363,
     "asset_manifest_verified": true
   },
   "checks": [
@@ -100,6 +104,13 @@
       "pass": true
     },
     {
+      "name": "same_dimension_space_mismatch_rejected",
+      "value": true,
+      "target": true,
+      "op": "is",
+      "pass": true
+    },
+    {
       "name": "encoder_contract_ok",
       "value": true,
       "target": true,
@@ -122,7 +133,7 @@
     },
     {
       "name": "encoder_contract_margin",
-      "value": 0.8113164444259024,
+      "value": 0.811328690622853,
       "target": 0.2,
       "op": ">=",
       "pass": true
@@ -157,14 +168,14 @@
     },
     {
       "name": "encoder_health_payload_p95_ms",
-      "value": 8.334220002143411,
+      "value": 3.103920003923122,
       "target": 50.0,
       "op": "<=",
       "pass": true
     },
     {
       "name": "encoder_health_query_p95_ms",
-      "value": 1.5152499952819198,
+      "value": 0.8351299984497018,
       "target": 50.0,
       "op": "<=",
       "pass": true
@@ -258,6 +269,8 @@
       "graph"
     ],
     "cross_modal_embedding_dim": 64,
+    "cross_modal_space_id": "wavemind.descriptor.v1.d64",
+    "cross_modal_space_production_eligible": false,
     "cross_modal_vectors_persisted_rate": 1.0,
     "cross_modal_provenance_rate": 1.0,
     "asset_manifest_verified": true,
@@ -267,6 +280,9 @@
     "precomputed_vector_queries": 4,
     "precomputed_vector_precision_at_1": 1.0,
     "precomputed_vector_embedding_dim": 4,
+    "precomputed_vector_space_id": "scale-readiness:external-precomputed.v1",
+    "precomputed_vector_model_revision": "scale-readiness-v1",
+    "same_dimension_space_mismatch_rejected": true,
     "precomputed_vector_persisted_rate": 1.0,
     "precomputed_vector_target_modalities": [
       "image",
@@ -293,7 +309,7 @@
     "encoder_contract_normalized_vector_rate": 1.0,
     "encoder_contract_finite_vector_rate": 1.0,
     "encoder_contract_provenance_rate": 1.0,
-    "encoder_contract_min_global_margin": 0.8113164444259024,
+    "encoder_contract_min_global_margin": 0.811328690622853,
     "encoder_contract_min_required_margin": 0.2,
     "encoder_contract_failures": [],
     "encoder_health_ok": true,
@@ -307,8 +323,8 @@
     "encoder_health_finite_query_vector_rate": 1.0,
     "encoder_health_normalized_query_vector_rate": 1.0,
     "encoder_health_dimension_match_rate": 1.0,
-    "encoder_health_payload_encode_p95_ms": 8.334220002143411,
-    "encoder_health_query_encode_p95_ms": 1.5152499952819198,
+    "encoder_health_payload_encode_p95_ms": 3.103920003923122,
+    "encoder_health_query_encode_p95_ms": 0.8351299984497018,
     "encoder_health_min_global_margin": 0.24988913536071777,
     "encoder_health_min_required_margin": 0.01,
     "encoder_health_failures": [],
@@ -329,15 +345,15 @@
     "knowledge_graph_predicate_precision_at_1": 1,
     "knowledge_graph_persistence_rate": 1.0,
     "knowledge_graph_provenance_rate": 1.0,
-    "avg_latency_ms": 1.9594857138664727,
-    "p99_latency_ms": 4.907700000330806,
-    "cross_modal_avg_latency_ms": 4.714814283943269,
-    "cross_modal_p99_latency_ms": 6.705400002829265,
-    "precomputed_vector_avg_latency_ms": 1.871925001978525,
-    "precomputed_vector_p99_latency_ms": 2.0838999989791773,
-    "temporal_event_avg_latency_ms": 2.565499999036547,
-    "temporal_event_p99_latency_ms": 5.27929999952903,
-    "knowledge_graph_avg_latency_ms": 2.338574999157572,
-    "knowledge_graph_p99_latency_ms": 4.364599997643381
+    "avg_latency_ms": 2.2998714287366187,
+    "p99_latency_ms": 2.5353999953949824,
+    "cross_modal_avg_latency_ms": 3.447385714805153,
+    "cross_modal_p99_latency_ms": 3.940299997339025,
+    "precomputed_vector_avg_latency_ms": 2.422800000204006,
+    "precomputed_vector_p99_latency_ms": 2.61730000784155,
+    "temporal_event_avg_latency_ms": 2.840524997736793,
+    "temporal_event_p99_latency_ms": 3.158799998345785,
+    "knowledge_graph_avg_latency_ms": 2.4531499984732363,
+    "knowledge_graph_p99_latency_ms": 2.5531999999657273
   }
 }

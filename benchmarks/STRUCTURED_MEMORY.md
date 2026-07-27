@@ -1,6 +1,6 @@
 # WaveMind Structured Memory Report
 
-Generated: `2026-07-09T22:45:10Z`.
+Generated: `2026-07-27T13:29:25Z`.
 
 Structured-memory rows come from the checked-in scale-readiness artifact. They prove typed payload routing, provenance, persistence, temporal recall, and graph traversal on the deterministic fixture; they do not claim full production multimodal model quality.
 
@@ -11,12 +11,13 @@ Structured-memory rows come from the checked-in scale-readiness artifact. They p
 - Structured precision@1: `1`.
 - Cross-modal precision@1: `1`.
 - Precomputed-vector precision@1: `1`.
+- Shared-space mismatch rejected: `True`.
 - Encoder health: `True`.
 - Temporal event precision@1: `1`.
 - Knowledge-graph precision@1: `1`.
-- Cross-modal avg latency: `4.715 ms`.
-- Temporal avg latency: `2.565 ms`.
-- Knowledge-graph avg latency: `2.339 ms`.
+- Cross-modal avg latency: `3.447 ms`.
+- Temporal avg latency: `2.841 ms`.
+- Knowledge-graph avg latency: `2.453 ms`.
 
 ## Gate Checks
 
@@ -29,6 +30,7 @@ Structured-memory rows come from the checked-in scale-readiness artifact. They p
 | cross_modal_provenance | `pass` | `1` | `>= 1.0` |
 | precomputed_vector_precision_at_1 | `pass` | `1` | `>= 1.0` |
 | precomputed_vector_persisted | `pass` | `1` | `>= 1.0` |
+| same_dimension_space_mismatch_rejected | `pass` | `1` | `is True` |
 | encoder_contract_ok | `pass` | `1` | `is True` |
 | encoder_contract_target_precision_at_1 | `pass` | `1` | `>= 1.0` |
 | encoder_contract_global_precision_at_1 | `pass` | `1` | `>= 1.0` |
@@ -37,8 +39,8 @@ Structured-memory rows come from the checked-in scale-readiness artifact. They p
 | encoder_health_global_precision_at_1 | `pass` | `1` | `>= 1.0` |
 | encoder_health_target_modality_routing_rate | `pass` | `1` | `>= 1.0` |
 | encoder_health_dimension_match_rate | `pass` | `1` | `>= 1.0` |
-| encoder_health_payload_p95_ms | `pass` | `8.334` | `<= 50.0` |
-| encoder_health_query_p95_ms | `pass` | `1.515` | `<= 50.0` |
+| encoder_health_payload_p95_ms | `pass` | `3.104` | `<= 50.0` |
+| encoder_health_query_p95_ms | `pass` | `0.835` | `<= 50.0` |
 | encoder_health_margin | `pass` | `0.25` | `>= 0.01` |
 | temporal_event_precision_at_1 | `pass` | `1` | `>= 1.0` |
 | temporal_event_persistence | `pass` | `1` | `>= 1.0` |
@@ -54,10 +56,10 @@ Structured-memory rows come from the checked-in scale-readiness artifact. They p
 | area | evidence |
 |---|---|
 | Typed payloads | `7` queries across `7` modalities. |
-| Cross-modal routing | `7` typed queries, persisted vector rate `1`, provenance `1`. |
-| External vectors | `4` strict precomputed-vector queries over `image, audio, video, 3d`. |
+| Cross-modal routing | `7` typed queries in `wavemind.descriptor.v1.d64`, persisted vector rate `1`, provenance `1`. |
+| External vectors | `4` strict precomputed-vector queries in `scale-readiness:external-precomputed.v1` over `image, audio, video, 3d`; equal-dimension mismatch rejected `True`. |
 | Encoder contract | target@1 `1`, global@1 `1`, margin `0.811`. |
-| Encoder health | active encoder `descriptor`, global@1 `1`, routing `1`, payload p95 `8.334 ms`, query p95 `1.515 ms`. |
+| Encoder health | active encoder `descriptor`, global@1 `1`, routing `1`, payload p95 `3.104 ms`, query p95 `0.835 ms`. |
 | Temporal events | around/window/recency/interval `1/1/1/1`. |
 | Knowledge graph | direct/two-hop/three-hop/predicate `1/1/1/1`. |
 

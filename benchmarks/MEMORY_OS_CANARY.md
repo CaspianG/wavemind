@@ -12,7 +12,7 @@ declared. It is not remote production scale evidence.
 | namespace | `canary:memory-os` |
 | target memories | `100000` |
 | replayed queries | `18` |
-| hot queries | `16` |
+| hot queries | `5` |
 | admission | `admitted` |
 | admitted | `True` |
 | passed checks | `6/6` |
@@ -21,10 +21,10 @@ declared. It is not remote production scale evidence.
 
 | check | status | evidence | action |
 |---|---|---|---|
-| Representative query audit created hot queries | `pass` | hot_query_count=16, replayed_queries=18 | Replay representative staging traffic with query audit enabled before Memory OS rollout. |
+| Representative query audit created hot queries | `pass` | hot_query_count=5, replayed_queries=18 | Replay representative staging traffic with query audit enabled before Memory OS rollout. |
 | Memory OS prewarmed hot recall paths | `pass` | prewarm_warmed=5, cache_hit=True | Fix cache wiring or audit filters before scheduling cache-prewarm workers. |
 | Memory OS generated predictive follow-up queries | `pass` | predictive_warmed=15 | Keep transition audit enabled so predictive prefetch can learn follow-up paths. |
-| Memory OS applied bounded priority learning | `pass` | priority_predictions=8 | Investigate recall quality if hot queries do not produce priority updates. |
+| Memory OS applied bounded priority learning | `pass` | priority_predictions=6 | Investigate recall quality if hot queries do not produce priority updates. |
 | Memory OS purged expired stale memories | `pass` | expired_purged=1 | Keep maintenance enabled before stale TTL records can compete with live memories. |
 | Memory OS scheduler passes staging admission | `pass` | status=admitted, blockers=[] | Resolve admission blockers before enabling production automation. |
 
@@ -43,7 +43,7 @@ schedule as production automation, or whether it is still only a runbook.
 | target memories | `100000` |
 | worker count | `1` |
 | effective cache | `redis` |
-| hot query count | `16` |
+| hot query count | `5` |
 | passed requirements | `13/13` |
 | blockers | `0` |
 | warnings | `0` |
@@ -54,7 +54,7 @@ schedule as production automation, or whether it is still only a runbook.
 |---|---|---|---|
 | Execution plan has no blocked worker tasks | `pass` | safe_to_run=True, blocked=[] | Resolve execution_plan.blocked_task_ids before scheduling Memory OS. |
 | All Memory OS worker lanes are planned | `pass` | adaptive-forgetting, architecture-advice, cache-prewarm, consolidation, maintenance, memory-os, predictive-prefetch | Planner must include memory-os, cache-prewarm, predictive-prefetch, forgetting, consolidation, maintenance, and architecture-advice. |
-| Query audit traffic enables prewarm and predictive workers | `pass` | hot_query_count=16, enabled=['adaptive-forgetting', 'architecture-advice', 'cache-prewarm', 'consolidation', 'maintenance', 'memory-os', 'predictive-prefetch'] | Enable audited query traffic in staging, replay representative traffic, then rerun memory-os-admission. |
+| Query audit traffic enables prewarm and predictive workers | `pass` | hot_query_count=5, enabled=['adaptive-forgetting', 'architecture-advice', 'cache-prewarm', 'consolidation', 'maintenance', 'memory-os', 'predictive-prefetch'] | Enable audited query traffic in staging, replay representative traffic, then rerun memory-os-admission. |
 | Consolidation worker is active when clusters exist | `pass` | enabled=['adaptive-forgetting', 'architecture-advice', 'cache-prewarm', 'consolidation', 'maintenance', 'memory-os', 'predictive-prefetch'] | Seed enough representative memories/query traffic for stable concept clusters before production rollout. |
 | Shared Redis cache is configured when the plan requires it | `pass` | requires_shared_cache=True, effective_cache_mode=redis, redis_configured=True | Set WAVEMIND_REDIS_URL or pass --redis-url before enabling multi-worker Memory OS. |
 | Distributed single-flight lock is configured for state mutation | `pass` | requires_distributed_lock=True, lock_configured=True | Set WAVEMIND_MEMORY_OS_LOCK_REDIS_URL or pass --lock-redis-url before running production Memory OS workers. |
