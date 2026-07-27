@@ -708,10 +708,36 @@ class CrossModalMemoryLayer:
             )
         descriptor = cross_modal_descriptor(merged_payload)
         vector = self.cross_modal_encoder.encode_payload(merged_payload, descriptor)
+        return self._remember_encoded_payload(
+            merged_payload,
+            vector,
+            descriptor=descriptor,
+            namespace=namespace,
+            ttl_seconds=ttl_seconds,
+            priority=priority,
+        )
+
+    def _remember_encoded_payload(
+        self,
+        payload: MemoryPayload,
+        vector: Sequence[float] | np.ndarray,
+        *,
+        descriptor: str,
+        namespace: str,
+        ttl_seconds: float | None,
+        priority: float,
+    ) -> int:
+        """Persist a vector produced by this layer's active encoder.
+
+        This internal hook lets the checked-in benchmark persist vectors from
+        a real batched encoder call without encoding each asset a second time.
+        Callers remain responsible for invoking the active encoder first.
+        """
+
         vector = _normalize_vector(vector, vector_dim=self.vector_dim)
         record_metadata = {
-            **merged_payload.metadata,
-            "modality": merged_payload.kind,
+            **payload.metadata,
+            "modality": payload.kind,
             "source": "wavemind_cross_modal",
             "cross_modal_version": _CROSS_MODAL_VERSION,
             "cross_modal_encoder": self.cross_modal_encoder.name,
@@ -725,8 +751,8 @@ class CrossModalMemoryLayer:
         tags = tuple(
             dict.fromkeys(
                 (
-                    *merged_payload.tags,
-                    merged_payload.kind,
+                    *payload.tags,
+                    payload.kind,
                     "multimodal",
                     cross_modal_space_tag(self.space_id),
                 )
@@ -734,7 +760,7 @@ class CrossModalMemoryLayer:
         )
         return int(
             self.memory.remember(
-                merged_payload.text,
+                payload.text,
                 namespace=namespace,
                 tags=tags,
                 ttl_seconds=ttl_seconds,
