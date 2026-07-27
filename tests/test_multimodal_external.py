@@ -30,6 +30,8 @@ def _manifest(tmp_path: Path, *, object_store: str = "s3") -> Path:
         "object_store": object_store,
         "object_store_verification_mode": "manifest",
         "encoder_name": "external-fixture-clip-audio-video-3d",
+        "encoder_revision": "fixture-v1",
+        "shared_space_id": "tests:external-fixture-space.v1",
         "vector_dim": 7,
         "encoder_metrics": {
             "payload_encode_p95_ms": 42.0,
@@ -84,6 +86,8 @@ def test_external_multimodal_evidence_runner_generates_admission_artifact(tmp_pa
     assert payload["environment"] == "staging"
     assert payload["object_store"] == "s3"
     assert payload["object_store_verification_mode"] == "manifest"
+    assert payload["encoder_revision"] == "fixture-v1"
+    assert payload["shared_space_id"] == "tests:external-fixture-space.v1"
     assert payload["modality_count"] == 7
     assert payload["payload_count"] == 7
     assert payload["query_count"] == 7
@@ -101,6 +105,20 @@ def test_external_multimodal_evidence_runner_generates_admission_artifact(tmp_pa
     assert payload["metrics"]["query_encode_p95_ms"] == 18.0
     assert payload["metrics"]["error_rate"] == 0.0
     assert payload["errors"] == []
+
+
+def test_external_multimodal_evidence_requires_explicit_shared_space(tmp_path):
+    manifest_path = _manifest(tmp_path)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest.pop("shared_space_id")
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    try:
+        run_external_multimodal_evidence(manifest_path)
+    except ValueError as exc:
+        assert "shared_space_id is required" in str(exc)
+    else:
+        raise AssertionError("missing shared_space_id must fail closed")
 
 
 def test_precomputed_external_vectors_do_not_unlock_real_encoder_admission(tmp_path):

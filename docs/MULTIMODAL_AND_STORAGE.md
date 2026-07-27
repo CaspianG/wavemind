@@ -22,9 +22,9 @@ print(memory.query("enterprise expansion chart", namespace="research")[0].metada
 
 For agent workflows that need one memory layer across payload types, use
 `CrossModalMemoryLayer`. It stores typed payloads through WaveMind, keeps
-provenance in metadata, and re-ranks by a shared deterministic descriptor
-embedding so queries can target one modality without changing the underlying
-storage.
+provenance in metadata, and re-ranks inside an explicitly registered embedding
+space. The zero-config descriptor encoder below is a local development path,
+not evidence of real image, audio, video, or 3D understanding.
 
 ```python
 from wavemind import CrossModalMemoryLayer, WaveMind, audio_payload, image_payload
@@ -48,16 +48,25 @@ fallback:
 from wavemind import CrossModalMemoryLayer, PrecomputedCrossModalEncoder, WaveMind, image_payload
 
 memory = WaveMind()
+space_id = "openclip:ViT-B-32@laion2b-s34b-b79k"
 layer = CrossModalMemoryLayer(
     memory,
-    cross_modal_encoder=PrecomputedCrossModalEncoder(vector_dim=512, name="clip"),
+    cross_modal_encoder=PrecomputedCrossModalEncoder(
+        vector_dim=512,
+        space_id=space_id,
+        name="openclip",
+        model_revision="laion2b-s34b-b79k",
+    ),
 )
 
 layer.remember(
     image_payload(
         "s3://demo/chart.png",
         caption="Q2 revenue chart",
-        metadata={"cross_modal_vector": image_clip_vector},
+        metadata={
+            "cross_modal_vector": image_clip_vector,
+            "cross_modal_space_id": space_id,
+        },
     ),
     namespace="research",
 )
@@ -66,7 +75,49 @@ results = layer.query(
     namespace="research",
     target_modality="image",
     query_vector=text_clip_vector,
+    query_space_id=space_id,
 )
+```
+
+Precomputed payload and query vectors must declare the same `space_id`. WaveMind
+rejects a missing ID and rejects equal-length vectors from different spaces
+before cosine similarity is calculated.
+
+Mixed queries use the same rule and expose normalized fusion weights:
+
+```python
+from wavemind import CrossModalQueryPart
+
+mixed_space_id = "imagebind:huge@pinned-revision"
+mixed_layer = CrossModalMemoryLayer(
+    memory,
+    cross_modal_encoder=PrecomputedCrossModalEncoder(
+        vector_dim=1024,
+        space_id=mixed_space_id,
+        name="imagebind",
+        model_revision="pinned-revision",
+        modalities=("text", "image", "audio", "video", "3d"),
+    ),
+)
+results = mixed_layer.query_mixed(
+    [
+        CrossModalQueryPart(
+            modality="image",
+            vector=tuple(image_query_vector),
+            space_id=mixed_space_id,
+            weight=3,
+        ),
+        CrossModalQueryPart(
+            modality="audio",
+            vector=tuple(audio_query_vector),
+            space_id=mixed_space_id,
+            weight=1,
+        ),
+    ],
+    namespace="research",
+)
+print(results[0].fusion)
+print(results[0].score_breakdown)
 ```
 
 To validate an explicitly precomputed-vector integration, run the external
@@ -155,7 +206,10 @@ from wavemind import CrossModalMemoryLayer, SentenceTransformersCrossModalEncode
 memory = WaveMind()
 layer = CrossModalMemoryLayer(
     memory,
-    cross_modal_encoder=SentenceTransformersCrossModalEncoder("clip-ViT-B-32"),
+    cross_modal_encoder=SentenceTransformersCrossModalEncoder(
+        "clip-ViT-B-32",
+        model_revision="pinned-model-revision",
+    ),
 )
 
 layer.remember(
@@ -166,9 +220,11 @@ results = layer.query("revenue chart", namespace="research", target_modality="im
 ```
 
 This backend loads local image files with Pillow and encodes text queries through
-the same sentence-transformers model. Remote assets, audio, video, and 3D
-payloads may use descriptors or precomputed vectors for development and storage
-integration, but those paths do not satisfy real-encoder admission.
+the same sentence-transformers model. It fails clearly for remote images and for
+audio, video, or 3D instead of substituting a caption, filename, metadata, OCR,
+or descriptor. Use a selectable backend that actually supports those modalities,
+or provide explicitly scoped precomputed vectors for storage integration; the
+precomputed path still cannot satisfy real-encoder admission.
 
 Supported payload helpers:
 

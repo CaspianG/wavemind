@@ -28,6 +28,7 @@ from wavemind import (
     CachePrewarmWorker,
     ClusterNode,
     CrossModalMemoryLayer,
+    CrossModalSpaceMismatchError,
     ActiveActiveSyncWorker,
     DistributedRepairWorker,
     DistributedShardedWaveMind,
@@ -3897,11 +3898,14 @@ def run_multimodal_profile() -> dict[str, object]:
                 and len(record.metadata["cross_modal_vector"]) == layer.vector_dim
             )
 
+            precomputed_space_id = "scale-readiness:external-precomputed.v1"
             precomputed_layer = CrossModalMemoryLayer(
                 memory,
                 cross_modal_encoder=PrecomputedCrossModalEncoder(
                     vector_dim=4,
+                    space_id=precomputed_space_id,
                     name="external-precomputed",
+                    model_revision="scale-readiness-v1",
                 ),
             )
             precomputed_expected = {
@@ -3909,7 +3913,10 @@ def run_multimodal_profile() -> dict[str, object]:
                     image_payload(
                         "s3://demo/external-chart.png",
                         caption="external image encoder result",
-                        metadata={"cross_modal_vector": [1.0, 0.0, 0.0, 0.0]},
+                        metadata={
+                            "cross_modal_vector": [1.0, 0.0, 0.0, 0.0],
+                            "cross_modal_space_id": precomputed_space_id,
+                        },
                     ),
                     namespace="precomputed",
                 ),
@@ -3917,7 +3924,10 @@ def run_multimodal_profile() -> dict[str, object]:
                     audio_payload(
                         "s3://demo/external-call.wav",
                         transcript="external audio encoder result",
-                        metadata={"cross_modal_vector": [0.0, 1.0, 0.0, 0.0]},
+                        metadata={
+                            "cross_modal_vector": [0.0, 1.0, 0.0, 0.0],
+                            "cross_modal_space_id": precomputed_space_id,
+                        },
                     ),
                     namespace="precomputed",
                 ),
@@ -3925,7 +3935,10 @@ def run_multimodal_profile() -> dict[str, object]:
                     video_payload(
                         "s3://demo/external-demo.mp4",
                         summary="external video encoder result",
-                        metadata={"cross_modal_vector": [0.0, 0.0, 1.0, 0.0]},
+                        metadata={
+                            "cross_modal_vector": [0.0, 0.0, 1.0, 0.0],
+                            "cross_modal_space_id": precomputed_space_id,
+                        },
                     ),
                     namespace="precomputed",
                 ),
@@ -3933,7 +3946,10 @@ def run_multimodal_profile() -> dict[str, object]:
                     asset3d_payload(
                         "s3://demo/external-asset.glb",
                         description="external 3D encoder result",
-                        metadata={"cross_modal_vector": [0.0, 0.0, 0.0, 1.0]},
+                        metadata={
+                            "cross_modal_vector": [0.0, 0.0, 0.0, 1.0],
+                            "cross_modal_space_id": precomputed_space_id,
+                        },
                     ),
                     namespace="precomputed",
                 ),
@@ -3955,12 +3971,33 @@ def run_multimodal_profile() -> dict[str, object]:
                     target_modality=modality,
                     top_k=1,
                     query_vector=query_vector,
+                    query_space_id=precomputed_space_id,
                 )
                 precomputed_latencies.append((time.perf_counter() - started) * 1000.0)
                 if results and results[0].id == precomputed_expected[modality]:
                     precomputed_correct += 1
                 if results and results[0].metadata.get("cross_modal_vector"):
                     precomputed_persisted += 1
+            same_dimension_space_mismatch_rejected = False
+            incompatible_layer = CrossModalMemoryLayer(
+                memory,
+                cross_modal_encoder=PrecomputedCrossModalEncoder(
+                    vector_dim=4,
+                    space_id="scale-readiness:incompatible-space.v1",
+                    name="incompatible-precomputed",
+                    model_revision="scale-readiness-v1",
+                ),
+            )
+            try:
+                incompatible_layer.query(
+                    "same dimension but incompatible space",
+                    namespace="precomputed",
+                    top_k=1,
+                    query_vector=[1.0, 0.0, 0.0, 0.0],
+                    query_space_id="scale-readiness:incompatible-space.v1",
+                )
+            except CrossModalSpaceMismatchError:
+                same_dimension_space_mismatch_rejected = True
 
             temporal_layer = TemporalEventMemoryLayer(
                 memory,
@@ -4193,6 +4230,10 @@ def run_multimodal_profile() -> dict[str, object]:
                 "cross_modal_precision_at_1": cross_correct / len(cross_modal_checks),
                 "cross_modal_target_modalities": [modality for _, modality, _ in cross_modal_checks],
                 "cross_modal_embedding_dim": layer.vector_dim,
+                "cross_modal_space_id": layer.space_id,
+                "cross_modal_space_production_eligible": (
+                    layer.embedding_space.production_eligible
+                ),
                 "cross_modal_vectors_persisted_rate": persisted_vectors / len(descriptor_records),
                 "cross_modal_provenance_rate": provenance_complete / len(cross_modal_checks),
                 "asset_manifest_verified": described_video_asset.verified,
@@ -4202,6 +4243,13 @@ def run_multimodal_profile() -> dict[str, object]:
                 "precomputed_vector_queries": len(precomputed_checks),
                 "precomputed_vector_precision_at_1": precomputed_correct / len(precomputed_checks),
                 "precomputed_vector_embedding_dim": precomputed_layer.vector_dim,
+                "precomputed_vector_space_id": precomputed_layer.space_id,
+                "precomputed_vector_model_revision": (
+                    precomputed_layer.embedding_space.model_revision
+                ),
+                "same_dimension_space_mismatch_rejected": (
+                    same_dimension_space_mismatch_rejected
+                ),
                 "precomputed_vector_persisted_rate": precomputed_persisted / len(precomputed_checks),
                 "precomputed_vector_target_modalities": [modality for modality, _ in precomputed_checks],
                 "encoder_contract_ok": encoder_contract.ok,
