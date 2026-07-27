@@ -499,6 +499,68 @@ def test_precomputed_cross_modal_encoder_requires_vectors(tmp_path):
         memory.close()
 
 
+def test_cross_modal_zero_base_weight_skips_base_query_and_normalizes_vector(tmp_path):
+    memory = WaveMind(
+        db_path=tmp_path / "cross-modal-vector-only.sqlite3",
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+    )
+    vector = np.asarray([1.0000005, 0.0, 0.0, 0.0], dtype=np.float32)
+    try:
+        layer = CrossModalMemoryLayer(
+            memory,
+            cross_modal_encoder=PrecomputedCrossModalEncoder(
+                vector_dim=4,
+                space_id=_TEST_SPACE_ID,
+            ),
+            base_weight=0.0,
+            cross_modal_weight=1.0,
+            modality_weight=0.0,
+        )
+        memory_id = layer.remember(
+            image_payload(
+                "s3://bucket/exact-vector.png",
+                caption="exact vector",
+                metadata={
+                    "cross_modal_vector": vector.tolist(),
+                    "cross_modal_space_id": _TEST_SPACE_ID,
+                },
+            ),
+            namespace="workspace",
+        )
+        record = memory.store.get(memory_id)
+        assert record is not None
+        expected = (vector / float(np.linalg.norm(vector))).astype(np.float32)
+        assert np.array_equal(
+            np.asarray(record.metadata["cross_modal_vector"], dtype=np.float32),
+            expected,
+        )
+
+        def fail_base_query(*args, **kwargs):
+            raise AssertionError("base query must not run when base_weight is zero")
+
+        memory.query = fail_base_query
+
+        def fail_store_list(*args, **kwargs):
+            raise AssertionError("cross-modal query must use WaveMind's record cache")
+
+        memory.store.list = fail_store_list
+        results = layer.query(
+            "vector-only query",
+            namespace="workspace",
+            target_modality="image",
+            top_k=1,
+            query_vector=vector,
+            query_space_id=_TEST_SPACE_ID,
+        )
+        assert results[0].id == memory_id
+        assert results[0].base_score == 0.0
+    finally:
+        memory.close()
+
+
 def test_cross_modal_query_vector_dimension_is_validated(tmp_path):
     memory = WaveMind(
         db_path=tmp_path / "dimension-check.sqlite3",

@@ -167,6 +167,7 @@ def _write_external_multimodal_evidence(
                     "mixed_multimodal_precision_at_1": 0.91,
                     "persisted_vector_parity": 1.0,
                     "retrieval_p99_ms": query_p99_ms,
+                    "query_p99_ms": 5_000.0,
                     "batch_throughput_assets_per_second": 12.5,
                     "error_rate": 0.0,
                 },
@@ -257,7 +258,10 @@ def test_multimodal_admission_blocks_small_or_slow_external_evidence(tmp_path):
     assert payload["summary"]["requested_evidence_status"] == "fail"
     assert "payload_count must be >= 1000" in payload["requested_evidence"]["issues"]
     assert "query_count must be >= 200" in payload["requested_evidence"]["issues"]
-    assert "query_p99_ms must be <= 250.000" in payload["requested_evidence"]["issues"]
+    assert (
+        "retrieval_p99_ms must be <= 250.000"
+        in payload["requested_evidence"]["issues"]
+    )
     assert "macro precision_at_1 must be >= 0.900" in payload["requested_evidence"]["issues"]
 
 

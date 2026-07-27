@@ -11,6 +11,7 @@ from wavemind import (
     LocalClapAudioEncoder,
     LocalClipMediaEncoder,
     LocalMediaInputError,
+    LocalMultimodalBackendError,
     LocalMultimodalMemory,
     LocalMultimodalQueryPart,
     LocalSentenceTextEncoder,
@@ -22,11 +23,82 @@ from wavemind import (
     no_inference_context,
     video_payload,
 )
+from wavemind.multimodal_local import _read_off_geometry, _sample_mesh_pointcloud
 
 
 _TEXT_REVISION = "a" * 40
 _CLIP_REVISION = "b" * 40
 _CLAP_REVISION = "c" * 40
+
+
+def test_off_geometry_reader_triangulates_without_descriptor_data(tmp_path):
+    path = tmp_path / "opaque.off"
+    path.write_text(
+        "OFF\n4 1 0\n0 0 0\n1 0 0\n1 1 0\n0 1 0\n4 0 1 2 3\n",
+        encoding="utf-8",
+    )
+    vertices, faces = _read_off_geometry(path)
+    assert vertices.shape == (4, 3)
+    assert faces.tolist() == [[0, 1, 2], [0, 2, 3]]
+
+
+def test_mesh_pointcloud_sampling_is_content_based_and_deterministic(tmp_path):
+    path = tmp_path / "opaque.off"
+    path.write_text(
+        "OFF\n4 2 0\n0 0 0\n1 0 0\n0 1 0\n0 0 1\n"
+        "3 0 1 2\n3 0 1 3\n",
+        encoding="utf-8",
+    )
+    first = _sample_mesh_pointcloud(path, point_count=64)
+    second = _sample_mesh_pointcloud(path, point_count=64)
+    assert first.shape == (64, 6)
+    assert np.array_equal(first, second)
+    assert np.allclose(first[:, 3:], 0.4)
+    assert np.isclose(np.linalg.norm(first[:, :3], axis=1).max(), 1.0)
+
+
+def test_clip_3d_backend_encodes_xyz_rgb_pointclouds(tmp_path):
+    torch = pytest.importorskip("torch")
+
+    class _PointcloudModel(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.anchor = torch.nn.Parameter(torch.zeros(1))
+            self.shapes = []
+
+        def forward(self, values):
+            self.shapes.append(tuple(values.shape))
+            assert values.shape[1] == 6
+            return torch.tensor(
+                [[3.0, 4.0, 0.0, 0.0]] * values.shape[0],
+                dtype=values.dtype,
+                device=values.device,
+            )
+
+    path = tmp_path / "opaque.off"
+    path.write_text(
+        "OFF\n4 2 0\n0 0 0\n1 0 0\n0 1 0\n0 0 1\n"
+        "3 0 1 2\n3 0 1 3\n",
+        encoding="utf-8",
+    )
+    model = _PointcloudModel()
+    encoder = LocalClipMediaEncoder(
+        "tests/clip",
+        model_revision=_CLIP_REVISION,
+        model=_ContentModel(),
+        pointcloud_model=model,
+        use_openshape_3d=True,
+        pointcloud_size=64,
+        pointcloud_batch_size=2,
+    )
+    payload = MemoryPayload(kind="3d", text="", metadata={"uri": str(path)})
+
+    single = encoder.encode_payload(payload, "")
+    batch = encoder.encode_payloads([payload, payload])
+
+    assert model.shapes == [(1, 6, 64), (2, 6, 64)]
+    assert np.allclose(single, np.asarray([0.6, 0.8, 0.0, 0.0]))
+    assert all(np.array_equal(single, vector) for vector in batch)
 
 
 def _vector(index: int) -> np.ndarray:
@@ -156,6 +228,7 @@ def _backends() -> _Backends:
                 path.read_text(encoding="utf-8")
             ]
             * count,
+            use_openshape_3d=False,
             video_frame_count=2,
             mesh_view_count=2,
         ),
@@ -195,6 +268,15 @@ def test_real_local_backends_require_pinned_revisions():
             model=_FakeClapModel(),
             processor=_FakeClapProcessor(),
             inference_context=no_inference_context,
+        )
+
+
+def test_bundled_openshape_rejects_an_unaligned_clip_space():
+    with pytest.raises(LocalMultimodalBackendError, match="aligned only"):
+        LocalClipMediaEncoder(
+            "tests/custom-clip",
+            model_revision=_CLIP_REVISION,
+            model=_ContentModel(),
         )
 
 
@@ -527,7 +609,7 @@ def test_mixed_query_fuses_spaces_by_rank_without_raw_vector_comparison(tmp_path
 
         assert {result.id for result in results} == {image_id, audio_id}
         assert all(
-            result.fusion["strategy"] == "weighted_reciprocal_rank"
+            result.fusion["strategy"] == "confidence_weighted_reciprocal_rank"
             for result in results
         )
         assert all(
@@ -538,6 +620,7 @@ def test_mixed_query_fuses_spaces_by_rank_without_raw_vector_comparison(tmp_path
             contributions = result.fusion["contributions"]
             assert len({item["space_id"] for item in contributions}) == 1
             assert all("raw_space_score" in item for item in contributions)
+            assert all(0.0 < item["group_confidence"] <= 1.0 for item in contributions)
     finally:
         memory.close()
 
