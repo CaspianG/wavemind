@@ -307,6 +307,14 @@ def test_multiple_real_spaces_coexist_and_are_exactly_tagged(tmp_path):
                 MemoryPayload(kind="text", text="release checklist"),
                 namespace="tenant:a",
             ),
+            "dashboard_text": local.remember(
+                MemoryPayload(kind="text", text="dashboard analysis"),
+                namespace="tenant:a",
+            ),
+            "bell_text": local.remember(
+                MemoryPayload(kind="text", text="bell incident recording"),
+                namespace="tenant:a",
+            ),
             "image": local.remember(
                 image_payload(files["image"], caption="uninformative"),
                 namespace="tenant:a",
@@ -358,11 +366,35 @@ def test_multiple_real_spaces_coexist_and_are_exactly_tagged(tmp_path):
         )
 
         records = memory.store.list(namespace="tenant:a", tags=["multimodal"])
-        assert len(records) == 5
+        assert len(records) == 13
         for record in records:
             space_id = record.metadata["cross_modal_space_id"]
             assert cross_modal_space_tag(space_id) in record.tags
         assert len(local.spaces) == 3
+
+        image_to_text = local.query_mixed(
+            [LocalMultimodalQueryPart(modality="image", uri=files["image"])],
+            namespace="tenant:a",
+            target_modalities=["text"],
+            top_k=1,
+        )
+        audio_to_text = local.query_mixed(
+            [LocalMultimodalQueryPart(modality="audio", uri=files["audio"])],
+            namespace="tenant:a",
+            target_modalities=["text"],
+            top_k=1,
+        )
+        assert image_to_text[0].id == ids["dashboard_text"]
+        assert audio_to_text[0].id == ids["bell_text"]
+        assert image_to_text[0].metadata["embedding_record_id"] != ids["dashboard_text"]
+        assert audio_to_text[0].metadata["embedding_record_id"] != ids["bell_text"]
+
+        assert local.forget(ids["dashboard_text"], namespace="tenant:a") == 3
+        assert all(
+            record.id != ids["dashboard_text"]
+            and record.metadata.get("logical_memory_id") != ids["dashboard_text"]
+            for record in memory.store.list(namespace="tenant:a", tags=["multimodal"])
+        )
     finally:
         memory.close()
 

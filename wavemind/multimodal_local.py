@@ -384,6 +384,14 @@ class LocalMultimodalMemory:
         metadata: dict[str, Any] | None = None,
     ) -> int:
         modality = normalize_modality(payload.kind)
+        if modality == "text":
+            return self._remember_text_across_spaces(
+                payload,
+                namespace=namespace,
+                ttl_seconds=ttl_seconds,
+                priority=priority,
+                metadata=metadata,
+            )
         encoder = self._encoder_for(modality)
         return self.layers[encoder.embedding_space.space_id].remember(
             payload,
@@ -392,6 +400,23 @@ class LocalMultimodalMemory:
             priority=priority,
             metadata=metadata,
         )
+
+    def forget(self, logical_memory_id: int, *, namespace: str = "default") -> int:
+        records = self.memory.store.list(namespace=namespace, tags=["multimodal"])
+        physical_ids = [
+            int(record.id)
+            for record in records
+            if record.id is not None
+            and (
+                int(record.id) == int(logical_memory_id)
+                or _logical_memory_id(record.id, record.metadata)
+                == int(logical_memory_id)
+            )
+        ]
+        deleted = 0
+        for physical_id in dict.fromkeys(physical_ids):
+            deleted += int(self.memory.forget(id=physical_id, namespace=namespace))
+        return deleted
 
     def query(
         self,
@@ -442,81 +467,155 @@ class LocalMultimodalMemory:
         query_label = " | ".join(part.text for part in selected if part.text.strip())
         groups: list[tuple[str, str, float, Sequence[CrossModalQueryResult]]] = []
         for modality in modalities:
-            encoder = self._encoder_for(modality)
-            compatible = [
-                part
-                for part in selected
-                if part.modality == "text"
-                or self._encoder_for(part.modality).embedding_space.space_id
-                == encoder.embedding_space.space_id
-            ]
-            if not compatible:
-                continue
-            vectors: list[np.ndarray] = []
-            weights: list[float] = []
-            part_details: list[dict[str, Any]] = []
-            for part in compatible:
-                if part.modality == "text":
-                    vector = encoder.encode_query(
-                        part.text,
-                        target_modality=modality,
-                        descriptor=part.text,
+            for encoder in self._query_encoders_for(modality, selected):
+                compatible = [
+                    part
+                    for part in selected
+                    if part.modality == "text"
+                    or self._encoder_for(part.modality).embedding_space.space_id
+                    == encoder.embedding_space.space_id
+                ]
+                if not compatible:
+                    continue
+                vectors: list[np.ndarray] = []
+                weights: list[float] = []
+                part_details: list[dict[str, Any]] = []
+                for part in compatible:
+                    if part.modality == "text":
+                        vector = encoder.encode_query(
+                            part.text,
+                            target_modality=modality,
+                            descriptor=part.text,
+                        )
+                    else:
+                        vector = encoder.encode_payload(
+                            MemoryPayload(
+                                kind=part.modality,
+                                text=part.text,
+                                metadata={**part.metadata, "uri": str(part.uri)},
+                            ),
+                            "",
+                        )
+                    vectors.append(_unit_vector(vector, vector_dim=encoder.vector_dim))
+                    weights.append(part.weight)
+                    part_details.append(
+                        {
+                            "modality": part.modality,
+                            "weight": part.weight,
+                            "space_id": encoder.embedding_space.space_id,
+                            "source": "real_local_encoder",
+                        }
                     )
-                else:
-                    vector = encoder.encode_payload(
-                        MemoryPayload(
-                            kind=part.modality,
-                            text=part.text,
-                            metadata={**part.metadata, "uri": str(part.uri)},
-                        ),
-                        "",
-                    )
-                vectors.append(_unit_vector(vector, vector_dim=encoder.vector_dim))
-                weights.append(part.weight)
-                part_details.append(
-                    {
-                        "modality": part.modality,
-                        "weight": part.weight,
-                        "space_id": encoder.embedding_space.space_id,
-                        "source": "real_local_encoder",
-                    }
+                fused_vector = _weighted_mean_vectors(
+                    vectors,
+                    weights,
+                    vector_dim=encoder.vector_dim,
                 )
-            fused_vector = _weighted_mean_vectors(
-                vectors,
-                weights,
-                vector_dim=encoder.vector_dim,
+                layer = self.layers[encoder.embedding_space.space_id]
+                results = layer.query(
+                    query_label or "mixed local multimodal query",
+                    namespace=namespace,
+                    top_k=max(candidate_k or top_k * 4, top_k),
+                    target_modality=modality,
+                    candidate_k=candidate_k,
+                    query_vector=fused_vector,
+                    query_space_id=encoder.embedding_space.space_id,
+                )
+                results = [
+                    replace(
+                        result,
+                        fusion={
+                            "strategy": "within_space_normalized_weighted_sum",
+                            "space_id": encoder.embedding_space.space_id,
+                            "parts": part_details,
+                            "incompatible_spaces_compared": False,
+                        },
+                    )
+                    for result in results
+                ]
+                groups.append(
+                    (
+                        encoder.embedding_space.space_id,
+                        modality,
+                        self.modality_weights[modality],
+                        results,
+                    )
+                )
+        return self._rank_fuse(groups, top_k=top_k, min_score=min_score)
+
+    def _remember_text_across_spaces(
+        self,
+        payload: MemoryPayload,
+        *,
+        namespace: str,
+        ttl_seconds: float | None,
+        priority: float,
+        metadata: dict[str, Any] | None,
+    ) -> int:
+        merged_metadata = {**payload.metadata, **(metadata or {})}
+        if "cross_modal_space_id" in merged_metadata:
+            raise CrossModalSpaceMismatchError(
+                "LocalMultimodalMemory controls text projection spaces; callers "
+                "must not force one cross_modal_space_id."
             )
-            layer = self.layers[encoder.embedding_space.space_id]
-            results = layer.query(
-                query_label or "mixed local multimodal query",
+        text_encoder = self.encoders["text"]
+        text_layer = self.layers[text_encoder.embedding_space.space_id]
+        created: list[int] = []
+        try:
+            primary_id = text_layer.remember(
+                payload,
                 namespace=namespace,
-                top_k=max(candidate_k or top_k * 4, top_k),
-                target_modality=modality,
-                candidate_k=candidate_k,
-                query_vector=fused_vector,
-                query_space_id=encoder.embedding_space.space_id,
+                ttl_seconds=ttl_seconds,
+                priority=priority,
+                metadata=metadata,
             )
-            results = [
-                replace(
-                    result,
-                    fusion={
-                        "strategy": "within_space_normalized_weighted_sum",
-                        "space_id": encoder.embedding_space.space_id,
-                        "parts": part_details,
-                        "incompatible_spaces_compared": False,
+            created.append(primary_id)
+            projection_encoders = {
+                encoder.embedding_space.space_id: encoder
+                for modality, encoder in self.encoders.items()
+                if modality != "text"
+                and "text" in encoder.embedding_space.modalities
+            }
+            for space_id, encoder in projection_encoders.items():
+                projection_id = self.layers[space_id].remember(
+                    payload,
+                    namespace=namespace,
+                    ttl_seconds=ttl_seconds,
+                    priority=priority,
+                    metadata={
+                        **(metadata or {}),
+                        "logical_memory_id": primary_id,
+                        "derived_from_memory_id": primary_id,
+                        "derived_memory_type": "cross_space_text_projection",
+                        "derived_encoder": encoder.name,
                     },
                 )
-                for result in results
-            ]
-            groups.append(
-                (
-                    encoder.embedding_space.space_id,
-                    modality,
-                    self.modality_weights[modality],
-                    results,
+                created.append(projection_id)
+            return primary_id
+        except Exception:
+            for memory_id in reversed(created):
+                self.memory.forget(id=memory_id, namespace=namespace)
+            raise
+
+    def _query_encoders_for(
+        self,
+        target_modality: str,
+        parts: Sequence[LocalMultimodalQueryPart],
+    ) -> tuple[Any, ...]:
+        if target_modality != "text":
+            return (self._encoder_for(target_modality),)
+        non_text = tuple(part for part in parts if part.modality != "text")
+        if not non_text:
+            return (self.encoders["text"],)
+        return tuple(
+            {
+                self._encoder_for(part.modality).embedding_space.space_id: self._encoder_for(
+                    part.modality
                 )
-            )
-        return self._rank_fuse(groups, top_k=top_k, min_score=min_score)
+                for part in non_text
+                if "text" in self._encoder_for(part.modality).embedding_space.modalities
+            }.values()
+        )
 
     def _encoder_for(self, modality: str) -> Any:
         normalized = normalize_modality(modality)
@@ -561,11 +660,22 @@ class LocalMultimodalMemory:
         for space_id, modality, raw_weight, results in active:
             normalized_weight = raw_weight / total_weight
             for rank, result in enumerate(results, start=1):
+                logical_id = _logical_memory_id(result.id, result.metadata)
                 rrf_factor = (self.rrf_k + 1.0) / (self.rrf_k + float(rank))
                 contribution = normalized_weight * rrf_factor
-                by_id[result.id] = result
-                scores[result.id] = scores.get(result.id, 0.0) + contribution
-                contributions.setdefault(result.id, []).append(
+                current = by_id.get(logical_id)
+                if current is None or result.cross_modal_score > current.cross_modal_score:
+                    by_id[logical_id] = replace(
+                        result,
+                        id=logical_id,
+                        metadata={
+                            **result.metadata,
+                            "logical_memory_id": logical_id,
+                            "embedding_record_id": result.id,
+                        },
+                    )
+                scores[logical_id] = scores.get(logical_id, 0.0) + contribution
+                contributions.setdefault(logical_id, []).append(
                     {
                         "space_id": space_id,
                         "target_modality": modality,
@@ -607,6 +717,19 @@ def _require_pinned_revision(revision: str) -> None:
             "Production local encoder revisions must be exact 40-character "
             "Hugging Face commit SHAs."
         )
+
+
+def _logical_memory_id(memory_id: Any, metadata: Mapping[str, Any]) -> int:
+    for key in ("logical_memory_id", "derived_from_memory_id"):
+        value = metadata.get(key)
+        if value is not None:
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                raise LocalMultimodalBackendError(
+                    f"Invalid `{key}` value on cross-space projection: {value!r}."
+                ) from None
+    return int(memory_id)
 
 
 def _reject_vector_shortcut(metadata: Mapping[str, Any], *, backend: str) -> None:
