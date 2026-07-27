@@ -1,0 +1,93 @@
+{
+  "schema": "wavemind.asset-lifecycle-evidence.v1",
+  "generated_at": "2026-07-27T14:35:06Z",
+  "source_ref": "8a5181b4188622665ccf675479b254a75510eba9",
+  "status": "pass",
+  "claim_boundary": "This artifact proves filesystem and S3-compatible asset lifecycle behavior only. It does not prove multimodal encoder quality, cross-modal retrieval quality, or the 1000-asset admission gate.",
+  "fixture": {
+    "kind": "lifecycle-only",
+    "public_asset_count": 0,
+    "multimodal_query_count": 0,
+    "eligible_for_multimodal_quality_admission": false
+  },
+  "environment": {
+    "python": "3.13.3",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "machine": "AMD64"
+  },
+  "duration_ms": 3023.128999993787,
+  "filesystem": {
+    "backend": "filesystem",
+    "status": "pass",
+    "checks": {
+      "ingest_pass": true,
+      "checksum_pass": true,
+      "reload_pass": true,
+      "persistence_pass": true,
+      "namespace_isolation_pass": true,
+      "ttl_pass": true,
+      "physical_delete_pass": true,
+      "tombstone_pass": true,
+      "backup_restore_pass": true,
+      "orphan_cleanup_pass": true
+    },
+    "objects_created": 5,
+    "objects_deleted": 5,
+    "tombstones_verified": 5,
+    "namespace_count": 2,
+    "backup": {
+      "path": "assets.zip",
+      "namespace": "tenant:a",
+      "asset_count": 1,
+      "total_bytes": 24,
+      "sha256": "f7fa468f4064d9896948a2628b8075f64e85d7b79ceb6bd6180e3e141315c69b",
+      "verified": true
+    }
+  },
+  "s3_compatible": {
+    "backend": "minio",
+    "status": "pass",
+    "checks": {
+      "ingest_pass": true,
+      "checksum_pass": true,
+      "reload_pass": true,
+      "persistence_pass": true,
+      "namespace_isolation_pass": true,
+      "ttl_pass": true,
+      "physical_delete_pass": true,
+      "tombstone_pass": true,
+      "backup_restore_pass": true,
+      "orphan_cleanup_pass": true
+    },
+    "objects_created": 5,
+    "objects_deleted": 5,
+    "tombstones_verified": 5,
+    "namespace_count": 2,
+    "backup": {
+      "path": "assets.zip",
+      "namespace": "tenant:a",
+      "asset_count": 1,
+      "total_bytes": 24,
+      "sha256": "31c8950bf4c1ffe491338e9c270b4a5a4ced1f5f4c9906ef5bf7c052a2a397aa",
+      "verified": true
+    },
+    "teardown_pass": true,
+    "container_image": "minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e",
+    "endpoint": "http://127.0.0.1:19000"
+  },
+  "lifecycle": {
+    "object_store_backend": "minio",
+    "object_store_pass": true,
+    "filesystem_pass": true,
+    "ingest_pass": true,
+    "checksum_pass": true,
+    "reload_pass": true,
+    "persistence_pass": true,
+    "namespace_isolation_pass": true,
+    "ttl_pass": true,
+    "physical_delete_pass": true,
+    "tombstone_pass": true,
+    "backup_restore_pass": true,
+    "orphan_cleanup_pass": true
+  }
+}

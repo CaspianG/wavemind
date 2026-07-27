@@ -137,6 +137,48 @@ def _external_multimodal_summary(payload: dict[str, Any] | None) -> dict[str, An
     }
 
 
+def _asset_lifecycle_summary(
+    payload: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    if not payload:
+        return None
+    lifecycle = (
+        payload.get("lifecycle")
+        if isinstance(payload.get("lifecycle"), dict)
+        else {}
+    )
+    s3 = (
+        payload.get("s3_compatible")
+        if isinstance(payload.get("s3_compatible"), dict)
+        else {}
+    )
+    return {
+        "status": payload.get("status"),
+        "source_ref": payload.get("source_ref"),
+        "filesystem_status": (
+            payload.get("filesystem", {}).get("status")
+            if isinstance(payload.get("filesystem"), dict)
+            else None
+        ),
+        "object_store_backend": lifecycle.get("object_store_backend"),
+        "object_store_pass": lifecycle.get("object_store_pass"),
+        "filesystem_pass": lifecycle.get("filesystem_pass"),
+        "ingest_pass": lifecycle.get("ingest_pass"),
+        "checksum_pass": lifecycle.get("checksum_pass"),
+        "reload_pass": lifecycle.get("reload_pass"),
+        "persistence_pass": lifecycle.get("persistence_pass"),
+        "namespace_isolation_pass": lifecycle.get("namespace_isolation_pass"),
+        "ttl_pass": lifecycle.get("ttl_pass"),
+        "physical_delete_pass": lifecycle.get("physical_delete_pass"),
+        "tombstone_pass": lifecycle.get("tombstone_pass"),
+        "backup_restore_pass": lifecycle.get("backup_restore_pass"),
+        "orphan_cleanup_pass": lifecycle.get("orphan_cleanup_pass"),
+        "teardown_pass": s3.get("teardown_pass"),
+        "container_image": s3.get("container_image"),
+        "claim_boundary": payload.get("claim_boundary"),
+    }
+
+
 def _memory_os_evolution_summary(payload: dict[str, Any] | None) -> dict[str, Any] | None:
     if not payload:
         return None
@@ -665,6 +707,9 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     )
     external_http_active_active_payload = _load_json(root / "benchmarks" / "external_http_active_active_results.json")
     multimodal_external_payload = _load_json(root / "benchmarks" / "multimodal_external_encoder_results.json")
+    asset_lifecycle_payload = _load_json(
+        root / "benchmarks" / "asset_lifecycle_results.json"
+    )
     multimodal_admission_payload = _load_json(
         root / "benchmarks" / "multimodal_admission_results.json"
     )
@@ -2684,6 +2729,39 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             },
             "target": "Admit only after >=1000 real/public assets and >=200 independent queries cover text, image, audio, video, and 3D with explicit shared spaces, per-modality budgets, MinIO lifecycle safety, and stable repeated verdicts.",
             "next_step": "Implement the real local encoder registry and benchmark runner; descriptor, filename, metadata, OCR-only, synthetic-vector, and precomputed-vector shortcuts are forbidden.",
+        },
+        {
+            "id": "multimodal_asset_lifecycle",
+            "name": "Filesystem and MinIO asset lifecycle",
+            "category": "multimodal-lifecycle",
+            "status": "implemented",
+            "source": "benchmarks/asset_lifecycle_results.json",
+            "dataset": "A lifecycle-only fixture executed through namespace-bound filesystem storage and a real local MinIO container pinned by digest. It is intentionally ineligible for multimodal encoder quality claims.",
+            "competitors": ["none"],
+            "metrics": [
+                "ingest_pass",
+                "checksum_pass",
+                "reload_pass",
+                "persistence_pass",
+                "namespace_isolation_pass",
+                "ttl_pass",
+                "physical_delete_pass",
+                "tombstone_pass",
+                "backup_restore_pass",
+                "orphan_cleanup_pass",
+                "teardown_pass",
+            ],
+            "current": {
+                "WaveMind asset lifecycle": (
+                    _asset_lifecycle_summary(asset_lifecycle_payload)
+                    or {
+                        "status": "missing",
+                        "requires": "python benchmarks/asset_lifecycle_benchmark.py --endpoint-url http://127.0.0.1:9000 --access-key ... --secret-key ...",
+                    }
+                )
+            },
+            "target": "Keep filesystem and real local MinIO lifecycle checks green with a pinned container digest, complete teardown, and no use of this fixture as encoder-quality evidence.",
+            "next_step": "Run the 1000-public-asset encoder benchmark and embed this verified lifecycle result into the strict multimodal admission artifact.",
         },
         {
             "id": "memory_os_policy_evolution",
