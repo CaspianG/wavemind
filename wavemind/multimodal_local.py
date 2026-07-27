@@ -130,6 +130,28 @@ class LocalSentenceTextEncoder:
             raise LocalMediaInputError("Text query must not be empty.")
         return _encode_sentence_values(self.model, [text], vector_dim=self.vector_dim)[0]
 
+    def encode_payloads(
+        self,
+        payloads: Sequence[MemoryPayload],
+    ) -> list[np.ndarray]:
+        selected = tuple(payloads)
+        texts: list[str] = []
+        for payload in selected:
+            self.embedding_space.require_modality(payload.kind)
+            _reject_vector_shortcut(payload.metadata, backend=self.name)
+            text = str(payload.text).strip()
+            if not text:
+                raise LocalMediaInputError("Text payload content must not be empty.")
+            texts.append(text)
+        if not texts:
+            return []
+        matrix = _encode_sentence_values(
+            self.model,
+            texts,
+            vector_dim=self.vector_dim,
+        )
+        return [matrix[index] for index in range(len(texts))]
+
 
 class LocalClipMediaEncoder:
     """Pinned CLIP backend for text, image, sampled video, and rendered 3D geometry."""
@@ -216,6 +238,51 @@ class LocalClipMediaEncoder:
         if not text:
             raise LocalMediaInputError("CLIP text query must not be empty.")
         return _encode_sentence_values(self.model, [text], vector_dim=self.vector_dim)[0]
+
+    def encode_payloads(
+        self,
+        payloads: Sequence[MemoryPayload],
+    ) -> list[np.ndarray]:
+        selected = tuple(payloads)
+        if not selected:
+            return []
+        flattened: list[Any] = []
+        spans: list[tuple[int, int]] = []
+        for payload in selected:
+            values = self._payload_values(payload)
+            start = len(flattened)
+            flattened.extend(values)
+            spans.append((start, len(flattened)))
+        matrix = _encode_sentence_values(
+            self.model,
+            flattened,
+            vector_dim=self.vector_dim,
+        )
+        return [
+            _mean_unit_vectors(matrix[start:end], vector_dim=self.vector_dim)
+            for start, end in spans
+        ]
+
+    def _payload_values(self, payload: MemoryPayload) -> tuple[Any, ...]:
+        modality = self.embedding_space.require_modality(payload.kind)
+        _reject_vector_shortcut(payload.metadata, backend=self.name)
+        if modality == "text":
+            text = str(payload.text).strip()
+            if not text:
+                raise LocalMediaInputError("CLIP text payload content must not be empty.")
+            return (text,)
+        path = _require_local_media_path(payload.metadata.get("uri"), modality=modality)
+        if modality == "image":
+            values = (self.image_loader(path),)
+        elif modality == "video":
+            values = tuple(self.video_frame_loader(path, self.video_frame_count))
+        else:
+            values = tuple(self.mesh_view_renderer(path, self.mesh_view_count))
+        if not values:
+            raise LocalMediaInputError(
+                f"`{modality}` payload `{path}` produced no decodable content."
+            )
+        return values
 
 
 class LocalClapAudioEncoder:
@@ -308,6 +375,70 @@ class LocalClapAudioEncoder:
         with self.inference_context():
             vector = self.model.get_text_features(**inputs)
         return _feature_vector(vector, vector_dim=self.vector_dim)
+
+    def encode_payloads(
+        self,
+        payloads: Sequence[MemoryPayload],
+    ) -> list[np.ndarray]:
+        selected = tuple(payloads)
+        if not selected:
+            return []
+        results: list[np.ndarray | None] = [None] * len(selected)
+        text_rows: list[tuple[int, str]] = []
+        audio_rows: list[tuple[int, np.ndarray]] = []
+        target_rate = _processor_sampling_rate(self.processor)
+        for index, payload in enumerate(selected):
+            modality = self.embedding_space.require_modality(payload.kind)
+            _reject_vector_shortcut(payload.metadata, backend=self.name)
+            if modality == "text":
+                text = str(payload.text).strip()
+                if not text:
+                    raise LocalMediaInputError("CLAP text input must not be empty.")
+                text_rows.append((index, text))
+                continue
+            path = _require_local_media_path(payload.metadata.get("uri"), modality="audio")
+            samples, sampling_rate = self.audio_loader(path)
+            samples = _mono_float_audio(samples)
+            if int(sampling_rate) != target_rate:
+                samples = _resample_audio(samples, int(sampling_rate), target_rate)
+            audio_rows.append((index, samples))
+
+        if text_rows:
+            inputs = _processor_call(
+                self.processor,
+                modality="text",
+                value=[text for _, text in text_rows],
+            )
+            with self.inference_context():
+                matrix = self.model.get_text_features(**inputs)
+            vectors = _feature_matrix(
+                matrix,
+                vector_dim=self.vector_dim,
+                expected_rows=len(text_rows),
+            )
+            for row, vector in zip(text_rows, vectors, strict=True):
+                results[row[0]] = vector
+        if audio_rows:
+            inputs = _processor_call(
+                self.processor,
+                modality="audio",
+                value=[samples for _, samples in audio_rows],
+                sampling_rate=target_rate,
+            )
+            with self.inference_context():
+                matrix = self.model.get_audio_features(**inputs)
+            vectors = _feature_matrix(
+                matrix,
+                vector_dim=self.vector_dim,
+                expected_rows=len(audio_rows),
+            )
+            for row, vector in zip(audio_rows, vectors, strict=True):
+                results[row[0]] = vector
+        if any(vector is None for vector in results):
+            raise LocalMultimodalBackendError(
+                "CLAP batch encoding did not produce one vector per payload."
+            )
+        return [vector for vector in results if vector is not None]
 
 
 class LocalMultimodalMemory:
@@ -850,6 +981,33 @@ def _encode_sentence_values(
 
 
 def _feature_vector(value: Any, *, vector_dim: int) -> np.ndarray:
+    matrix = _raw_feature_array(value)
+    if matrix.ndim == 2 and matrix.shape[0] == 1:
+        matrix = matrix[0]
+    return _unit_vector(matrix, vector_dim=vector_dim)
+
+
+def _feature_matrix(
+    value: Any,
+    *,
+    vector_dim: int,
+    expected_rows: int,
+) -> np.ndarray:
+    matrix = _raw_feature_array(value)
+    if matrix.ndim == 1 and expected_rows == 1:
+        matrix = matrix.reshape(1, -1)
+    if matrix.ndim != 2 or int(matrix.shape[0]) != int(expected_rows):
+        raise LocalMultimodalBackendError(
+            f"Encoder produced batch shape {tuple(matrix.shape)}, "
+            f"expected ({expected_rows}, {vector_dim})."
+        )
+    return np.stack(
+        [_unit_vector(row, vector_dim=vector_dim) for row in matrix],
+        axis=0,
+    )
+
+
+def _raw_feature_array(value: Any) -> np.ndarray:
     if hasattr(value, "pooler_output"):
         value = value.pooler_output
     elif hasattr(value, "audio_embeds"):
@@ -869,10 +1027,7 @@ def _feature_vector(value: Any, *, vector_dim: int) -> np.ndarray:
         value = value.cpu()
     if hasattr(value, "numpy"):
         value = value.numpy()
-    matrix = np.asarray(value, dtype=np.float32)
-    if matrix.ndim == 2 and matrix.shape[0] == 1:
-        matrix = matrix[0]
-    return _unit_vector(matrix, vector_dim=vector_dim)
+    return np.asarray(value, dtype=np.float32)
 
 
 def _unit_vector(value: Any, *, vector_dim: int) -> np.ndarray:

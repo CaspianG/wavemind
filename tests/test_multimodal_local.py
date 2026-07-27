@@ -260,6 +260,54 @@ def test_clip_backend_uses_real_file_content_for_image_video_and_3d(tmp_path):
     assert np.allclose(mesh, _vector(2))
 
 
+def test_real_local_batch_encoders_match_individual_content_encoding(tmp_path):
+    backends = _backends()
+    image = tmp_path / "opaque-image.bin"
+    image.write_text("dashboard pixels", encoding="utf-8")
+    video = tmp_path / "opaque-video.bin"
+    video.write_text("forklift frames", encoding="utf-8")
+    mesh = tmp_path / "opaque-mesh.bin"
+    mesh.write_text("gear geometry", encoding="utf-8")
+    bell = tmp_path / "opaque-bell.bin"
+    bell.write_bytes(b"bell waveform")
+    noise = tmp_path / "opaque-noise.bin"
+    noise.write_bytes(b"noise waveform")
+
+    text_payloads = [
+        MemoryPayload(kind="text", text="release checklist"),
+        MemoryPayload(kind="text", text="other note"),
+    ]
+    clip_payloads = [
+        MemoryPayload(kind="image", text="ignored", metadata={"uri": str(image)}),
+        MemoryPayload(kind="video", text="ignored", metadata={"uri": str(video)}),
+        MemoryPayload(kind="3d", text="ignored", metadata={"uri": str(mesh)}),
+    ]
+    audio_payloads = [
+        MemoryPayload(kind="audio", text="ignored", metadata={"uri": str(bell)}),
+        MemoryPayload(kind="audio", text="ignored", metadata={"uri": str(noise)}),
+    ]
+
+    for encoder, payloads in (
+        (backends.text, text_payloads),
+        (backends.clip, clip_payloads),
+        (backends.clap, audio_payloads),
+    ):
+        batched = encoder.encode_payloads(payloads)
+        individual = [
+            encoder.encode_payload(payload, "descriptor must be ignored")
+            for payload in payloads
+        ]
+        assert len(batched) == len(payloads)
+        assert all(
+            np.allclose(batch_vector, individual_vector)
+            for batch_vector, individual_vector in zip(
+                batched,
+                individual,
+                strict=True,
+            )
+        )
+
+
 def test_missing_media_is_a_clear_error_without_descriptor_fallback(tmp_path):
     encoder = _backends().clip
     with pytest.raises(LocalMediaInputError, match="does not exist"):
