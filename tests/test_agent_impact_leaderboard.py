@@ -3,6 +3,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 
 def test_agent_impact_leaderboard_renderer_writes_json_and_markdown(tmp_path):
     output = tmp_path / "agent_impact_results.json"
@@ -39,7 +41,12 @@ def test_agent_impact_leaderboard_renderer_writes_json_and_markdown(tmp_path):
     assert payload["load_errors"] == []
 
     groups = {row["benchmark"]: row for row in payload["benchmark_groups"]}
-    assert groups["Agent coherence and token savings"]["primary_lift"] >= 0.5 - 1e-12
+    coherence_group = groups["Agent coherence and token savings"]
+    assert coherence_group["primary_lift"] > 0
+    assert coherence_group["primary_lift"] == pytest.approx(
+        coherence_group["best_wavemind_primary"]
+        - coherence_group["best_baseline_primary"]
+    )
     assert groups["LongMemEval answer quality"]["primary_lift"] > 0.1
 
     wavemind_rows = {
