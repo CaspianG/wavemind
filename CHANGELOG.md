@@ -10,6 +10,9 @@ authoritative release sources.
   paths cannot be presented as real encoder evidence.
 - Improved the public repository entrypoint, documentation navigation, package
   metadata, and benchmark dashboard without changing evidence thresholds.
+- Added namespace-bound filesystem and S3-compatible multimodal asset
+  lifecycles with checksummed reload, TTL cleanup, physical deletion,
+  tombstones, backup/restore, provenance, and orphan cleanup.
 
 ## [2.6.3] - 2026-07-27
 

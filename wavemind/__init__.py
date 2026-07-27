@@ -162,6 +162,10 @@ from .multimodal import (
     video_payload,
 )
 from .object_store import (
+    AssetBackupReport,
+    AssetCleanupReport,
+    AssetTombstone,
+    FilesystemAssetStore,
     ObjectStoreArchive,
     ObjectStoreAssetReport,
     ObjectStoreLocation,
@@ -328,6 +332,7 @@ __all__ = [
     "CrossModalSpaceMismatchError",
     "CrossModalSpaceRegistry",
     "DescriptorCrossModalEncoder",
+    "FilesystemAssetStore",
     "KnowledgeGraphMemoryLayer",
     "KnowledgeGraphQueryResult",
     "PrecomputedCrossModalEncoder",
@@ -338,6 +343,9 @@ __all__ = [
     "NamespaceRebalanceBatch",
     "NamespaceDeltaSyncReport",
     "NamespaceShardRouter",
+    "AssetBackupReport",
+    "AssetCleanupReport",
+    "AssetTombstone",
     "ObjectStoreArchive",
     "ObjectStoreAssetReport",
     "ObjectStoreLocation",
