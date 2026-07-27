@@ -74,7 +74,7 @@ dev = [
   "httpx>=0.27",
   "httpx2>=2",
   "langchain-classic>=1.0",
-  "ruff==0.15.22",
+  "ruff==0.16.0",
 ]
 
 [project.scripts]
