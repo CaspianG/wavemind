@@ -674,11 +674,12 @@ def _load_clap(
 
 
 def _sentence_model_dimension(model: Any) -> int:
-    getter = getattr(model, "get_sentence_embedding_dimension", None)
-    if callable(getter):
-        dimension = getter()
-        if dimension:
-            return int(dimension)
+    for method_name in ("get_embedding_dimension", "get_sentence_embedding_dimension"):
+        getter = getattr(model, method_name, None)
+        if callable(getter):
+            dimension = getter()
+            if dimension:
+                return int(dimension)
     raise LocalMultimodalBackendError(
         "Sentence-transformers backend does not expose an embedding dimension."
     )
@@ -686,9 +687,6 @@ def _sentence_model_dimension(model: Any) -> int:
 
 def _clap_dimension(model: Any) -> int:
     config = getattr(model, "config", None)
-    for owner in (config, getattr(config, "projection_dim", None)):
-        if isinstance(owner, int):
-            return int(owner)
     dimension = getattr(config, "projection_dim", None)
     if dimension:
         return int(dimension)
@@ -729,6 +727,19 @@ def _encode_sentence_values(
 
 
 def _feature_vector(value: Any, *, vector_dim: int) -> np.ndarray:
+    if hasattr(value, "pooler_output"):
+        value = value.pooler_output
+    elif hasattr(value, "audio_embeds"):
+        value = value.audio_embeds
+    elif hasattr(value, "text_embeds"):
+        value = value.text_embeds
+    elif isinstance(value, Mapping):
+        for key in ("pooler_output", "audio_embeds", "text_embeds"):
+            if key in value:
+                value = value[key]
+                break
+    elif isinstance(value, tuple) and value:
+        value = value[0]
     if hasattr(value, "detach"):
         value = value.detach()
     if hasattr(value, "cpu"):

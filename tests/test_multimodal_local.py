@@ -105,12 +105,14 @@ class _FakeClapModel:
 
     def get_audio_features(self, *, audio_values, sampling_rate):
         assert sampling_rate == 48000
-        return np.asarray(
-            [
-                _vector(0) if float(np.mean(value)) > 0.0 else _vector(1)
-                for value in audio_values
-            ],
-            dtype=np.float32,
+        return SimpleNamespace(
+            pooler_output=np.asarray(
+                [
+                    _vector(0) if float(np.mean(value)) > 0.0 else _vector(1)
+                    for value in audio_values
+                ],
+                dtype=np.float32,
+            )
         )
 
 
