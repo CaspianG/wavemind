@@ -4,6 +4,9 @@ WaveMind is an early dynamic-memory engine. Contributions are welcome, but the
 project has one strict rule: benchmark and production claims must be
 reproducible.
 
+By participating, you agree to follow the
+[`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
+
 ## Local Setup
 
 ```sh

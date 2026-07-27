@@ -162,6 +162,9 @@ def test_github_actions_runs_pytest_on_main_for_python_310_and_311():
     assert "wavemind operator-sample" in full_check
     assert "wavemind operator-reconcile" in full_check
     assert "wavemind operator-bundle" in full_check
+    assert "name: required / full-check" in full_check
+    assert "NEEDS_JSON" in full_check
+    assert "if details[\"result\"] != \"success\"" in full_check
 
 
 def test_release_workflow_builds_and_creates_github_release():
@@ -222,7 +225,16 @@ def test_container_workflow_builds_and_publishes_ghcr_image():
 
 def test_manifest_includes_docs_without_large_benchmark_data():
     manifest = Path("MANIFEST.in").read_text(encoding="utf-8")
-    readme = Path("README.md").read_text(encoding="utf-8")
+    readme = "\n".join(
+        Path(path).read_text(encoding="utf-8")
+        for path in (
+            "README.md",
+            "docs/SCALE_AND_PRODUCTION.md",
+            "docs/MULTIMODAL_AND_STORAGE.md",
+            "docs/INTEGRATIONS.md",
+            "docs/BENCHMARKS.md",
+        )
+    )
     roadmap = Path("docs/ROADMAP.md").read_text(encoding="utf-8")
     use_cases = Path("docs/USE_CASES.md").read_text(encoding="utf-8")
     chroma_migration = Path("docs/CHROMA_MIGRATION.md").read_text(encoding="utf-8")
@@ -230,6 +242,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     benchmark_brief = Path("docs/BENCHMARK_BRIEF.md").read_text(encoding="utf-8")
 
     assert "include CONTRIBUTING.md" in manifest
+    assert "include CODE_OF_CONDUCT.md" in manifest
     assert "include SECURITY.md" in manifest
     assert "include SUPPORT.md" in manifest
     assert "include docs/ROADMAP.md" in manifest
@@ -240,6 +253,10 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "include docs/data/leaderboard-status.json" in manifest
     assert "include docs/CHROMA_MIGRATION.md" in manifest
     assert "include docs/OBSERVABILITY.md" in manifest
+    assert "include docs/SCALE_AND_PRODUCTION.md" in manifest
+    assert "include docs/MULTIMODAL_AND_STORAGE.md" in manifest
+    assert "include docs/INTEGRATIONS.md" in manifest
+    assert "include docs/BENCHMARKS.md" in manifest
     assert "include docs/assets/benchmark-summary.svg" in manifest
     assert "include benchmarks/*.json" in manifest
     assert "include docs/assets/wavemind-demo.gif" in manifest
