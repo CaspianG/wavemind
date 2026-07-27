@@ -8,9 +8,9 @@ stay useful for development, but do not unlock this gate.
 
 | metric | value |
 |---|---:|
-| status | `admitted` |
-| admitted | `True` |
-| deployment | `kind-non-loopback-ci` |
+| status | `plan_only` |
+| admitted | `False` |
+| deployment | `production` |
 | min nodes | `4` |
 | namespace count | `32` |
 | memories per namespace | `8` |
@@ -21,32 +21,34 @@ stay useful for development, but do not unlock this gate.
 | p99 SLO ms | `1000.0` |
 | strict evidence | `pass` |
 | requested evidence | `pass` |
-| preflight | `ready` |
+| preflight | `action_required` |
 | required artifact | `benchmarks/http_cluster_load_results.json` |
 
 ## Required Evidence
 
 | requirement | status | artifact | evidence |
 |---|---|---|---|
-| Non-loopback Kubernetes or external HTTP service-node load | `pass` | `benchmarks/http_cluster_load_results.json` | nodes 4, deployment github-actions-29165761261-wavemind-ci-wavemind-system, environment kubernetes-kind-non-loopback-ci, source kubernetes-pod-dns-physical-node-drill, namespaces 32, success 1.0, failover 1.0, query p99 79.44286219996737 ms, lifecycle batch p99 8351.044338999998 ms, batch query True, batch HTTP 24 -> 1, batch p99 186.78031600001077 ms |
+| Non-loopback Kubernetes or external HTTP service-node load | `pass` | `benchmarks/http_cluster_load_results.json` | nodes 4, deployment github-actions-30264903065-wavemind-ci-wavemind-system, environment kubernetes-kind-non-loopback-ci, source kubernetes-pod-dns-physical-node-drill, namespaces 32, success 1.0, failover 1.0, query p99 85.72988783000763 ms, lifecycle batch p99 7909.665061999987 ms, batch query True, batch HTTP 24 -> 1, batch p99 171.8241359999979 ms |
 
 ## Requested Evidence
 
 | status | min nodes | namespaces | RF | read quorum | read fanout | batch size | p99 SLO ms | evidence |
 |---|---:|---:|---:|---:|---:|---:|---:|---|
-| `pass` | `4` | `32` | `3` | `1` | `1` | `24` | `1000.0` | nodes 4, deployment github-actions-29165761261-wavemind-ci-wavemind-system, environment kubernetes-kind-non-loopback-ci, source kubernetes-pod-dns-physical-node-drill, namespaces 32, success 1.0, failover 1.0, query p99 79.44286219996737 ms, lifecycle batch p99 8351.044338999998 ms, batch query True, batch HTTP 24 -> 1, batch p99 186.78031600001077 ms |
+| `pass` | `4` | `32` | `3` | `1` | `1` | `24` | `1000.0` | nodes 4, deployment github-actions-30264903065-wavemind-ci-wavemind-system, environment kubernetes-kind-non-loopback-ci, source kubernetes-pod-dns-physical-node-drill, namespaces 32, success 1.0, failover 1.0, query p99 85.72988783000763 ms, lifecycle batch p99 7909.665061999987 ms, batch query True, batch HTTP 24 -> 1, batch p99 171.8241359999979 ms |
 
 ## Preflight
 
 | status | required env | missing env | evidence |
 |---|---|---|---|
-| `ready` | `WAVEMIND_CLUSTER_NODES, WAVEMIND_CLUSTER_NODES_MANIFEST_JSON` | `` | 4 URLs configured |
+| `action_required` | `WAVEMIND_CLUSTER_NODES, WAVEMIND_CLUSTER_NODES_MANIFEST_JSON` | `WAVEMIND_CLUSTER_NODES, WAVEMIND_CLUSTER_NODES_MANIFEST_JSON` | 0 URLs configured |
 
 ## Issues
 
-- none
+- external HTTP cluster preflight is not ready; provide target node URLs or a node manifest before admitting the rollout.
+- requested cluster node URLs do not match the node_addresses in strict evidence
+- cluster node requires at least 4 URLs
 
 ## Next Actions
 
-- Proceed with cluster rollout while keeping quorum, failover, repair, delete-suppression, batch-query, and p99 monitors enabled.
+- Do not admit remote production cluster traffic yet; run the external HTTP cluster workflow against real service nodes first.
 - `gh workflow run external-http-cluster-load.yml -f nodes="node-a=https://wm-a.example.com,node-b=https://wm-b.example.com,node-c=https://wm-c.example.com,node-d=https://wm-d.example.com" -f replication_factor=3 -f read_quorum=1 -f read_fanout=1 -f batch_query_size=24 -f fail_on_slo=true -f commit_results=true`

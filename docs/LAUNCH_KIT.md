@@ -8,27 +8,31 @@ every post points to the same honest story.
 
 ### One Sentence
 
-WaveMind is a local-first dynamic memory layer for software that needs to
-remember what still matters, not just what text is nearest.
+WaveMind is adaptive memory infrastructure for agents and applications that
+need to learn from experience, not just retrieve the nearest text.
 
 ### Short Pitch
 
-Most vector stores return nearest neighbors. WaveMind adds memory state around
-retrieval: hotness, decay, TTL, namespaces, audit events, and graph dynamics.
-SQLite or Postgres remains the source of truth; FAISS, pgvector, Qdrant, Annoy,
-or NumPy can provide candidate search; WaveMind re-ranks the small candidate
-set as memory.
+Most vector stores return nearest neighbors. WaveMind adds a durable memory
+lifecycle around retrieval: reinforcement, decay, TTL, corrections,
+consolidation, provenance, namespaces, and deliberate forgetting. SQLite or
+PostgreSQL remains the source of truth; FAISS, pgvector, Qdrant, Annoy, or
+NumPy can provide candidate search; WaveMind turns those candidates into a
+small, inspectable context for the agent.
 
 ### What To Say Clearly
 
-- WaveMind is not trying to replace Qdrant, Chroma, Pinecone, or Postgres.
-- It is a memory layer above or beside a vector index.
-- The strongest current proof is dynamic-memory behavior: stale facts,
-  corrections, TTL, namespace isolation, and repeated recall.
+- WaveMind is the memory policy and lifecycle above or beside a vector index,
+  not a claim that one database should replace every storage system.
+- Production Memory OS is admitted at 13/13, including a six-hour remote
+  Redis/worker soak with no state corruption.
+- The strongest current proof is adaptive-memory behavior: stale suppression,
+  corrections, TTL, namespace isolation, repeated recall, consolidation, and
+  safe background maintenance.
 - Public benchmark evidence exists for retrieval on LoCoMo, LongMemEval, and
   BEIR/SciFact, but answer-generation leaderboards are still future work.
-- The project is early, local-first, MIT licensed, and practical today for
-  small-to-medium memory streams.
+- The project is local-first by default, MIT licensed, and has documented
+  PostgreSQL, Redis, service-index, Kubernetes, and observability paths.
 
 ### What Not To Claim
 
@@ -125,8 +129,8 @@ python -m venv .venv-check
 
 ### GitHub Description
 
-Local-first dynamic memory for agents and apps: SQLite source of truth, vector
-search candidates, hotness/decay/TTL re-ranking, namespaces, benchmarks.
+Adaptive memory for agents: durable local-first state, scoped recall,
+reinforcement, forgetting, consolidation, and reproducible benchmarks.
 
 ### Show HN Title
 

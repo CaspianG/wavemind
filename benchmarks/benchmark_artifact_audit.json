@@ -1,15 +1,15 @@
 {
   "schema": "wavemind.benchmark_artifact_audit.v1",
   "status": "pass",
-  "checked_at": "2026-07-15T00:57:52Z",
-  "generated_at": "2026-07-15T00:57:04Z",
-  "source_ref": "025b8285cbf2",
+  "checked_at": "2026-07-27T13:29:28Z",
+  "generated_at": "2026-07-27T13:29:25Z",
+  "source_ref": "f3a23b2fc832",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "max_age_days": 8.0,
-  "age_days": 0.0005624289583333334,
-  "implemented_count": 39,
-  "runner_ready_count": 4,
-  "planned_count": 6,
+  "age_days": 3.7026215277777776e-05,
+  "implemented_count": 40,
+  "runner_ready_count": 3,
+  "planned_count": 7,
   "errors": []
 }

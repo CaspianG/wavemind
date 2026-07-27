@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.memory_os_policy_evolution.v1",
-  "generated_at": "2026-07-09T13:44:41Z",
+  "generated_at": "2026-07-27T13:17:12Z",
   "status": "pass",
   "ok": true,
   "namespace": "evolution:memory-os",
@@ -20,7 +20,7 @@
     "memory os policy",
     "risk limits"
   ],
-  "elapsed_ms": 1815.4044000002614,
+  "elapsed_ms": 1598.0670999997528,
   "claim_boundary": "Policy evolution is deterministic local/staging evidence. It proves policy-history escalation, self-adjusting scheduler behavior, and multi-cycle Memory OS learning on this workload; it does not unlock unattended production automation without remote Redis, distributed lock, runtime env, and strict large-scale evidence.",
   "summary": {
     "status": "pass",

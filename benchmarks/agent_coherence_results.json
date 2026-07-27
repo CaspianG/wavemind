@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.agent_coherence_benchmark.v1",
-  "generated_at": "2026-07-08T17:24:13Z",
+  "generated_at": "2026-07-27T10:51:49Z",
   "scenario": {
     "name": "agent_coherence",
     "memories": 500,
@@ -43,8 +43,8 @@
         "project": 1.0,
         "ttl": 1.0
       },
-      "avg_latency_ms": 2.647033310495317,
-      "p95_latency_ms": 2.9186999890953302,
+      "avg_latency_ms": 1.4299913333329546,
+      "p95_latency_ms": 1.4731330000046228,
       "tasks": 12,
       "memory_os": null
     },
@@ -67,8 +67,8 @@
         "project": 1.0,
         "ttl": 1.0
       },
-      "avg_latency_ms": 3.298825021677961,
-      "p95_latency_ms": 3.8723000325262547,
+      "avg_latency_ms": 1.6367452499975361,
+      "p95_latency_ms": 1.987514999996165,
       "tasks": 12,
       "memory_os": {
         "worker_ok": true,
@@ -108,7 +108,7 @@
               "namespace": "agent-a",
               "query": "budget recall",
               "frequency": 2,
-              "last_seen": 1783531451.6108146
+              "last_seen": 1785149508.5106883
             }
           ],
           "expired_purged": 5,
@@ -116,7 +116,7 @@
           "concepts_created": 0,
           "concept_ids": [],
           "priority_predictions": 5,
-          "priority_boost_total": 0.4999984925947998,
+          "priority_boost_total": 0.49999909062241893,
           "priority_boosted_ids": [
             10,
             94,
@@ -160,7 +160,7 @@
                 "to_query": "risk limits",
                 "count": 1,
                 "probability": 1.0,
-                "last_seen": 1783531451.6081438
+                "last_seen": 1785149508.5090656
               }
             ],
             "ok": true
@@ -170,7 +170,7 @@
             "expired_memories": 5,
             "total_memories": 402,
             "audit_events": 407,
-            "field_energy": 271676.6875,
+            "field_energy": 271673.125,
             "clusters": 1,
             "field_shape": "64x64x3",
             "index": "numpy-exact",
@@ -208,7 +208,7 @@
             "expired_memories": 0,
             "total_memories": 397,
             "audit_events": 419,
-            "field_energy": 414343.625,
+            "field_energy": 414125.3125,
             "clusters": 1,
             "field_shape": "64x64x3",
             "index": "numpy-exact",
@@ -314,6 +314,20 @@
             "owner": null,
             "ttl_seconds": null,
             "reason": null,
+            "heartbeat_started": false,
+            "refresh_count": 0,
+            "lease_lost": false,
+            "released": false,
+            "ok": true
+          },
+          "idempotency": {
+            "key": null,
+            "owner": null,
+            "claimed": false,
+            "duplicate": false,
+            "completed": false,
+            "reason": null,
+            "in_doubt": false,
             "ok": true
           },
           "actions": [
@@ -527,32 +541,32 @@
         "project": 0.0,
         "ttl": 0.0
       },
-      "avg_latency_ms": 0.6787333404645324,
-      "p95_latency_ms": 0.7653000066056848,
+      "avg_latency_ms": 0.3889096666659005,
+      "p95_latency_ms": 0.5867790000024797,
       "tasks": 12,
       "memory_os": null
     },
     {
       "engine": "Chroma static",
-      "task_success_rate": 0.3333333333333333,
+      "task_success_rate": 0.4166666666666667,
       "decision_success_at_1": 0.3333333333333333,
-      "stale_error_rate": 0.45454545454545453,
+      "stale_error_rate": 0.5454545454545454,
       "namespace_leak_rate": 0,
-      "coherent_turns": 1,
-      "coherent_turn_rate": 0.08333333333333333,
-      "context_tokens_returned": 1001,
+      "coherent_turns": 3,
+      "coherent_turn_rate": 0.25,
+      "context_tokens_returned": 1030,
       "full_context_tokens": 13427,
-      "context_budget_saved": 0.9254487227228718,
+      "context_budget_saved": 0.9232888955090489,
       "category_success": {
         "correction": 0.0,
-        "namespace": 1.0,
+        "namespace": 0.5,
         "personalization": 0.5,
         "profile": 1.0,
-        "project": 0.0,
+        "project": 1.0,
         "ttl": 0.0
       },
-      "avg_latency_ms": 5.647891686142732,
-      "p95_latency_ms": 30.282999970950186,
+      "avg_latency_ms": 2.8331954166643434,
+      "p95_latency_ms": 10.246832999996514,
       "tasks": 12,
       "memory_os": null
     }

@@ -22,9 +22,9 @@ print(memory.query("enterprise expansion chart", namespace="research")[0].metada
 
 For agent workflows that need one memory layer across payload types, use
 `CrossModalMemoryLayer`. It stores typed payloads through WaveMind, keeps
-provenance in metadata, and re-ranks by a shared deterministic descriptor
-embedding so queries can target one modality without changing the underlying
-storage.
+provenance in metadata, and re-ranks inside an explicitly registered embedding
+space. The zero-config descriptor encoder below is a local development path,
+not evidence of real image, audio, video, or 3D understanding.
 
 ```python
 from wavemind import CrossModalMemoryLayer, WaveMind, audio_payload, image_payload
@@ -48,16 +48,25 @@ fallback:
 from wavemind import CrossModalMemoryLayer, PrecomputedCrossModalEncoder, WaveMind, image_payload
 
 memory = WaveMind()
+space_id = "openclip:ViT-B-32@laion2b-s34b-b79k"
 layer = CrossModalMemoryLayer(
     memory,
-    cross_modal_encoder=PrecomputedCrossModalEncoder(vector_dim=512, name="clip"),
+    cross_modal_encoder=PrecomputedCrossModalEncoder(
+        vector_dim=512,
+        space_id=space_id,
+        name="openclip",
+        model_revision="laion2b-s34b-b79k",
+    ),
 )
 
 layer.remember(
     image_payload(
         "s3://demo/chart.png",
         caption="Q2 revenue chart",
-        metadata={"cross_modal_vector": image_clip_vector},
+        metadata={
+            "cross_modal_vector": image_clip_vector,
+            "cross_modal_space_id": space_id,
+        },
     ),
     namespace="research",
 )
@@ -66,14 +75,56 @@ results = layer.query(
     namespace="research",
     target_modality="image",
     query_vector=text_clip_vector,
+    query_space_id=space_id,
 )
 ```
 
-Before trusting a production multimodal encoder, run the external-vector
-contract. It writes representative image, audio, table, event, video, 3D, and
-graph payloads through the real memory layer, then checks global retrieval,
-target-modality routing, persisted finite normalized vectors, provenance, and
-separation margin:
+Precomputed payload and query vectors must declare the same `space_id`. WaveMind
+rejects a missing ID and rejects equal-length vectors from different spaces
+before cosine similarity is calculated.
+
+Mixed queries use the same rule and expose normalized fusion weights:
+
+```python
+from wavemind import CrossModalQueryPart
+
+mixed_space_id = "imagebind:huge@pinned-revision"
+mixed_layer = CrossModalMemoryLayer(
+    memory,
+    cross_modal_encoder=PrecomputedCrossModalEncoder(
+        vector_dim=1024,
+        space_id=mixed_space_id,
+        name="imagebind",
+        model_revision="pinned-revision",
+        modalities=("text", "image", "audio", "video", "3d"),
+    ),
+)
+results = mixed_layer.query_mixed(
+    [
+        CrossModalQueryPart(
+            modality="image",
+            vector=tuple(image_query_vector),
+            space_id=mixed_space_id,
+            weight=3,
+        ),
+        CrossModalQueryPart(
+            modality="audio",
+            vector=tuple(audio_query_vector),
+            space_id=mixed_space_id,
+            weight=1,
+        ),
+    ],
+    namespace="research",
+)
+print(results[0].fusion)
+print(results[0].score_breakdown)
+```
+
+To validate an explicitly precomputed-vector integration, run the external
+storage contract. It writes representative image, audio, table, event, video,
+3D, and graph payloads through the real memory layer, then checks global
+retrieval, target-modality routing, persisted finite normalized vectors,
+provenance, and separation margin:
 
 ```python
 from wavemind import WaveMind, validate_precomputed_cross_modal_contract
@@ -83,9 +134,10 @@ report = validate_precomputed_cross_modal_contract(memory)
 assert report.ok, report.failures
 ```
 
-The same contract is part of the scale-readiness and production-readiness gates,
-so external CLIP/audio/video/3D integrations must prove the storage and recall
-contract before they become published evidence.
+This proves storage and recall behavior only. It does not measure the encoder
+that produced the vectors and cannot unlock real-encoder production admission.
+External CLIP/audio/video/3D integrations should still run this contract before
+publication, then pass the separate real-encoder benchmark.
 
 For encoders that produce both payload and query vectors, run the active encoder
 health check as a deployment preflight. It probes all supported modalities,
@@ -104,8 +156,20 @@ report = check_cross_modal_encoder_health(encoder)
 assert report.ok, report.failures
 ```
 
-The checked-in structured-memory report now includes this health gate, so a
-multimodal backend can fail before it reaches production traffic.
+The checked-in structured-memory report includes this health gate, so a backend
+can fail before it reaches traffic. Descriptor-based health checks remain
+development checks, not production encoder evidence.
+
+`wavemind multimodal-admission` applies the stricter release boundary. Admission
+requires real local text, image, audio, video, and 3D encoders over at least
+1000 real or publicly licensed assets and 200 independent queries, with at least
+100 assets and 20 queries per modality. The evidence must include explicit
+compatible shared-space IDs, bidirectional text-to-media and media-to-text
+checks, per-modality precision and encoding budgets, persisted-vector parity,
+three stable runs, and a complete S3-compatible lifecycle. Local MinIO is a
+valid object-store target. Descriptor, filename, metadata, OCR-only,
+synthetic-vector, and precomputed-vector shortcuts are rejected as encoder
+evidence.
 
 For production media, keep large files in S3-compatible object storage and store
 a verified content-addressed manifest with the memory. This keeps SQLite/Postgres
@@ -142,7 +206,10 @@ from wavemind import CrossModalMemoryLayer, SentenceTransformersCrossModalEncode
 memory = WaveMind()
 layer = CrossModalMemoryLayer(
     memory,
-    cross_modal_encoder=SentenceTransformersCrossModalEncoder("clip-ViT-B-32"),
+    cross_modal_encoder=SentenceTransformersCrossModalEncoder(
+        "clip-ViT-B-32",
+        model_revision="pinned-model-revision",
+    ),
 )
 
 layer.remember(
@@ -153,9 +220,11 @@ results = layer.query("revenue chart", namespace="research", target_modality="im
 ```
 
 This backend loads local image files with Pillow and encodes text queries through
-the same sentence-transformers model. Remote assets, audio, video, and 3D
-payloads should either carry strong text descriptors or use the precomputed
-vector path until dedicated perception backends are benchmarked.
+the same sentence-transformers model. It fails clearly for remote images and for
+audio, video, or 3D instead of substituting a caption, filename, metadata, OCR,
+or descriptor. Use a selectable backend that actually supports those modalities,
+or provide explicitly scoped precomputed vectors for storage integration; the
+precomputed path still cannot satisfy real-encoder admission.
 
 Supported payload helpers:
 
