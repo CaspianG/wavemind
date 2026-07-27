@@ -1,0 +1,2479 @@
+{
+  "benchmark": "causal market-episode bounce-vs-continuation transition",
+  "methodology": {
+    "source": "official Bybit completed 4h candles and causally aligned open interest for 24 longitudinal holdout assets",
+    "event_policy": {
+      "return_quantile": 0.05,
+      "oi_quantile": 0.2,
+      "sampling": "one globally aligned, non-overlapping market decision per forecast horizon"
+    },
+    "train_end": "2024-01-01T00:00:00+00:00",
+    "validation_end": "2025-01-01T00:00:00+00:00",
+    "selection": "model family is selected on 2024 only; 2025-2026 is read once as the final split",
+    "models": [
+      "majority",
+      "logistic",
+      "extra_trees",
+      "knn",
+      "wavefield",
+      "field_tree_hybrid"
+    ],
+    "dependence_control": "the unit of evidence is a globally aligned market episode, not a correlated per-asset signal"
+  },
+  "horizons": {
+    "24h": {
+      "episodes": {
+        "train": 127,
+        "validation": 59,
+        "final": 84
+      },
+      "selected_model": "majority",
+      "validation": {
+        "majority": {
+          "episodes": 59,
+          "hits": 31,
+          "accuracy": 0.5254237288135594,
+          "wilson_low_95": 0.40039795170017084,
+          "brier_score": 0.4745762711864407,
+          "predicted_up_rate": 1.0,
+          "actual_up_rate": 0.5254237288135594,
+          "by_year": [
+            {
+              "year": 2024,
+              "episodes": 59,
+              "hits": 31,
+              "accuracy": 0.5254237288135594,
+              "wilson_low_95": 0.40039795170017084
+            }
+          ],
+          "worst_supported_year_accuracy": 0.5254237288135594
+        },
+        "logistic": {
+          "episodes": 59,
+          "hits": 28,
+          "accuracy": 0.4745762711864407,
+          "wilson_low_95": 0.35265876715068556,
+          "brier_score": 0.2812872804105351,
+          "predicted_up_rate": 0.4745762711864407,
+          "actual_up_rate": 0.5254237288135594,
+          "by_year": [
+            {
+              "year": 2024,
+              "episodes": 59,
+              "hits": 28,
+              "accuracy": 0.4745762711864407,
+              "wilson_low_95": 0.35265876715068556
+            }
+          ],
+          "worst_supported_year_accuracy": 0.4745762711864407
+        },
+        "extra_trees": {
+          "episodes": 59,
+          "hits": 29,
+          "accuracy": 0.4915254237288136,
+          "wilson_low_95": 0.3684383690774015,
+          "brier_score": 0.25570580628964457,
+          "predicted_up_rate": 0.5254237288135594,
+          "actual_up_rate": 0.5254237288135594,
+          "by_year": [
+            {
+              "year": 2024,
+              "episodes": 59,
+              "hits": 29,
+              "accuracy": 0.4915254237288136,
+              "wilson_low_95": 0.3684383690774015
+            }
+          ],
+          "worst_supported_year_accuracy": 0.4915254237288136
+        },
+        "knn": {
+          "episodes": 59,
+          "hits": 27,
+          "accuracy": 0.4576271186440678,
+          "wilson_low_95": 0.33701305851855917,
+          "brier_score": 0.2615820839896059,
+          "predicted_up_rate": 0.6949152542372882,
+          "actual_up_rate": 0.5254237288135594,
+          "by_year": [
+            {
+              "year": 2024,
+              "episodes": 59,
+              "hits": 27,
+              "accuracy": 0.4576271186440678,
+              "wilson_low_95": 0.33701305851855917
+            }
+          ],
+          "worst_supported_year_accuracy": 0.4576271186440678
+        },
+        "wavefield": {
+          "episodes": 59,
+          "hits": 25,
+          "accuracy": 0.423728813559322,
+          "wilson_low_95": 0.30612727435188697,
+          "brier_score": 0.34077635838582765,
+          "predicted_up_rate": 0.3898305084745763,
+          "actual_up_rate": 0.5254237288135594,
+          "by_year": [
+            {
+              "year": 2024,
+              "episodes": 59,
+              "hits": 25,
+              "accuracy": 0.423728813559322,
+              "wilson_low_95": 0.30612727435188697
+            }
+          ],
+          "worst_supported_year_accuracy": 0.423728813559322
+        },
+        "field_tree_hybrid": {
+          "episodes": 59,
+          "hits": 26,
+          "accuracy": 0.4406779661016949,
+          "wilson_low_95": 0.321502117676121,
+          "brier_score": 0.28921548407501446,
+          "predicted_up_rate": 0.4067796610169492,
+          "actual_up_rate": 0.5254237288135594,
+          "by_year": [
+            {
+              "year": 2024,
+              "episodes": 59,
+              "hits": 26,
+              "accuracy": 0.4406779661016949,
+              "wilson_low_95": 0.321502117676121
+            }
+          ],
+          "worst_supported_year_accuracy": 0.4406779661016949
+        }
+      },
+      "final": {
+        "majority": {
+          "episodes": 84,
+          "hits": 49,
+          "accuracy": 0.5833333333333334,
+          "wilson_low_95": 0.4765264298684705,
+          "brier_score": 0.4166666666666667,
+          "predicted_up_rate": 1.0,
+          "actual_up_rate": 0.5833333333333334,
+          "by_year": [
+            {
+              "year": 2025,
+              "episodes": 51,
+              "hits": 33,
+              "accuracy": 0.6470588235294118,
+              "wilson_low_95": 0.5098605845450522
+            },
+            {
+              "year": 2026,
+              "episodes": 33,
+              "hits": 16,
+              "accuracy": 0.48484848484848486,
+              "wilson_low_95": 0.325040421081337
+            }
+          ],
+          "worst_supported_year_accuracy": 0.48484848484848486
+        },
+        "logistic": {
+          "episodes": 84,
+          "hits": 46,
+          "accuracy": 0.5476190476190477,
+          "wilson_low_95": 0.4414303701382067,
+          "brier_score": 0.2523394363177917,
+          "predicted_up_rate": 0.4880952380952381,
+          "actual_up_rate": 0.5833333333333334,
+          "by_year": [
+            {
+              "year": 2025,
+              "episodes": 51,
+              "hits": 28,
+              "accuracy": 0.5490196078431373,
+              "wilson_low_95": 0.41384708550368815
+            },
+            {
+              "year": 2026,
+              "episodes": 33,
+              "hits": 18,
+              "accuracy": 0.5454545454545454,
+              "wilson_low_95": 0.37985938536217456
+            }
+          ],
+          "worst_supported_year_accuracy": 0.5454545454545454
+        },
+        "extra_trees": {
+          "episodes": 84,
+          "hits": 48,
+          "accuracy": 0.5714285714285714,
+          "wilson_low_95": 0.46476952745720773,
+          "brier_score": 0.2444353049307986,
+          "predicted_up_rate": 0.5119047619047619,
+          "actual_up_rate": 0.5833333333333334,
+          "by_year": [
+            {
+              "year": 2025,
+              "episodes": 51,
+              "hits": 29,
+              "accuracy": 0.5686274509803921,
+              "wilson_low_95": 0.43265302109302245
+            },
+            {
+              "year": 2026,
+              "episodes": 33,
+              "hits": 19,
+              "accuracy": 0.5757575757575758,
+              "wilson_low_95": 0.4080726333731245
+            }
+          ],
+          "worst_supported_year_accuracy": 0.5686274509803921
+        },
+        "knn": {
+          "episodes": 84,
+          "hits": 54,
+          "accuracy": 0.6428571428571429,
+          "wilson_low_95": 0.5362131509036314,
+          "brier_score": 0.23039978496112898,
+          "predicted_up_rate": 0.7023809523809523,
+          "actual_up_rate": 0.5833333333333334,
+          "by_year": [
+            {
+              "year": 2025,
+              "episodes": 51,
+              "hits": 36,
+              "accuracy": 0.7058823529411765,
+              "wilson_low_95": 0.5700092442431359
+            },
+            {
+              "year": 2026,
+              "episodes": 33,
+              "hits": 18,
+              "accuracy": 0.5454545454545454,
+              "wilson_low_95": 0.37985938536217456
+            }
+          ],
+          "worst_supported_year_accuracy": 0.5454545454545454
+        },
+        "wavefield": {
+          "episodes": 84,
+          "hits": 44,
+          "accuracy": 0.5238095238095238,
+          "wilson_low_95": 0.41832105651727897,
+          "brier_score": 0.2704786953612907,
+          "predicted_up_rate": 0.4880952380952381,
+          "actual_up_rate": 0.5833333333333334,
+          "by_year": [
+            {
+              "year": 2025,
+              "episodes": 51,
+              "hits": 28,
+              "accuracy": 0.5490196078431373,
+              "wilson_low_95": 0.41384708550368815
+            },
+            {
+              "year": 2026,
+              "episodes": 33,
+              "hits": 16,
+              "accuracy": 0.48484848484848486,
+              "wilson_low_95": 0.325040421081337
+            }
+          ],
+          "worst_supported_year_accuracy": 0.48484848484848486
+        },
+        "field_tree_hybrid": {
+          "episodes": 84,
+          "hits": 46,
+          "accuracy": 0.5476190476190477,
+          "wilson_low_95": 0.4414303701382067,
+          "brier_score": 0.24757321773788576,
+          "predicted_up_rate": 0.4642857142857143,
+          "actual_up_rate": 0.5833333333333334,
+          "by_year": [
+            {
+              "year": 2025,
+              "episodes": 51,
+              "hits": 28,
+              "accuracy": 0.5490196078431373,
+              "wilson_low_95": 0.41384708550368815
+            },
+            {
+              "year": 2026,
+              "episodes": 33,
+              "hits": 18,
+              "accuracy": 0.5454545454545454,
+              "wilson_low_95": 0.37985938536217456
+            }
+          ],
+          "worst_supported_year_accuracy": 0.5454545454545454
+        }
+      },
+      "selected_final": {
+        "episodes": 84,
+        "hits": 49,
+        "accuracy": 0.5833333333333334,
+        "wilson_low_95": 0.4765264298684705,
+        "brier_score": 0.4166666666666667,
+        "predicted_up_rate": 1.0,
+        "actual_up_rate": 0.5833333333333334,
+        "by_year": [
+          {
+            "year": 2025,
+            "episodes": 51,
+            "hits": 33,
+            "accuracy": 0.6470588235294118,
+            "wilson_low_95": 0.5098605845450522
+          },
+          {
+            "year": 2026,
+            "episodes": 33,
+            "hits": 16,
+            "accuracy": 0.48484848484848486,
+            "wilson_low_95": 0.325040421081337
+          }
+        ],
+        "worst_supported_year_accuracy": 0.48484848484848486
+      },
+      "final_uplift_vs_train_majority": 0.0,
+      "admitted_70": false,
+      "final_rows": [
+        {
+          "timestamp": 1735862400,
+          "timestamp_utc": "2025-01-03T00:00:00+00:00",
+          "target_timestamp": 1735948800,
+          "target_timestamp_utc": "2025-01-04T00:00:00+00:00",
+          "selected_assets": [
+            "CVCUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 159.6774193548378,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1736294400,
+          "timestamp_utc": "2025-01-08T00:00:00+00:00",
+          "target_timestamp": 1736380800,
+          "target_timestamp_utc": "2025-01-09T00:00:00+00:00",
+          "selected_assets": [
+            "CHRUSDT",
+            "PEOPLEUSDT",
+            "TLMUSDT",
+            "YGGUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -603.9667686270345,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1736380800,
+          "timestamp_utc": "2025-01-09T00:00:00+00:00",
+          "target_timestamp": 1736467200,
+          "target_timestamp_utc": "2025-01-10T00:00:00+00:00",
+          "selected_assets": [
+            "ALICEUSDT",
+            "DUSKUSDT",
+            "ILVUSDT",
+            "RVNUSDT",
+            "SLPUSDT",
+            "TLMUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -254.65456945099442,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1737331200,
+          "timestamp_utc": "2025-01-20T00:00:00+00:00",
+          "target_timestamp": 1737417600,
+          "target_timestamp_utc": "2025-01-21T00:00:00+00:00",
+          "selected_assets": [
+            "BSVUSDT",
+            "CVCUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 128.86310305364913,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1737417600,
+          "timestamp_utc": "2025-01-21T00:00:00+00:00",
+          "target_timestamp": 1737504000,
+          "target_timestamp_utc": "2025-01-22T00:00:00+00:00",
+          "selected_assets": [
+            "BICOUSDT",
+            "HNTUSDT",
+            "YGGUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 489.3702366626562,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1738108800,
+          "timestamp_utc": "2025-01-29T00:00:00+00:00",
+          "target_timestamp": 1738195200,
+          "target_timestamp_utc": "2025-01-30T00:00:00+00:00",
+          "selected_assets": [
+            "PEOPLEUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 786.4726700747137,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1738540800,
+          "timestamp_utc": "2025-02-03T00:00:00+00:00",
+          "target_timestamp": 1738627200,
+          "target_timestamp_utc": "2025-02-04T00:00:00+00:00",
+          "selected_assets": [
+            "ALICEUSDT",
+            "BSVUSDT",
+            "C98USDT",
+            "CROUSDT",
+            "DUSKUSDT",
+            "ILVUSDT",
+            "IOSTUSDT",
+            "RVNUSDT",
+            "STORJUSDT",
+            "TLMUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 332.30063252818184,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1738627200,
+          "timestamp_utc": "2025-02-04T00:00:00+00:00",
+          "target_timestamp": 1738713600,
+          "target_timestamp_utc": "2025-02-05T00:00:00+00:00",
+          "selected_assets": [
+            "C98USDT",
+            "DUSKUSDT",
+            "YGGUSDT",
+            "ZENUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -713.63028619013,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1740441600,
+          "timestamp_utc": "2025-02-25T00:00:00+00:00",
+          "target_timestamp": 1740528000,
+          "target_timestamp_utc": "2025-02-26T00:00:00+00:00",
+          "selected_assets": [
+            "CHRUSDT",
+            "ZENUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 289.9110872639576,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1740528000,
+          "timestamp_utc": "2025-02-26T00:00:00+00:00",
+          "target_timestamp": 1740614400,
+          "target_timestamp_utc": "2025-02-27T00:00:00+00:00",
+          "selected_assets": [
+            "CHRUSDT",
+            "CVCUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 64.69240614159821,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1741132800,
+          "timestamp_utc": "2025-03-05T00:00:00+00:00",
+          "target_timestamp": 1741219200,
+          "target_timestamp_utc": "2025-03-06T00:00:00+00:00",
+          "selected_assets": [
+            "CHRUSDT",
+            "CVCUSDT",
+            "DUSKUSDT",
+            "ETHUSDT",
+            "IOSTUSDT",
+            "SHIB1000USDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 311.65765687537487,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1741564800,
+          "timestamp_utc": "2025-03-10T00:00:00+00:00",
+          "target_timestamp": 1741651200,
+          "target_timestamp_utc": "2025-03-11T00:00:00+00:00",
+          "selected_assets": [
+            "BSVUSDT",
+            "ILVUSDT",
+            "TLMUSDT",
+            "YGGUSDT",
+            "ZENUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -502.47699929228617,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1741651200,
+          "timestamp_utc": "2025-03-11T00:00:00+00:00",
+          "target_timestamp": 1741737600,
+          "target_timestamp_utc": "2025-03-12T00:00:00+00:00",
+          "selected_assets": [
+            "C98USDT",
+            "GRTUSDT",
+            "STORJUSDT",
+            "ZENUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 654.7192057070649,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1743292800,
+          "timestamp_utc": "2025-03-30T00:00:00+00:00",
+          "target_timestamp": 1743379200,
+          "target_timestamp_utc": "2025-03-31T00:00:00+00:00",
+          "selected_assets": [
+            "GRTUSDT",
+            "ILVUSDT",
+            "YGGUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 67.72009029345494,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1743724800,
+          "timestamp_utc": "2025-04-04T00:00:00+00:00",
+          "target_timestamp": 1743811200,
+          "target_timestamp_utc": "2025-04-05T00:00:00+00:00",
+          "selected_assets": [
+            "BICOUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -79.68127490039944,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1743984000,
+          "timestamp_utc": "2025-04-07T00:00:00+00:00",
+          "target_timestamp": 1744070400,
+          "target_timestamp_utc": "2025-04-08T00:00:00+00:00",
+          "selected_assets": [
+            "BSVUSDT",
+            "ETHUSDT",
+            "PEOPLEUSDT",
+            "YGGUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 195.69985562701288,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1744848000,
+          "timestamp_utc": "2025-04-17T00:00:00+00:00",
+          "target_timestamp": 1744934400,
+          "target_timestamp_utc": "2025-04-18T00:00:00+00:00",
+          "selected_assets": [
+            "ALICEUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -539.3984588615464,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1746316800,
+          "timestamp_utc": "2025-05-04T00:00:00+00:00",
+          "target_timestamp": 1746403200,
+          "target_timestamp_utc": "2025-05-05T00:00:00+00:00",
+          "selected_assets": [
+            "BICOUSDT",
+            "CHRUSDT",
+            "TLMUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -289.99064546304965,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1746403200,
+          "timestamp_utc": "2025-05-05T00:00:00+00:00",
+          "target_timestamp": 1746489600,
+          "target_timestamp_utc": "2025-05-06T00:00:00+00:00",
+          "selected_assets": [
+            "RVNUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 191.75455417066223,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1747440000,
+          "timestamp_utc": "2025-05-17T00:00:00+00:00",
+          "target_timestamp": 1747526400,
+          "target_timestamp_utc": "2025-05-18T00:00:00+00:00",
+          "selected_assets": [
+            "CHRUSDT",
+            "PEOPLEUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -449.6217833849031,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1747526400,
+          "timestamp_utc": "2025-05-18T00:00:00+00:00",
+          "target_timestamp": 1747612800,
+          "target_timestamp_utc": "2025-05-19T00:00:00+00:00",
+          "selected_assets": [
+            "PEOPLEUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 2240.2159244264517,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1748131200,
+          "timestamp_utc": "2025-05-25T00:00:00+00:00",
+          "target_timestamp": 1748217600,
+          "target_timestamp_utc": "2025-05-26T00:00:00+00:00",
+          "selected_assets": [
+            "GRTUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 204.78131949592358,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1748649600,
+          "timestamp_utc": "2025-05-31T00:00:00+00:00",
+          "target_timestamp": 1748736000,
+          "target_timestamp_utc": "2025-06-01T00:00:00+00:00",
+          "selected_assets": [
+            "C98USDT",
+            "GRTUSDT",
+            "PEOPLEUSDT",
+            "SHIB1000USDT",
+            "YGGUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 108.48126232741562,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1749772800,
+          "timestamp_utc": "2025-06-13T00:00:00+00:00",
+          "target_timestamp": 1749859200,
+          "target_timestamp_utc": "2025-06-14T00:00:00+00:00",
+          "selected_assets": [
+            "C98USDT",
+            "IOSTUSDT",
+            "YGGUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -207.13463751438564,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1749859200,
+          "timestamp_utc": "2025-06-14T00:00:00+00:00",
+          "target_timestamp": 1749945600,
+          "target_timestamp_utc": "2025-06-15T00:00:00+00:00",
+          "selected_assets": [
+            "HNTUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 319.104848736016,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1749945600,
+          "timestamp_utc": "2025-06-15T00:00:00+00:00",
+          "target_timestamp": 1750032000,
+          "target_timestamp_utc": "2025-06-16T00:00:00+00:00",
+          "selected_assets": [
+            "RVNUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 248.11218985976157,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1750636800,
+          "timestamp_utc": "2025-06-23T00:00:00+00:00",
+          "target_timestamp": 1750723200,
+          "target_timestamp_utc": "2025-06-24T00:00:00+00:00",
+          "selected_assets": [
+            "DUSKUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 1251.1071744907,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1751414400,
+          "timestamp_utc": "2025-07-02T00:00:00+00:00",
+          "target_timestamp": 1751500800,
+          "target_timestamp_utc": "2025-07-03T00:00:00+00:00",
+          "selected_assets": [
+            "BSVUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 204.08163265306146,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1753315200,
+          "timestamp_utc": "2025-07-24T00:00:00+00:00",
+          "target_timestamp": 1753401600,
+          "target_timestamp_utc": "2025-07-25T00:00:00+00:00",
+          "selected_assets": [
+            "ALICEUSDT",
+            "YGGUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -292.9335728339322,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1753488000,
+          "timestamp_utc": "2025-07-26T00:00:00+00:00",
+          "target_timestamp": 1753574400,
+          "target_timestamp_utc": "2025-07-27T00:00:00+00:00",
+          "selected_assets": [
+            "SLPUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 1474.4232698094283,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1755648000,
+          "timestamp_utc": "2025-08-20T00:00:00+00:00",
+          "target_timestamp": 1755734400,
+          "target_timestamp_utc": "2025-08-21T00:00:00+00:00",
+          "selected_assets": [
+            "SLPUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 480.0462695199537,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1756166400,
+          "timestamp_utc": "2025-08-26T00:00:00+00:00",
+          "target_timestamp": 1756252800,
+          "target_timestamp_utc": "2025-08-27T00:00:00+00:00",
+          "selected_assets": [
+            "BICOUSDT",
+            "C98USDT",
+            "TLMUSDT",
+            "YGGUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 544.773905654351,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1757980800,
+          "timestamp_utc": "2025-09-16T00:00:00+00:00",
+          "target_timestamp": 1758067200,
+          "target_timestamp_utc": "2025-09-17T00:00:00+00:00",
+          "selected_assets": [
+            "ALICEUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 152.82022784106618,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1759881600,
+          "timestamp_utc": "2025-10-08T00:00:00+00:00",
+          "target_timestamp": 1759968000,
+          "target_timestamp_utc": "2025-10-09T00:00:00+00:00",
+          "selected_assets": [
+            "BSVUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 177.79533781114188,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1760140800,
+          "timestamp_utc": "2025-10-11T00:00:00+00:00",
+          "target_timestamp": 1760227200,
+          "target_timestamp_utc": "2025-10-12T00:00:00+00:00",
+          "selected_assets": [
+            "BICOUSDT",
+            "HNTUSDT",
+            "SLPUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 166.1129568106312,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1760227200,
+          "timestamp_utc": "2025-10-12T00:00:00+00:00",
+          "target_timestamp": 1760313600,
+          "target_timestamp_utc": "2025-10-13T00:00:00+00:00",
+          "selected_assets": [
+            "ALICEUSDT",
+            "BSVUSDT",
+            "C98USDT",
+            "DUSKUSDT",
+            "ETHUSDT",
+            "GRTUSDT",
+            "HNTUSDT",
+            "SHIB1000USDT",
+            "TLMUSDT",
+            "XMRUSDT",
+            "YGGUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 1063.9312977099235,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1760486400,
+          "timestamp_utc": "2025-10-15T00:00:00+00:00",
+          "target_timestamp": 1760572800,
+          "target_timestamp_utc": "2025-10-16T00:00:00+00:00",
+          "selected_assets": [
+            "ZENUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -284.76660464363704,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1760572800,
+          "timestamp_utc": "2025-10-16T00:00:00+00:00",
+          "target_timestamp": 1760659200,
+          "target_timestamp_utc": "2025-10-17T00:00:00+00:00",
+          "selected_assets": [
+            "ZENUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -674.4941294029483,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1760745600,
+          "timestamp_utc": "2025-10-18T00:00:00+00:00",
+          "target_timestamp": 1760832000,
+          "target_timestamp_utc": "2025-10-19T00:00:00+00:00",
+          "selected_assets": [
+            "YGGUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 197.60056457304165,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1761177600,
+          "timestamp_utc": "2025-10-23T00:00:00+00:00",
+          "target_timestamp": 1761264000,
+          "target_timestamp_utc": "2025-10-24T00:00:00+00:00",
+          "selected_assets": [
+            "ZENUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -230.01095290251848,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1761696000,
+          "timestamp_utc": "2025-10-29T00:00:00+00:00",
+          "target_timestamp": 1761782400,
+          "target_timestamp_utc": "2025-10-30T00:00:00+00:00",
+          "selected_assets": [
+            "ILVUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -44.88330341113178,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1762214400,
+          "timestamp_utc": "2025-11-04T00:00:00+00:00",
+          "target_timestamp": 1762300800,
+          "target_timestamp_utc": "2025-11-05T00:00:00+00:00",
+          "selected_assets": [
+            "ILVUSDT",
+            "TLMUSDT",
+            "YGGUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -424.17815482502675,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1762300800,
+          "timestamp_utc": "2025-11-05T00:00:00+00:00",
+          "target_timestamp": 1762387200,
+          "target_timestamp_utc": "2025-11-06T00:00:00+00:00",
+          "selected_assets": [
+            "SLPUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 612.0331950207469,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1762732800,
+          "timestamp_utc": "2025-11-10T00:00:00+00:00",
+          "target_timestamp": 1762819200,
+          "target_timestamp_utc": "2025-11-11T00:00:00+00:00",
+          "selected_assets": [
+            "DUSKUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -1158.0680570801317,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1762819200,
+          "timestamp_utc": "2025-11-11T00:00:00+00:00",
+          "target_timestamp": 1762905600,
+          "target_timestamp_utc": "2025-11-12T00:00:00+00:00",
+          "selected_assets": [
+            "ILVUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -759.6059113300502,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1762905600,
+          "timestamp_utc": "2025-11-12T00:00:00+00:00",
+          "target_timestamp": 1762992000,
+          "target_timestamp_utc": "2025-11-13T00:00:00+00:00",
+          "selected_assets": [
+            "XMRUSDT",
+            "ZENUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 474.03790674008576,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1763164800,
+          "timestamp_utc": "2025-11-15T00:00:00+00:00",
+          "target_timestamp": 1763251200,
+          "target_timestamp_utc": "2025-11-16T00:00:00+00:00",
+          "selected_assets": [
+            "CHRUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 804.127088110056,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1763769600,
+          "timestamp_utc": "2025-11-22T00:00:00+00:00",
+          "target_timestamp": 1763856000,
+          "target_timestamp_utc": "2025-11-23T00:00:00+00:00",
+          "selected_assets": [
+            "DUSKUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 156.19807244931837,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1763856000,
+          "timestamp_utc": "2025-11-23T00:00:00+00:00",
+          "target_timestamp": 1763942400,
+          "target_timestamp_utc": "2025-11-24T00:00:00+00:00",
+          "selected_assets": [
+            "DUSKUSDT",
+            "ZENUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -164.10617804462288,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1764633600,
+          "timestamp_utc": "2025-12-02T00:00:00+00:00",
+          "target_timestamp": 1764720000,
+          "target_timestamp_utc": "2025-12-03T00:00:00+00:00",
+          "selected_assets": [
+            "TLMUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 538.9492753623193,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1766102400,
+          "timestamp_utc": "2025-12-19T00:00:00+00:00",
+          "target_timestamp": 1766188800,
+          "target_timestamp_utc": "2025-12-20T00:00:00+00:00",
+          "selected_assets": [
+            "ALICEUSDT",
+            "CHRUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 559.4667436277845,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1768003200,
+          "timestamp_utc": "2026-01-10T00:00:00+00:00",
+          "target_timestamp": 1768089600,
+          "target_timestamp_utc": "2026-01-11T00:00:00+00:00",
+          "selected_assets": [
+            "IOSTUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -25.824627303674408,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1768435200,
+          "timestamp_utc": "2026-01-15T00:00:00+00:00",
+          "target_timestamp": 1768521600,
+          "target_timestamp_utc": "2026-01-16T00:00:00+00:00",
+          "selected_assets": [
+            "DUSKUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -321.98992827712544,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1768867200,
+          "timestamp_utc": "2026-01-20T00:00:00+00:00",
+          "target_timestamp": 1768953600,
+          "target_timestamp_utc": "2026-01-21T00:00:00+00:00",
+          "selected_assets": [
+            "TLMUSDT",
+            "YGGUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 107.88998869079973,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1768953600,
+          "timestamp_utc": "2026-01-21T00:00:00+00:00",
+          "target_timestamp": 1769040000,
+          "target_timestamp_utc": "2026-01-22T00:00:00+00:00",
+          "selected_assets": [
+            "YGGUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 575.8637956935409,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1769126400,
+          "timestamp_utc": "2026-01-23T00:00:00+00:00",
+          "target_timestamp": 1769212800,
+          "target_timestamp_utc": "2026-01-24T00:00:00+00:00",
+          "selected_assets": [
+            "DUSKUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -1064.6517441199865,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1769385600,
+          "timestamp_utc": "2026-01-26T00:00:00+00:00",
+          "target_timestamp": 1769472000,
+          "target_timestamp_utc": "2026-01-27T00:00:00+00:00",
+          "selected_assets": [
+            "ZENUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 303.0643169828262,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1769904000,
+          "timestamp_utc": "2026-02-01T00:00:00+00:00",
+          "target_timestamp": 1769990400,
+          "target_timestamp_utc": "2026-02-02T00:00:00+00:00",
+          "selected_assets": [
+            "ETHUSDT",
+            "GRTUSDT",
+            "ILVUSDT",
+            "SLPUSDT",
+            "ZENUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -332.87733698130427,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1769990400,
+          "timestamp_utc": "2026-02-02T00:00:00+00:00",
+          "target_timestamp": 1770076800,
+          "target_timestamp_utc": "2026-02-03T00:00:00+00:00",
+          "selected_assets": [
+            "ALICEUSDT",
+            "SLPUSDT",
+            "YGGUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 193.4206518428283,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1770336000,
+          "timestamp_utc": "2026-02-06T00:00:00+00:00",
+          "target_timestamp": 1770422400,
+          "target_timestamp_utc": "2026-02-07T00:00:00+00:00",
+          "selected_assets": [
+            "ANKRUSDT",
+            "BICOUSDT",
+            "DUSKUSDT",
+            "HNTUSDT",
+            "SLPUSDT",
+            "TLMUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 1032.2286720628626,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1770422400,
+          "timestamp_utc": "2026-02-07T00:00:00+00:00",
+          "target_timestamp": 1770508800,
+          "target_timestamp_utc": "2026-02-08T00:00:00+00:00",
+          "selected_assets": [
+            "XMRUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 250.57514145370828,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1770595200,
+          "timestamp_utc": "2026-02-09T00:00:00+00:00",
+          "target_timestamp": 1770681600,
+          "target_timestamp_utc": "2026-02-10T00:00:00+00:00",
+          "selected_assets": [
+            "C98USDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 178.2411961440089,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1770768000,
+          "timestamp_utc": "2026-02-11T00:00:00+00:00",
+          "target_timestamp": 1770854400,
+          "target_timestamp_utc": "2026-02-12T00:00:00+00:00",
+          "selected_assets": [
+            "DUSKUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -195.9465949476513,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1771632000,
+          "timestamp_utc": "2026-02-21T00:00:00+00:00",
+          "target_timestamp": 1771718400,
+          "target_timestamp_utc": "2026-02-22T00:00:00+00:00",
+          "selected_assets": [
+            "HNTUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 520.5232920329483,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1771891200,
+          "timestamp_utc": "2026-02-24T00:00:00+00:00",
+          "target_timestamp": 1771977600,
+          "target_timestamp_utc": "2026-02-25T00:00:00+00:00",
+          "selected_assets": [
+            "CHRUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -306.17540217955377,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1771977600,
+          "timestamp_utc": "2026-02-25T00:00:00+00:00",
+          "target_timestamp": 1772064000,
+          "target_timestamp_utc": "2026-02-26T00:00:00+00:00",
+          "selected_assets": [
+            "YGGUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 161.64584864070574,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1773878400,
+          "timestamp_utc": "2026-03-19T00:00:00+00:00",
+          "target_timestamp": 1773964800,
+          "target_timestamp_utc": "2026-03-20T00:00:00+00:00",
+          "selected_assets": [
+            "ZENUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -505.3852526926261,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1774224000,
+          "timestamp_utc": "2026-03-23T00:00:00+00:00",
+          "target_timestamp": 1774310400,
+          "target_timestamp_utc": "2026-03-24T00:00:00+00:00",
+          "selected_assets": [
+            "CHRUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 608.5043988269812,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1776556800,
+          "timestamp_utc": "2026-04-19T00:00:00+00:00",
+          "target_timestamp": 1776643200,
+          "target_timestamp_utc": "2026-04-20T00:00:00+00:00",
+          "selected_assets": [
+            "PEOPLEUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -344.4621091679911,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1776643200,
+          "timestamp_utc": "2026-04-20T00:00:00+00:00",
+          "target_timestamp": 1776729600,
+          "target_timestamp_utc": "2026-04-21T00:00:00+00:00",
+          "selected_assets": [
+            "CHRUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 936.9863013698621,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1779062400,
+          "timestamp_utc": "2026-05-18T00:00:00+00:00",
+          "target_timestamp": 1779148800,
+          "target_timestamp_utc": "2026-05-19T00:00:00+00:00",
+          "selected_assets": [
+            "STORJUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 119.60855382384894,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1779494400,
+          "timestamp_utc": "2026-05-23T00:00:00+00:00",
+          "target_timestamp": 1779580800,
+          "target_timestamp_utc": "2026-05-24T00:00:00+00:00",
+          "selected_assets": [
+            "ZENUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 410.68108838938633,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1779753600,
+          "timestamp_utc": "2026-05-26T00:00:00+00:00",
+          "target_timestamp": 1779840000,
+          "target_timestamp_utc": "2026-05-27T00:00:00+00:00",
+          "selected_assets": [
+            "BICOUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -580.4248861911987,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1780444800,
+          "timestamp_utc": "2026-06-03T00:00:00+00:00",
+          "target_timestamp": 1780531200,
+          "target_timestamp_utc": "2026-06-04T00:00:00+00:00",
+          "selected_assets": [
+            "CHRUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 108.6956521739113,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1780617600,
+          "timestamp_utc": "2026-06-05T00:00:00+00:00",
+          "target_timestamp": 1780704000,
+          "target_timestamp_utc": "2026-06-06T00:00:00+00:00",
+          "selected_assets": [
+            "CHRUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -990.0410076156995,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1780704000,
+          "timestamp_utc": "2026-06-06T00:00:00+00:00",
+          "target_timestamp": 1780790400,
+          "target_timestamp_utc": "2026-06-07T00:00:00+00:00",
+          "selected_assets": [
+            "BICOUSDT",
+            "ETHUSDT",
+            "ILVUSDT",
+            "PEOPLEUSDT",
+            "SHIB1000USDT",
+            "TLMUSDT",
+            "YGGUSDT",
+            "ZENUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -84.38770340321256,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1782345600,
+          "timestamp_utc": "2026-06-25T00:00:00+00:00",
+          "target_timestamp": 1782432000,
+          "target_timestamp_utc": "2026-06-26T00:00:00+00:00",
+          "selected_assets": [
+            "HNTUSDT",
+            "TLMUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -473.9445536631504,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1782432000,
+          "timestamp_utc": "2026-06-26T00:00:00+00:00",
+          "target_timestamp": 1782518400,
+          "target_timestamp_utc": "2026-06-27T00:00:00+00:00",
+          "selected_assets": [
+            "BICOUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 250.96525096525158,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1782864000,
+          "timestamp_utc": "2026-07-01T00:00:00+00:00",
+          "target_timestamp": 1782950400,
+          "target_timestamp_utc": "2026-07-02T00:00:00+00:00",
+          "selected_assets": [
+            "BICOUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -733.3747669359858,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1783468800,
+          "timestamp_utc": "2026-07-08T00:00:00+00:00",
+          "target_timestamp": 1783555200,
+          "target_timestamp_utc": "2026-07-09T00:00:00+00:00",
+          "selected_assets": [
+            "TLMUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -582.1262640065584,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1783555200,
+          "timestamp_utc": "2026-07-09T00:00:00+00:00",
+          "target_timestamp": 1783641600,
+          "target_timestamp_utc": "2026-07-10T00:00:00+00:00",
+          "selected_assets": [
+            "TLMUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -580.3830528148591,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1783641600,
+          "timestamp_utc": "2026-07-10T00:00:00+00:00",
+          "target_timestamp": 1783728000,
+          "target_timestamp_utc": "2026-07-11T00:00:00+00:00",
+          "selected_assets": [
+            "TLMUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -1476.542557873426,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1784592000,
+          "timestamp_utc": "2026-07-21T00:00:00+00:00",
+          "target_timestamp": 1784678400,
+          "target_timestamp_utc": "2026-07-22T00:00:00+00:00",
+          "selected_assets": [
+            "YGGUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 342.76387377584206,
+          "outcome_up": true,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1784851200,
+          "timestamp_utc": "2026-07-24T00:00:00+00:00",
+          "target_timestamp": 1784937600,
+          "target_timestamp_utc": "2026-07-25T00:00:00+00:00",
+          "selected_assets": [
+            "CHRUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -48.00480048004818,
+          "outcome_up": false,
+          "selected_probability_up": 1.0,
+          "selected_prediction_up": true
+        }
+      ],
+      "thresholds": {
+        "return_threshold_bps": -1092.1501706484637,
+        "oi_threshold_bps": -171.72395932584632
+      }
+    },
+    "48h": {
+      "episodes": {
+        "train": 63,
+        "validation": 31,
+        "final": 36
+      },
+      "selected_model": "extra_trees",
+      "validation": {
+        "majority": {
+          "episodes": 31,
+          "hits": 19,
+          "accuracy": 0.6129032258064516,
+          "wilson_low_95": 0.4382410861966073,
+          "brier_score": 0.3870967741935484,
+          "predicted_up_rate": 0.0,
+          "actual_up_rate": 0.3870967741935484,
+          "by_year": [
+            {
+              "year": 2024,
+              "episodes": 31,
+              "hits": 19,
+              "accuracy": 0.6129032258064516,
+              "wilson_low_95": 0.4382410861966073
+            }
+          ],
+          "worst_supported_year_accuracy": 0.6129032258064516
+        },
+        "logistic": {
+          "episodes": 31,
+          "hits": 16,
+          "accuracy": 0.5161290322580645,
+          "wilson_low_95": 0.348403954480288,
+          "brier_score": 0.2671036509420447,
+          "predicted_up_rate": 0.3548387096774194,
+          "actual_up_rate": 0.3870967741935484,
+          "by_year": [
+            {
+              "year": 2024,
+              "episodes": 31,
+              "hits": 16,
+              "accuracy": 0.5161290322580645,
+              "wilson_low_95": 0.348403954480288
+            }
+          ],
+          "worst_supported_year_accuracy": 0.5161290322580645
+        },
+        "extra_trees": {
+          "episodes": 31,
+          "hits": 21,
+          "accuracy": 0.6774193548387096,
+          "wilson_low_95": 0.5014100930808564,
+          "brier_score": 0.23869026792130754,
+          "predicted_up_rate": 0.3225806451612903,
+          "actual_up_rate": 0.3870967741935484,
+          "by_year": [
+            {
+              "year": 2024,
+              "episodes": 31,
+              "hits": 21,
+              "accuracy": 0.6774193548387096,
+              "wilson_low_95": 0.5014100930808564
+            }
+          ],
+          "worst_supported_year_accuracy": 0.6774193548387096
+        },
+        "knn": {
+          "episodes": 31,
+          "hits": 19,
+          "accuracy": 0.6129032258064516,
+          "wilson_low_95": 0.4382410861966073,
+          "brier_score": 0.23650307208067006,
+          "predicted_up_rate": 0.06451612903225806,
+          "actual_up_rate": 0.3870967741935484,
+          "by_year": [
+            {
+              "year": 2024,
+              "episodes": 31,
+              "hits": 19,
+              "accuracy": 0.6129032258064516,
+              "wilson_low_95": 0.4382410861966073
+            }
+          ],
+          "worst_supported_year_accuracy": 0.6129032258064516
+        },
+        "wavefield": {
+          "episodes": 31,
+          "hits": 16,
+          "accuracy": 0.5161290322580645,
+          "wilson_low_95": 0.348403954480288,
+          "brier_score": 0.2873247326418643,
+          "predicted_up_rate": 0.41935483870967744,
+          "actual_up_rate": 0.3870967741935484,
+          "by_year": [
+            {
+              "year": 2024,
+              "episodes": 31,
+              "hits": 16,
+              "accuracy": 0.5161290322580645,
+              "wilson_low_95": 0.348403954480288
+            }
+          ],
+          "worst_supported_year_accuracy": 0.5161290322580645
+        },
+        "field_tree_hybrid": {
+          "episodes": 31,
+          "hits": 16,
+          "accuracy": 0.5161290322580645,
+          "wilson_low_95": 0.348403954480288,
+          "brier_score": 0.2542800428001342,
+          "predicted_up_rate": 0.4838709677419355,
+          "actual_up_rate": 0.3870967741935484,
+          "by_year": [
+            {
+              "year": 2024,
+              "episodes": 31,
+              "hits": 16,
+              "accuracy": 0.5161290322580645,
+              "wilson_low_95": 0.348403954480288
+            }
+          ],
+          "worst_supported_year_accuracy": 0.5161290322580645
+        }
+      },
+      "final": {
+        "majority": {
+          "episodes": 36,
+          "hits": 19,
+          "accuracy": 0.5277777777777778,
+          "wilson_low_95": 0.37005938022987594,
+          "brier_score": 0.4722222222222222,
+          "predicted_up_rate": 0.0,
+          "actual_up_rate": 0.4722222222222222,
+          "by_year": [
+            {
+              "year": 2025,
+              "episodes": 23,
+              "hits": 11,
+              "accuracy": 0.4782608695652174,
+              "wilson_low_95": 0.29237157416646653
+            },
+            {
+              "year": 2026,
+              "episodes": 13,
+              "hits": 8,
+              "accuracy": 0.6153846153846154,
+              "wilson_low_95": 0.3552289151266569
+            }
+          ],
+          "worst_supported_year_accuracy": 0.4782608695652174
+        },
+        "logistic": {
+          "episodes": 36,
+          "hits": 19,
+          "accuracy": 0.5277777777777778,
+          "wilson_low_95": 0.37005938022987594,
+          "brier_score": 0.2493091816851401,
+          "predicted_up_rate": 0.3888888888888889,
+          "actual_up_rate": 0.4722222222222222,
+          "by_year": [
+            {
+              "year": 2025,
+              "episodes": 23,
+              "hits": 9,
+              "accuracy": 0.391304347826087,
+              "wilson_low_95": 0.2215762279247795
+            },
+            {
+              "year": 2026,
+              "episodes": 13,
+              "hits": 10,
+              "accuracy": 0.7692307692307693,
+              "wilson_low_95": 0.49743624053272495
+            }
+          ],
+          "worst_supported_year_accuracy": 0.391304347826087
+        },
+        "extra_trees": {
+          "episodes": 36,
+          "hits": 24,
+          "accuracy": 0.6666666666666666,
+          "wilson_low_95": 0.5033399787115652,
+          "brier_score": 0.2337308893196176,
+          "predicted_up_rate": 0.4166666666666667,
+          "actual_up_rate": 0.4722222222222222,
+          "by_year": [
+            {
+              "year": 2025,
+              "episodes": 23,
+              "hits": 13,
+              "accuracy": 0.5652173913043478,
+              "wilson_low_95": 0.3681137508501646
+            },
+            {
+              "year": 2026,
+              "episodes": 13,
+              "hits": 11,
+              "accuracy": 0.8461538461538461,
+              "wilson_low_95": 0.5776536898051745
+            }
+          ],
+          "worst_supported_year_accuracy": 0.5652173913043478
+        },
+        "knn": {
+          "episodes": 36,
+          "hits": 20,
+          "accuracy": 0.5555555555555556,
+          "wilson_low_95": 0.39581061755697294,
+          "brier_score": 0.24370770803510247,
+          "predicted_up_rate": 0.08333333333333333,
+          "actual_up_rate": 0.4722222222222222,
+          "by_year": [
+            {
+              "year": 2025,
+              "episodes": 23,
+              "hits": 12,
+              "accuracy": 0.5217391304347826,
+              "wilson_low_95": 0.32962737336427406
+            },
+            {
+              "year": 2026,
+              "episodes": 13,
+              "hits": 8,
+              "accuracy": 0.6153846153846154,
+              "wilson_low_95": 0.3552289151266569
+            }
+          ],
+          "worst_supported_year_accuracy": 0.5217391304347826
+        },
+        "wavefield": {
+          "episodes": 36,
+          "hits": 22,
+          "accuracy": 0.6111111111111112,
+          "wilson_low_95": 0.44864459096605147,
+          "brier_score": 0.25429437720268566,
+          "predicted_up_rate": 0.4722222222222222,
+          "actual_up_rate": 0.4722222222222222,
+          "by_year": [
+            {
+              "year": 2025,
+              "episodes": 23,
+              "hits": 12,
+              "accuracy": 0.5217391304347826,
+              "wilson_low_95": 0.32962737336427406
+            },
+            {
+              "year": 2026,
+              "episodes": 13,
+              "hits": 10,
+              "accuracy": 0.7692307692307693,
+              "wilson_low_95": 0.49743624053272495
+            }
+          ],
+          "worst_supported_year_accuracy": 0.5217391304347826
+        },
+        "field_tree_hybrid": {
+          "episodes": 36,
+          "hits": 22,
+          "accuracy": 0.6111111111111112,
+          "wilson_low_95": 0.44864459096605147,
+          "brier_score": 0.23389213501198652,
+          "predicted_up_rate": 0.4722222222222222,
+          "actual_up_rate": 0.4722222222222222,
+          "by_year": [
+            {
+              "year": 2025,
+              "episodes": 23,
+              "hits": 12,
+              "accuracy": 0.5217391304347826,
+              "wilson_low_95": 0.32962737336427406
+            },
+            {
+              "year": 2026,
+              "episodes": 13,
+              "hits": 10,
+              "accuracy": 0.7692307692307693,
+              "wilson_low_95": 0.49743624053272495
+            }
+          ],
+          "worst_supported_year_accuracy": 0.5217391304347826
+        }
+      },
+      "selected_final": {
+        "episodes": 36,
+        "hits": 24,
+        "accuracy": 0.6666666666666666,
+        "wilson_low_95": 0.5033399787115652,
+        "brier_score": 0.2337308893196176,
+        "predicted_up_rate": 0.4166666666666667,
+        "actual_up_rate": 0.4722222222222222,
+        "by_year": [
+          {
+            "year": 2025,
+            "episodes": 23,
+            "hits": 13,
+            "accuracy": 0.5652173913043478,
+            "wilson_low_95": 0.3681137508501646
+          },
+          {
+            "year": 2026,
+            "episodes": 13,
+            "hits": 11,
+            "accuracy": 0.8461538461538461,
+            "wilson_low_95": 0.5776536898051745
+          }
+        ],
+        "worst_supported_year_accuracy": 0.5652173913043478
+      },
+      "final_uplift_vs_train_majority": 0.13888888888888884,
+      "admitted_70": false,
+      "final_rows": [
+        {
+          "timestamp": 1736294400,
+          "timestamp_utc": "2025-01-08T00:00:00+00:00",
+          "target_timestamp": 1736467200,
+          "target_timestamp_utc": "2025-01-10T00:00:00+00:00",
+          "selected_assets": [
+            "CHRUSDT",
+            "PEOPLEUSDT",
+            "TLMUSDT",
+            "YGGUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -839.1421581645881,
+          "outcome_up": false,
+          "selected_probability_up": 0.495730330435028,
+          "selected_prediction_up": false
+        },
+        {
+          "timestamp": 1737331200,
+          "timestamp_utc": "2025-01-20T00:00:00+00:00",
+          "target_timestamp": 1737504000,
+          "target_timestamp_utc": "2025-01-22T00:00:00+00:00",
+          "selected_assets": [
+            "BSVUSDT",
+            "CVCUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 235.33050660099585,
+          "outcome_up": true,
+          "selected_probability_up": 0.510317862664024,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1738540800,
+          "timestamp_utc": "2025-02-03T00:00:00+00:00",
+          "target_timestamp": 1738713600,
+          "target_timestamp_utc": "2025-02-05T00:00:00+00:00",
+          "selected_assets": [
+            "ALICEUSDT",
+            "BSVUSDT",
+            "C98USDT",
+            "CROUSDT",
+            "DUSKUSDT",
+            "ILVUSDT",
+            "IOSTUSDT",
+            "RVNUSDT",
+            "STORJUSDT",
+            "TLMUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -281.55308567068494,
+          "outcome_up": false,
+          "selected_probability_up": 0.49271479789049705,
+          "selected_prediction_up": false
+        },
+        {
+          "timestamp": 1740441600,
+          "timestamp_utc": "2025-02-25T00:00:00+00:00",
+          "target_timestamp": 1740614400,
+          "target_timestamp_utc": "2025-02-27T00:00:00+00:00",
+          "selected_assets": [
+            "CHRUSDT",
+            "ZENUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 706.698790373409,
+          "outcome_up": true,
+          "selected_probability_up": 0.4279138740820244,
+          "selected_prediction_up": false
+        },
+        {
+          "timestamp": 1741132800,
+          "timestamp_utc": "2025-03-05T00:00:00+00:00",
+          "target_timestamp": 1741305600,
+          "target_timestamp_utc": "2025-03-07T00:00:00+00:00",
+          "selected_assets": [
+            "CHRUSDT",
+            "CVCUSDT",
+            "DUSKUSDT",
+            "ETHUSDT",
+            "IOSTUSDT",
+            "SHIB1000USDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 150.07703147906557,
+          "outcome_up": true,
+          "selected_probability_up": 0.5588684495181662,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1741651200,
+          "timestamp_utc": "2025-03-11T00:00:00+00:00",
+          "target_timestamp": 1741824000,
+          "target_timestamp_utc": "2025-03-13T00:00:00+00:00",
+          "selected_assets": [
+            "C98USDT",
+            "GRTUSDT",
+            "STORJUSDT",
+            "ZENUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 1072.813908381316,
+          "outcome_up": true,
+          "selected_probability_up": 0.5173123522384793,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1743724800,
+          "timestamp_utc": "2025-04-04T00:00:00+00:00",
+          "target_timestamp": 1743897600,
+          "target_timestamp_utc": "2025-04-06T00:00:00+00:00",
+          "selected_assets": [
+            "BICOUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -189.24302788844605,
+          "outcome_up": false,
+          "selected_probability_up": 0.43689675195801997,
+          "selected_prediction_up": false
+        },
+        {
+          "timestamp": 1746316800,
+          "timestamp_utc": "2025-05-04T00:00:00+00:00",
+          "target_timestamp": 1746489600,
+          "target_timestamp_utc": "2025-05-06T00:00:00+00:00",
+          "selected_assets": [
+            "BICOUSDT",
+            "CHRUSDT",
+            "TLMUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -415.1075771749291,
+          "outcome_up": false,
+          "selected_probability_up": 0.4037982897385372,
+          "selected_prediction_up": false
+        },
+        {
+          "timestamp": 1747526400,
+          "timestamp_utc": "2025-05-18T00:00:00+00:00",
+          "target_timestamp": 1747699200,
+          "target_timestamp_utc": "2025-05-20T00:00:00+00:00",
+          "selected_assets": [
+            "PEOPLEUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 1241.5654520917662,
+          "outcome_up": true,
+          "selected_probability_up": 0.4286609608479896,
+          "selected_prediction_up": false
+        },
+        {
+          "timestamp": 1749772800,
+          "timestamp_utc": "2025-06-13T00:00:00+00:00",
+          "target_timestamp": 1749945600,
+          "target_timestamp_utc": "2025-06-15T00:00:00+00:00",
+          "selected_assets": [
+            "C98USDT",
+            "IOSTUSDT",
+            "YGGUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -644.4188722669742,
+          "outcome_up": false,
+          "selected_probability_up": 0.5272835795199196,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1749945600,
+          "timestamp_utc": "2025-06-15T00:00:00+00:00",
+          "target_timestamp": 1750118400,
+          "target_timestamp_utc": "2025-06-17T00:00:00+00:00",
+          "selected_assets": [
+            "RVNUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 118.66235167205863,
+          "outcome_up": true,
+          "selected_probability_up": 0.40233157445569573,
+          "selected_prediction_up": false
+        },
+        {
+          "timestamp": 1750636800,
+          "timestamp_utc": "2025-06-23T00:00:00+00:00",
+          "target_timestamp": 1750809600,
+          "target_timestamp_utc": "2025-06-25T00:00:00+00:00",
+          "selected_assets": [
+            "DUSKUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 1423.8263950398577,
+          "outcome_up": true,
+          "selected_probability_up": 0.4954142307400035,
+          "selected_prediction_up": false
+        },
+        {
+          "timestamp": 1755648000,
+          "timestamp_utc": "2025-08-20T00:00:00+00:00",
+          "target_timestamp": 1755820800,
+          "target_timestamp_utc": "2025-08-22T00:00:00+00:00",
+          "selected_assets": [
+            "SLPUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 11.567379988430826,
+          "outcome_up": true,
+          "selected_probability_up": 0.509499670023341,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1756166400,
+          "timestamp_utc": "2025-08-26T00:00:00+00:00",
+          "target_timestamp": 1756339200,
+          "target_timestamp_utc": "2025-08-28T00:00:00+00:00",
+          "selected_assets": [
+            "BICOUSDT",
+            "C98USDT",
+            "TLMUSDT",
+            "YGGUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 759.6207886491535,
+          "outcome_up": true,
+          "selected_probability_up": 0.5262544780023748,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1760140800,
+          "timestamp_utc": "2025-10-11T00:00:00+00:00",
+          "target_timestamp": 1760313600,
+          "target_timestamp_utc": "2025-10-13T00:00:00+00:00",
+          "selected_assets": [
+            "BICOUSDT",
+            "HNTUSDT",
+            "SLPUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 1075.7479312539785,
+          "outcome_up": true,
+          "selected_probability_up": 0.5142024446957311,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1760486400,
+          "timestamp_utc": "2025-10-15T00:00:00+00:00",
+          "target_timestamp": 1760659200,
+          "target_timestamp_utc": "2025-10-17T00:00:00+00:00",
+          "selected_assets": [
+            "ZENUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -940.0533937383715,
+          "outcome_up": false,
+          "selected_probability_up": 0.4400285898564947,
+          "selected_prediction_up": false
+        },
+        {
+          "timestamp": 1761177600,
+          "timestamp_utc": "2025-10-23T00:00:00+00:00",
+          "target_timestamp": 1761350400,
+          "target_timestamp_utc": "2025-10-25T00:00:00+00:00",
+          "selected_assets": [
+            "ZENUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 110.44176706827446,
+          "outcome_up": true,
+          "selected_probability_up": 0.5346463952758453,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1761696000,
+          "timestamp_utc": "2025-10-29T00:00:00+00:00",
+          "target_timestamp": 1761868800,
+          "target_timestamp_utc": "2025-10-31T00:00:00+00:00",
+          "selected_assets": [
+            "ILVUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -754.039497307002,
+          "outcome_up": false,
+          "selected_probability_up": 0.56336180539714,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1762214400,
+          "timestamp_utc": "2025-11-04T00:00:00+00:00",
+          "target_timestamp": 1762387200,
+          "target_timestamp_utc": "2025-11-06T00:00:00+00:00",
+          "selected_assets": [
+            "ILVUSDT",
+            "TLMUSDT",
+            "YGGUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -18.81467544684878,
+          "outcome_up": false,
+          "selected_probability_up": 0.5062435225706391,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1762732800,
+          "timestamp_utc": "2025-11-10T00:00:00+00:00",
+          "target_timestamp": 1762905600,
+          "target_timestamp_utc": "2025-11-12T00:00:00+00:00",
+          "selected_assets": [
+            "DUSKUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -2027.991218441274,
+          "outcome_up": false,
+          "selected_probability_up": 0.3358143818995505,
+          "selected_prediction_up": false
+        },
+        {
+          "timestamp": 1762905600,
+          "timestamp_utc": "2025-11-12T00:00:00+00:00",
+          "target_timestamp": 1763078400,
+          "target_timestamp_utc": "2025-11-14T00:00:00+00:00",
+          "selected_assets": [
+            "XMRUSDT",
+            "ZENUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -1.8794736733040907,
+          "outcome_up": false,
+          "selected_probability_up": 0.5288368966001332,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1763769600,
+          "timestamp_utc": "2025-11-22T00:00:00+00:00",
+          "target_timestamp": 1763942400,
+          "target_timestamp_utc": "2025-11-24T00:00:00+00:00",
+          "selected_assets": [
+            "DUSKUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -483.5493519441669,
+          "outcome_up": false,
+          "selected_probability_up": 0.5000727402000333,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1764633600,
+          "timestamp_utc": "2025-12-02T00:00:00+00:00",
+          "target_timestamp": 1764806400,
+          "target_timestamp_utc": "2025-12-04T00:00:00+00:00",
+          "selected_assets": [
+            "TLMUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 996.376811594204,
+          "outcome_up": true,
+          "selected_probability_up": 0.4952152940086215,
+          "selected_prediction_up": false
+        },
+        {
+          "timestamp": 1768435200,
+          "timestamp_utc": "2026-01-15T00:00:00+00:00",
+          "target_timestamp": 1768608000,
+          "target_timestamp_utc": "2026-01-17T00:00:00+00:00",
+          "selected_assets": [
+            "DUSKUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 5800.39676484053,
+          "outcome_up": true,
+          "selected_probability_up": 0.45671828282826793,
+          "selected_prediction_up": false
+        },
+        {
+          "timestamp": 1768953600,
+          "timestamp_utc": "2026-01-21T00:00:00+00:00",
+          "target_timestamp": 1769126400,
+          "target_timestamp_utc": "2026-01-23T00:00:00+00:00",
+          "selected_assets": [
+            "YGGUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 622.6005675179435,
+          "outcome_up": true,
+          "selected_probability_up": 0.35035894101062104,
+          "selected_prediction_up": false
+        },
+        {
+          "timestamp": 1769126400,
+          "timestamp_utc": "2026-01-23T00:00:00+00:00",
+          "target_timestamp": 1769299200,
+          "target_timestamp_utc": "2026-01-25T00:00:00+00:00",
+          "selected_assets": [
+            "DUSKUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -2038.9728439950006,
+          "outcome_up": false,
+          "selected_probability_up": 0.3861930554192523,
+          "selected_prediction_up": false
+        },
+        {
+          "timestamp": 1769990400,
+          "timestamp_utc": "2026-02-02T00:00:00+00:00",
+          "target_timestamp": 1770163200,
+          "target_timestamp_utc": "2026-02-04T00:00:00+00:00",
+          "selected_assets": [
+            "ALICEUSDT",
+            "SLPUSDT",
+            "YGGUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -74.87337590838972,
+          "outcome_up": false,
+          "selected_probability_up": 0.4566174776178085,
+          "selected_prediction_up": false
+        },
+        {
+          "timestamp": 1770336000,
+          "timestamp_utc": "2026-02-06T00:00:00+00:00",
+          "target_timestamp": 1770508800,
+          "target_timestamp_utc": "2026-02-08T00:00:00+00:00",
+          "selected_assets": [
+            "ANKRUSDT",
+            "BICOUSDT",
+            "DUSKUSDT",
+            "HNTUSDT",
+            "SLPUSDT",
+            "TLMUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 903.6467035271246,
+          "outcome_up": true,
+          "selected_probability_up": 0.5493662172391593,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1771891200,
+          "timestamp_utc": "2026-02-24T00:00:00+00:00",
+          "target_timestamp": 1772064000,
+          "target_timestamp_utc": "2026-02-26T00:00:00+00:00",
+          "selected_assets": [
+            "CHRUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -337.3118837571343,
+          "outcome_up": false,
+          "selected_probability_up": 0.46465552690828005,
+          "selected_prediction_up": false
+        },
+        {
+          "timestamp": 1776556800,
+          "timestamp_utc": "2026-04-19T00:00:00+00:00",
+          "target_timestamp": 1776729600,
+          "target_timestamp_utc": "2026-04-21T00:00:00+00:00",
+          "selected_assets": [
+            "PEOPLEUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -311.34075251722294,
+          "outcome_up": false,
+          "selected_probability_up": 0.42322392831772376,
+          "selected_prediction_up": false
+        },
+        {
+          "timestamp": 1779494400,
+          "timestamp_utc": "2026-05-23T00:00:00+00:00",
+          "target_timestamp": 1779667200,
+          "target_timestamp_utc": "2026-05-25T00:00:00+00:00",
+          "selected_assets": [
+            "ZENUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 348.14940003380144,
+          "outcome_up": true,
+          "selected_probability_up": 0.6289847003076007,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1780704000,
+          "timestamp_utc": "2026-06-06T00:00:00+00:00",
+          "target_timestamp": 1780876800,
+          "target_timestamp_utc": "2026-06-08T00:00:00+00:00",
+          "selected_assets": [
+            "BICOUSDT",
+            "ETHUSDT",
+            "ILVUSDT",
+            "PEOPLEUSDT",
+            "SHIB1000USDT",
+            "TLMUSDT",
+            "YGGUSDT",
+            "ZENUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": 235.7302457014887,
+          "outcome_up": true,
+          "selected_probability_up": 0.5184715345689109,
+          "selected_prediction_up": true
+        },
+        {
+          "timestamp": 1782432000,
+          "timestamp_utc": "2026-06-26T00:00:00+00:00",
+          "target_timestamp": 1782604800,
+          "target_timestamp_utc": "2026-06-28T00:00:00+00:00",
+          "selected_assets": [
+            "BICOUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -241.3127413127414,
+          "outcome_up": false,
+          "selected_probability_up": 0.4503459006918939,
+          "selected_prediction_up": false
+        },
+        {
+          "timestamp": 1783468800,
+          "timestamp_utc": "2026-07-08T00:00:00+00:00",
+          "target_timestamp": 1783641600,
+          "target_timestamp_utc": "2026-07-10T00:00:00+00:00",
+          "selected_assets": [
+            "TLMUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -1128.7236949986334,
+          "outcome_up": false,
+          "selected_probability_up": 0.44331826730833873,
+          "selected_prediction_up": false
+        },
+        {
+          "timestamp": 1783641600,
+          "timestamp_utc": "2026-07-10T00:00:00+00:00",
+          "target_timestamp": 1783814400,
+          "target_timestamp_utc": "2026-07-12T00:00:00+00:00",
+          "selected_assets": [
+            "TLMUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -2188.187659537012,
+          "outcome_up": false,
+          "selected_probability_up": 0.3558007459888796,
+          "selected_prediction_up": false
+        },
+        {
+          "timestamp": 1784851200,
+          "timestamp_utc": "2026-07-24T00:00:00+00:00",
+          "target_timestamp": 1785024000,
+          "target_timestamp_utc": "2026-07-26T00:00:00+00:00",
+          "selected_assets": [
+            "CHRUSDT"
+          ],
+          "available_assets": 24,
+          "future_return_bps": -29.252925292529987,
+          "outcome_up": false,
+          "selected_probability_up": 0.4586597609763948,
+          "selected_prediction_up": false
+        }
+      ],
+      "thresholds": {
+        "return_threshold_bps": -1092.1501706484637,
+        "oi_threshold_bps": -171.72395932584632
+      }
+    }
+  },
+  "primary_24h_admitted_70": false,
+  "all_horizons_admitted_70": false
+}

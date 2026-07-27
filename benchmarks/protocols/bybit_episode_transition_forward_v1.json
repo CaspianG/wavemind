@@ -1,0 +1,56 @@
+{
+  "schema": "wavemind.crypto.forward-protocol.v1",
+  "name": "bybit_episode_transition_forward_v1",
+  "frozen_utc": "2026-07-27T00:00:00+00:00",
+  "evaluation_start_utc": "2026-07-28T00:00:00+00:00",
+  "hypothesis": "A frozen cross-asset transition model can distinguish a 48h rebound from continuation after a broad capitulation episode.",
+  "source": {
+    "venue": "Bybit",
+    "market": "linear perpetuals",
+    "bar_interval": "4h",
+    "price": "completed public klines",
+    "open_interest": "causally aligned public 4h open interest"
+  },
+  "horizon": "48h",
+  "event_policy": {
+    "return_feature": "return_12",
+    "return_quantile": 0.05,
+    "oi_feature": "oi_change_1",
+    "oi_quantile": 0.2,
+    "sampling": "one epoch-aligned decision every 48h",
+    "prediction_unit": "one global market episode"
+  },
+  "features": {
+    "selected_asset_aggregates": [
+      "mean",
+      "median",
+      "q10",
+      "q90",
+      "std",
+      "min",
+      "max"
+    ],
+    "market_context": true,
+    "future_values_allowed": false
+  },
+  "model": {
+    "family": "ExtraTreesClassifier",
+    "pca_components": 16,
+    "parameters": {
+      "n_estimators": 400,
+      "max_depth": 4,
+      "min_samples_leaf": 5,
+      "max_features": 0.5,
+      "class_weight": "balanced"
+    },
+    "random_seed": 2027
+  },
+  "admission_gate": {
+    "minimum_independent_episodes": 40,
+    "minimum_accuracy": 0.7,
+    "minimum_wilson_low_95": 0.65,
+    "minimum_supported_calendar_slice_accuracy": 0.65,
+    "minimum_uplift_over_frozen_majority": 0.05
+  },
+  "immutability": "No event threshold, feature, model parameter, confidence threshold, or admission rule may change after this protocol commit. Any change requires a new protocol version and a new forward period."
+}

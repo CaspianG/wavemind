@@ -388,6 +388,35 @@ Reproducible outputs:
 - `benchmarks/results/crypto/bybit_longitudinal_capitulation.json`
 - `benchmarks/results/crypto/bybit_longitudinal_capitulation.md`
 
+### Bounce-versus-continuation transition
+
+The next benchmark replaces correlated asset votes with one globally aligned
+market episode per forecast horizon. Rich price, OI, volatility, turnover, and
+cross-asset breadth features are calibrated before 2024. Model choice uses
+2024 only, while 2025-2026 is read once as the final split.
+
+| horizon | train | validation | final | selected model | final accuracy | Wilson low | majority | uplift | gate |
+|---|---:|---:|---:|---|---:|---:|---:|---:|:---:|
+| 24h | 127 | 59 | 84 | majority | 0.583 | 0.477 | 0.583 | +0.000 | no |
+| 48h | 63 | 31 | 36 | ExtraTrees | 0.667 | 0.503 | 0.528 | +0.139 | no |
+
+On 24h, validation correctly refuses to promote a learned model: k-NN later
+reaches `0.643` on the final split, but it was not the validation winner and
+therefore is not the reported policy. The direct WaveField head reaches only
+`0.524` final accuracy. On 48h, the selected tree model adds 13.9 percentage
+points over the train-frozen majority baseline, but support is below 40 and
+the 2025 calendar slice is only `0.565`. The strict 70% gate remains rejected.
+
+This closes the immediate transition-learning hypothesis without hiding model
+selection or counting each coin as an independent experiment. The 48h uplift
+is worth forward replication; it is not yet a trading claim.
+
+Reproducible outputs:
+
+- `benchmarks/crypto_episode_transition_benchmark.py`
+- `benchmarks/results/crypto/bybit_episode_transition.json`
+- `benchmarks/results/crypto/bybit_episode_transition.md`
+
 ### Universal full-coverage direction gate
 
 `benchmarks/crypto_orientation_memory_benchmark.py` tests the stronger claim
@@ -1119,9 +1148,14 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
     horizon is 48h at `0.622` across 45 market episodes, `+0.142` over the
     unconditional up rate, but Wilson low is `0.476`. The 24h primary reaches
     only `0.565`.
-42. Next: learn bounce-vs-continuation transitions at market-episode grain,
-    with a frozen future-period policy and episode-clustered uncertainty. The
-    model must beat the event detector and unconditional direction, not merely
-    re-rank correlated asset signals.
-43. Keep market research reports separate from the main README so memory
+42. Done, negative but informative: added a market-episode
+    bounce-vs-continuation benchmark with train before 2024, model selection
+    on 2024, and a one-read 2025-2026 final split. The 24h selector retains the
+    `0.583` majority baseline; the direct WaveField reaches only `0.524`.
+    The selected 48h ExtraTrees head reaches `0.667` on 36 episodes and adds
+    `0.139` over majority, but fails support, Wilson, and year stability.
+43. Next: preregister the 48h transition policy for a genuinely new forward
+    period and add a second long-history venue. No hyperparameter or confidence
+    threshold may be changed after the forward journal begins.
+44. Keep market research reports separate from the main README so memory
     benchmark evidence is never confused with trading performance.
