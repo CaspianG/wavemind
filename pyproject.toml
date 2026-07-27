@@ -49,8 +49,12 @@ ml = [
   "sentence-transformers>=3",
 ]
 multimodal = [
-  "sentence-transformers>=3",
+  "sentence-transformers[image]>=5.1,<6",
+  "transformers>=4.57,<6",
   "Pillow>=10",
+  "opencv-python-headless>=4.10",
+  "soundfile>=0.13",
+  "trimesh>=4.8",
 ]
 indexes = [
   "annoy>=1.17",

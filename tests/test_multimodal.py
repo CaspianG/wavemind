@@ -592,7 +592,7 @@ def test_precomputed_vectors_require_explicit_matching_space_ids(tmp_path):
         memory.close()
 
 
-def test_equal_dimension_different_embedding_spaces_fail_after_reload(tmp_path):
+def test_equal_dimension_different_embedding_spaces_are_isolated_after_reload(tmp_path):
     db_path = tmp_path / "space-reload.sqlite3"
     first = WaveMind(
         db_path=db_path,
@@ -638,13 +638,15 @@ def test_equal_dimension_different_embedding_spaces_fail_after_reload(tmp_path):
                 space_id="tests:clap-space.v1",
             ),
         )
-        with pytest.raises(CrossModalSpaceMismatchError, match="clip-space"):
+        assert (
             layer.query(
                 "must not compare equal-length vectors",
                 namespace="workspace",
                 query_vector=_one_hot(0),
                 query_space_id="tests:clap-space.v1",
             )
+            == []
+        )
     finally:
         second.close()
 

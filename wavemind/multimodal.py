@@ -26,6 +26,7 @@ _MODALITY_ALIASES: dict[str, tuple[str, ...]] = {
 }
 _TOKEN_RE = re.compile(r"[\w$.-]+", re.UNICODE)
 _CROSS_MODAL_SPACE_KEY = "cross_modal_space_id"
+_CROSS_MODAL_SPACE_TAG_PREFIX = "cross-modal-space:"
 _SUPPORTED_CROSS_MODAL_MODALITIES = ("text", *_MODALITY_ALIASES)
 
 
@@ -721,7 +722,16 @@ class CrossModalMemoryLayer:
             "cross_modal_embedding_dim": self.vector_dim,
             "cross_modal_vector": vector.astype(float).tolist(),
         }
-        tags = tuple(dict.fromkeys((*merged_payload.tags, merged_payload.kind, "multimodal")))
+        tags = tuple(
+            dict.fromkeys(
+                (
+                    *merged_payload.tags,
+                    merged_payload.kind,
+                    "multimodal",
+                    cross_modal_space_tag(self.space_id),
+                )
+            )
+        )
         return int(
             self.memory.remember(
                 merged_payload.text,
@@ -752,7 +762,9 @@ class CrossModalMemoryLayer:
             if target_modality
             else None
         )
-        required_tags = ["multimodal", modality] if modality else ["multimodal"]
+        required_tags = ["multimodal", cross_modal_space_tag(self.space_id)]
+        if modality:
+            required_tags.append(modality)
         records = self.memory.store.list(namespace=namespace, tags=required_tags)
         if not records:
             return []
@@ -2093,6 +2105,13 @@ def normalize_modality(value: Any) -> str:
         "knowledge_graph": "graph",
     }
     return aliases.get(text, text)
+
+
+def cross_modal_space_tag(space_id: str) -> str:
+    normalized = str(space_id).strip()
+    if not normalized:
+        raise CrossModalSpaceError("Cross-modal embedding space_id must not be empty.")
+    return f"{_CROSS_MODAL_SPACE_TAG_PREFIX}{normalized}"
 
 
 def normalize_timestamp(
