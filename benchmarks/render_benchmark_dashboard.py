@@ -268,9 +268,27 @@ def _multimodal_admission_panel(status: dict[str, Any]) -> str:
         ("Structured contract", summary.get("structured_status", "missing")),
         ("Requested evidence", summary.get("requested_evidence_status", "missing")),
         ("Required artifact", required.get("artifact", "")),
-        ("External modalities", summary.get("external_modality_count", 0)),
-        ("External payloads", summary.get("external_payload_count", 0)),
-        ("External queries", summary.get("external_query_count", 0)),
+        (
+            "Evidence modalities",
+            summary.get(
+                "evidence_modality_count",
+                summary.get("external_modality_count", 0),
+            ),
+        ),
+        (
+            "Evidence payloads",
+            summary.get(
+                "evidence_payload_count",
+                summary.get("external_payload_count", 0),
+            ),
+        ),
+        (
+            "Evidence queries",
+            summary.get(
+                "evidence_query_count",
+                summary.get("external_query_count", 0),
+            ),
+        ),
         ("Object store", requested.get("object_store", "")),
     ]
     table = ["<table class=\"compact\"><tbody>"]

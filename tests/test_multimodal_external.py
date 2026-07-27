@@ -103,7 +103,7 @@ def test_external_multimodal_evidence_runner_generates_admission_artifact(tmp_pa
     assert payload["errors"] == []
 
 
-def test_external_multimodal_evidence_unblocks_admission_when_thresholds_match(tmp_path):
+def test_precomputed_external_vectors_do_not_unlock_real_encoder_admission(tmp_path):
     manifest = _manifest(tmp_path)
     output = tmp_path / "benchmarks" / "multimodal_external_encoder_results.json"
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -124,9 +124,13 @@ def test_external_multimodal_evidence_unblocks_admission_when_thresholds_match(t
         max_encode_p95_ms=100.0,
     )
 
-    assert admission["status"] == "admitted"
-    assert admission["admitted"] is True
-    assert admission["summary"]["requested_evidence_status"] == "pass"
+    assert admission["status"] == "blocked"
+    assert admission["admitted"] is False
+    assert admission["summary"]["requested_evidence_status"] == "fail"
+    assert any(
+        "real or publicly licensed assets" in issue
+        for issue in admission["requested_evidence"]["issues"]
+    )
 
 
 def test_external_multimodal_evidence_fails_without_object_store(tmp_path):

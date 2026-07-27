@@ -69,11 +69,11 @@ results = layer.query(
 )
 ```
 
-Before trusting a production multimodal encoder, run the external-vector
-contract. It writes representative image, audio, table, event, video, 3D, and
-graph payloads through the real memory layer, then checks global retrieval,
-target-modality routing, persisted finite normalized vectors, provenance, and
-separation margin:
+To validate an explicitly precomputed-vector integration, run the external
+storage contract. It writes representative image, audio, table, event, video,
+3D, and graph payloads through the real memory layer, then checks global
+retrieval, target-modality routing, persisted finite normalized vectors,
+provenance, and separation margin:
 
 ```python
 from wavemind import WaveMind, validate_precomputed_cross_modal_contract
@@ -83,9 +83,10 @@ report = validate_precomputed_cross_modal_contract(memory)
 assert report.ok, report.failures
 ```
 
-The same contract is part of the scale-readiness and production-readiness gates,
-so external CLIP/audio/video/3D integrations must prove the storage and recall
-contract before they become published evidence.
+This proves storage and recall behavior only. It does not measure the encoder
+that produced the vectors and cannot unlock real-encoder production admission.
+External CLIP/audio/video/3D integrations should still run this contract before
+publication, then pass the separate real-encoder benchmark.
 
 For encoders that produce both payload and query vectors, run the active encoder
 health check as a deployment preflight. It probes all supported modalities,
@@ -104,8 +105,20 @@ report = check_cross_modal_encoder_health(encoder)
 assert report.ok, report.failures
 ```
 
-The checked-in structured-memory report now includes this health gate, so a
-multimodal backend can fail before it reaches production traffic.
+The checked-in structured-memory report includes this health gate, so a backend
+can fail before it reaches traffic. Descriptor-based health checks remain
+development checks, not production encoder evidence.
+
+`wavemind multimodal-admission` applies the stricter release boundary. Admission
+requires real local text, image, audio, video, and 3D encoders over at least
+1000 real or publicly licensed assets and 200 independent queries, with at least
+100 assets and 20 queries per modality. The evidence must include explicit
+compatible shared-space IDs, bidirectional text-to-media and media-to-text
+checks, per-modality precision and encoding budgets, persisted-vector parity,
+three stable runs, and a complete S3-compatible lifecycle. Local MinIO is a
+valid object-store target. Descriptor, filename, metadata, OCR-only,
+synthetic-vector, and precomputed-vector shortcuts are rejected as encoder
+evidence.
 
 For production media, keep large files in S3-compatible object storage and store
 a verified content-addressed manifest with the memory. This keeps SQLite/Postgres
@@ -154,8 +167,8 @@ results = layer.query("revenue chart", namespace="research", target_modality="im
 
 This backend loads local image files with Pillow and encodes text queries through
 the same sentence-transformers model. Remote assets, audio, video, and 3D
-payloads should either carry strong text descriptors or use the precomputed
-vector path until dedicated perception backends are benchmarked.
+payloads may use descriptors or precomputed vectors for development and storage
+integration, but those paths do not satisfy real-encoder admission.
 
 Supported payload helpers:
 

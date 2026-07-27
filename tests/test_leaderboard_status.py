@@ -433,7 +433,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
         row["id"] for row in payload["memory_os_admission"]["requirements"]
     }
     assert payload["multimodal_admission"]["schema"] == (
-        "wavemind.multimodal_admission.v1"
+        "wavemind.multimodal_admission.v2"
     )
     assert payload["multimodal_admission"]["status"] in {
         "admitted",
@@ -442,11 +442,11 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     }
     assert payload["multimodal_admission"]["admitted"] is False
     assert payload["multimodal_admission"]["claim_boundary"] == (
-        "external_multimodal_encoder_evidence_required"
+        "real_multimodal_encoder_and_lifecycle_evidence_required"
     )
     assert payload["multimodal_admission"]["summary"]["structured_status"] == "pass"
     assert payload["multimodal_admission"]["required_evidence"]["id"] == (
-        "external_multimodal_encoder"
+        "real_multimodal_encoder"
     )
     assert payload["multimodal_admission"]["requested_evidence"]["status"] == (
         "action_required"
@@ -569,7 +569,7 @@ def test_checked_in_leaderboard_status_is_present_and_machine_readable():
     assert payload["cost_efficiency"]["schema"] == "wavemind.cost_efficiency_leaderboard.v1"
     assert payload["memory_os_admission"]["schema"] == "wavemind.memory_os_admission.v1"
     assert payload["multimodal_admission"]["schema"] == (
-        "wavemind.multimodal_admission.v1"
+        "wavemind.multimodal_admission.v2"
     )
     assert payload["production_scale_run_plan"]["schema"] == "wavemind.production_scale_run_plan.v1"
     assert payload["memory_os_intelligence"]["schema"] == (

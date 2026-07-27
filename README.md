@@ -484,8 +484,17 @@ alerts.
 
 WaveMind supports typed image, audio, video, 3D, table, temporal-event, and
 knowledge-graph payloads. Current checked evidence proves the structured
-contract and external/precomputed vector path; it does not claim broad raw
-encoder quality for every modality.
+contract and the explicitly precomputed-vector storage path. Precomputed
+vectors do not prove encoder quality and cannot unlock production multimodal
+admission.
+
+The production gate requires real local text, image, audio, video, and 3D
+encoders over at least 1000 real or publicly licensed assets and 200 independent
+queries. It also requires explicit compatible shared spaces, bidirectional
+cross-modal checks, per-modality quality and encoding budgets, stable repeated
+verdicts, and a verified S3-compatible lifecycle. Local MinIO is valid;
+descriptor, filename, metadata, OCR-only, synthetic-vector, and precomputed
+shortcuts are rejected as encoder evidence.
 
 See [Multimodal And Storage](docs/MULTIMODAL_AND_STORAGE.md) for payload schemas,
 cross-modal retrieval, temporal and graph queries, storage backends, object
@@ -626,16 +635,15 @@ If you already use Chroma for local memory, see the practical migration guide:
   is a single-node flat-index path; use `ReplicatedWaveMind` or external
   database/service replication when that is not enough.
 - The current cross-modal layer supports deterministic descriptor embeddings,
-  a strict precomputed-vector path for externally computed CLIP/audio/video/3D
-  embeddings, and an optional sentence-transformers backend for CLIP-style local
-  image/text retrieval. Audio, video, and 3D perception still require external
-  embeddings or strong descriptors until dedicated backends are benchmarked.
-- `wavemind multimodal-admission` keeps production multimodal claims locked
-  until an external encoder/object-store benchmark artifact proves real
-  image/audio/video/3D quality, cross-modal routing, object-store verification,
-  persistence, provenance, p99 query latency, encode p95, and error-rate
-  thresholds. Use `wavemind multimodal-external-evidence` to generate that
-  artifact from a real external manifest; no fixture unlocks this claim.
+  a strict precomputed-vector storage path, and an optional
+  sentence-transformers backend for CLIP-style local image/text retrieval.
+  Those integration paths do not count as real audio, video, or 3D encoder
+  evidence.
+- `wavemind multimodal-admission` keeps production claims locked until a real
+  local benchmark proves text/image/audio/video/3D quality, compatible shared
+  spaces, persistence, provenance, lifecycle integrity, p99 retrieval latency,
+  per-modality encoding budgets, and zero errors. The external precomputed
+  runner verifies storage and retrieval only; no fixture unlocks this claim.
 - The `quantized` backend is an explicit int8 candidate-index experiment. It
   reduces vector precision, stores the local candidate matrix compactly, uses an
   int32 accumulator to avoid dot-product overflow, and must be benchmarked per

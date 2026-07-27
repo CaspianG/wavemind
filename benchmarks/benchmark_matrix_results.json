@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-20T07:09:38Z",
-  "source_ref": "23edad3b172f",
+  "generated_at": "2026-07-27T11:43:19Z",
+  "source_ref": "df43a57dcb50",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -2165,14 +2165,14 @@
           "failover_hit_rate": 1.0,
           "delete_suppression_rate": 1.0,
           "repair_repaired_total": 1,
-          "p99_operation_ms": 8351.044338999998,
+          "p99_operation_ms": 9365.52459400002,
           "slo_pass": true,
           "batch_query_success": true,
           "batch_query_size": 24,
           "batch_query_http_requests": "24 -> 1",
           "batch_query_request_reduction_ratio": 0.9583333333333334,
-          "batch_query_p99_ms": 186.78031600001077,
-          "batch_query_total_speedup": 1.0791519808749621
+          "batch_query_p99_ms": 199.6035530000313,
+          "batch_query_total_speedup": 0.9552733362409072
         }
       },
       "target": "Keep the service-node workload and external batch recall green against real API processes, then repeat it against remote Kubernetes or serverless nodes before claiming external-cluster production readiness.",
@@ -2201,9 +2201,9 @@
           "status": "pass",
           "environment": "kind-multinode-ci",
           "evidence_source": "github-actions-kind",
-          "source_ref": "29f84dc226c5fd11ae9696d04fa48ffb1ae371e3",
-          "workflow_run_id": "29165761261",
-          "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29165761261",
+          "source_ref": "96c364d6db176d46148599f0350aa092f9347bb7",
+          "workflow_run_id": "29631598530",
+          "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29631598530",
           "node_count": 4,
           "operator_pod_count": 2,
           "operator_node_count": 2,
@@ -2251,22 +2251,22 @@
           "status": "pass",
           "environment": "kind-multinode-network-ci",
           "evidence_source": "github-actions-kind-physical-node-pause",
-          "source_ref": "29f84dc226c5fd11ae9696d04fa48ffb1ae371e3",
-          "workflow_run_id": "29165761261",
-          "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29165761261",
+          "source_ref": "96c364d6db176d46148599f0350aa092f9347bb7",
+          "workflow_run_id": "29631598530",
+          "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29631598530",
           "service_node_count": 4,
           "zone_count": 3,
           "failure_method": "docker-pause-kind-worker",
           "target_worker": "wavemind-ci-worker2",
           "target_zone": "zone-b",
           "target_data_pods": [
-            "wavemind-ci-2"
+            "wavemind-ci-1"
           ],
-          "outage_duration_ms": 9431.139,
+          "outage_duration_ms": 10234.947,
           "seed_memories": 256,
           "outage_hit_rate": 1.0,
           "failed_nodes_during_outage": [
-            "wavemind-ci-2"
+            "wavemind-ci-1"
           ],
           "recovery_hit_rate": 1.0,
           "failed_nodes_after_recovery": [],
@@ -2305,15 +2305,15 @@
           "status": "pass",
           "environment": "kind-multizone-active-active-ci",
           "evidence_source": "github-actions-kind-physical-region-worker-pause",
-          "source_ref": "29f84dc226c5fd11ae9696d04fa48ffb1ae371e3",
-          "workflow_run_id": "29165761261",
-          "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29165761261",
+          "source_ref": "96c364d6db176d46148599f0350aa092f9347bb7",
+          "workflow_run_id": "29631598530",
+          "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29631598530",
           "region_count": 3,
           "zone_count": 3,
           "all_regions_use_pvc": true,
           "failure_method": "docker-pause-kind-worker",
           "target_region": "region-b",
-          "outage_duration_ms": 9658.868,
+          "outage_duration_ms": 9566.665,
           "seed_writes": 48,
           "seed_convergence_rate": 1.0,
           "outage_unavailable_regions": [
@@ -2359,22 +2359,22 @@
           "status": "pass",
           "environment": "kind-multizone-serverless-lifecycle-ci",
           "evidence_source": "github-actions-kind-external-state-manual-scale-lifecycle",
-          "source_ref": "29f84dc226c5fd11ae9696d04fa48ffb1ae371e3",
-          "workflow_run_id": "29165761261",
-          "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29165761261",
+          "source_ref": "96c364d6db176d46148599f0350aa092f9347bb7",
+          "workflow_run_id": "29631598530",
+          "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29631598530",
           "passed_checks": 13,
           "check_count": 13,
           "persistent_volume_claims": 3,
-          "cold_start_ms": 5055.034,
+          "cold_start_ms": 4882.522,
           "restored_after_zero_rate": 1.0,
           "ready_replicas": 3,
           "zone_count": 3,
           "visible_replicas": 3,
           "suppressed_replicas": 3,
-          "write_propagation_ms": 1136.9370459999573,
-          "delete_propagation_ms": 884.7577889999911,
-          "burst_requests_per_second": 40.74436448541339,
-          "burst_p99_ms": 1891.9401950000747,
+          "write_propagation_ms": 1137.3218360000692,
+          "delete_propagation_ms": 853.7812759999497,
+          "burst_requests_per_second": 37.74615423150393,
+          "burst_p99_ms": 1488.5377629999539,
           "final_restore_rate": 1.0,
           "claim_boundary": "Ephemeral non-loopback Kubernetes lifecycle evidence with external durable state. It proves scale-to-zero state safety and multi-replica behavior, but does not unlock remote managed Knative/KEDA production admission."
         }
@@ -2405,13 +2405,13 @@
           "status": "pass",
           "environment": "kind-independent-namespace-postgres-qdrant-dr-ci",
           "evidence_source": "github-actions-kind-pg-dump-independent-restore",
-          "source_ref": "29f84dc226c5fd11ae9696d04fa48ffb1ae371e3",
-          "workflow_run_id": "29165761261",
-          "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29165761261",
+          "source_ref": "96c364d6db176d46148599f0350aa092f9347bb7",
+          "workflow_run_id": "29631598530",
+          "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29631598530",
           "passed_checks": 10,
           "check_count": 10,
           "backup_format": "pg_dump-custom",
-          "backup_bytes": 1016642,
+          "backup_bytes": 1016796,
           "source_state_stopped": true,
           "recovery_pvcs": 3,
           "restored_rate": 1.0,
@@ -2419,7 +2419,7 @@
           "index_expected_records": 24,
           "index_vector_records": 24,
           "restored_after_api_replacement_rate": 1.0,
-          "restore_elapsed_ms": 23338.114,
+          "restore_elapsed_ms": 20899.928,
           "claim_boundary": "Ephemeral non-loopback Kubernetes disaster-recovery evidence. It proves logical PostgreSQL backup/restore and Qdrant rebuild in an independent namespace, not managed-cloud PITR or multi-region DR."
         }
       },
@@ -2497,13 +2497,13 @@
     },
     {
       "id": "external_multimodal_evidence_runner",
-      "name": "External multimodal evidence runner",
-      "category": "production-scale",
+      "name": "Precomputed multimodal storage contract",
+      "category": "multimodal-contract",
       "status": "runner-ready",
       "source": "wavemind/multimodal_external.py",
       "dataset": "User-supplied external multimodal manifest with shared-space asset/query vectors, s3 object-store URIs, verified sha256/byte-size metadata, encode p95 values, and target relevance labels.",
       "competitors": [
-        "WaveMind external multimodal encoder pipeline"
+        "none"
       ],
       "metrics": [
         "precision_at_1",
@@ -2525,8 +2525,41 @@
           "requires": "wavemind multimodal-external-evidence --manifest external_multimodal_manifest.json --write-artifacts --output benchmarks/multimodal_external_encoder_results.json"
         }
       },
-      "target": "Generate benchmarks/multimodal_external_encoder_results.json from a real external CLIP/audio/video/3D encoder manifest with >=1000 payloads, >=200 queries, precision@1 >=0.90, cross-modal precision@1 >=0.90, object-store verification >=0.99, and p99 <=250 ms.",
-      "next_step": "Run the external multimodal manifest path against real s3-backed assets and then let wavemind multimodal-admission evaluate the produced artifact."
+      "target": "Keep this runner as a strict persistence/provenance contract for externally supplied vectors; it must not unlock real-encoder admission.",
+      "next_step": "Use the real local multimodal benchmark for production admission. Precomputed vectors remain an explicit integration path only."
+    },
+    {
+      "id": "local_multimodal_encoder_benchmark",
+      "name": "Real local multimodal encoder benchmark",
+      "category": "multimodal-memory",
+      "status": "planned",
+      "source": "planned local open-source encoder runner",
+      "dataset": "Pinned public text, image, audio, video, and 3D assets with checked manifests, ground truth, and MinIO lifecycle evidence.",
+      "competitors": [
+        "WaveMind Core",
+        "WaveMind multimodal shared-space retrieval"
+      ],
+      "metrics": [
+        "macro_precision_at_1",
+        "cross_modal_precision_at_1",
+        "mixed_multimodal_precision_at_1",
+        "per_modality_precision_at_1",
+        "persisted_vector_parity",
+        "retrieval_p99_ms",
+        "per_modality_encode_p95_ms",
+        "batch_throughput_assets_per_second",
+        "lifecycle_checks",
+        "repeatability"
+      ],
+      "current": {
+        "Multimodal admission": {
+          "status": "plan_only",
+          "artifact": "benchmarks/multimodal_admission_results.json",
+          "claim_boundary": "real_multimodal_encoder_and_lifecycle_evidence_required"
+        }
+      },
+      "target": "Admit only after >=1000 real/public assets and >=200 independent queries cover text, image, audio, video, and 3D with explicit shared spaces, per-modality budgets, MinIO lifecycle safety, and stable repeated verdicts.",
+      "next_step": "Implement the real local encoder registry and benchmark runner; descriptor, filename, metadata, OCR-only, synthetic-vector, and precomputed-vector shortcuts are forbidden."
     },
     {
       "id": "memory_os_policy_evolution",
@@ -2642,18 +2675,18 @@
           "passed_count": 7,
           "check_count": 7,
           "failed_check_ids": [],
-          "memory_os_task_success": 1,
+          "memory_os_task_success": 1.0,
           "baseline_task_success": 0.875,
           "task_success_uplift": 0.125,
-          "memory_os_stale_error_rate": 0,
+          "memory_os_stale_error_rate": 0.0,
           "baseline_stale_error_rate": 0.125,
           "stale_suppression_uplift": 0.125,
-          "memory_os_p95_latency_ms": 4.455400005099364,
-          "baseline_p95_latency_ms": 4.883599991444498,
-          "p95_latency_delta_ms": -0.4281999863451347,
-          "p95_latency_regression_ratio": -0.08768121613057815,
-          "cold_p95_latency_delta_ms": -0.11059999815188348,
-          "cold_p95_latency_regression_ratio": -0.02268717911403815
+          "memory_os_p95_latency_ms": 3.2509000011486933,
+          "baseline_p95_latency_ms": 3.3573000036994927,
+          "p95_latency_delta_ms": -0.1064000025507994,
+          "p95_latency_regression_ratio": -0.031692134284560386,
+          "cold_p95_latency_delta_ms": 0.02510000194888562,
+          "cold_p95_latency_regression_ratio": 0.007497237661467624
         }
       },
       "target": "Require positive Memory OS uplift over WaveMind baseline while p95 stays within both the 20 percent and 5 ms regression limits.",
