@@ -75,6 +75,7 @@ def test_longmemeval_cli_writes_json(tmp_path):
             str(path),
             "--engines",
             "wavemind",
+            "memory-os",
             "static",
             "--top-k",
             "2",
@@ -95,3 +96,6 @@ def test_longmemeval_cli_writes_json(tmp_path):
     assert payload["scenario"]["queries"] == 1
     assert payload["scenario"]["granularity"] == "session"
     assert payload["results"][0]["engine"] == "WaveMind"
+    assert payload["results"][1]["engine"] == "WaveMind + Memory OS"
+    assert payload["results"][1]["execution_mode"] == "memory_os_direct_sequential"
+    assert payload["results"][1]["worker_runs"] == 1

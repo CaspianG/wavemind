@@ -132,6 +132,33 @@ def test_static_vector_baseline_respects_query_namespace():
     assert metrics.stale_suppression == 1.0
 
 
+def test_memory_os_runner_executes_worker_in_sequential_workload():
+    from benchmarks.long_memory_evidence_benchmark import (
+        build_synthetic_dataset,
+        run_wavemind_memory_os,
+    )
+    from wavemind.encoders import HashingTextEncoder
+
+    dataset = build_synthetic_dataset(memory_count=40)
+    metrics = run_wavemind_memory_os(
+        dataset,
+        HashingTextEncoder(vector_dim=64),
+        top_k=3,
+    )
+
+    assert metrics.engine == "WaveMind + Memory OS"
+    assert metrics.execution_mode == "memory_os_direct_sequential"
+    assert 0 < metrics.worker_runs <= len(dataset.queries)
+    assert metrics.maintenance_total_ms > 0.0
+    assert metrics.maintenance_avg_ms > 0.0
+    assert metrics.end_to_end_p95_ms >= metrics.p95_latency_ms
+    assert metrics.cache_misses >= len(dataset.queries)
+    assert metrics.priority_predictions == 0
+    assert metrics.memory_os_policy_mode == "feedback_free_safe"
+    assert metrics.prewarmed_queries > 0
+    assert metrics.worker_errors == 0
+
+
 def test_long_memory_cli_writes_json_for_wavemind(tmp_path):
     output = tmp_path / "long-memory-result.json"
     project_root = Path(__file__).resolve().parents[1]
@@ -169,3 +196,41 @@ def test_long_memory_cli_writes_json_for_wavemind(tmp_path):
     assert payload["results"][0]["engine"] == "WaveMind"
     assert "context_budget_saved" in payload["results"][0]
     assert "category_success" in payload["results"][0]
+
+
+def test_long_memory_cli_supports_direct_memory_os(tmp_path):
+    output = tmp_path / "long-memory-os-result.json"
+    project_root = Path(__file__).resolve().parents[1]
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(project_root) + os.pathsep + env.get("PYTHONPATH", "")
+
+    subprocess.run(
+        [
+            sys.executable,
+            "benchmarks/long_memory_evidence_benchmark.py",
+            "--dataset",
+            "synthetic",
+            "--engines",
+            "wavemind",
+            "memory-os",
+            "--memories",
+            "40",
+            "--top-k",
+            "3",
+            "--output",
+            str(output),
+        ],
+        cwd=project_root,
+        env=env,
+        text=True,
+        encoding="utf-8",
+        capture_output=True,
+        check=True,
+    )
+
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    memory_os = payload["results"][1]
+    assert memory_os["engine"] == "WaveMind + Memory OS"
+    assert memory_os["execution_mode"] == "memory_os_direct_sequential"
+    assert 0 < memory_os["worker_runs"] <= payload["scenario"]["queries"]
+    assert memory_os["memory_os_policy_mode"] == "feedback_free_safe"

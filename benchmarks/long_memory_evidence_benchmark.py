@@ -7,6 +7,7 @@ import statistics
 import sys
 import tempfile
 import time
+from collections import Counter
 from collections.abc import Iterable as IterableABC
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -18,7 +19,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from wavemind import WaveMind
+from wavemind import HotMemoryCache, MemoryOSWorker, WaveMind, query_with_cache
 from wavemind.encoders import create_text_encoder
 
 
@@ -64,6 +65,19 @@ class EvidenceMetrics:
     avg_latency_ms: float
     p95_latency_ms: float
     queries: int
+    execution_mode: str = "retrieval"
+    worker_runs: int = 0
+    maintenance_total_ms: float = 0.0
+    maintenance_avg_ms: float = 0.0
+    end_to_end_p95_ms: float = 0.0
+    cache_hits: int = 0
+    cache_misses: int = 0
+    priority_predictions: int = 0
+    forgetting_demotions: int = 0
+    memory_os_policy_mode: str = ""
+    prewarmed_queries: int = 0
+    predictive_prefetch_warmed: int = 0
+    worker_errors: int = 0
 
 
 class CachedTextEncoder:
@@ -206,8 +220,27 @@ def _full_context_tokens(dataset: EvidenceDataset) -> int:
     return sum(_estimate_tokens(memory.text) for memory in dataset.memories)
 
 
-def _to_metrics(dataset: EvidenceDataset, rankings: dict[str, list[str]], texts: dict[str, list[str]], latencies: list[float], top_k: int, engine: str) -> EvidenceMetrics:
-    return compute_evidence_metrics(dataset.queries, rankings, texts, latencies, _full_context_tokens(dataset), top_k, engine)
+def _to_metrics(
+    dataset: EvidenceDataset,
+    rankings: dict[str, list[str]],
+    texts: dict[str, list[str]],
+    latencies: list[float],
+    top_k: int,
+    engine: str,
+    **runtime: object,
+) -> EvidenceMetrics:
+    metrics = compute_evidence_metrics(
+        dataset.queries,
+        rankings,
+        texts,
+        latencies,
+        _full_context_tokens(dataset),
+        top_k,
+        engine,
+    )
+    values = asdict(metrics)
+    values.update(runtime)
+    return EvidenceMetrics(**values)
 
 
 def run_wavemind(dataset: EvidenceDataset, encoder, top_k: int) -> EvidenceMetrics:
@@ -228,6 +261,155 @@ def run_wavemind(dataset: EvidenceDataset, encoder, top_k: int) -> EvidenceMetri
         finally:
             memory.close()
     return _to_metrics(dataset, rankings, texts, latencies, top_k, "WaveMind")
+
+
+def run_wavemind_memory_os(
+    dataset: EvidenceDataset,
+    encoder,
+    top_k: int,
+) -> EvidenceMetrics:
+    """Run retrieval and Memory OS maintenance in the same sequential workload.
+
+    Maintenance runs only after a query has been scored. This prevents the
+    current query from tuning its own result. Public evidence labels are never
+    fed back into the system. Without explicit user feedback, priority mutation
+    and forgetting stay disabled so an early retrieval error cannot reinforce
+    itself; audited prewarm and predictive prefetch still execute.
+    """
+
+    with tempfile.TemporaryDirectory() as tmp:
+        memory = WaveMind(
+            db_path=Path(tmp) / "long-memory-os.sqlite3",
+            encoder=encoder,
+            index_kind="numpy",
+            score_threshold=0.0,
+            evolve_on_feed=0,
+            vector_weight=0.78,
+            field_weight=0.06,
+            priority_weight=0.16,
+            lexical_weight=0.35,
+            short_query_lexical_weight=1.5,
+            rerank_k=max(top_k, 30),
+            persist_access_on_query=False,
+            query_feedback_strength=0.0,
+            audit_queries=True,
+        )
+        cache = HotMemoryCache(capacity=max(128, len(dataset.queries) * 2), ttl_seconds=300.0)
+        try:
+            for item in dataset.memories:
+                memory.remember(
+                    item.text,
+                    namespace=item.namespace,
+                    tags=item.tags,
+                    ttl_seconds=item.ttl_seconds,
+                    priority=item.priority,
+                    metadata={"evidence_id": item.id, "timestamp": item.timestamp},
+                )
+            rankings: dict[str, list[str]] = {}
+            texts: dict[str, list[str]] = {}
+            retrieval_latencies: list[float] = []
+            end_to_end_latencies: list[float] = []
+            maintenance_total_ms = 0.0
+            worker_reports: list[dict[str, object]] = []
+            queries_per_namespace = Counter(query.namespace for query in dataset.queries)
+            seen_per_namespace: Counter[str] = Counter()
+            maintenance_interval = 8
+            for query in dataset.queries:
+                query_started = time.perf_counter()
+                results = query_with_cache(
+                    memory,
+                    cache,
+                    query.text,
+                    namespace=query.namespace,
+                    top_k=top_k,
+                )
+                retrieval_ms = (time.perf_counter() - query_started) * 1000.0
+                retrieval_latencies.append(retrieval_ms)
+                rankings[query.id] = [
+                    str(result.metadata.get("evidence_id", ""))
+                    for result in results
+                ]
+                texts[query.id] = [result.text for result in results]
+
+                seen_per_namespace[query.namespace] += 1
+                namespace_finished = (
+                    seen_per_namespace[query.namespace]
+                    == queries_per_namespace[query.namespace]
+                )
+                should_run_maintenance = (
+                    seen_per_namespace[query.namespace] % maintenance_interval == 0
+                    or namespace_finished
+                )
+                maintenance_ms = 0.0
+                if should_run_maintenance:
+                    maintenance_started = time.perf_counter()
+                    report = MemoryOSWorker(memory, cache).run_once(
+                        namespace=query.namespace,
+                        min_frequency=1,
+                        max_hot_queries=8,
+                        top_k=top_k,
+                        consolidate_steps=0,
+                        consolidate_concepts=False,
+                        predict_priorities=False,
+                        adaptive_forgetting=False,
+                        predictive_prefetch=True,
+                        architecture_advice=False,
+                    )
+                    maintenance_ms = (
+                        time.perf_counter() - maintenance_started
+                    ) * 1000.0
+                    worker_reports.append(report.as_dict())
+                maintenance_total_ms += maintenance_ms
+                end_to_end_latencies.append(retrieval_ms + maintenance_ms)
+            cache_stats = cache.stats()
+        finally:
+            memory.close()
+
+    ordered_end_to_end = sorted(end_to_end_latencies)
+    end_to_end_index = (
+        min(len(ordered_end_to_end) - 1, int(len(ordered_end_to_end) * 0.95))
+        if ordered_end_to_end
+        else 0
+    )
+    return _to_metrics(
+        dataset,
+        rankings,
+        texts,
+        retrieval_latencies,
+        top_k,
+        "WaveMind + Memory OS",
+        execution_mode="memory_os_direct_sequential",
+        worker_runs=len(worker_reports),
+        maintenance_total_ms=maintenance_total_ms,
+        maintenance_avg_ms=maintenance_total_ms / max(1, len(worker_reports)),
+        end_to_end_p95_ms=(
+            ordered_end_to_end[end_to_end_index] if ordered_end_to_end else 0.0
+        ),
+        cache_hits=cache_stats.hits,
+        cache_misses=cache_stats.misses,
+        priority_predictions=sum(
+            int(report.get("priority_predictions") or 0)
+            for report in worker_reports
+        ),
+        forgetting_demotions=sum(
+            int(report.get("forgetting_demotions") or 0)
+            for report in worker_reports
+        ),
+        memory_os_policy_mode="feedback_free_safe",
+        prewarmed_queries=sum(
+            int(dict(report.get("prewarm") or {}).get("warmed") or 0)
+            for report in worker_reports
+        ),
+        predictive_prefetch_warmed=sum(
+            int(dict(report.get("predictive_prefetch") or {}).get("warmed") or 0)
+            for report in worker_reports
+        ),
+        worker_errors=sum(
+            int(dict(report.get("prewarm") or {}).get("errors") or 0)
+            + int(dict(report.get("predictive_prefetch") or {}).get("errors") or 0)
+            for report in worker_reports
+        ),
+    )
 
 
 def run_static_vector(dataset: EvidenceDataset, encoder, top_k: int) -> EvidenceMetrics:
@@ -370,7 +552,7 @@ def run_benchmark(dataset_kind: str, engines: Iterable[str], memory_count: int =
     dataset = load_dataset(dataset_kind, memory_count)
     base_encoder = create_text_encoder(kind=encoder_kind, vector_dim=384)
     encoder = cache_encoder_for_dataset(dataset, base_encoder)
-    runners = {"wavemind": run_wavemind, "static": run_static_vector, "static-vector": run_static_vector, "chroma": run_chroma_static, "chroma-static": run_chroma_static, "qdrant": run_qdrant_static, "qdrant-static": run_qdrant_static}
+    runners = {"wavemind": run_wavemind, "memory-os": run_wavemind_memory_os, "wavemind-memory-os": run_wavemind_memory_os, "static": run_static_vector, "static-vector": run_static_vector, "chroma": run_chroma_static, "chroma-static": run_chroma_static, "qdrant": run_qdrant_static, "qdrant-static": run_qdrant_static}
     results = []
     for engine in engines:
         key = engine.lower()
@@ -391,7 +573,7 @@ def print_table(payload: dict) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", default="synthetic")
-    parser.add_argument("--engines", nargs="+", choices=["wavemind", "static", "static-vector", "chroma", "chroma-static", "qdrant", "qdrant-static"], default=["wavemind", "static"])
+    parser.add_argument("--engines", nargs="+", choices=["wavemind", "memory-os", "wavemind-memory-os", "static", "static-vector", "chroma", "chroma-static", "qdrant", "qdrant-static"], default=["wavemind", "static"])
     parser.add_argument("--encoder", choices=["hash", "sentence"], default="hash")
     parser.add_argument("--memories", type=int, default=200)
     parser.add_argument("--top-k", type=int, default=5)

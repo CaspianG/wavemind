@@ -20,6 +20,7 @@ from benchmarks.long_memory_evidence_benchmark import (
     run_qdrant_static,
     run_static_vector,
     run_wavemind,
+    run_wavemind_memory_os,
 )
 from wavemind.encoders import create_text_encoder
 
@@ -260,6 +261,8 @@ def run_benchmark(
     encoder = cache_encoder_for_dataset(dataset, base_encoder)
     runners = {
         "wavemind": run_wavemind,
+        "memory-os": run_wavemind_memory_os,
+        "wavemind-memory-os": run_wavemind_memory_os,
         "static": run_static_vector,
         "static-vector": run_static_vector,
         "chroma": run_chroma_static,
@@ -320,7 +323,7 @@ def main() -> int:
     parser.add_argument(
         "--engines",
         nargs="+",
-        choices=["wavemind", "static", "static-vector", "chroma", "chroma-static", "qdrant", "qdrant-static"],
+        choices=["wavemind", "memory-os", "wavemind-memory-os", "static", "static-vector", "chroma", "chroma-static", "qdrant", "qdrant-static"],
         default=["wavemind", "static"],
     )
     parser.add_argument("--encoder", choices=["hash", "sentence"], default="hash")
