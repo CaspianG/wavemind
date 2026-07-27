@@ -70,6 +70,10 @@ class _TextModel:
 
 class _FakeClapProcessor:
     feature_extractor = SimpleNamespace(sampling_rate=48000)
+    tokenizer = SimpleNamespace(model_max_length=512)
+
+    def __init__(self):
+        self.text_calls = []
 
     def __call__(
         self,
@@ -79,8 +83,17 @@ class _FakeClapProcessor:
         sampling_rate=None,
         return_tensors=None,
         padding=None,
+        truncation=None,
+        max_length=None,
     ):
         if text is not None:
+            self.text_calls.append(
+                {
+                    "text": list(text),
+                    "truncation": truncation,
+                    "max_length": max_length,
+                }
+            )
             return {"texts": list(text)}
         return {
             "audio_values": list(audio),
@@ -183,6 +196,30 @@ def test_real_local_backends_require_pinned_revisions():
             processor=_FakeClapProcessor(),
             inference_context=no_inference_context,
         )
+
+
+def test_clap_text_encoding_always_truncates_to_model_limit():
+    backends = _backends()
+    long_text = "bell " * 700
+
+    vector = backends.clap.encode_payload(
+        MemoryPayload(kind="text", text=long_text),
+        long_text,
+    )
+    vectors = backends.clap.encode_payloads(
+        [
+            MemoryPayload(kind="text", text=long_text),
+            MemoryPayload(kind="text", text="bell"),
+        ]
+    )
+
+    assert vector.shape == (4,)
+    assert len(vectors) == 2
+    assert backends.clap.processor.text_calls
+    assert all(
+        call["truncation"] is True and call["max_length"] == 512
+        for call in backends.clap.processor.text_calls
+    )
 
 
 def test_real_local_backends_reject_precomputed_vector_shortcuts(tmp_path):

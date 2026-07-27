@@ -1297,6 +1297,8 @@ def _processor_call(
     }
     if modality == "text":
         options["text"] = value
+        options["truncation"] = True
+        options["max_length"] = _processor_text_max_length(processor)
     elif modality == "audio":
         signature = inspect.signature(processor.__call__)
         parameter = "audio" if "audio" in signature.parameters else "audios"
@@ -1310,6 +1312,18 @@ def _processor_call(
             "CLAP processor returned a non-mapping input batch."
         )
     return result
+
+
+def _processor_text_max_length(processor: Any) -> int:
+    tokenizer = getattr(processor, "tokenizer", None)
+    value = getattr(tokenizer, "model_max_length", None)
+    try:
+        resolved = int(value)
+    except (TypeError, ValueError):
+        resolved = 512
+    if resolved <= 0 or resolved > 1_000_000:
+        return 512
+    return min(resolved, 512)
 
 
 def _torch_inference_context() -> ContextManager[Any]:
