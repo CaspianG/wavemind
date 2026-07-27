@@ -13,10 +13,12 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from benchmarks.long_memory_evidence_benchmark import (
+    BENCHMARK_FIELD,
     EvidenceDataset,
     EvidenceQuery,
     LongMemory,
     cache_encoder_for_dataset,
+    create_benchmark_encoder,
     run_chroma_static,
     run_qdrant_static,
     run_static_vector,
@@ -24,7 +26,6 @@ from benchmarks.long_memory_evidence_benchmark import (
     run_wavemind_memory_os,
     repository_commit,
 )
-from wavemind.encoders import create_text_encoder
 
 
 SOURCE_URL = "https://github.com/xiaowu0162/LongMemEval"
@@ -267,7 +268,7 @@ def run_benchmark(
         limit_queries=limit_queries,
         include_abstention=include_abstention,
     )
-    base_encoder = create_text_encoder(kind=encoder_kind, vector_dim=384)
+    base_encoder = create_benchmark_encoder(encoder_kind, vector_dim=384)
     encoder = cache_encoder_for_dataset(dataset, base_encoder)
     runners = {
         "wavemind": run_wavemind,
@@ -310,8 +311,14 @@ def run_benchmark(
             "class": type(base_encoder).__name__,
             "cached": True,
             "vector_dim": getattr(encoder, "vector_dim", None),
+            "char_ngram_weight": getattr(
+                base_encoder,
+                "char_ngram_weight",
+                None,
+            ),
             "note": "All engines receive embeddings from the same WaveMind encoder.",
         },
+        "field": BENCHMARK_FIELD,
         "results": results,
     }
 
@@ -339,7 +346,11 @@ def main() -> int:
         choices=["wavemind", "memory-os", "wavemind-memory-os", "static", "static-vector", "chroma", "chroma-static", "qdrant", "qdrant-static"],
         default=["wavemind", "static"],
     )
-    parser.add_argument("--encoder", choices=["hash", "sentence"], default="hash")
+    parser.add_argument(
+        "--encoder",
+        choices=["hash", "hash-token", "sentence"],
+        default="hash",
+    )
     parser.add_argument("--granularity", choices=["session", "turn"], default="session")
     parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument("--limit-queries", type=int, default=None)

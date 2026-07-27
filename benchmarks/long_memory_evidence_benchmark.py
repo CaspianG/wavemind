@@ -21,7 +21,10 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from wavemind import HotMemoryCache, MemoryOSWorker, WaveMind, query_with_cache
-from wavemind.encoders import create_text_encoder
+from wavemind.encoders import HashingTextEncoder, create_text_encoder
+
+
+BENCHMARK_FIELD = {"width": 32, "height": 32, "layers": 2}
 
 
 def repository_commit() -> str:
@@ -35,6 +38,15 @@ def repository_commit() -> str:
         ).strip()
     except Exception:
         return "unknown"
+
+
+def create_benchmark_encoder(kind: str, *, vector_dim: int = 384):
+    if kind == "hash-token":
+        return HashingTextEncoder(
+            vector_dim=vector_dim,
+            char_ngram_weight=0.0,
+        )
+    return create_text_encoder(kind=kind, vector_dim=vector_dim)
 
 
 @dataclass(frozen=True)
@@ -265,7 +277,22 @@ def _to_metrics(
 
 def run_wavemind(dataset: EvidenceDataset, encoder, top_k: int) -> EvidenceMetrics:
     with tempfile.TemporaryDirectory() as tmp:
-        memory = WaveMind(db_path=Path(tmp) / "long-memory.sqlite3", encoder=encoder, index_kind="numpy", score_threshold=0.0, evolve_on_feed=0, vector_weight=0.78, field_weight=0.06, priority_weight=0.16, lexical_weight=0.35, short_query_lexical_weight=1.5, rerank_k=max(top_k, 30), persist_access_on_query=False, query_feedback_strength=0.0)
+        memory = WaveMind(
+            db_path=Path(tmp) / "long-memory.sqlite3",
+            encoder=encoder,
+            index_kind="numpy",
+            score_threshold=0.0,
+            evolve_on_feed=0,
+            vector_weight=0.78,
+            field_weight=0.06,
+            priority_weight=0.16,
+            lexical_weight=0.35,
+            short_query_lexical_weight=1.5,
+            rerank_k=max(top_k, 30),
+            persist_access_on_query=False,
+            query_feedback_strength=0.0,
+            **BENCHMARK_FIELD,
+        )
         try:
             memory.remember_batch(
                 {
@@ -325,6 +352,7 @@ def run_wavemind_memory_os(
             persist_access_on_query=False,
             query_feedback_strength=0.0,
             audit_queries=True,
+            **BENCHMARK_FIELD,
         )
         cache = HotMemoryCache(capacity=max(128, len(dataset.queries) * 2), ttl_seconds=300.0)
         try:
@@ -587,7 +615,7 @@ def load_dataset(kind: str, memory_count: int) -> EvidenceDataset:
 
 def run_benchmark(dataset_kind: str, engines: Iterable[str], memory_count: int = 200, encoder_kind: str = "hash", top_k: int = 5) -> dict:
     dataset = load_dataset(dataset_kind, memory_count)
-    base_encoder = create_text_encoder(kind=encoder_kind, vector_dim=384)
+    base_encoder = create_benchmark_encoder(encoder_kind, vector_dim=384)
     encoder = cache_encoder_for_dataset(dataset, base_encoder)
     runners = {"wavemind": run_wavemind, "memory-os": run_wavemind_memory_os, "wavemind-memory-os": run_wavemind_memory_os, "static": run_static_vector, "static-vector": run_static_vector, "chroma": run_chroma_static, "chroma-static": run_chroma_static, "qdrant": run_qdrant_static, "qdrant-static": run_qdrant_static}
     results = []
@@ -596,7 +624,7 @@ def run_benchmark(dataset_kind: str, engines: Iterable[str], memory_count: int =
         if key not in runners:
             raise ValueError(f"Unknown engine: {engine}")
         results.append(asdict(runners[key](dataset, encoder, top_k)))
-    return {"scenario": {"name": "long_memory_evidence", "dataset": dataset.name, "memories": len(dataset.memories), "queries": len(dataset.queries), "top_k": top_k, "description": "Retrieval-only long-term memory evidence benchmark. It measures expected evidence recall, stale suppression, personalization, namespace isolation, context budget, and latency."}, "embedding": {"kind": encoder_kind, "class": type(base_encoder).__name__, "cached": True, "vector_dim": getattr(encoder, "vector_dim", None), "note": "All engines receive embeddings from the same WaveMind encoder."}, "results": results}
+    return {"scenario": {"name": "long_memory_evidence", "dataset": dataset.name, "memories": len(dataset.memories), "queries": len(dataset.queries), "top_k": top_k, "description": "Retrieval-only long-term memory evidence benchmark. It measures expected evidence recall, stale suppression, personalization, namespace isolation, context budget, and latency."}, "embedding": {"kind": encoder_kind, "class": type(base_encoder).__name__, "cached": True, "vector_dim": getattr(encoder, "vector_dim", None), "char_ngram_weight": getattr(base_encoder, "char_ngram_weight", None), "note": "All engines receive embeddings from the same WaveMind encoder."}, "field": BENCHMARK_FIELD, "results": results}
 
 
 def print_table(payload: dict) -> None:
@@ -611,7 +639,11 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", default="synthetic")
     parser.add_argument("--engines", nargs="+", choices=["wavemind", "memory-os", "wavemind-memory-os", "static", "static-vector", "chroma", "chroma-static", "qdrant", "qdrant-static"], default=["wavemind", "static"])
-    parser.add_argument("--encoder", choices=["hash", "sentence"], default="hash")
+    parser.add_argument(
+        "--encoder",
+        choices=["hash", "hash-token", "sentence"],
+        default="hash",
+    )
     parser.add_argument("--memories", type=int, default=200)
     parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument("--output", type=Path, default=Path("benchmarks/long_memory_evidence_results.json"))

@@ -100,6 +100,15 @@ def test_cached_encoder_batches_unique_dataset_texts():
     assert np.allclose(cached.encode_vector("beta"), [2.0, 0.0, 0.0, 0.0])
 
 
+def test_token_hash_profile_disables_document_character_scan():
+    from benchmarks.long_memory_evidence_benchmark import create_benchmark_encoder
+
+    encoder = create_benchmark_encoder("hash-token", vector_dim=64)
+
+    assert encoder.vector_dim == 64
+    assert encoder.char_ngram_weight == 0.0
+
+
 def test_static_vector_baseline_respects_query_namespace():
     from benchmarks.long_memory_evidence_benchmark import (
         EvidenceDataset,
