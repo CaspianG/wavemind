@@ -22,6 +22,7 @@ from .multimodal import (
     CrossModalMemoryLayer,
     CrossModalQueryResult,
     MemoryPayload,
+    _rank_group_confidence,
     cross_modal_descriptor,
     normalize_modality,
 )
@@ -345,20 +346,21 @@ def run_public_multimodal_benchmark(
     per_asset_rows: list[dict[str, Any]] = []
     per_query_rows: list[dict[str, Any]] = []
     repeat_summaries: list[dict[str, Any]] = []
-    spaces: dict[str, dict[str, Any]] = {}
-    modality_encoders: dict[str, list[tuple[str, Any]]] = {}
+    factory = encoder_factory or (
+        lambda: _default_encoders(cache_folder=cache_folder)
+    )
+    encoders = dict(factory())
+    _validate_encoder_set(encoders)
+    spaces = {
+        space_id: encoder.embedding_space.as_dict()
+        for space_id, encoder in encoders.items()
+    }
+    modality_encoders = _modality_encoder_index(encoders)
 
+    # Models are immutable inference runtimes. Reuse them while rebuilding every
+    # store and query run independently so repeated evidence does not reload
+    # large torch libraries or retain duplicate model allocations.
     for repeat_index in range(repeats):
-        factory = encoder_factory or (
-            lambda: _default_encoders(cache_folder=cache_folder)
-        )
-        encoders = dict(factory())
-        _validate_encoder_set(encoders)
-        spaces = {
-            space_id: encoder.embedding_space.as_dict()
-            for space_id, encoder in encoders.items()
-        }
-        modality_encoders = _modality_encoder_index(encoders)
         repeat_root = output_root / f"repeat-{repeat_index + 1}"
         repeat_root.mkdir(parents=True, exist_ok=True)
         layers: dict[str, CrossModalMemoryLayer] = {}
@@ -442,10 +444,7 @@ def run_public_multimodal_benchmark(
                                 priority=1.0,
                             )
                             memory_to_asset[space_id][memory_id] = asset.id
-                            stored_vectors[space_id][memory_id] = np.asarray(
-                                vector,
-                                dtype=np.float32,
-                            )
+                            stored_vectors[space_id][memory_id] = _unit_vector(vector)
                             per_asset_rows.append(
                                 {
                                     "repeat": repeat_index + 1,
@@ -788,7 +787,7 @@ def _execute_queries(
                     }
                     for space_id, target_modality, _ in execution.groups
                 ],
-                "fusion": "weighted_reciprocal_rank",
+                "fusion": "confidence_weighted_reciprocal_rank",
                 "incompatible_spaces_compared": False,
             }
         )
@@ -804,11 +803,21 @@ def _rank_fuse_asset_ids(
 ) -> list[dict[str, Any]]:
     scores: dict[str, float] = {}
     contributions: dict[str, list[dict[str, Any]]] = {}
-    active_count = max(1, sum(1 for _, _, results in groups if results))
-    for space_id, target_modality, results in groups:
-        if not results:
-            continue
-        group_weight = 1.0 / active_count
+    active = [
+        (
+            space_id,
+            target_modality,
+            _rank_group_confidence(results),
+            results,
+        )
+        for space_id, target_modality, results in groups
+        if results
+    ]
+    confidence_total = sum(confidence for _, _, confidence, _ in active)
+    for space_id, target_modality, confidence, results in active:
+        group_weight = (
+            confidence / confidence_total if confidence_total > 0.0 else 0.0
+        )
         for rank, result in enumerate(results, start=1):
             asset_id = memory_to_asset[space_id].get(result.id)
             if not asset_id:
@@ -821,6 +830,7 @@ def _rank_fuse_asset_ids(
                     "space_id": space_id,
                     "target_modality": target_modality,
                     "rank": rank,
+                    "group_confidence": confidence,
                     "raw_score": result.score,
                     "contribution": contribution,
                 }
@@ -1189,7 +1199,7 @@ def _quality_verdict(summary: Mapping[str, Any]) -> str:
         and float(summary.get("mixed_multimodal_precision_at_1", 0.0)) >= 0.90
         and float(summary.get("persisted_vector_parity", 0.0)) == 1.0
         and float(summary.get("reload_query_parity", 0.0)) == 1.0
-        and float(summary.get("query_p99_ms", float("inf"))) <= 250.0
+        and float(summary.get("retrieval_p99_ms", float("inf"))) <= 250.0
         and float(summary.get("error_rate", 1.0)) == 0.0
     )
     return "pass" if passed else "fail"
@@ -1449,6 +1459,14 @@ def _sha256_file(path: Path) -> str:
 
 def _vector_sha256(vector: Any) -> str:
     return hashlib.sha256(np.asarray(vector, dtype=np.float32).tobytes()).hexdigest()
+
+
+def _unit_vector(vector: Any) -> np.ndarray:
+    selected = np.asarray(vector, dtype=np.float32)
+    norm = float(np.linalg.norm(selected))
+    if norm <= 1e-12:
+        return selected
+    return (selected / norm).astype(np.float32)
 
 
 def _weighted_unit_vector(

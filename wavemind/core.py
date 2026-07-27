@@ -786,6 +786,32 @@ class WaveMind:
             return
         self.refresh_namespace_from_store(namespace)
 
+    def list_records(
+        self,
+        namespace: str,
+        *,
+        tags: Iterable[str] | None = None,
+    ) -> list[MemoryRecord]:
+        """Return active cached records for one namespace.
+
+        Local mutations update this cache synchronously. Shared stores retain
+        their configured refresh semantics, while read-heavy layers avoid
+        repeatedly decoding the same persisted records.
+        """
+
+        selected_namespace = str(namespace)
+        self._refresh_namespace_if_due(selected_namespace)
+        required_tags = set(tags or ())
+        records = []
+        for memory_id in sorted(self._namespace_ids.get(selected_namespace, ())):
+            record = self._records_by_id.get(memory_id)
+            if record is None or record.is_expired:
+                continue
+            if required_tags and not required_tags.issubset(record.tags):
+                continue
+            records.append(record)
+        return records
+
     def _append_recovery_journal(
         self,
         action: str,

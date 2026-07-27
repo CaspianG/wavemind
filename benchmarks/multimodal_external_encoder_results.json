@@ -1,0 +1,379 @@
+{
+  "schema": "wavemind.multimodal_encoder_benchmark.v2",
+  "generated_at": "2026-07-27T21:01:07Z",
+  "status": "pass",
+  "admission_eligible": true,
+  "source": "local-open-source-multimodal-benchmark",
+  "source_sha": "1db5ce3110edbca67db3679674a6785f407c33b8",
+  "deployment": "local-evidence",
+  "environment": "local",
+  "asset_source": "real_public_assets",
+  "object_store": "minio-s3-compatible",
+  "object_store_backend": "minio",
+  "dataset": {
+    "name": "WaveMind Public Multimodal Retrieval Suite",
+    "revision": "wavemind-public-multimodal-v1",
+    "license": "mixed; see per-dataset license and terms",
+    "asset_source": "real_public_assets",
+    "manifest_sha256": "6d686b4434a886b176c982da52718b39c51599c88229920cc227dd1f41d49e2d",
+    "ground_truth_sha256": "4feea95a5ea756ffa7f6118881d30f21feee6d28faadf47d06b3b33d1f6fa52f",
+    "asset_manifest_sha256": "7c56ec1047f1824612b262cc9c5332b571a5149c421fc00e6ca5bf00e5291b70",
+    "query_manifest_sha256": "810f0aec80e09adc837709536959878a68aa31db2843a4601022a10fc45a1dc8",
+    "datasets": [
+      {
+        "id": "cifar100",
+        "license": "unknown; see source dataset card and upstream terms",
+        "name": "CIFAR-100 test split",
+        "revision": "aadb3af77e9048adbea6b47c21a81e47dd092ae5",
+        "source_files": [
+          {
+            "bytes": 23772751,
+            "name": "test-00000-of-00001.parquet",
+            "sha256": "98776c529bb146a9c791229df74a5cf076be9b43d82dbbd334b6a7788d73dc68"
+          }
+        ],
+        "source_url": "https://huggingface.co/datasets/uoft-cs/cifar100/tree/aadb3af77e9048adbea6b47c21a81e47dd092ae5"
+      },
+      {
+        "id": "esc50",
+        "license": "CC-BY-NC-2.0",
+        "name": "ESC-50",
+        "revision": "825dcaabaddcaa0836ad79ed115d256db6e7ed76",
+        "source_files": [
+          {
+            "bytes": 386278368,
+            "name": "train-00000-of-00002-7e0045578435fe1f.parquet",
+            "sha256": "a1682bea788a523c9a516e686d2cba12f005caf0af72f9bfba608396c2e95c7b"
+          },
+          {
+            "bytes": 386760120,
+            "name": "train-00001-of-00002-f25e4ae50612a27b.parquet",
+            "sha256": "84d82c2c810909a313f552cc15e3e8b8476eb7dca2b481e64ca5744cad268dd6"
+          }
+        ],
+        "source_url": "https://huggingface.co/datasets/renumics/esc50/tree/825dcaabaddcaa0836ad79ed115d256db6e7ed76"
+      },
+      {
+        "id": "ucf101",
+        "license": "research dataset; verify upstream clip terms before reuse",
+        "name": "UCF101",
+        "revision": "057753e5d0709d3f5b8104a803b91a420a069103",
+        "source_files": [
+          {
+            "bytes": 2602096640,
+            "name": "shard-00000.tar",
+            "sha256": "db67408ea71b9de8ad7c27bd3c594795b5313547d5d9e51eb869e28fdb2bf293"
+          },
+          {
+            "bytes": 889425920,
+            "name": "shard-00001.tar",
+            "sha256": "bb7d70e686b5e232f19931a68e231cd62dd635809d695b3b0301968274424b8f"
+          }
+        ],
+        "source_url": "https://huggingface.co/datasets/guyuchao/UCF101/tree/057753e5d0709d3f5b8104a803b91a420a069103"
+      },
+      {
+        "id": "modelnet40",
+        "license": "academic research only; original CAD authors retain copyright",
+        "name": "Princeton ModelNet40 Auto Aligned mirror",
+        "revision": "aeb0af95f3ddc6503b5613c28ebcece569e3c2e2",
+        "selected_file_count": 220,
+        "selection_manifest_sha256": "25e9ef141853ef4c606c45fdd28c73901ea4531b964cbbebf6d843e0228add69",
+        "source_url": "https://huggingface.co/datasets/naderalfares/ModelNet40_Auto_aligned/tree/aeb0af95f3ddc6503b5613c28ebcece569e3c2e2"
+      },
+      {
+        "id": "wikipedia",
+        "license": "CC-BY-SA-4.0 and GFDL",
+        "name": "English Wikipedia revision-pinned extracts",
+        "revision": "per-page oldid in provenance manifest",
+        "source_url": "https://en.wikipedia.org/"
+      }
+    ]
+  },
+  "environment_fingerprint": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "hardware": "AMD64 Family 23 Model 8 Stepping 2, AuthenticAMD; logical_cpus=12",
+    "dependency_lock_sha256": "f7541e814ae59a7131e30eba1718df45890c20842dfc17843f652e413d7b00b1"
+  },
+  "modalities": [
+    "text",
+    "image",
+    "audio",
+    "video",
+    "3d"
+  ],
+  "modality_count": 5,
+  "payload_count": 1000,
+  "query_count": 200,
+  "shared_spaces": {
+    "text:sentence-transformers/paraphrase-multilingual-mpnet-base-v2@4328cf26390c98c5e3c738b4460a05b95f4911f5": {
+      "space_id": "text:sentence-transformers/paraphrase-multilingual-mpnet-base-v2@4328cf26390c98c5e3c738b4460a05b95f4911f5",
+      "vector_dim": 768,
+      "modalities": [
+        "text"
+      ],
+      "encoder_name": "sentence-transformers/sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+      "model_revision": "4328cf26390c98c5e3c738b4460a05b95f4911f5",
+      "production_eligible": true
+    },
+    "clip:sentence-transformers/clip-ViT-B-32@327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd": {
+      "space_id": "clip:sentence-transformers/clip-ViT-B-32@327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd",
+      "vector_dim": 512,
+      "modalities": [
+        "text",
+        "image",
+        "video",
+        "3d"
+      ],
+      "encoder_name": "clip/sentence-transformers/clip-ViT-B-32+openshape/OpenShape/openshape-pointbert-vitb32-rgb",
+      "model_revision": "327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd",
+      "production_eligible": true
+    },
+    "clap:laion/clap-htsat-unfused@8fa0f1c6d0433df6e97c127f64b2a1d6c0dcda8a": {
+      "space_id": "clap:laion/clap-htsat-unfused@8fa0f1c6d0433df6e97c127f64b2a1d6c0dcda8a",
+      "vector_dim": 512,
+      "modalities": [
+        "text",
+        "audio"
+      ],
+      "encoder_name": "clap/laion/clap-htsat-unfused",
+      "model_revision": "8fa0f1c6d0433df6e97c127f64b2a1d6c0dcda8a",
+      "production_eligible": true
+    }
+  },
+  "modality_metrics": {
+    "text": {
+      "asset_count": 200,
+      "query_count": 80,
+      "precision_at_1": 0.8875,
+      "encode_p95_ms": 219.5337000011932,
+      "encoder_backend": "clap/laion/clap-htsat-unfused+clip/sentence-transformers/clip-ViT-B-32+openshape/OpenShape/openshape-pointbert-vitb32-rgb+sentence-transformers/sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+      "model_revision": "327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd+4328cf26390c98c5e3c738b4460a05b95f4911f5+8fa0f1c6d0433df6e97c127f64b2a1d6c0dcda8a",
+      "shared_space_ids": [
+        "text:sentence-transformers/paraphrase-multilingual-mpnet-base-v2@4328cf26390c98c5e3c738b4460a05b95f4911f5",
+        "clip:sentence-transformers/clip-ViT-B-32@327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd",
+        "clap:laion/clap-htsat-unfused@8fa0f1c6d0433df6e97c127f64b2a1d6c0dcda8a"
+      ]
+    },
+    "image": {
+      "asset_count": 200,
+      "query_count": 40,
+      "precision_at_1": 0.975,
+      "encode_p95_ms": 133.42980000015814,
+      "encoder_backend": "clip/sentence-transformers/clip-ViT-B-32+openshape/OpenShape/openshape-pointbert-vitb32-rgb",
+      "model_revision": "327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd",
+      "shared_space_ids": [
+        "clip:sentence-transformers/clip-ViT-B-32@327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd"
+      ]
+    },
+    "audio": {
+      "asset_count": 200,
+      "query_count": 40,
+      "precision_at_1": 1.0,
+      "encode_p95_ms": 297.1804999979213,
+      "encoder_backend": "clap/laion/clap-htsat-unfused",
+      "model_revision": "8fa0f1c6d0433df6e97c127f64b2a1d6c0dcda8a",
+      "shared_space_ids": [
+        "clap:laion/clap-htsat-unfused@8fa0f1c6d0433df6e97c127f64b2a1d6c0dcda8a"
+      ]
+    },
+    "video": {
+      "asset_count": 200,
+      "query_count": 40,
+      "precision_at_1": 0.9,
+      "encode_p95_ms": 794.4003000011435,
+      "encoder_backend": "clip/sentence-transformers/clip-ViT-B-32+openshape/OpenShape/openshape-pointbert-vitb32-rgb",
+      "model_revision": "327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd",
+      "shared_space_ids": [
+        "clip:sentence-transformers/clip-ViT-B-32@327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd"
+      ]
+    },
+    "3d": {
+      "asset_count": 200,
+      "query_count": 40,
+      "precision_at_1": 0.9,
+      "encode_p95_ms": 452.2863000020152,
+      "encoder_backend": "clip/sentence-transformers/clip-ViT-B-32+openshape/OpenShape/openshape-pointbert-vitb32-rgb",
+      "model_revision": "327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd",
+      "shared_space_ids": [
+        "clip:sentence-transformers/clip-ViT-B-32@327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd"
+      ]
+    }
+  },
+  "cross_modal_pairs": [
+    {
+      "query_modality": "text",
+      "target_modality": "image",
+      "query_count": 20,
+      "precision_at_1": 0.95,
+      "shared_space_id": "clip:sentence-transformers/clip-ViT-B-32@327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd"
+    },
+    {
+      "query_modality": "image",
+      "target_modality": "text",
+      "query_count": 20,
+      "precision_at_1": 0.85,
+      "shared_space_id": "clip:sentence-transformers/clip-ViT-B-32@327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd"
+    },
+    {
+      "query_modality": "text",
+      "target_modality": "audio",
+      "query_count": 20,
+      "precision_at_1": 1.0,
+      "shared_space_id": "clap:laion/clap-htsat-unfused@8fa0f1c6d0433df6e97c127f64b2a1d6c0dcda8a"
+    },
+    {
+      "query_modality": "audio",
+      "target_modality": "text",
+      "query_count": 20,
+      "precision_at_1": 0.95,
+      "shared_space_id": "clap:laion/clap-htsat-unfused@8fa0f1c6d0433df6e97c127f64b2a1d6c0dcda8a"
+    },
+    {
+      "query_modality": "text",
+      "target_modality": "video",
+      "query_count": 20,
+      "precision_at_1": 0.95,
+      "shared_space_id": "clip:sentence-transformers/clip-ViT-B-32@327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd"
+    },
+    {
+      "query_modality": "video",
+      "target_modality": "text",
+      "query_count": 20,
+      "precision_at_1": 0.9,
+      "shared_space_id": "clip:sentence-transformers/clip-ViT-B-32@327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd"
+    },
+    {
+      "query_modality": "text",
+      "target_modality": "3d",
+      "query_count": 20,
+      "precision_at_1": 0.95,
+      "shared_space_id": "clip:sentence-transformers/clip-ViT-B-32@327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd"
+    },
+    {
+      "query_modality": "3d",
+      "target_modality": "text",
+      "query_count": 20,
+      "precision_at_1": 0.85,
+      "shared_space_id": "clip:sentence-transformers/clip-ViT-B-32@327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd"
+    }
+  ],
+  "lifecycle": {
+    "object_store_backend": "minio",
+    "object_store_pass": true,
+    "ingest_pass": true,
+    "checksum_pass": true,
+    "reload_pass": true,
+    "persistence_pass": true,
+    "namespace_isolation_pass": true,
+    "ttl_pass": true,
+    "physical_delete_pass": true,
+    "tombstone_pass": true,
+    "backup_restore_pass": true,
+    "orphan_cleanup_pass": true,
+    "artifact_schema": "wavemind.asset-lifecycle-evidence.v1",
+    "artifact_source_ref": "1db5ce3110edbca67db3679674a6785f407c33b8",
+    "artifact_sha256": "fa2204e03656bc7a60c23b7a265ca18398c0127f1570cac27ace85fbbae40506"
+  },
+  "leakage_checks": {
+    "pass": true,
+    "filename_leakage": false,
+    "caption_leakage": false,
+    "id_leakage": false,
+    "metadata_leakage": false,
+    "contract": "opaque filenames + separate ground truth + no semantic asset metadata"
+  },
+  "repeatability": {
+    "run_count": 3,
+    "stable_verdict": true,
+    "verdicts": [
+      "pass",
+      "pass",
+      "pass"
+    ],
+    "summaries": [
+      {
+        "precision_at_1": 0.925,
+        "cross_modal_precision_at_1": 0.925,
+        "mixed_multimodal_precision_at_1": 0.925,
+        "retrieval_p99_ms": 42.0398000132991,
+        "query_p99_ms": 1726.2092000019038,
+        "encoding_p95_ms": 1544.2004000069574,
+        "persisted_vector_parity": 1.0,
+        "reload_query_parity": 1.0,
+        "error_rate": 0.0,
+        "repeat": 1,
+        "asset_encode_p95_ms": {
+          "text": 215.78199999930803,
+          "image": 124.66220000351314,
+          "audio": 317.3453000053996,
+          "video": 787.7499000023818,
+          "3d": 478.3488999964902
+        },
+        "batch_throughput_assets_per_second": 3.597343074208444
+      },
+      {
+        "precision_at_1": 0.925,
+        "cross_modal_precision_at_1": 0.925,
+        "mixed_multimodal_precision_at_1": 0.925,
+        "retrieval_p99_ms": 41.78909999609459,
+        "query_p99_ms": 1689.2936000076588,
+        "encoding_p95_ms": 1543.9099999930477,
+        "persisted_vector_parity": 1.0,
+        "reload_query_parity": 1.0,
+        "error_rate": 0.0,
+        "repeat": 2,
+        "asset_encode_p95_ms": {
+          "text": 220.02740000607446,
+          "image": 123.93980000342708,
+          "audio": 304.37569999776315,
+          "video": 784.1217000095639,
+          "3d": 540.139899996575
+        },
+        "batch_throughput_assets_per_second": 3.6472129130849593
+      },
+      {
+        "precision_at_1": 0.925,
+        "cross_modal_precision_at_1": 0.925,
+        "mixed_multimodal_precision_at_1": 0.925,
+        "retrieval_p99_ms": 48.64370000723284,
+        "query_p99_ms": 1987.2020999900997,
+        "encoding_p95_ms": 1542.7083999966271,
+        "persisted_vector_parity": 1.0,
+        "reload_query_parity": 1.0,
+        "error_rate": 0.0,
+        "repeat": 3,
+        "asset_encode_p95_ms": {
+          "text": 219.5337000011932,
+          "image": 133.42980000015814,
+          "audio": 297.1804999979213,
+          "video": 794.4003000011435,
+          "3d": 452.2863000020152
+        },
+        "batch_throughput_assets_per_second": 3.6099816385073176
+      }
+    ]
+  },
+  "evidence_files": {
+    "per_query": {
+      "path": "multimodal_per_query.jsonl",
+      "sha256": "cfa75c5f1d8532343af1db27fcdffbcd0220a75f7594ff9aefe0fff2538df406"
+    },
+    "per_asset": {
+      "path": "multimodal_per_asset.jsonl",
+      "sha256": "00a96458d80cae01f468f02e2ad4d329fab3d9086c395684e5b8b494629cd95a"
+    }
+  },
+  "metrics": {
+    "macro_precision_at_1": 0.925,
+    "cross_modal_precision_at_1": 0.925,
+    "mixed_multimodal_precision_at_1": 0.925,
+    "persisted_vector_parity": 1.0,
+    "reload_query_parity": 1.0,
+    "retrieval_p99_ms": 48.64370000723284,
+    "query_p99_ms": 1987.2020999900997,
+    "batch_throughput_assets_per_second": 3.6099816385073176,
+    "error_rate": 0.0
+  }
+}

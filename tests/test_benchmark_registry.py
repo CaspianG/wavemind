@@ -56,6 +56,31 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert entries["vectordbbench"]["status"] == "runner-ready"
     assert entries["vectordbbench"]["current"]["WaveMind custom dataset export"]["status"] == "ready"
     assert entries["vectordbbench"]["current"]["WaveMind custom dataset export"]["vectors"] == 10000
+    multimodal = entries["local_multimodal_encoder_benchmark"]
+    assert multimodal["status"] == "implemented"
+    multimodal_result = multimodal["current"][
+        "WaveMind real local multimodal retrieval"
+    ]
+    assert multimodal_result["status"] == "pass"
+    assert multimodal_result["admission_eligible"] is True
+    assert multimodal_result["payloads"] == 1000
+    assert multimodal_result["queries"] == 200
+    assert multimodal_result["macro_precision_at_1"] >= 0.90
+    assert multimodal_result["cross_modal_precision_at_1"] >= 0.90
+    assert multimodal_result["mixed_multimodal_precision_at_1"] >= 0.90
+    assert multimodal_result["persisted_vector_parity"] == 1.0
+    assert multimodal_result["reload_query_parity"] == 1.0
+    assert multimodal_result["retrieval_p99_ms"] <= 250.0
+    assert multimodal_result["repeat_count"] == 3
+    assert multimodal_result["stable_verdict"] is True
+    assert multimodal_result["cross_modal_pairs"]["text->image"] >= 0.85
+    assert multimodal_result["cross_modal_pairs"]["3d->text"] >= 0.85
+    assert multimodal["current"]["Multimodal admission"]["status"] == "admitted"
+    external_contract = entries["external_multimodal_evidence_runner"]["current"][
+        "WaveMind external multimodal evidence"
+    ]
+    assert external_contract["runner_ready"] is True
+    assert external_contract["checked_in_result"] is False
     assert entries["longmemeval_evidence_retrieval"]["status"] == "implemented"
     assert entries["ann_index_curve"]["status"] == "implemented"
     assert entries["production_load_profile_100k"]["status"] == "implemented"

@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -10,6 +11,8 @@ import pytest
 from wavemind.multimodal import CrossModalEmbeddingSpace, MemoryPayload
 from wavemind.multimodal_public_benchmark import (
     PUBLIC_MULTIMODAL_RESULT_SCHEMA,
+    _quality_verdict,
+    _rank_fuse_asset_ids,
     load_public_multimodal_suite,
     write_public_multimodal_benchmark_artifacts,
 )
@@ -22,6 +25,51 @@ _CONCEPTS = {
     "delta": 3,
     "echo": 4,
 }
+
+
+def test_quality_verdict_gates_retrieval_separately_from_media_encoding():
+    summary = {
+        "precision_at_1": 0.90,
+        "cross_modal_precision_at_1": 0.90,
+        "mixed_multimodal_precision_at_1": 0.90,
+        "persisted_vector_parity": 1.0,
+        "reload_query_parity": 1.0,
+        "retrieval_p99_ms": 249.0,
+        "query_p99_ms": 2_000.0,
+        "error_rate": 0.0,
+    }
+    assert _quality_verdict(summary) == "pass"
+    summary["retrieval_p99_ms"] = 251.0
+    assert _quality_verdict(summary) == "fail"
+
+
+def test_rank_fusion_uses_group_confidence_instead_of_first_group_ties():
+    weak = [
+        SimpleNamespace(id=1, score=0.90),
+        SimpleNamespace(id=2, score=0.89),
+    ]
+    decisive = [
+        SimpleNamespace(id=3, score=0.90),
+        SimpleNamespace(id=4, score=0.50),
+    ]
+
+    ranked = _rank_fuse_asset_ids(
+        [
+            ("visual", "image", weak),
+            ("audio", "audio", decisive),
+        ],
+        memory_to_asset={
+            "visual": {1: "visual-first", 2: "visual-second"},
+            "audio": {3: "audio-first", 4: "audio-second"},
+        },
+        top_k=4,
+    )
+
+    assert ranked[0]["asset_id"] == "audio-first"
+    by_asset = {row["asset_id"]: row for row in ranked}
+    assert by_asset["audio-first"]["contributions"][0]["group_confidence"] > (
+        by_asset["visual-first"]["contributions"][0]["group_confidence"]
+    )
 
 
 class _ContentEncoder:
@@ -268,6 +316,13 @@ def test_public_suite_rejects_semantic_asset_metadata(tmp_path):
 def test_public_benchmark_exercises_cross_modal_restart_and_evidence(tmp_path):
     suite = _build_suite(tmp_path)
     result_path = tmp_path / "multimodal-result.json"
+    factory_calls = 0
+
+    def factory():
+        nonlocal factory_calls
+        factory_calls += 1
+        return _encoder_factory()
+
     result = write_public_multimodal_benchmark_artifacts(
         suite,
         output_dir=tmp_path / "output",
@@ -276,9 +331,10 @@ def test_public_benchmark_exercises_cross_modal_restart_and_evidence(tmp_path):
         batch_size=2,
         top_k=2,
         lifecycle_artifact=_lifecycle_artifact(tmp_path),
-        encoder_factory=_encoder_factory,
+        encoder_factory=factory,
     )
 
+    assert factory_calls == 1
     assert result["schema"] == PUBLIC_MULTIMODAL_RESULT_SCHEMA
     assert result["status"] == "fail"
     assert result["admission_eligible"] is False

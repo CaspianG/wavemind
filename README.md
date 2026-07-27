@@ -398,10 +398,22 @@ alerts.
 ## Structured And Multimodal Memory
 
 WaveMind supports typed image, audio, video, 3D, table, temporal-event, and
-knowledge-graph payloads. Current checked evidence proves the structured
-contract and the explicitly precomputed-vector storage path. Precomputed
-vectors do not prove encoder quality and cannot unlock production multimodal
-admission.
+knowledge-graph payloads. The checked real-encoder suite uses pinned local
+SentenceTransformers, CLIP, CLAP, and OpenShape PointBERT models over 1000
+public assets and 200 independent queries. Its three exact-SHA runs all pass
+the production admission gate:
+
+| Metric | Checked result |
+|---|---:|
+| Macro / cross-modal / mixed precision@1 | `0.925 / 0.925 / 0.925` |
+| Persisted / reload parity | `1.000 / 1.000` |
+| Retrieval p99 | `48.64 ms` |
+| Errors | `0` |
+
+The suite covers text, image, audio, video, and 3D retrieval and verifies the
+asset lifecycle against local S3-compatible MinIO. The separate
+precomputed-vector path remains an integration contract only; it does not prove
+encoder quality.
 
 The production gate requires real local text, image, audio, video, and 3D
 encoders over at least 1000 real or publicly licensed assets and 200 independent
@@ -474,6 +486,7 @@ loopback, and production evidence.
 |---|---|
 | Memory OS admission | `admitted`, 13/13 requirements |
 | Memory OS remote soak | 6 hours, 500 cycles, 2500 attempts, zero corruption |
+| Real multimodal admission | `admitted`; 1000 assets, 200 queries, precision@1 `0.925`, retrieval p99 `48.64 ms` |
 | Strict production evidence | 5/8 requirements |
 | LongMemEval evidence retrieval | WaveMind recall@5 `0.782` |
 | Large-N profiles | 10M Qdrant, 10M sharded Qdrant, 10M pgvector, 50M FAISS |
@@ -515,9 +528,10 @@ If you already use Chroma for local memory, see the practical migration guide:
 - Production Memory OS is admitted for its documented remote Redis/worker
   topology. The broader cluster gate remains 5/8: remote multi-region, managed
   serverless telemetry, and 100M service evidence are not yet admitted.
-- Real universal text/image/audio/video/3D encoding and cross-modal quality are
-  still behind `multimodal-admission`; precomputed vectors and descriptors do
-  not unlock that claim.
+- The checked real text/image/audio/video/3D suite is admitted for its pinned
+  models, datasets, exact source SHA, and local MinIO topology. This is not a
+  claim of universal cross-modal quality on unseen domains; precomputed vectors
+  and descriptors still cannot unlock real-encoder admission.
 - Large-N Qdrant and pgvector artifacts prove their stated GitHub-hosted service
   topologies, not independent multi-host or multi-region production.
 
@@ -533,9 +547,9 @@ Release history: [`CHANGELOG.md`](CHANGELOG.md).
 
 Near-term priorities:
 
-- Finish real local text, image, audio, video, and 3D encoders and pass the
-  strict multimodal admission gate without descriptor or synthetic-vector
-  fallbacks.
+- Extend the admitted real local multimodal suite with independently maintained
+  public datasets while preserving its per-modality quality, latency, leakage,
+  persistence, and lifecycle gates.
 - Run Memory OS directly inside LoCoMo, LongMemEval, and LongMemEval-V2
   evaluations and prove agent-quality lift against reproducible local
   baselines.

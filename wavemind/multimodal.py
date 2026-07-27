@@ -791,7 +791,7 @@ class CrossModalMemoryLayer:
         required_tags = ["multimodal", cross_modal_space_tag(self.space_id)]
         if modality:
             required_tags.append(modality)
-        records = self.memory.store.list(namespace=namespace, tags=required_tags)
+        records = self.memory.list_records(namespace, tags=required_tags)
         if not records:
             return []
 
@@ -815,11 +815,15 @@ class CrossModalMemoryLayer:
             )
             encoded_query_vector = np.asarray(query_vector, dtype=np.float32)
         encoded_query_vector = _normalize_vector(encoded_query_vector, vector_dim=self.vector_dim)
-        base_scores = self._base_scores(
-            query,
-            namespace=namespace,
-            tags=required_tags,
-            candidate_k=max(candidate_k or top_k * 8, top_k),
+        base_scores = (
+            self._base_scores(
+                query,
+                namespace=namespace,
+                tags=required_tags,
+                candidate_k=max(candidate_k or top_k * 8, top_k),
+            )
+            if self.base_weight > 0.0
+            else {}
         )
         query_tokens = _tokens(query_descriptor)
         scored: list[CrossModalQueryResult] = []
@@ -2281,6 +2285,24 @@ def _bounded_score(value: float) -> float:
     if value <= -1.0 or value >= 1.0:
         return math.tanh(value)
     return float(value)
+
+
+def _rank_group_confidence(
+    results: Sequence[CrossModalQueryResult],
+    *,
+    temperature: float = 10.0,
+) -> float:
+    """Return a within-space confidence without comparing raw vector spaces."""
+
+    if not results:
+        return 0.0
+    scores = np.asarray([float(result.score) for result in results], dtype=np.float64)
+    scaled = (scores - float(np.max(scores))) * float(temperature)
+    probabilities = np.exp(scaled)
+    denominator = float(np.sum(probabilities))
+    if denominator <= 0.0 or not math.isfinite(denominator):
+        return 0.0
+    return float(probabilities[0] / denominator)
 
 
 def _rate(numerator: int, denominator: int) -> float:

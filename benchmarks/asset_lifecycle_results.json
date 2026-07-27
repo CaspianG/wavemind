@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.asset-lifecycle-evidence.v1",
-  "generated_at": "2026-07-27T14:35:06Z",
-  "source_ref": "8a5181b4188622665ccf675479b254a75510eba9",
+  "generated_at": "2026-07-27T20:25:22Z",
+  "source_ref": "1db5ce3110edbca67db3679674a6785f407c33b8",
   "status": "pass",
   "claim_boundary": "This artifact proves filesystem and S3-compatible asset lifecycle behavior only. It does not prove multimodal encoder quality, cross-modal retrieval quality, or the 1000-asset admission gate.",
   "fixture": {
@@ -11,11 +11,11 @@
     "eligible_for_multimodal_quality_admission": false
   },
   "environment": {
-    "python": "3.13.3",
-    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
     "machine": "AMD64"
   },
-  "duration_ms": 3023.128999993787,
+  "duration_ms": 6572.941499995068,
   "filesystem": {
     "backend": "filesystem",
     "status": "pass",
@@ -40,7 +40,7 @@
       "namespace": "tenant:a",
       "asset_count": 1,
       "total_bytes": 24,
-      "sha256": "f7fa468f4064d9896948a2628b8075f64e85d7b79ceb6bd6180e3e141315c69b",
+      "sha256": "40770bd718037b9c310c9b87eca0c47a084c497068bf93cf90bca285516f174c",
       "verified": true
     }
   },
@@ -68,11 +68,11 @@
       "namespace": "tenant:a",
       "asset_count": 1,
       "total_bytes": 24,
-      "sha256": "31c8950bf4c1ffe491338e9c270b4a5a4ced1f5f4c9906ef5bf7c052a2a397aa",
+      "sha256": "18cde493bc8f63f5bef5d52882409790cd758f0ecadfaa2f5ce93988c8cb04a3",
       "verified": true
     },
     "teardown_pass": true,
-    "container_image": "minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e",
+    "container_image": "sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e",
     "endpoint": "http://127.0.0.1:19000"
   },
   "lifecycle": {

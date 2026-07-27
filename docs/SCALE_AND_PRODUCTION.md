@@ -600,8 +600,8 @@ wavemind memory-os-plan --namespace user:42 --deployment production --target-mem
 wavemind cluster-admission --deployment production --min-nodes 4 --namespace-count 32 --replication-factor 3 --read-quorum 1 --read-fanout 1 --batch-query-size 24 --allow-plan-only --write-artifacts --json
 wavemind active-active-admission --deployment production --min-regions 3 --namespace-count 16 --allow-plan-only --write-artifacts --json
 wavemind serverless-admission --deployment production --target-rps 3200 --target-p99-ms 500 --max-scale 256 --allow-plan-only --write-artifacts --json
-wavemind multimodal-external-evidence --manifest path/to/external_multimodal_manifest.json --write-artifacts --output benchmarks/multimodal_external_encoder_results.json --markdown-output benchmarks/MULTIMODAL_EXTERNAL_EVIDENCE.md --json
-wavemind multimodal-admission --deployment production --allow-plan-only --write-artifacts --json
+wavemind multimodal-external-evidence --manifest path/to/external_multimodal_manifest.json --write-artifacts --output benchmarks/multimodal_precomputed_contract_results.json --markdown-output benchmarks/MULTIMODAL_EXTERNAL_EVIDENCE.md --json
+wavemind multimodal-admission --deployment production --fail-on-blocked --write-artifacts --json
 wavemind memory-os-canary --target-memories 100000 --namespace-count 64 --deployment staging --write-artifacts --json
 wavemind memory-os-evolution --cycles 3 --write-artifacts --json
 wavemind memory-os-admission --target-memories 10000000 --namespace-count 4096 --deployment production --allow-plan-only --write-artifacts --json
@@ -688,16 +688,20 @@ with the remote-node preflight state and writes
 real deployed API nodes have produced remote telemetry for p99 latency,
 cold-start budget, error rate, and scale-out capacity.
 `wavemind multimodal-external-evidence` turns a real external multimodal
-manifest into `benchmarks/multimodal_external_encoder_results.json`: assets
+manifest into `benchmarks/multimodal_precomputed_contract_results.json`: assets
 must already have external shared-space vectors, `s3://` object-store metadata,
-verified sha256/byte-size provenance, and precomputed query vectors.
+verified sha256/byte-size provenance, and precomputed query vectors. This is a
+storage/integration contract and cannot unlock real-encoder admission.
 `wavemind multimodal-admission` is the deployment-facing gate for production
 multimodal claims. It uses the checked structured-memory report as the API
-contract, but only admits production when the external evidence artifact proves
-real image/audio/video/3D encoder quality, object-store-backed assets, object
-verification, vector persistence, provenance, and query/encode latency SLOs.
-Deterministic structured fixtures stay useful for development, but they do not
-unlock broad multimodal model-quality claims.
+contract and only admits when the real local benchmark proves pinned
+text/image/audio/video/3D encoder quality, object-store-backed assets, object
+verification, vector persistence, provenance, leakage protection,
+per-modality/bidirectional precision, repeated verdicts, and retrieval/encoding
+SLOs. The checked 1000-asset/200-query, three-run artifact is admitted with
+macro/cross-modal/mixed precision@1 `0.925`, parity `1.000`, retrieval p99
+`48.64 ms`, and zero errors. This is exact-SHA and suite-bounded evidence, not a
+universal-domain claim.
 `wavemind memory-os-admission` is the stricter deployment gate for the same
 worker set: it checks hot-query audit signal, Redis/shared-cache wiring,
 distributed lock wiring, singleton/idempotent mutations, policy coverage, and

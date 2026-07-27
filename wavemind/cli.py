@@ -828,7 +828,17 @@ def build_parser() -> argparse.ArgumentParser:
         type=float,
         default=0.90,
     )
-    multimodal_admission.add_argument("--max-query-p99-ms", type=float, default=250.0)
+    multimodal_admission.add_argument(
+        "--max-retrieval-p99-ms",
+        "--max-query-p99-ms",
+        dest="max_query_p99_ms",
+        type=float,
+        default=250.0,
+        help=(
+            "Maximum retrieval-only p99 latency. Encoder latency is checked "
+            "against separate per-modality p95 budgets."
+        ),
+    )
     multimodal_admission.add_argument(
         "--max-encode-p95-ms",
         type=float,
@@ -905,7 +915,7 @@ def build_parser() -> argparse.ArgumentParser:
     multimodal_external.add_argument(
         "--output",
         type=Path,
-        default=Path("benchmarks/multimodal_external_encoder_results.json"),
+        default=Path("benchmarks/multimodal_precomputed_contract_results.json"),
     )
     multimodal_external.add_argument(
         "--markdown-output",

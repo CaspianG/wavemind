@@ -371,11 +371,11 @@ def validate_external_multimodal_evidence(
             "persisted-vector parity must be 1.000",
         ),
         _check(
-            "query_p99_ms",
-            _metric(payload, "query_p99_ms", "p99_latency_ms", "retrieval_p99_ms"),
+            "retrieval_p99_ms",
+            _metric(payload, "retrieval_p99_ms"),
             float(max_query_p99_ms),
             "<=",
-            f"query_p99_ms must be <= {float(max_query_p99_ms):.3f}",
+            f"retrieval_p99_ms must be <= {float(max_query_p99_ms):.3f}",
         ),
         _check(
             "error_rate",
@@ -695,7 +695,7 @@ def evaluate_multimodal_admission(
     if not 0 < float(min_cross_modal_precision_at_1) <= 1:
         issues.append("min_cross_modal_precision_at_1 must be in (0, 1].")
     if float(max_query_p99_ms) <= 0:
-        issues.append("max_query_p99_ms must be positive.")
+        issues.append("max_retrieval_p99_ms must be positive.")
     if max_encode_p95_ms is not None and float(max_encode_p95_ms) <= 0:
         issues.append("max_encode_p95_ms must be positive.")
     if int(min_assets_per_modality) < 1:
@@ -744,6 +744,7 @@ def evaluate_multimodal_admission(
         "min_queries": int(min_queries),
         "min_precision_at_1": float(min_precision_at_1),
         "min_cross_modal_precision_at_1": float(min_cross_modal_precision_at_1),
+        "max_retrieval_p99_ms": float(max_query_p99_ms),
         "max_query_p99_ms": float(max_query_p99_ms),
         "max_encode_p95_ms": (
             None if max_encode_p95_ms is None else float(max_encode_p95_ms)
@@ -802,6 +803,7 @@ def evaluate_multimodal_admission(
             "min_queries": int(min_queries),
             "min_precision_at_1": float(min_precision_at_1),
             "min_cross_modal_precision_at_1": float(min_cross_modal_precision_at_1),
+            "max_retrieval_p99_ms": float(max_query_p99_ms),
             "max_query_p99_ms": float(max_query_p99_ms),
             "max_encode_p95_ms": (
                 None if max_encode_p95_ms is None else float(max_encode_p95_ms)
@@ -855,7 +857,7 @@ def render_multimodal_admission_markdown(payload: dict[str, Any]) -> str:
         f"| min queries | `{payload['min_queries']}` |",
         f"| min precision@1 | `{payload['min_precision_at_1']}` |",
         f"| min cross-modal precision@1 | `{payload['min_cross_modal_precision_at_1']}` |",
-        f"| max query p99 ms | `{payload['max_query_p99_ms']}` |",
+        f"| max retrieval p99 ms | `{payload['max_retrieval_p99_ms']}` |",
         f"| per-modality encode budgets ms | `{payload['encoding_budgets_ms']}` |",
         f"| min assets per modality | `{payload['min_assets_per_modality']}` |",
         f"| min queries per modality | `{payload['min_queries_per_modality']}` |",

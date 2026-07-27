@@ -109,7 +109,11 @@ def _external_http_cluster_summary(result: dict[str, Any] | None) -> dict[str, A
 
 
 def _external_multimodal_summary(payload: dict[str, Any] | None) -> dict[str, Any] | None:
-    if not payload:
+    if (
+        not payload
+        or payload.get("schema")
+        != "wavemind.multimodal_external_encoder_benchmark.v1"
+    ):
         return None
     metrics = payload.get("metrics") if isinstance(payload.get("metrics"), dict) else {}
     return {
@@ -134,6 +138,79 @@ def _external_multimodal_summary(payload: dict[str, Any] | None) -> dict[str, An
         "payload_encode_p95_ms": metrics.get("payload_encode_p95_ms"),
         "query_encode_p95_ms": metrics.get("query_encode_p95_ms"),
         "error_rate": metrics.get("error_rate"),
+    }
+
+
+def _local_multimodal_summary(
+    payload: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    if (
+        not payload
+        or payload.get("schema") != "wavemind.multimodal_encoder_benchmark.v2"
+    ):
+        return None
+    metrics = payload.get("metrics") if isinstance(payload.get("metrics"), dict) else {}
+    repeatability = (
+        payload.get("repeatability")
+        if isinstance(payload.get("repeatability"), dict)
+        else {}
+    )
+    modality_metrics = (
+        payload.get("modality_metrics")
+        if isinstance(payload.get("modality_metrics"), dict)
+        else {}
+    )
+    cross_modal_pairs = (
+        payload.get("cross_modal_pairs")
+        if isinstance(payload.get("cross_modal_pairs"), list)
+        else []
+    )
+    return {
+        "status": payload.get("status"),
+        "admission_eligible": payload.get("admission_eligible"),
+        "source_sha": payload.get("source_sha"),
+        "deployment": payload.get("deployment"),
+        "environment": payload.get("environment"),
+        "asset_source": payload.get("asset_source"),
+        "object_store": payload.get("object_store"),
+        "modalities": payload.get("modality_count"),
+        "payloads": payload.get("payload_count"),
+        "queries": payload.get("query_count"),
+        "macro_precision_at_1": metrics.get("macro_precision_at_1"),
+        "cross_modal_precision_at_1": metrics.get(
+            "cross_modal_precision_at_1"
+        ),
+        "mixed_multimodal_precision_at_1": metrics.get(
+            "mixed_multimodal_precision_at_1"
+        ),
+        "persisted_vector_parity": metrics.get("persisted_vector_parity"),
+        "reload_query_parity": metrics.get("reload_query_parity"),
+        "retrieval_p99_ms": metrics.get("retrieval_p99_ms"),
+        "batch_throughput_assets_per_second": metrics.get(
+            "batch_throughput_assets_per_second"
+        ),
+        "error_rate": metrics.get("error_rate"),
+        "per_modality": {
+            modality: {
+                "precision_at_1": values.get("precision_at_1"),
+                "encode_p95_ms": values.get("encode_p95_ms"),
+            }
+            for modality, values in modality_metrics.items()
+            if isinstance(values, dict)
+        },
+        "cross_modal_pairs": {
+            f"{pair.get('query_modality')}->{pair.get('target_modality')}": (
+                pair.get("precision_at_1")
+            )
+            for pair in cross_modal_pairs
+            if (
+                isinstance(pair, dict)
+                and pair.get("query_modality")
+                and pair.get("target_modality")
+            )
+        },
+        "repeat_count": repeatability.get("run_count"),
+        "stable_verdict": repeatability.get("stable_verdict"),
     }
 
 
@@ -712,6 +789,17 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     )
     multimodal_admission_payload = _load_json(
         root / "benchmarks" / "multimodal_admission_results.json"
+    )
+    local_multimodal_summary = _local_multimodal_summary(
+        multimodal_external_payload
+    )
+    multimodal_admitted = bool(
+        local_multimodal_summary
+        and local_multimodal_summary.get("status") == "pass"
+        and local_multimodal_summary.get("admission_eligible") is True
+        and isinstance(multimodal_admission_payload, dict)
+        and multimodal_admission_payload.get("status") == "admitted"
+        and multimodal_admission_payload.get("admitted") is True
     )
     memory_os_evolution_payload = _load_json(root / "benchmarks" / "memory_os_policy_evolution_results.json")
     memory_os_policy_bundle_payload = _load_json(root / "benchmarks" / "memory_os_policy_bundle_results.json")
@@ -2685,7 +2773,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                     or {
                         "runner_ready": True,
                         "checked_in_result": False,
-                        "requires": "wavemind multimodal-external-evidence --manifest external_multimodal_manifest.json --write-artifacts --output benchmarks/multimodal_external_encoder_results.json",
+                        "requires": "wavemind multimodal-external-evidence --manifest external_multimodal_manifest.json --write-artifacts --output benchmarks/multimodal_precomputed_contract_results.json",
                     }
                 ),
             },
@@ -2696,8 +2784,8 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "id": "local_multimodal_encoder_benchmark",
             "name": "Real local multimodal encoder benchmark",
             "category": "multimodal-memory",
-            "status": "planned",
-            "source": "planned local open-source encoder runner",
+            "status": "implemented" if multimodal_admitted else "planned",
+            "source": "wavemind/multimodal_public_benchmark.py",
             "dataset": "Pinned public text, image, audio, video, and 3D assets with checked manifests, ground truth, and MinIO lifecycle evidence.",
             "competitors": ["WaveMind Core", "WaveMind multimodal shared-space retrieval"],
             "metrics": [
@@ -2713,6 +2801,13 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 "repeatability",
             ],
             "current": {
+                "WaveMind real local multimodal retrieval": (
+                    local_multimodal_summary
+                    or {
+                        "runner_ready": True,
+                        "checked_in_result": False,
+                    }
+                ),
                 "Multimodal admission": {
                     "status": (
                         multimodal_admission_payload.get("status")
@@ -2728,7 +2823,11 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 }
             },
             "target": "Admit only after >=1000 real/public assets and >=200 independent queries cover text, image, audio, video, and 3D with explicit shared spaces, per-modality budgets, MinIO lifecycle safety, and stable repeated verdicts.",
-            "next_step": "Implement the real local encoder registry and benchmark runner; descriptor, filename, metadata, OCR-only, synthetic-vector, and precomputed-vector shortcuts are forbidden.",
+            "next_step": (
+                "Keep the pinned three-run suite and lifecycle gates green, then add independently maintained public multimodal datasets without relaxing per-modality or latency thresholds."
+                if multimodal_admitted
+                else "Run the real local encoder registry and public benchmark suite; descriptor, filename, metadata, OCR-only, synthetic-vector, and precomputed-vector shortcuts are forbidden."
+            ),
         },
         {
             "id": "multimodal_asset_lifecycle",
@@ -2761,7 +2860,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 )
             },
             "target": "Keep filesystem and real local MinIO lifecycle checks green with a pinned container digest, complete teardown, and no use of this fixture as encoder-quality evidence.",
-            "next_step": "Run the 1000-public-asset encoder benchmark and embed this verified lifecycle result into the strict multimodal admission artifact.",
+            "next_step": "Keep the pinned filesystem and MinIO lifecycle checks reproducible alongside every real-encoder evidence refresh.",
         },
         {
             "id": "memory_os_policy_evolution",

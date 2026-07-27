@@ -296,13 +296,12 @@ policy matters more than raw vector-database scale:
   `deploy/serverless/observed-telemetry.remote.json` passes.
 - `wavemind multimodal-admission --allow-plan-only` now publishes the
   deployment-facing multimodal admission contract. It uses the structured-memory
-  report as the local API contract, then keeps production text/image/audio/video/3D
-  claims locked until `benchmarks/multimodal_external_encoder_results.json`
-  proves real local open-source encoder quality over at least 1000 real/public
-  assets and 200 independent queries, explicit compatible shared spaces,
-  per-modality precision and encoding budgets, repeated verdict stability,
-  leakage protection, and a complete S3-compatible lifecycle through local
-  MinIO.
+  report as the local API contract. The checked real local artifact now proves
+  pinned text/image/audio/video/3D encoder quality over 1000 public assets and
+  200 independent queries, explicit compatible shared spaces, per-modality
+  precision and encoding budgets, three stable exact-SHA verdicts, leakage
+  protection, and a complete S3-compatible lifecycle through local MinIO.
+  Admission is `admitted` for that exact evidence boundary.
 - `wavemind multimodal-external-evidence --manifest ...` remains the
   reproducible storage/provenance contract for explicitly precomputed vectors.
   It cannot unlock real-encoder admission.
@@ -859,13 +858,13 @@ Enterprise requirements:
   latency histograms beyond the current process-local API latency gauges.
 - Multi-encoder support: local sentence-transformers, OpenAI-compatible APIs,
   and application-provided embeddings.
-- Multimodal encoders: the optional sentence-transformers backend now covers
-  CLIP-style local image/text retrieval, and active encoder health monitoring is
-  part of the structured-memory evidence path. Next are benchmarked audio
-  embeddings, video scene embeddings, and 3D descriptors behind the same
-  `CrossModalMemoryLayer`, `PrecomputedCrossModalEncoder`,
-  `validate_precomputed_cross_modal_contract()`, and
-  `check_cross_modal_encoder_health()` contracts.
+- Multimodal encoders: pinned SentenceTransformers, CLIP, CLAP, and OpenShape
+  PointBERT backends now cover real local text/image/audio/video/3D retrieval.
+  The 1000-asset/200-query suite, three-run exact-SHA evidence, persistence,
+  leakage, encoding-budget, retrieval-p99, and MinIO lifecycle gates are
+  admitted. Next are additional independently maintained public datasets,
+  remote object-store SLOs, quantized/GPU profiles, and broader cross-domain
+  validation without relaxing the current gates.
 - Community benchmark dashboard generated from checked-in result JSON, backed by
   the weekly freshness/audit gate.
 - Strict production-evidence dashboard/report that stays separate from the core
@@ -878,11 +877,9 @@ Enterprise requirements:
 - Clustered deployment mode.
 - Enterprise auth, RBAC, audit log, and encryption.
 - Hosted managed service.
-- Production-grade multimodal memory beyond deterministic descriptors:
-  benchmarked local CLIP image/text/video/3D runs, CLAP audio/text runs, a
-  pinned public 1000-asset/200-query suite, encoder health monitoring, MinIO
-  lifecycle evidence, and strict admission through
-  `wavemind multimodal-admission`.
+- Broaden the admitted multimodal evidence beyond the pinned local suite:
+  independently maintained datasets, remote object-store SLOs, GPU/quantized
+  profiles, and cross-domain drift monitoring.
 - Production-grade graph/field memory with measurable excitation,
   inhibition, decay, and consolidation behavior.
 
