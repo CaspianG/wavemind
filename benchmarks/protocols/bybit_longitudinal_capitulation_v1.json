@@ -1,0 +1,68 @@
+{
+  "protocol": "wavemind.crypto.bybit-longitudinal-capitulation.v1",
+  "frozen_at_utc": "2026-07-27T15:48:33Z",
+  "purpose": "Independent longitudinal replication of the frozen post-capitulation event detector with market-episode dependence controls.",
+  "source": {
+    "provider": "Bybit V5 public market API",
+    "kline_endpoint": "https://api.bybit.com/v5/market/kline",
+    "open_interest_endpoint": "https://api.bybit.com/v5/market/open-interest",
+    "interval": "4h",
+    "start": "2021-03-15",
+    "end": "2026-07-27"
+  },
+  "symbols": [
+    "BTCUSDT",
+    "ETHUSDT",
+    "IOSTUSDT",
+    "SHIB1000USDT",
+    "ALICEUSDT",
+    "C98USDT",
+    "SLPUSDT",
+    "CHRUSDT",
+    "STORJUSDT",
+    "TLMUSDT",
+    "YGGUSDT",
+    "CROUSDT",
+    "ANKRUSDT",
+    "ILVUSDT",
+    "ZENUSDT",
+    "CVCUSDT",
+    "BICOUSDT",
+    "GRTUSDT",
+    "BSVUSDT",
+    "DUSKUSDT",
+    "XMRUSDT",
+    "PEOPLEUSDT",
+    "RVNUSDT",
+    "HNTUSDT"
+  ],
+  "frozen_rule": {
+    "return_feature": "return_12",
+    "return_quantile": 0.01,
+    "open_interest_feature": "oi_change_1",
+    "open_interest_quantile": 0.2,
+    "confirmation": "none",
+    "prediction": "up"
+  },
+  "horizons": {
+    "12h": 3,
+    "24h": 6,
+    "48h": 12,
+    "7d": 42
+  },
+  "dependence_control": {
+    "per_asset_overlap": "collapse signals until the forecast horizon matures",
+    "utc_market_blocks": "group all selected asset signals by UTC 24h block",
+    "rolling_market_episodes": "merge selected signals separated by no more than 24h",
+    "episode_label": "hit when more than half of the selected assets rise over the horizon"
+  },
+  "primary_gate": {
+    "horizon": "24h",
+    "minimum_market_episodes": 40,
+    "minimum_episode_accuracy": 0.7,
+    "minimum_episode_wilson_low_95": 0.65,
+    "minimum_supported_time_fold_accuracy": 0.65,
+    "minimum_supported_asset_accuracy": 0.65
+  },
+  "selection_policy": "No threshold, symbol, horizon, direction, or gate may be changed after downloading this dataset. Failed gates remain reported."
+}
