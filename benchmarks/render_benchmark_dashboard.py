@@ -467,71 +467,145 @@ def render_dashboard(root: Path = PROJECT_ROOT) -> str:
   <style>
     :root {{
       color-scheme: light;
-      --bg: #f6f8fb;
+      --bg: #f4f5f7;
       --panel: #ffffff;
-      --text: #111827;
-      --muted: #566174;
-      --line: #d9e1ee;
-      --pass: #0a7f5a;
-      --warn: #9a5b00;
+      --text: #111214;
+      --muted: #60656f;
+      --line: #d8dbe0;
+      --soft: #eceef1;
+      --accent: #0b57d0;
+      --pass: #087a55;
+      --warn: #8a5400;
     }}
     * {{ box-sizing: border-box; }}
+    html {{ scroll-behavior: smooth; }}
     body {{
       margin: 0;
       background: var(--bg);
       color: var(--text);
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       line-height: 1.45;
+      font-variant-numeric: tabular-nums;
     }}
-    main {{ max-width: 1180px; margin: 0 auto; padding: 32px 24px 48px; }}
-    header {{ margin-bottom: 24px; }}
-    h1 {{ margin: 0 0 8px; font-size: clamp(2rem, 5vw, 4.2rem); line-height: 0.98; letter-spacing: 0; }}
-    h2 {{ margin: 0 0 12px; font-size: 1.1rem; }}
+    .site-nav {{
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.94);
+    }}
+    .nav-inner {{
+      max-width: 1180px;
+      min-height: 58px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }}
+    .brand {{
+      color: var(--text);
+      font-size: 1.05rem;
+      font-weight: 800;
+      text-decoration: none;
+    }}
+    .nav-links {{ display: flex; align-items: center; gap: 18px; }}
+    .nav-links a {{
+      color: var(--muted);
+      font-size: 0.88rem;
+      font-weight: 650;
+      text-decoration: none;
+    }}
+    .nav-links a:hover, .nav-links a:focus-visible {{ color: var(--text); }}
+    main {{ max-width: 1180px; margin: 0 auto; padding: 52px 24px 56px; }}
+    .hero {{ max-width: 800px; margin-bottom: 28px; }}
+    .eyebrow {{
+      margin-bottom: 10px;
+      color: var(--accent);
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }}
+    h1 {{ margin: 0 0 12px; font-size: 3rem; line-height: 1.05; letter-spacing: 0; }}
+    h2 {{ margin: 0 0 12px; font-size: 1.12rem; letter-spacing: 0; }}
     p {{ margin: 0; color: var(--muted); }}
-    a {{ color: #245bdb; }}
-    .cards {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 24px 0; }}
+    a {{ color: var(--accent); text-underline-offset: 3px; }}
+    code {{ font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 0.92em; }}
+    .cards {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0 0 30px; }}
     .metric-card, .panel {{
+      min-width: 0;
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 8px;
       padding: 18px;
     }}
-    .metric-card strong {{ display: block; margin-bottom: 6px; font-size: 1.9rem; }}
-    .summary {{ width: 100%; max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; background: #fff; }}
+    .metric-card strong {{
+      display: block;
+      margin-bottom: 6px;
+      font-size: 1.75rem;
+      line-height: 1.1;
+      overflow-wrap: anywhere;
+    }}
+    .metric-card p {{ font-size: 0.9rem; }}
+    .visual-panel {{ margin-bottom: 30px; }}
+    .summary {{ display: block; width: 100%; max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; background: #fff; }}
     .table-wrap {{ overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: #fff; }}
     table {{ width: 100%; border-collapse: collapse; font-size: 0.88rem; }}
-    th, td {{ padding: 10px 12px; border-bottom: 1px solid #e8edf5; text-align: left; vertical-align: top; }}
-    th {{ background: #f1f4f9; font-weight: 700; white-space: nowrap; }}
+    .panel table.compact {{ display: block; max-width: 100%; overflow-x: auto; }}
+    th, td {{ padding: 11px 12px; border-bottom: 1px solid var(--soft); text-align: left; vertical-align: top; }}
+    th {{ background: #f6f7f9; font-weight: 750; white-space: nowrap; }}
+    tbody tr:hover {{ background: #fafbfc; }}
     tr:last-child td {{ border-bottom: 0; }}
     table.compact td {{ font-size: 0.86rem; }}
-    .badge {{ display: inline-block; padding: 3px 7px; border-radius: 999px; background: #eef2f7; color: var(--text); }}
+    .badge {{ display: inline-block; padding: 3px 7px; border-radius: 999px; background: var(--soft); color: var(--text); }}
     .badge.pass {{ background: #e8f6ef; color: var(--pass); }}
     .badge.warn {{ background: #fff3dd; color: var(--warn); }}
-    .section-title {{ margin: 30px 0 12px; }}
+    .section-title {{ margin: 34px 0 12px; }}
     .rules {{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }}
     .rules p {{ padding: 12px; background: #fff; border: 1px solid var(--line); border-radius: 8px; }}
     .publication-grid {{ display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 14px; align-items: start; }}
+    .publication-grid > * {{ min-width: 0; }}
     .check-list {{ display: flex; flex-wrap: wrap; gap: 8px; }}
-    footer {{ margin-top: 30px; color: var(--muted); font-size: 0.9rem; }}
+    footer {{
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.86rem;
+    }}
     @media (max-width: 760px) {{
-      main {{ padding: 22px 14px 36px; }}
+      .nav-inner {{ min-height: 54px; padding: 0 14px; }}
+      .nav-links {{ gap: 12px; }}
+      .nav-links a:nth-child(2), .nav-links a:nth-child(3) {{ display: none; }}
+      main {{ padding: 34px 14px 40px; }}
+      h1 {{ font-size: 2.25rem; }}
       .cards, .rules, .publication-grid {{ grid-template-columns: 1fr; }}
       th, td {{ padding: 9px 10px; }}
     }}
   </style>
 </head>
 <body>
+<nav class="site-nav" aria-label="WaveMind">
+  <div class="nav-inner">
+    <a class="brand" href="https://github.com/CaspianG/wavemind">WaveMind</a>
+    <div class="nav-links">
+      <a href="https://github.com/CaspianG/wavemind#quick-start">Quick Start</a>
+      <a href="https://github.com/CaspianG/wavemind/blob/main/docs/README.md">Docs</a>
+      <a href="https://pypi.org/project/wavemind/">PyPI</a>
+      <a href="https://github.com/CaspianG/wavemind/releases/latest">Release</a>
+    </div>
+  </div>
+</nav>
 <main>
-  <header>
-    <h1>WaveMind Living Benchmark Dashboard</h1>
-    <p>Generated from checked-in benchmark artifacts. Planned rows are not claimed wins; external service evidence is shown separately.</p>
+  <header class="hero">
+    <div class="eyebrow">Living benchmark dashboard</div>
+    <h1>Benchmark evidence</h1>
+    <p>Source-backed retrieval, latency, cost, agent-quality, and production-readiness results. Planned rows are not claimed wins, and external evidence stays visibly separate from verified claims.</p>
   </header>
 
   <div class="cards">
     {_summary_cards(payload)}
   </div>
 
-  <section class="panel">
+  <section class="visual-panel">
     <h2>Visual Summary</h2>
     <img class="summary" src="assets/benchmark-summary.svg" alt="WaveMind benchmark summary">
   </section>
@@ -569,11 +643,11 @@ def render_dashboard(root: Path = PROJECT_ROOT) -> str:
   </div>
 
   <footer>
-    Source: <code>benchmarks/benchmark_matrix_results.json</code>.
-    Machine status: <a href="data/leaderboard-status.json">data/leaderboard-status.json</a>.
-    Markdown view: <a href="../benchmarks/BENCHMARK_LEADERBOARD.md">benchmarks/BENCHMARK_LEADERBOARD.md</a>.
-    Strict production evidence: <a href="../benchmarks/PRODUCTION_EVIDENCE.md">benchmarks/PRODUCTION_EVIDENCE.md</a>.
-    Strict evidence readiness: <a href="../benchmarks/STRICT_EVIDENCE_READINESS.md">benchmarks/STRICT_EVIDENCE_READINESS.md</a>.
+    Generated from <code>benchmarks/benchmark_matrix_results.json</code>.
+    <a href="data/leaderboard-status.json">Machine status</a> ·
+    <a href="../benchmarks/BENCHMARK_LEADERBOARD.md">Markdown leaderboard</a> ·
+    <a href="../benchmarks/PRODUCTION_EVIDENCE.md">Production evidence</a> ·
+    <a href="../benchmarks/STRICT_EVIDENCE_READINESS.md">Evidence readiness</a>
   </footer>
 </main>
 </body>
