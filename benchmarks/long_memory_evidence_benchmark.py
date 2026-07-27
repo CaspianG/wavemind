@@ -106,6 +106,7 @@ class EvidenceMetrics:
     prewarmed_queries: int = 0
     predictive_prefetch_warmed: int = 0
     worker_errors: int = 0
+    maintenance_interval_queries: int = 0
 
 
 class CachedTextEncoder:
@@ -378,7 +379,7 @@ def run_wavemind_memory_os(
             worker_reports: list[dict[str, object]] = []
             queries_per_namespace = Counter(query.namespace for query in dataset.queries)
             seen_per_namespace: Counter[str] = Counter()
-            maintenance_interval = 8
+            maintenance_interval = 32
             for query in dataset.queries:
                 query_started = time.perf_counter()
                 results = query_with_cache(
@@ -474,6 +475,7 @@ def run_wavemind_memory_os(
             + int(dict(report.get("predictive_prefetch") or {}).get("errors") or 0)
             for report in worker_reports
         ),
+        maintenance_interval_queries=maintenance_interval,
     )
 
 

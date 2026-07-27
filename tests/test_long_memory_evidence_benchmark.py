@@ -166,6 +166,7 @@ def test_memory_os_runner_executes_worker_in_sequential_workload():
     assert metrics.memory_os_policy_mode == "feedback_free_safe"
     assert metrics.prewarmed_queries > 0
     assert metrics.worker_errors == 0
+    assert metrics.maintenance_interval_queries == 32
 
 
 def test_long_memory_cli_writes_json_for_wavemind(tmp_path):

@@ -158,6 +158,7 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
     assert memory_os["execution_mode"] == "memory_os_direct_feedback_free"
     assert memory_os["worker_runs"] == 2
     assert memory_os["worker_errors"] == 0
+    assert memory_os["maintenance_interval_queries"] == 32
     assert memory_os["task_success_rate"] == 1.0
     assert len(rows) == 4
     assert all(row["context_sha256"] for row in rows)

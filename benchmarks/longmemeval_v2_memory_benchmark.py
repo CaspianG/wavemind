@@ -485,7 +485,7 @@ def _query_memory(
         current_maintenance = 0.0
         if use_memory_os:
             seen[namespace] += 1
-            if seen[namespace] % 8 == 0 or seen[namespace] == totals[namespace]:
+            if seen[namespace] % 32 == 0 or seen[namespace] == totals[namespace]:
                 maintenance_started = time.perf_counter()
                 report = MemoryOSWorker(memory, cache).run_once(
                     namespace=namespace,
@@ -518,6 +518,7 @@ def _query_memory(
             + int(dict(row.get("predictive_prefetch") or {}).get("errors") or 0)
             for row in worker_reports
         ),
+        "maintenance_interval_queries": 32 if use_memory_os else 0,
         "memory_os_policy_mode": (
             "feedback_free_safe" if use_memory_os else "disabled"
         ),
