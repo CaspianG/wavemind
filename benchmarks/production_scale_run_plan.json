@@ -1,9 +1,9 @@
 {
   "schema": "wavemind.production_scale_run_plan.v1",
-  "generated_at": "2026-07-12T19:58:20Z",
+  "generated_at": "2026-07-27T13:17:13Z",
   "summary": {
     "schema": "wavemind.production_scale_run_plan.v1",
-    "generated_at": "2026-07-12T19:58:20Z",
+    "generated_at": "2026-07-27T13:17:13Z",
     "overall_status": "action_required",
     "ready_count": 0,
     "action_required_count": 5,
@@ -171,7 +171,7 @@
         "WAVEMIND_QDRANT_URL"
       ],
       "module_requirements": {
-        "qdrant_client": true
+        "qdrant_client": false
       },
       "estimated_index_gb": 0.0,
       "estimated_transient_runner_gb": 0.003,
@@ -228,6 +228,7 @@
       },
       "blockers": [
         "missing_env:WAVEMIND_QDRANT_URL",
+        "missing_module:qdrant_client",
         "insufficient_local_disk_for_index_and_transient_batches"
       ],
       "actions": [
@@ -278,7 +279,7 @@
         "WAVEMIND_QDRANT_URLS"
       ],
       "module_requirements": {
-        "qdrant_client": true
+        "qdrant_client": false
       },
       "estimated_index_gb": 0.0,
       "estimated_transient_runner_gb": 0.003,
@@ -335,6 +336,7 @@
       },
       "blockers": [
         "missing_env:WAVEMIND_QDRANT_URLS",
+        "missing_module:qdrant_client",
         "insufficient_local_disk_for_index_and_transient_batches"
       ],
       "actions": [
@@ -390,7 +392,7 @@
         "WAVEMIND_PGVECTOR_DSNS"
       ],
       "module_requirements": {
-        "psycopg": true
+        "psycopg": false
       },
       "estimated_index_gb": 0.0,
       "estimated_transient_runner_gb": 0.003,
@@ -447,6 +449,7 @@
       },
       "blockers": [
         "missing_env:WAVEMIND_PGVECTOR_DSNS",
+        "missing_module:psycopg",
         "insufficient_local_disk_for_index_and_transient_batches"
       ],
       "actions": [
@@ -605,7 +608,7 @@
         "WAVEMIND_QDRANT_URLS"
       ],
       "module_requirements": {
-        "qdrant_client": true
+        "qdrant_client": false
       },
       "estimated_index_gb": 0.0,
       "estimated_transient_runner_gb": 0.007,
@@ -662,6 +665,7 @@
       },
       "blockers": [
         "missing_env:WAVEMIND_QDRANT_URLS",
+        "missing_module:qdrant_client",
         "insufficient_local_disk_for_index_and_transient_batches"
       ],
       "actions": [

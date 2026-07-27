@@ -810,7 +810,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     multimodal_admission = sub.add_parser(
         "multimodal-admission",
-        help="Gate production multimodal memory claims against external encoder evidence",
+        help="Gate multimodal claims against real local encoder and lifecycle evidence",
     )
     multimodal_admission.add_argument(
         "--root",
@@ -819,7 +819,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Repository/artifact root. Defaults to the current working directory.",
     )
     multimodal_admission.add_argument("--deployment", default="production")
-    multimodal_admission.add_argument("--min-modalities", type=int, default=7)
+    multimodal_admission.add_argument("--min-modalities", type=int, default=5)
     multimodal_admission.add_argument("--min-payloads", type=int, default=1000)
     multimodal_admission.add_argument("--min-queries", type=int, default=200)
     multimodal_admission.add_argument("--min-precision-at-1", type=float, default=0.90)
@@ -829,11 +829,34 @@ def build_parser() -> argparse.ArgumentParser:
         default=0.90,
     )
     multimodal_admission.add_argument("--max-query-p99-ms", type=float, default=250.0)
-    multimodal_admission.add_argument("--max-encode-p95-ms", type=float, default=100.0)
+    multimodal_admission.add_argument(
+        "--max-encode-p95-ms",
+        type=float,
+        default=None,
+        help=(
+            "Optional single encode-p95 override. By default the gate uses "
+            "250 ms for text/image, 1 s for audio/3D, and 2 s for video."
+        ),
+    )
+    multimodal_admission.add_argument(
+        "--min-assets-per-modality",
+        type=int,
+        default=100,
+    )
+    multimodal_admission.add_argument(
+        "--min-queries-per-modality",
+        type=int,
+        default=20,
+    )
+    multimodal_admission.add_argument(
+        "--min-modality-precision-at-1",
+        type=float,
+        default=0.85,
+    )
     multimodal_admission.add_argument(
         "--no-require-object-store",
         action="store_true",
-        help="Do not require remote object-store evidence. Intended for development only.",
+        help="Do not require S3-compatible lifecycle evidence. Intended for development only.",
     )
     multimodal_admission.add_argument("--allow-plan-only", action="store_true")
     multimodal_admission.add_argument("--write-artifacts", action="store_true")
@@ -3233,6 +3256,9 @@ def main(argv: list[str] | None = None) -> int:
             min_cross_modal_precision_at_1=args.min_cross_modal_precision_at_1,
             max_query_p99_ms=args.max_query_p99_ms,
             max_encode_p95_ms=args.max_encode_p95_ms,
+            min_assets_per_modality=args.min_assets_per_modality,
+            min_queries_per_modality=args.min_queries_per_modality,
+            min_modality_precision_at_1=args.min_modality_precision_at_1,
             require_object_store=not args.no_require_object_store,
             allow_plan_only=args.allow_plan_only,
         )

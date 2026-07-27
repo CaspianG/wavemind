@@ -12,6 +12,26 @@ def test_package_version_matches_pyproject():
     assert wavemind.__version__ == match.group(1)
 
 
+def test_project_metadata_exposes_product_and_support_links():
+    pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
+
+    assert (
+        'description = "Adaptive, local-first memory infrastructure '
+        'for agents and applications"'
+    ) in pyproject
+    assert '{ name = "CaspianG" }' in pyproject
+    for keyword in ("agent-memory", "long-term-memory", "vector-search"):
+        assert f'"{keyword}"' in pyproject
+    for url_name in (
+        "Documentation",
+        "Changelog",
+        "Issues",
+        "Discussions",
+        "Benchmarks",
+    ):
+        assert f"{url_name} = " in pyproject
+
+
 def test_release_version_matches_deployment_examples():
     version = wavemind.__version__
     expected_image = f"ghcr.io/caspiang/wavemind:{version}"
@@ -229,6 +249,10 @@ def test_manifest_includes_docs_without_large_benchmark_data():
         Path(path).read_text(encoding="utf-8")
         for path in (
             "README.md",
+            "CHANGELOG.md",
+            "docs/README.md",
+            "docs/INDEX_BACKENDS.md",
+            "docs/KNOWN_LIMITATIONS.md",
             "docs/SCALE_AND_PRODUCTION.md",
             "docs/MULTIMODAL_AND_STORAGE.md",
             "docs/INTEGRATIONS.md",
@@ -242,10 +266,14 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     benchmark_brief = Path("docs/BENCHMARK_BRIEF.md").read_text(encoding="utf-8")
 
     assert "include CONTRIBUTING.md" in manifest
+    assert "include CHANGELOG.md" in manifest
     assert "include CODE_OF_CONDUCT.md" in manifest
     assert "include SECURITY.md" in manifest
     assert "include SUPPORT.md" in manifest
     assert "include docs/ROADMAP.md" in manifest
+    assert "include docs/README.md" in manifest
+    assert "include docs/INDEX_BACKENDS.md" in manifest
+    assert "include docs/KNOWN_LIMITATIONS.md" in manifest
     assert "include docs/RELEASE.md" in manifest
     assert "include docs/PROJECT_BOARD.md" in manifest
     assert "include docs/BENCHMARK_BRIEF.md" in manifest
@@ -258,6 +286,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "include docs/INTEGRATIONS.md" in manifest
     assert "include docs/BENCHMARKS.md" in manifest
     assert "include docs/assets/benchmark-summary.svg" in manifest
+    assert "include docs/assets/wavemind-social-preview.png" in manifest
+    assert "include docs/assets/wavemind-studio.png" in manifest
     assert "include benchmarks/*.json" in manifest
     assert "include docs/assets/wavemind-demo.gif" in manifest
     assert "include benchmarks/*.py" in manifest
@@ -370,7 +400,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "MEMORY_OS_POLICY_BUNDLE.md" in readme
     assert "wavemind memory-os-policy-bundle" in readme
     assert "faiss-persisted" in readme
-    assert "SHA-256 checksum of normalized source" in readme
+    assert "SHA-256" in readme
+    assert "checksum of normalized source" in readme
     assert "rebuilds it from the durable store" in readme
     assert "wavemind memory-os-plan" in readme
     assert "examples/chroma_migration.py" in readme

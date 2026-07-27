@@ -1,18 +1,28 @@
 {
-  "schema": "wavemind.multimodal_admission.v1",
-  "generated_at": "2026-07-09T12:56:09Z",
+  "schema": "wavemind.multimodal_admission.v2",
+  "generated_at": "2026-07-27T11:40:14Z",
   "status": "plan_only",
   "admitted": false,
   "deployment": "production",
   "allow_plan_only": true,
-  "claim_boundary": "external_multimodal_encoder_evidence_required",
-  "min_modalities": 7,
+  "claim_boundary": "real_multimodal_encoder_and_lifecycle_evidence_required",
+  "min_modalities": 5,
   "min_payloads": 1000,
   "min_queries": 200,
   "min_precision_at_1": 0.9,
   "min_cross_modal_precision_at_1": 0.9,
   "max_query_p99_ms": 250.0,
-  "max_encode_p95_ms": 100.0,
+  "max_encode_p95_ms": null,
+  "encoding_budgets_ms": {
+    "text": 250.0,
+    "image": 250.0,
+    "audio": 1000.0,
+    "video": 2000.0,
+    "3d": 1000.0
+  },
+  "min_assets_per_modality": 100,
+  "min_queries_per_modality": 20,
+  "min_modality_precision_at_1": 0.85,
   "require_object_store": true,
   "summary": {
     "status": "plan_only",
@@ -22,9 +32,9 @@
     "requested_evidence_status": "action_required",
     "required_artifact": "benchmarks/multimodal_external_encoder_results.json",
     "structured_modality_count": 7,
-    "external_modality_count": 0,
-    "external_payload_count": 0,
-    "external_query_count": 0,
+    "evidence_modality_count": 0,
+    "evidence_payload_count": 0,
+    "evidence_query_count": 0,
     "blocking_issue_count": 2,
     "warning_count": 0
   },
@@ -56,14 +66,14 @@
       "encoder_contract_ok": true,
       "encoder_contract_target_precision_at_1": 1.0,
       "encoder_contract_global_precision_at_1": 1.0,
-      "encoder_contract_margin": 0.8113185907521259,
+      "encoder_contract_margin": 0.8113164444259024,
       "encoder_contract_min_required_margin": 0.2,
       "encoder_health_ok": true,
       "encoder_health_global_precision_at_1": 1.0,
       "encoder_health_target_modality_routing_rate": 1.0,
       "encoder_health_dimension_match_rate": 1.0,
-      "encoder_health_payload_encode_p95_ms": 4.092629975639284,
-      "encoder_health_query_encode_p95_ms": 1.4515499933622777,
+      "encoder_health_payload_encode_p95_ms": 8.334220002143411,
+      "encoder_health_query_encode_p95_ms": 1.5152499952819198,
       "encoder_health_margin": 0.24988913536071777,
       "encoder_health_min_required_margin": 0.01,
       "temporal_event_precision_at_1": 1.0,
@@ -73,48 +83,58 @@
       "knowledge_graph_path_precision_at_1": 1.0,
       "knowledge_graph_persistence_rate": 1.0,
       "knowledge_graph_provenance_rate": 1.0,
-      "avg_latency_ms": 1.0470999737403222,
-      "cross_modal_avg_latency_ms": 2.941685728728771,
-      "temporal_event_avg_latency_ms": 1.102049951441586,
-      "knowledge_graph_avg_latency_ms": 1.4402500237338245,
+      "avg_latency_ms": 1.9594857138664727,
+      "cross_modal_avg_latency_ms": 4.714814283943269,
+      "temporal_event_avg_latency_ms": 2.565499999036547,
+      "knowledge_graph_avg_latency_ms": 2.338574999157572,
       "asset_manifest_verified": true
     }
   },
   "required_evidence": {
-    "id": "external_multimodal_encoder",
-    "title": "External multimodal encoder and object-store benchmark",
+    "id": "real_multimodal_encoder",
+    "title": "Real local multimodal encoder and MinIO lifecycle benchmark",
     "status": "action_required",
     "artifact": "benchmarks/multimodal_external_encoder_results.json",
-    "evidence": "missing external multimodal encoder evidence",
+    "evidence": "missing real multimodal encoder evidence",
     "issues": [
       "missing required artifact: benchmarks/multimodal_external_encoder_results.json"
     ],
-    "claim_unlocked": "Production multimodal encoder quality, cross-modal recall, object-store persistence, and latency SLO."
+    "claim_unlocked": "Production multimodal encoder quality, cross-modal recall, MinIO lifecycle safety, reproducibility, and latency SLO."
   },
   "requested_evidence": {
     "status": "action_required",
-    "evidence": "missing external multimodal encoder evidence",
+    "evidence": "missing real multimodal encoder evidence",
     "issues": [
       "missing required artifact: benchmarks/multimodal_external_encoder_results.json"
     ],
     "checks": [],
-    "min_modalities": 7,
+    "min_modalities": 5,
     "min_payloads": 1000,
     "min_queries": 200,
     "min_precision_at_1": 0.9,
     "min_cross_modal_precision_at_1": 0.9,
     "max_query_p99_ms": 250.0,
-    "max_encode_p95_ms": 100.0,
+    "max_encode_p95_ms": null,
+    "encoding_budgets_ms": {
+      "text": 250.0,
+      "image": 250.0,
+      "audio": 1000.0,
+      "video": 2000.0,
+      "3d": 1000.0
+    },
+    "min_assets_per_modality": 100,
+    "min_queries_per_modality": 20,
+    "min_modality_precision_at_1": 0.85,
     "require_object_store": true
   },
   "issues": [
-    "external_multimodal_encoder artifact does not satisfy requested rollout: requested_evidence_status=action_required",
+    "real_multimodal_encoder artifact does not satisfy requested rollout: requested_evidence_status=action_required",
     "missing required artifact: benchmarks/multimodal_external_encoder_results.json"
   ],
   "warnings": [],
   "next_actions": [
-    "Do not claim production multimodal quality yet; run the external encoder benchmark against real assets and object-store-backed payloads first.",
-    "Commit benchmarks/multimodal_external_encoder_results.json after the external encoder run passes."
+    "Do not claim production multimodal quality yet; run the local open-source benchmark against real public assets and verified MinIO-backed payloads first.",
+    "Commit benchmarks/multimodal_external_encoder_results.json only after the real-asset benchmark and lifecycle checks pass."
   ],
   "source_artifacts": {
     "structured_contract": "benchmarks/structured_memory_results.json",

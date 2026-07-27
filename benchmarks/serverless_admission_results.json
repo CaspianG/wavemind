@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.serverless_admission.v1",
-  "generated_at": "2026-07-12T20:39:56Z",
+  "generated_at": "2026-07-27T10:53:30Z",
   "status": "plan_only",
   "admitted": false,
   "deployment": "production",

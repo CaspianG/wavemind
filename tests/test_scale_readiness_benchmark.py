@@ -539,6 +539,14 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
     assert results["WaveMind structured payloads"]["cross_modal_queries"] == 7
     assert results["WaveMind structured payloads"]["cross_modal_precision_at_1"] == 1.0
     assert results["WaveMind structured payloads"]["cross_modal_embedding_dim"] == 64
+    assert (
+        results["WaveMind structured payloads"]["cross_modal_space_id"]
+        == "wavemind.descriptor.v1.d64"
+    )
+    assert (
+        results["WaveMind structured payloads"]["cross_modal_space_production_eligible"]
+        is False
+    )
     assert results["WaveMind structured payloads"]["cross_modal_vectors_persisted_rate"] == 1.0
     assert results["WaveMind structured payloads"]["cross_modal_provenance_rate"] == 1.0
     assert results["WaveMind structured payloads"]["asset_manifest_verified"] is True
@@ -557,6 +565,18 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
     assert results["WaveMind structured payloads"]["precomputed_vector_queries"] == 4
     assert results["WaveMind structured payloads"]["precomputed_vector_precision_at_1"] == 1.0
     assert results["WaveMind structured payloads"]["precomputed_vector_embedding_dim"] == 4
+    assert (
+        results["WaveMind structured payloads"]["precomputed_vector_space_id"]
+        == "scale-readiness:external-precomputed.v1"
+    )
+    assert (
+        results["WaveMind structured payloads"]["precomputed_vector_model_revision"]
+        == "scale-readiness-v1"
+    )
+    assert (
+        results["WaveMind structured payloads"]["same_dimension_space_mismatch_rejected"]
+        is True
+    )
     assert results["WaveMind structured payloads"]["precomputed_vector_persisted_rate"] == 1.0
     assert results["WaveMind structured payloads"]["precomputed_vector_target_modalities"] == [
         "image",

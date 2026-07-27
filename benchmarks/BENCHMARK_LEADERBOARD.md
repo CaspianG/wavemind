@@ -1,14 +1,14 @@
 # WaveMind Benchmark Leaderboard
 
 Generated from `benchmarks/benchmark_matrix_results.json`.
-Last refresh: `2026-07-20T07:09:38Z` from `23edad3b172f`.
+Last refresh: `2026-07-27T13:29:25Z` from `f3a23b2fc832`.
 
 This is a compact reader-facing view of checked-in benchmark results. It is not a universal vector-database leaderboard: each row uses the primary quality metric for that benchmark, and latency is shown separately so quality wins are not confused with speed wins.
 
 | benchmark | category | primary metric | best WaveMind result | best baseline result | readout |
 |---|---|---|---|---|---|
 | Agent user-memory retrieval | agent-memory | precision@1 | WaveMind: 0.82 / 2.249 ms | Chroma: 0.82 / 0.933 ms | Quality tie; WaveMind slower |
-| Agent coherence and token savings | agent-memory | task success | WaveMind: 0.917 / 2.647 ms | Static vector: 0.333 / 0.679 ms | WaveMind leads on quality |
+| Agent coherence and token savings | agent-memory | task success | WaveMind: 0.917 / 1.43 ms | Chroma static: 0.417 / 2.833 ms | WaveMind leads on quality |
 | Dynamic memory policy | agent-memory | precision@1 | WaveMind: 1 / 3.918 ms | Chroma static: 0.571 / 1.662 ms | WaveMind leads on quality |
 | Field memory graph dynamics | agent-memory | precision@1 | WaveMind graph: 1 / 0.332 ms | - | WaveMind-only check |
 | WaveMind capacity curve | capacity | precision@1 | WaveMind dynamic capacity: 1 / 48.4 ms | - | WaveMind-only check |
@@ -25,7 +25,7 @@ This is a compact reader-facing view of checked-in benchmark results. It is not 
 | Production load profile 1M | production-scale | Recall@k | WaveMind faiss-persisted: 1 / 39.1 ms | Qdrant service: 0.984 / 82.6 ms | WaveMind leads on quality; production SLO needs scale: WaveMind faiss-persisted; cost: WaveMind faiss-persisted $4.17/1M queries |
 | Qdrant 1M HNSW ef sweep | production-scale | Recall@k | - | hnsw_ef=2048: 0.977 / 64.8 ms | No WaveMind result; production SLO miss; cost if SLO fixed: hnsw_ef=512 $4.86/1M queries |
 | Production streaming load runner | production-scale | Recall@k | 10k smoke / WaveMind numpy-streaming: 1 / 0.098 ms | Qdrant sharded smoke / Qdrant sharded service streaming: 1 / 9.103 ms | Quality tie; WaveMind faster; production SLO pass: 10k smoke / WaveMind numpy-streaming; cost: 10k smoke / WaveMind numpy-streaming $0.69/1M queries |
-| Scale readiness profile | production-scale | precision@1 | WaveMind structured payloads: 1 / 1.959 ms | - | WaveMind-only check |
+| Scale readiness profile | production-scale | precision@1 | WaveMind structured payloads: 1 / 2.3 ms | - | WaveMind-only check |
 | Production readiness gate | production-scale | readiness score | WaveMind production readiness: 1 / - | - | WaveMind-only check |
 | Memory competitor adapter profile | agent-memory | precision@1 | WaveMind: 0.8 / 14.5 ms | GraphRAG static graph: 0.852 / 0.079 ms | Baseline leads on quality |
 | [LongMemEval answer generation](https://github.com/xiaowu0162/LongMemEval) | long-term-agent-memory | token F1 | WaveMind + qwen2.5:1.5b: 0.333 / - | Chroma static + qwen2.5:1.5b: 0.17 / - | WaveMind leads on quality |
@@ -34,7 +34,7 @@ This is a compact reader-facing view of checked-in benchmark results. It is not 
 
 | area | current source | claim status | next action |
 |---|---|---|---|
-| Artifact freshness | local matrix refresh at `2026-07-20T07:09:38Z` | source `23edad3b172f`; audit gate enforced by `validate_benchmark_artifacts.py` | Keep weekly refresh green before public claims. |
+| Artifact freshness | local matrix refresh at `2026-07-27T13:29:25Z` | source `f3a23b2fc832`; audit gate enforced by `validate_benchmark_artifacts.py` | Keep weekly refresh green before public claims. |
 | Serverless telemetry | loopback API pool; `loopback-api-capacity-estimate`; 4 measured replicas | observed SLO `True`; loopback evidence, not a managed-serverless claim | Run `.github/workflows/serverless-observed-telemetry.yml` against deployed API nodes. |
 | External HTTP cluster load | kubernetes-kind-non-loopback-ci; `kubernetes-pod-dns-physical-node-drill`; 4 nodes | SLO `True`; non-loopback Kubernetes pod-DNS evidence | Run `.github/workflows/external-http-cluster-load.yml` with a remote node manifest. |
 | External HTTP active-active loopback | local-loopback; `loopback-api-regions`; 3 regions | SLO `True`; external URL contract over local API regions | Run `.github/workflows/external-http-active-active.yml` with remote regions for production evidence. |

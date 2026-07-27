@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.memory_os_canary.v1",
-  "generated_at": "2026-07-15T00:52:29Z",
+  "generated_at": "2026-07-27T10:53:31Z",
   "status": "pass",
   "ok": true,
   "claim_boundary": "staging_canary; not remote Kubernetes, Redis, or 10M production evidence",
@@ -10,12 +10,12 @@
   "namespace_count": 64,
   "node_count": 3,
   "seeded_memory_ids": [
-    9,
-    10,
-    11,
-    12,
-    13,
-    14
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
   ],
   "replayed_query_count": 18,
   "unique_replayed_queries": [
@@ -31,7 +31,7 @@
       "title": "Representative query audit created hot queries",
       "status": "pass",
       "passed": true,
-      "evidence": "hot_query_count=16, replayed_queries=18",
+      "evidence": "hot_query_count=5, replayed_queries=18",
       "action": "Replay representative staging traffic with query audit enabled before Memory OS rollout."
     },
     {
@@ -55,7 +55,7 @@
       "title": "Memory OS applied bounded priority learning",
       "status": "pass",
       "passed": true,
-      "evidence": "priority_predictions=8",
+      "evidence": "priority_predictions=6",
       "action": "Investigate recall quality if hot queries do not produce priority updates."
     },
     {
@@ -82,7 +82,7 @@
     "passed_checks": 6,
     "check_count": 6,
     "failed_check_ids": [],
-    "hot_query_count": 16,
+    "hot_query_count": 5,
     "worker_actions": [
       "purge_expired",
       "consolidate_field",
@@ -90,68 +90,66 @@
       "predict_priority",
       "prewarm_cache",
       "predictive_prefetch",
-      "advise_architecture",
-      "escalate_policy_history"
+      "advise_architecture"
     ],
     "prewarm_warmed": 5,
     "predictive_warmed": 15,
-    "priority_predictions": 8,
+    "priority_predictions": 6,
     "expired_purged": 1,
     "admission_status": "admitted",
     "admitted": true
   },
   "worker_report": {
     "namespace": "canary:memory-os",
-    "scanned_events": 66,
+    "scanned_events": 18,
     "hot_queries": [
       {
         "namespace": "canary:memory-os",
         "query": "budget recall",
-        "frequency": 15,
-        "last_seen": 1784076748.6133287
+        "frequency": 6,
+        "last_seen": 1785149611.6669846
       },
       {
         "namespace": "canary:memory-os",
         "query": "memory os prewarm",
-        "frequency": 11,
-        "last_seen": 1784076748.6223826
+        "frequency": 4,
+        "last_seen": 1785149611.6684296
       },
       {
         "namespace": "canary:memory-os",
         "query": "risk limits",
-        "frequency": 11,
-        "last_seen": 1784076748.603643
+        "frequency": 4,
+        "last_seen": 1785149611.6655662
       },
       {
         "namespace": "canary:memory-os",
         "query": "user preferences",
-        "frequency": 7,
-        "last_seen": 1784076748.6271126
+        "frequency": 2,
+        "last_seen": 1785149611.6691234
       },
       {
         "namespace": "canary:memory-os",
         "query": "concise answers",
-        "frequency": 7,
-        "last_seen": 1784076748.6082695
+        "frequency": 2,
+        "last_seen": 1785149611.666277
       }
     ],
     "expired_purged": 1,
     "consolidated_steps": 3,
-    "concepts_created": 1,
+    "concepts_created": 2,
     "concept_ids": [
-      15
+      7,
+      8
     ],
-    "priority_predictions": 8,
-    "priority_boost_total": 4.399996935426188,
+    "priority_predictions": 6,
+    "priority_boost_total": 1.799998184692152,
     "priority_boosted_ids": [
       4,
-      12,
       7,
       8,
       2,
-      15,
-      3,
-      11
+      5,
+      3
     ],
     "forgetting_demotions": 0,
     "forgetting_decay_total": 0.0,
@@ -160,7 +158,7 @@
     "cache_enabled": true,
     "cache_invalidated": 0,
     "prewarm": {
-      "scanned_events": 71,
+      "scanned_events": 23,
       "candidates": 5,
       "warmed": 5,
       "skipped": 0,
@@ -176,47 +174,36 @@
       "queries": [
         "budget recall memory",
         "budget recall ops",
-        "budget recall paths.",
+        "budget recall prewarm",
         "memory os prewarm budget",
         "memory os prewarm ops",
         "memory os prewarm recall",
         "risk limits limit",
         "risk limits per",
         "risk limits percent",
+        "preferences can",
+        "preferences consolidate",
         "preferences limit",
-        "preferences per",
-        "preferences percent",
-        "concise answers answers.",
         "concise answers operational",
-        "concise answers preference"
+        "concise answers preference",
+        "concise answers prefers"
       ],
-      "transition_queries": [
-        "budget recall memory"
-      ],
-      "transition_edges": [
-        {
-          "namespace": "canary:memory-os",
-          "from_query": "concise answers",
-          "to_query": "budget recall memory",
-          "count": 1,
-          "probability": 0.14285714285714285,
-          "last_seen": 1784076727.5046418
-        }
-      ],
+      "transition_queries": [],
+      "transition_edges": [],
       "ok": true
     },
     "stats_before": {
-      "active_memories": 12,
+      "active_memories": 5,
       "expired_memories": 1,
-      "total_memories": 13,
-      "audit_events": 93,
-      "field_energy": 67.687721,
+      "total_memories": 6,
+      "audit_events": 24,
+      "field_energy": 13.6108,
       "clusters": 1,
       "field_shape": "128x128x6",
       "index": "numpy-exact",
       "index_healthy": true,
-      "index_expected_records": 13,
-      "index_vector_records": 13,
+      "index_expected_records": 6,
+      "index_vector_records": 6,
       "index_missing_records": 0,
       "index_extra_records": 0,
       "index_health": {
@@ -224,8 +211,8 @@
         "healthy": true,
         "exact": true,
         "vector_dim": 384,
-        "expected_count": 13,
-        "vector_count": 13,
+        "expected_count": 6,
+        "vector_count": 6,
         "missing_count": 0,
         "extra_count": 0,
         "missing_ids_sample": [],
@@ -237,24 +224,24 @@
       },
       "vector_dim": 384,
       "graph_enabled": false,
-      "graph_nodes": 13,
+      "graph_nodes": 6,
       "graph_edges": 0,
       "graph_positive_edges": 0,
       "graph_negative_edges": 0,
       "graph_energy": 0.0
     },
     "stats_after": {
-      "active_memories": 13,
+      "active_memories": 7,
       "expired_memories": 0,
-      "total_memories": 13,
-      "audit_events": 135,
-      "field_energy": 361.053741,
+      "total_memories": 7,
+      "audit_events": 68,
+      "field_energy": 99.49263,
       "clusters": 1,
       "field_shape": "128x128x6",
       "index": "numpy-exact",
       "index_healthy": true,
-      "index_expected_records": 13,
-      "index_vector_records": 13,
+      "index_expected_records": 7,
+      "index_vector_records": 7,
       "index_missing_records": 0,
       "index_extra_records": 0,
       "index_health": {
@@ -262,8 +249,8 @@
         "healthy": true,
         "exact": true,
         "vector_dim": 384,
-        "expected_count": 13,
-        "vector_count": 13,
+        "expected_count": 7,
+        "vector_count": 7,
         "missing_count": 0,
         "extra_count": 0,
         "missing_ids_sample": [],
@@ -275,7 +262,7 @@
       },
       "vector_dim": 384,
       "graph_enabled": false,
-      "graph_nodes": 13,
+      "graph_nodes": 7,
       "graph_edges": 0,
       "graph_positive_edges": 0,
       "graph_negative_edges": 0,
@@ -286,7 +273,7 @@
       "production_ready": false,
       "deployment": "staging",
       "namespace": "canary:memory-os",
-      "current_memories": 13,
+      "current_memories": 7,
       "target_memories": 100000,
       "index": "numpy-exact",
       "vector_dim": 384,
@@ -298,7 +285,7 @@
       "read_quorum": 1,
       "read_fanout": 3,
       "scale_plan": {
-        "current_memories": 13,
+        "current_memories": 7,
         "target_memories": 100000,
         "index": "numpy-exact",
         "vector_dim": 384,
@@ -430,8 +417,7 @@
       "predict_priority",
       "prewarm_cache",
       "predictive_prefetch",
-      "advise_architecture",
-      "escalate_policy_history"
+      "advise_architecture"
     ],
     "recommendations": [
       "Memory OS run is healthy; keep the worker scheduled.",
@@ -439,8 +425,7 @@
       "Architecture advisor: [action_required] Bound read fanout for the hot path - Use quorum-sized read fanout for normal queries and reserve wider fanout for repair or audit workflows.",
       "Architecture advisor: [action_required] Use a service-backed vector index - Keep SQLite/Postgres as source of truth and run Qdrant or pgvector as candidate generation.",
       "Architecture advisor: [action_required] Enable production controls - Set API keys, shared Redis rate limiting, OpenTelemetry/Prometheus, and object-store DR drills.",
-      "Architecture advisor: [action_required] Run a sustained production load profile - Run the external HTTP cluster load workflow against real API nodes before publishing the SLO.",
-      "Memory OS policy history: [action_required] scale-policy repeated across 2 runs - Follow next_commands and keep scale-readiness artifacts current before raising release claims."
+      "Architecture advisor: [action_required] Run a sustained production load profile - Run the external HTTP cluster load workflow against real API nodes before publishing the SLO."
     ],
     "suggestions": [
       {
@@ -451,7 +436,7 @@
         "action": "Surface these concept memories in Studio/API review before promoting them to high-priority production context.",
         "evidence": {
           "namespace": "canary:memory-os",
-          "concepts_created": 1
+          "concepts_created": 2
         }
       },
       {
@@ -464,9 +449,7 @@
           "namespace": "canary:memory-os",
           "generated_queries": 15,
           "warmed_queries": 15,
-          "transition_queries": [
-            "budget recall memory"
-          ]
+          "transition_queries": []
         }
       },
       {
@@ -477,7 +460,7 @@
         "action": "Keep feedback and priority deltas in the Memory OS evidence artifact.",
         "evidence": {
           "namespace": "canary:memory-os",
-          "priority_predictions": 8
+          "priority_predictions": 6
         }
       },
       {
@@ -539,21 +522,6 @@
           "source": "architecture_advisor",
           "recommendation_id": "load-test"
         }
-      },
-      {
-        "id": "policy-history:scale-policy",
-        "severity": "action_required",
-        "title": "Resolve repeated scale-policy",
-        "rationale": "Memory OS saw the same required policy state in repeated worker runs, so this is no longer a one-off maintenance signal.",
-        "action": "Follow next_commands and keep scale-readiness artifacts current before raising release claims.",
-        "evidence": {
-          "namespace": "canary:memory-os",
-          "policy_id": "scale-policy",
-          "policy_status": "action_required",
-          "policy_strategy": "fix-production-gaps-before-growth",
-          "history_trend": "repeated_action_required",
-          "previous_runs": 1
-        }
       }
     ],
     "policy_manifest": {
@@ -581,7 +549,7 @@
             "prewarm_warmed": 5,
             "predictive_generated": 15,
             "predictive_warmed": 15,
-            "transition_edges": 1
+            "transition_edges": 0
           }
         },
         {
@@ -592,7 +560,7 @@
           "action": "Keep priority deltas in release evidence and cap per-run boosts to prevent runaway reinforcement.",
           "evidence": {
             "namespace": "canary:memory-os",
-            "priority_predictions": 8
+            "priority_predictions": 6
           }
         },
         {
@@ -603,7 +571,7 @@
           "action": "Keep adaptive forgetting scheduled and validate stale suppression in dynamic benchmarks.",
           "evidence": {
             "namespace": "canary:memory-os",
-            "active_memories": 13
+            "active_memories": 7
           }
         },
         {
@@ -614,7 +582,7 @@
           "action": "Review new concept memories in Studio/API before assigning very high priority.",
           "evidence": {
             "namespace": "canary:memory-os",
-            "concepts_created": 1
+            "concepts_created": 2
           }
         },
         {
@@ -625,7 +593,7 @@
           "action": "Follow next_commands and keep scale-readiness artifacts current before raising release claims.",
           "evidence": {
             "namespace": "canary:memory-os",
-            "active_memories": 13,
+            "active_memories": 7,
             "target_memories": 100000,
             "recommendation_ids": [
               "scale-plan",
@@ -655,26 +623,17 @@
       "ok": false
     },
     "policy_history": {
-      "previous_runs": 1,
+      "previous_runs": 0,
       "window": 5,
-      "trend": "repeated_action_required",
-      "repeated_action_required_ids": [
-        "scale-policy"
-      ],
+      "trend": "first_run",
+      "repeated_action_required_ids": [],
       "repeated_architecture_required_ids": [],
-      "repeated_required_ids": [
-        "scale-policy"
-      ],
-      "stable_ok_ids": [
-        "consolidation-policy",
-        "coordination-policy",
-        "prefetch-policy",
-        "priority-policy"
-      ],
+      "repeated_required_ids": [],
+      "stable_ok_ids": [],
       "status_counts": {
-        "action_required": 2,
-        "ok": 8,
-        "watch": 2
+        "action_required": 1,
+        "ok": 4,
+        "watch": 1
       }
     },
     "ok": true
@@ -687,8 +646,8 @@
     "effective_cache_mode": "redis",
     "target_memories": 100000,
     "namespace_count": 64,
-    "active_memories": 13,
-    "hot_query_count": 16,
+    "active_memories": 7,
+    "hot_query_count": 5,
     "observed_p99_ms": null,
     "target_p99_ms": 100.0,
     "target_qps": 100.0,
@@ -712,7 +671,7 @@
       "production_ready": false,
       "deployment": "staging",
       "namespace": "canary:memory-os",
-      "current_memories": 13,
+      "current_memories": 7,
       "target_memories": 100000,
       "index": "numpy-exact",
       "vector_dim": 384,
@@ -724,7 +683,7 @@
       "read_quorum": 1,
       "read_fanout": 3,
       "scale_plan": {
-        "current_memories": 13,
+        "current_memories": 7,
         "target_memories": 100000,
         "index": "numpy-exact",
         "vector_dim": 384,
@@ -847,8 +806,8 @@
           "action": "Keep collecting prewarm hit rate, predictive hit rate, and transition edges in readiness artifacts.",
           "evidence": {
             "namespace": "canary:memory-os",
-            "hot_queries": 16,
-            "prewarm_warmed": 16,
+            "hot_queries": 5,
+            "prewarm_warmed": 5,
             "predictive_generated": 1,
             "predictive_warmed": 1,
             "transition_edges": 0
@@ -862,7 +821,7 @@
           "action": "Keep priority deltas in release evidence and cap per-run boosts to prevent runaway reinforcement.",
           "evidence": {
             "namespace": "canary:memory-os",
-            "priority_predictions": 16
+            "priority_predictions": 5
           }
         },
         {
@@ -873,7 +832,7 @@
           "action": "Keep adaptive forgetting scheduled and validate stale suppression in dynamic benchmarks.",
           "evidence": {
             "namespace": "canary:memory-os",
-            "active_memories": 13
+            "active_memories": 7
           }
         },
         {
@@ -895,7 +854,7 @@
           "action": "Follow next_commands and keep scale-readiness artifacts current before raising release claims.",
           "evidence": {
             "namespace": "canary:memory-os",
-            "active_memories": 13,
+            "active_memories": 7,
             "target_memories": 100000,
             "recommendation_ids": [
               "scale-plan",
@@ -925,7 +884,7 @@
       "ok": false
     },
     "policy_history": {
-      "previous_runs": 2,
+      "previous_runs": 1,
       "window": 5,
       "trend": "repeated_action_required",
       "repeated_action_required_ids": [
@@ -942,9 +901,9 @@
         "priority-policy"
       ],
       "status_counts": {
-        "action_required": 3,
-        "ok": 12,
-        "watch": 3
+        "action_required": 2,
+        "ok": 8,
+        "watch": 2
       }
     },
     "policy_escalation_ids": [
@@ -1245,7 +1204,7 @@
   },
   "admission": {
     "schema": "wavemind.memory_os_admission.v1",
-    "generated_at": "2026-07-15T00:52:29Z",
+    "generated_at": "2026-07-27T10:53:31Z",
     "status": "admitted",
     "admitted": true,
     "deployment": "staging",
@@ -1253,7 +1212,7 @@
     "namespace_count": 64,
     "worker_count": 1,
     "effective_cache_mode": "redis",
-    "hot_query_count": 16,
+    "hot_query_count": 5,
     "allow_plan_only": false,
     "claim_boundary": "memory_os_runtime_gate",
     "summary": {
@@ -1303,7 +1262,7 @@
         "status": "pass",
         "passed": true,
         "severity": "ok",
-        "evidence": "hot_query_count=16, enabled=['adaptive-forgetting', 'architecture-advice', 'cache-prewarm', 'consolidation', 'maintenance', 'memory-os', 'predictive-prefetch']",
+        "evidence": "hot_query_count=5, enabled=['adaptive-forgetting', 'architecture-advice', 'cache-prewarm', 'consolidation', 'maintenance', 'memory-os', 'predictive-prefetch']",
         "action": "Enable audited query traffic in staging, replay representative traffic, then rerun memory-os-admission.",
         "details": {}
       },
@@ -1423,7 +1382,7 @@
           "remote_runtime_evidence": false,
           "evidence_age_seconds": null,
           "evidence_fresh": false,
-          "expected_commit_sha": "025b8285cbf28670d3bf712cf25d408ae8080eb3",
+          "expected_commit_sha": "807faf0fdd6d2cc58903d1a5237148110c3cfc5c",
           "commit_matches": false,
           "duration_ok": false,
           "worker_cycles_ok": false,
@@ -1660,8 +1619,8 @@
           "action": "Keep collecting prewarm hit rate, predictive hit rate, and transition edges in readiness artifacts.",
           "evidence": {
             "namespace": "canary:memory-os",
-            "hot_queries": 16,
-            "prewarm_warmed": 16,
+            "hot_queries": 5,
+            "prewarm_warmed": 5,
             "predictive_generated": 1,
             "predictive_warmed": 1,
             "transition_edges": 0
@@ -1675,7 +1634,7 @@
           "action": "Keep priority deltas in release evidence and cap per-run boosts to prevent runaway reinforcement.",
           "evidence": {
             "namespace": "canary:memory-os",
-            "priority_predictions": 16
+            "priority_predictions": 5
           }
         },
         {
@@ -1686,7 +1645,7 @@
           "action": "Keep adaptive forgetting scheduled and validate stale suppression in dynamic benchmarks.",
           "evidence": {
             "namespace": "canary:memory-os",
-            "active_memories": 13
+            "active_memories": 7
           }
         },
         {
@@ -1708,7 +1667,7 @@
           "action": "Follow next_commands and keep scale-readiness artifacts current before raising release claims.",
           "evidence": {
             "namespace": "canary:memory-os",
-            "active_memories": 13,
+            "active_memories": 7,
             "target_memories": 100000,
             "recommendation_ids": [
               "scale-plan",
@@ -1742,7 +1701,7 @@
       "production_ready": false,
       "deployment": "staging",
       "namespace": "canary:memory-os",
-      "current_memories": 13,
+      "current_memories": 7,
       "target_memories": 100000,
       "index": "numpy-exact",
       "vector_dim": 384,
@@ -1754,7 +1713,7 @@
       "read_quorum": 1,
       "read_fanout": 3,
       "scale_plan": {
-        "current_memories": 13,
+        "current_memories": 7,
         "target_memories": 100000,
         "index": "numpy-exact",
         "vector_dim": 384,
@@ -1865,8 +1824,8 @@
       "effective_cache_mode": "redis",
       "target_memories": 100000,
       "namespace_count": 64,
-      "active_memories": 13,
-      "hot_query_count": 16,
+      "active_memories": 7,
+      "hot_query_count": 5,
       "observed_p99_ms": null,
       "target_p99_ms": 100.0,
       "target_qps": 100.0,
@@ -1890,7 +1849,7 @@
         "production_ready": false,
         "deployment": "staging",
         "namespace": "canary:memory-os",
-        "current_memories": 13,
+        "current_memories": 7,
         "target_memories": 100000,
         "index": "numpy-exact",
         "vector_dim": 384,
@@ -1902,7 +1861,7 @@
         "read_quorum": 1,
         "read_fanout": 3,
         "scale_plan": {
-          "current_memories": 13,
+          "current_memories": 7,
           "target_memories": 100000,
           "index": "numpy-exact",
           "vector_dim": 384,
@@ -2025,8 +1984,8 @@
             "action": "Keep collecting prewarm hit rate, predictive hit rate, and transition edges in readiness artifacts.",
             "evidence": {
               "namespace": "canary:memory-os",
-              "hot_queries": 16,
-              "prewarm_warmed": 16,
+              "hot_queries": 5,
+              "prewarm_warmed": 5,
               "predictive_generated": 1,
               "predictive_warmed": 1,
               "transition_edges": 0
@@ -2040,7 +1999,7 @@
             "action": "Keep priority deltas in release evidence and cap per-run boosts to prevent runaway reinforcement.",
             "evidence": {
               "namespace": "canary:memory-os",
-              "priority_predictions": 16
+              "priority_predictions": 5
             }
           },
           {
@@ -2051,7 +2010,7 @@
             "action": "Keep adaptive forgetting scheduled and validate stale suppression in dynamic benchmarks.",
             "evidence": {
               "namespace": "canary:memory-os",
-              "active_memories": 13
+              "active_memories": 7
             }
           },
           {
@@ -2073,7 +2032,7 @@
             "action": "Follow next_commands and keep scale-readiness artifacts current before raising release claims.",
             "evidence": {
               "namespace": "canary:memory-os",
-              "active_memories": 13,
+              "active_memories": 7,
               "target_memories": 100000,
               "recommendation_ids": [
                 "scale-plan",
@@ -2103,7 +2062,7 @@
         "ok": false
       },
       "policy_history": {
-        "previous_runs": 2,
+        "previous_runs": 1,
         "window": 5,
         "trend": "repeated_action_required",
         "repeated_action_required_ids": [
@@ -2120,9 +2079,9 @@
           "priority-policy"
         ],
         "status_counts": {
-          "action_required": 3,
-          "ok": 12,
-          "watch": 3
+          "action_required": 2,
+          "ok": 8,
+          "watch": 2
         }
       },
       "policy_escalation_ids": [

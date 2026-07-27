@@ -1,14 +1,14 @@
 {
   "schema": "wavemind.cluster_autoscale_report.v1",
-  "generated_at": "2026-07-09T22:45:10Z",
-  "source_ref": "e9b8896f2e2f",
+  "generated_at": "2026-07-27T10:52:52Z",
+  "source_ref": "807faf0fdd6d",
   "source_file": "benchmarks/scale_readiness_results.json",
   "claim_boundary": "Cluster autoscale evidence is extracted from the checked-in scale-readiness artifact. It proves deterministic shard placement, failure-domain availability, autoscale planning, rebalance planning, operator reconciliation, quorum safety, active-active convergence, field-state CRDT behavior, and the 100M capacity envelope on these fixtures. It is not a real 100M vector-query latency benchmark, managed Kubernetes production run, or independent multi-region SLO.",
   "summary": {
     "status": "pass",
     "check_count": 62,
     "passed_check_count": 62,
-    "source_generated_at": "2026-07-09T22:45:10Z",
+    "source_generated_at": "2026-07-27T10:52:52Z",
     "simulated_memories": 1000000,
     "namespace_count": 4096,
     "planner_node_count": 4,
@@ -525,7 +525,7 @@
       "namespaces": 4096,
       "nodes": 4,
       "replication_factor": 2,
-      "placement_ms": 85.88370000506984,
+      "placement_ms": 36.04794900000741,
       "max_replica_load": 2413,
       "min_replica_load": 1728,
       "replica_load_stdev": 316.54462560593254,
@@ -567,7 +567,7 @@
       "rebalance_all_batches_checkpointed": true,
       "rebalance_all_batches_repaired": true,
       "rebalance_all_batches_validated": true,
-      "plan_ms": 7266.970399999991
+      "plan_ms": 2355.5350550000044
     },
     "control_plane": {
       "engine": "WaveMind control-plane consensus",
@@ -738,10 +738,10 @@
       "concurrent_writes": 12,
       "concurrent_write_ok": true,
       "concurrent_query_hit_rate": 1.0,
-      "concurrent_ms": 1311.0460000025341,
-      "write_ms": 50.33930000354303,
-      "query_after_primary_loss_ms": 16.156400000909343,
-      "repair_ms": 53.776200002175756
+      "concurrent_ms": 2073.905534000005,
+      "write_ms": 32.22652300000561,
+      "query_after_primary_loss_ms": 26.306762999993794,
+      "repair_ms": 43.42422300000237
     },
     "active_active": {
       "engine": "WaveMind sustained active-active sync",
@@ -763,8 +763,8 @@
       "success_rate": 1.0,
       "failed_pairs": 0,
       "has_more_pairs": 0,
-      "p99_sync_ms": 402.99360000062734,
-      "avg_sync_ms": 216.46699999982957
+      "p99_sync_ms": 102.07498299999429,
+      "avg_sync_ms": 52.800272199999654
     },
     "http_active_active": {
       "engine": "WaveMind HTTP active-active service-region sync",
@@ -791,8 +791,8 @@
       "success_rate": 1.0,
       "failed_pairs": 0,
       "has_more_pairs": 0,
-      "p99_sync_ms": 465.8969999945839,
-      "avg_sync_ms": 342.6729000002524
+      "p99_sync_ms": 138.9973220000087,
+      "avg_sync_ms": 105.01578150000057
     },
     "field_crdt": {
       "engine": "WaveMind field-state CRDT",
@@ -816,7 +816,7 @@
       "watermark_lag_detected": true,
       "budget_activation": 5.0,
       "suppressed_report_activation": 0.75,
-      "merge_ms": 0.1827000014600344
+      "merge_ms": 0.09811500000012074
     },
     "capacity_100m": {
       "engine": "WaveMind 100M capacity envelope",
@@ -853,7 +853,7 @@
       "scale_out_target_replica_load_skew": 1.0823567708333335,
       "scale_out_target_zone_spread_rate": 1.0,
       "recommended_autoscaling_max_replicas": 192,
-      "placement_ms": 53699.917200006894,
+      "placement_ms": 13713.633820999989,
       "valid_capacity_plan": true,
       "scope": "Deterministic 100M-memory capacity envelope. This proves shard placement, replication overhead, storage envelope, and failure-domain availability; it is not a 100M vector-query latency benchmark."
     }

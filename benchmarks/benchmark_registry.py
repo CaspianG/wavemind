@@ -665,6 +665,9 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     )
     external_http_active_active_payload = _load_json(root / "benchmarks" / "external_http_active_active_results.json")
     multimodal_external_payload = _load_json(root / "benchmarks" / "multimodal_external_encoder_results.json")
+    multimodal_admission_payload = _load_json(
+        root / "benchmarks" / "multimodal_admission_results.json"
+    )
     memory_os_evolution_payload = _load_json(root / "benchmarks" / "memory_os_policy_evolution_results.json")
     memory_os_policy_bundle_payload = _load_json(root / "benchmarks" / "memory_os_policy_bundle_results.json")
     memory_os_runtime_soak_payload = _load_json(root / "benchmarks" / "memory_os_runtime_soak_results.json")
@@ -1993,11 +1996,16 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                         "cross_modal_queries",
                         "cross_modal_precision_at_1",
                         "cross_modal_embedding_dim",
+                        "cross_modal_space_id",
+                        "cross_modal_space_production_eligible",
                         "cross_modal_vectors_persisted_rate",
                         "cross_modal_provenance_rate",
                         "precomputed_vector_queries",
                         "precomputed_vector_precision_at_1",
                         "precomputed_vector_embedding_dim",
+                        "precomputed_vector_space_id",
+                        "precomputed_vector_model_revision",
+                        "same_dimension_space_mismatch_rejected",
                         "precomputed_vector_persisted_rate",
                         "encoder_contract_ok",
                         "encoder_contract_payloads",
@@ -2607,12 +2615,12 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
         },
         {
             "id": "external_multimodal_evidence_runner",
-            "name": "External multimodal evidence runner",
-            "category": "production-scale",
+            "name": "Precomputed multimodal storage contract",
+            "category": "multimodal-contract",
             "status": "runner-ready",
             "source": "wavemind/multimodal_external.py",
             "dataset": "User-supplied external multimodal manifest with shared-space asset/query vectors, s3 object-store URIs, verified sha256/byte-size metadata, encode p95 values, and target relevance labels.",
-            "competitors": ["WaveMind external multimodal encoder pipeline"],
+            "competitors": ["none"],
             "metrics": [
                 "precision_at_1",
                 "precision_at_3",
@@ -2636,8 +2644,46 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                     }
                 ),
             },
-            "target": "Generate benchmarks/multimodal_external_encoder_results.json from a real external CLIP/audio/video/3D encoder manifest with >=1000 payloads, >=200 queries, precision@1 >=0.90, cross-modal precision@1 >=0.90, object-store verification >=0.99, and p99 <=250 ms.",
-            "next_step": "Run the external multimodal manifest path against real s3-backed assets and then let wavemind multimodal-admission evaluate the produced artifact.",
+            "target": "Keep this runner as a strict persistence/provenance contract for externally supplied vectors; it must not unlock real-encoder admission.",
+            "next_step": "Use the real local multimodal benchmark for production admission. Precomputed vectors remain an explicit integration path only.",
+        },
+        {
+            "id": "local_multimodal_encoder_benchmark",
+            "name": "Real local multimodal encoder benchmark",
+            "category": "multimodal-memory",
+            "status": "planned",
+            "source": "planned local open-source encoder runner",
+            "dataset": "Pinned public text, image, audio, video, and 3D assets with checked manifests, ground truth, and MinIO lifecycle evidence.",
+            "competitors": ["WaveMind Core", "WaveMind multimodal shared-space retrieval"],
+            "metrics": [
+                "macro_precision_at_1",
+                "cross_modal_precision_at_1",
+                "mixed_multimodal_precision_at_1",
+                "per_modality_precision_at_1",
+                "persisted_vector_parity",
+                "retrieval_p99_ms",
+                "per_modality_encode_p95_ms",
+                "batch_throughput_assets_per_second",
+                "lifecycle_checks",
+                "repeatability",
+            ],
+            "current": {
+                "Multimodal admission": {
+                    "status": (
+                        multimodal_admission_payload.get("status")
+                        if isinstance(multimodal_admission_payload, dict)
+                        else "missing"
+                    ),
+                    "artifact": "benchmarks/multimodal_admission_results.json",
+                    "claim_boundary": (
+                        multimodal_admission_payload.get("claim_boundary")
+                        if isinstance(multimodal_admission_payload, dict)
+                        else "missing"
+                    ),
+                }
+            },
+            "target": "Admit only after >=1000 real/public assets and >=200 independent queries cover text, image, audio, video, and 3D with explicit shared spaces, per-modality budgets, MinIO lifecycle safety, and stable repeated verdicts.",
+            "next_step": "Implement the real local encoder registry and benchmark runner; descriptor, filename, metadata, OCR-only, synthetic-vector, and precomputed-vector shortcuts are forbidden.",
         },
         {
             "id": "memory_os_policy_evolution",

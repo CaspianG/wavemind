@@ -187,6 +187,19 @@ def run_external_multimodal_evidence(
         raise ValueError("top_k must be positive")
 
     encoder_name = str(manifest.get("encoder_name") or manifest.get("encoder") or "external")
+    shared_space_id = str(
+        manifest.get("shared_space_id") or manifest.get("space_id") or ""
+    ).strip()
+    if not shared_space_id:
+        raise ValueError(
+            "manifest.shared_space_id is required for external vectors; "
+            "dimension equality does not prove embedding-space compatibility"
+        )
+    encoder_revision = str(
+        manifest.get("encoder_revision") or manifest.get("model_revision") or ""
+    ).strip()
+    if not encoder_revision:
+        raise ValueError("manifest.encoder_revision is required for reproducible evidence")
     deployment = str(manifest.get("deployment") or "staging")
     environment = str(manifest.get("environment") or deployment)
     source = str(manifest.get("source") or "external-multimodal-manifest")
@@ -290,7 +303,9 @@ def run_external_multimodal_evidence(
             memory,
             cross_modal_encoder=PrecomputedCrossModalEncoder(
                 vector_dim=vector_dim,
+                space_id=shared_space_id,
                 name=encoder_name,
+                model_revision=encoder_revision,
             ),
         )
         for index, asset in enumerate(assets):
@@ -308,6 +323,7 @@ def run_external_multimodal_evidence(
                 "asset_verified": _asset_verified(asset),
                 "object_store_verification_mode": object_store_verification_mode,
                 "cross_modal_vector": asset_vectors[asset_id].astype(float).tolist(),
+                "cross_modal_space_id": shared_space_id,
             }
             payload = MemoryPayload(
                 kind=modality,
@@ -344,6 +360,7 @@ def run_external_multimodal_evidence(
                     target_modality=target_modality,
                     top_k=max(1, top_k),
                     query_vector=query_vectors[query_id],
+                    query_space_id=shared_space_id,
                 )
             except Exception as exc:
                 query_errors_runtime.append(f"{query_id}: {exc}")
@@ -471,6 +488,8 @@ def run_external_multimodal_evidence(
         "object_store": object_store,
         "object_store_verification_mode": object_store_verification_mode,
         "encoder_name": encoder_name,
+        "encoder_revision": encoder_revision,
+        "shared_space_id": shared_space_id,
         "vector_dim": vector_dim,
         "modalities": modality_values,
         "modality_count": len(modality_values),
@@ -529,6 +548,12 @@ def _failed_report(
         "object_store": object_store,
         "object_store_verification_mode": object_store_verification_mode,
         "encoder_name": str(manifest.get("encoder_name") or manifest.get("encoder") or "external"),
+        "encoder_revision": str(
+            manifest.get("encoder_revision") or manifest.get("model_revision") or ""
+        ),
+        "shared_space_id": str(
+            manifest.get("shared_space_id") or manifest.get("space_id") or ""
+        ),
         "vector_dim": vector_dim,
         "modalities": modalities,
         "modality_count": len(modalities),
@@ -579,6 +604,8 @@ def render_external_multimodal_evidence_markdown(payload: dict[str, Any]) -> str
         f"| object store | `{payload.get('object_store')}` |",
         f"| object verification | `{payload.get('object_store_verification_mode')}` |",
         f"| encoder | `{payload.get('encoder_name')}` |",
+        f"| encoder revision | `{payload.get('encoder_revision')}` |",
+        f"| shared space | `{payload.get('shared_space_id')}` |",
         f"| vector dim | `{payload.get('vector_dim')}` |",
         f"| modalities | `{payload.get('modality_count')}` |",
         f"| payloads | `{payload.get('payload_count')}` |",

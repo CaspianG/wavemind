@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
-  <title id="title">WaveMind dynamic memory</title>
+  <title id="title">WaveMind adaptive agent memory</title>
   <desc id="desc">A minimal black and white diagram showing how WaveMind stores memories, searches candidates, applies memory state, and returns useful recall.</desc>
   <defs>
     <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
@@ -26,7 +26,7 @@
 
   <g class="font">
     <text class="title" x="72" y="110">WaveMind</text>
-    <text class="subtitle" x="76" y="150">Local-first dynamic memory for software that needs to remember what still matters.</text>
+    <text class="subtitle" x="76" y="150">Adaptive memory infrastructure for agents that need to remember what still matters.</text>
   </g>
 
   <g class="font" transform="translate(74 205)">
@@ -99,6 +99,6 @@
 
   <g class="font" transform="translate(74 540)">
     <line class="thin" x1="0" y1="0" x2="1065" y2="0"/>
-    <text class="small" x="0" y="34">SQLite source of truth. Optional FAISS, Qdrant, pgvector, Annoy, FastAPI, CLI, LangChain, backups, audit log, metrics, and traces.</text>
+    <text class="small" x="0" y="34">Local-first by default. Production paths: PostgreSQL, Redis, FAISS, Qdrant, pgvector, Kubernetes, metrics, and traces.</text>
   </g>
 </svg>

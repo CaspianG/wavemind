@@ -4,7 +4,7 @@ import json
 import math
 import re
 import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Iterable, Protocol, Sequence
@@ -25,6 +25,117 @@ _MODALITY_ALIASES: dict[str, tuple[str, ...]] = {
     "graph": ("graph", "relationship", "triple", "entity", "knowledge graph", "link"),
 }
 _TOKEN_RE = re.compile(r"[\w$.-]+", re.UNICODE)
+_CROSS_MODAL_SPACE_KEY = "cross_modal_space_id"
+_SUPPORTED_CROSS_MODAL_MODALITIES = ("text", *_MODALITY_ALIASES)
+
+
+class CrossModalSpaceError(ValueError):
+    """Base error for invalid or incompatible cross-modal embedding spaces."""
+
+
+class CrossModalSpaceMismatchError(CrossModalSpaceError):
+    """Raised before vectors from different embedding spaces can be compared."""
+
+
+@dataclass(frozen=True)
+class CrossModalEmbeddingSpace:
+    """Registered vector-space identity shared by compatible modalities."""
+
+    space_id: str
+    vector_dim: int
+    modalities: tuple[str, ...]
+    encoder_name: str
+    model_revision: str
+    production_eligible: bool = True
+
+    def __post_init__(self) -> None:
+        space_id = str(self.space_id).strip()
+        if not space_id:
+            raise CrossModalSpaceError("Cross-modal embedding space_id must not be empty.")
+        if any(character.isspace() for character in space_id):
+            raise CrossModalSpaceError(
+                "Cross-modal embedding space_id must not contain whitespace."
+            )
+        if int(self.vector_dim) <= 0:
+            raise CrossModalSpaceError("Cross-modal embedding vector_dim must be positive.")
+        modalities = tuple(
+            dict.fromkeys(normalize_modality(modality) for modality in self.modalities)
+        )
+        if not modalities:
+            raise CrossModalSpaceError(
+                "Cross-modal embedding space must declare supported modalities."
+            )
+        encoder_name = str(self.encoder_name).strip()
+        model_revision = str(self.model_revision).strip()
+        if not encoder_name:
+            raise CrossModalSpaceError(
+                "Cross-modal embedding space must declare encoder_name."
+            )
+        if not model_revision:
+            raise CrossModalSpaceError(
+                "Cross-modal embedding space must declare model_revision."
+            )
+        object.__setattr__(self, "space_id", space_id)
+        object.__setattr__(self, "vector_dim", int(self.vector_dim))
+        object.__setattr__(self, "modalities", modalities)
+        object.__setattr__(self, "encoder_name", encoder_name)
+        object.__setattr__(self, "model_revision", model_revision)
+
+    def require_modality(self, modality: str) -> str:
+        normalized = normalize_modality(modality)
+        if normalized not in self.modalities:
+            raise CrossModalSpaceError(
+                f"Embedding space `{self.space_id}` does not support modality "
+                f"`{normalized}`; supported modalities: {', '.join(self.modalities)}."
+            )
+        return normalized
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "space_id": self.space_id,
+            "vector_dim": self.vector_dim,
+            "modalities": list(self.modalities),
+            "encoder_name": self.encoder_name,
+            "model_revision": self.model_revision,
+            "production_eligible": self.production_eligible,
+        }
+
+
+class CrossModalSpaceRegistry:
+    """Small explicit registry that rejects conflicting definitions."""
+
+    def __init__(
+        self,
+        spaces: Iterable[CrossModalEmbeddingSpace] | None = None,
+    ) -> None:
+        self._spaces: dict[str, CrossModalEmbeddingSpace] = {}
+        for space in spaces or ():
+            self.register(space)
+
+    def register(self, space: CrossModalEmbeddingSpace) -> CrossModalEmbeddingSpace:
+        current = self._spaces.get(space.space_id)
+        if current is not None and current != space:
+            raise CrossModalSpaceMismatchError(
+                f"Embedding space `{space.space_id}` is already registered with "
+                "a different dimension, modality set, encoder, or revision."
+            )
+        self._spaces[space.space_id] = space
+        return space
+
+    def require(self, space_id: str) -> CrossModalEmbeddingSpace:
+        normalized = str(space_id).strip()
+        try:
+            return self._spaces[normalized]
+        except KeyError as exc:
+            raise CrossModalSpaceError(
+                f"Embedding space `{normalized or '<missing>'}` is not registered."
+            ) from exc
+
+    def as_dict(self) -> dict[str, dict[str, Any]]:
+        return {
+            space_id: space.as_dict()
+            for space_id, space in sorted(self._spaces.items())
+        }
 
 
 @dataclass(frozen=True)
@@ -53,6 +164,9 @@ class CrossModalQueryResult:
     metadata: dict[str, Any]
     matched_features: tuple[str, ...]
     provenance: dict[str, Any]
+    embedding_space_id: str
+    score_breakdown: dict[str, float]
+    fusion: dict[str, Any] = field(default_factory=dict)
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -67,6 +181,44 @@ class CrossModalQueryResult:
             "metadata": self.metadata,
             "matched_features": list(self.matched_features),
             "provenance": self.provenance,
+            "embedding_space_id": self.embedding_space_id,
+            "score_breakdown": self.score_breakdown,
+            "fusion": self.fusion,
+        }
+
+
+@dataclass(frozen=True)
+class CrossModalQueryPart:
+    """One explainable part of a mixed query in a registered shared space."""
+
+    modality: str
+    weight: float = 1.0
+    text: str = ""
+    vector: tuple[float, ...] | None = None
+    space_id: str | None = None
+
+    def __post_init__(self) -> None:
+        modality = normalize_modality(self.modality)
+        weight = float(self.weight)
+        if not math.isfinite(weight) or weight <= 0.0:
+            raise ValueError("Cross-modal query part weight must be finite and positive.")
+        vector = None
+        if self.vector is not None:
+            vector = tuple(float(value) for value in self.vector)
+        object.__setattr__(self, "modality", modality)
+        object.__setattr__(self, "weight", weight)
+        object.__setattr__(self, "text", str(self.text))
+        object.__setattr__(self, "vector", vector)
+        if self.space_id is not None:
+            object.__setattr__(self, "space_id", str(self.space_id).strip())
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "modality": self.modality,
+            "weight": self.weight,
+            "text": self.text,
+            "vector_dim": len(self.vector) if self.vector is not None else None,
+            "space_id": self.space_id,
         }
 
 
@@ -255,6 +407,7 @@ class KnowledgeGraphQueryResult:
 class CrossModalEncoder(Protocol):
     name: str
     vector_dim: int
+    embedding_space: CrossModalEmbeddingSpace
 
     def encode_payload(self, payload: MemoryPayload, descriptor: str) -> np.ndarray:
         ...
@@ -270,7 +423,7 @@ class CrossModalEncoder(Protocol):
 
 
 class DescriptorCrossModalEncoder:
-    """Descriptor encoder used by default and as a compatibility baseline."""
+    """Development-only descriptor encoder used as a compatibility baseline."""
 
     name = "descriptor"
 
@@ -279,13 +432,28 @@ class DescriptorCrossModalEncoder:
         encoder: TextEncoder | None = None,
         *,
         vector_dim: int = 128,
+        space_id: str | None = None,
     ) -> None:
         self.encoder = encoder or HashingTextEncoder(vector_dim=vector_dim)
         self.vector_dim = int(self.encoder.vector_dim)
+        self.embedding_space = CrossModalEmbeddingSpace(
+            space_id=space_id
+            or f"wavemind.descriptor.v1.d{self.vector_dim}",
+            vector_dim=self.vector_dim,
+            modalities=_SUPPORTED_CROSS_MODAL_MODALITIES,
+            encoder_name=self.name,
+            model_revision="development-only",
+            production_eligible=False,
+        )
 
     def encode_payload(self, payload: MemoryPayload, descriptor: str) -> np.ndarray:
         explicit = cross_modal_vector_from_metadata(payload.metadata, vector_dim=self.vector_dim)
         if explicit is not None:
+            _require_metadata_space_id(
+                payload.metadata,
+                expected_space_id=self.embedding_space.space_id,
+                context="Explicit descriptor-space payload vector",
+            )
             return explicit
         return _normalize_vector(self.encoder.encode_vector(descriptor), vector_dim=self.vector_dim)
 
@@ -304,12 +472,28 @@ class PrecomputedCrossModalEncoder:
 
     name = "precomputed"
 
-    def __init__(self, *, vector_dim: int, name: str | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        vector_dim: int,
+        space_id: str,
+        name: str | None = None,
+        model_revision: str = "external",
+        modalities: Sequence[str] = _SUPPORTED_CROSS_MODAL_MODALITIES,
+    ) -> None:
         if vector_dim <= 0:
             raise ValueError("vector_dim must be positive.")
         self.vector_dim = int(vector_dim)
         if name:
             self.name = str(name)
+        self.embedding_space = CrossModalEmbeddingSpace(
+            space_id=space_id,
+            vector_dim=self.vector_dim,
+            modalities=tuple(modalities),
+            encoder_name=self.name,
+            model_revision=model_revision,
+            production_eligible=False,
+        )
 
     def encode_payload(self, payload: MemoryPayload, descriptor: str) -> np.ndarray:
         vector = cross_modal_vector_from_metadata(payload.metadata, vector_dim=self.vector_dim)
@@ -318,6 +502,11 @@ class PrecomputedCrossModalEncoder:
                 "PrecomputedCrossModalEncoder requires payload metadata with "
                 "`cross_modal_vector`, `cross_modal_embedding`, `embedding`, or `vector`."
             )
+        _require_metadata_space_id(
+            payload.metadata,
+            expected_space_id=self.embedding_space.space_id,
+            context="Precomputed payload vector",
+        )
         return vector
 
     def encode_query(
@@ -344,6 +533,8 @@ class SentenceTransformersCrossModalEncoder:
         vector_dim: int | None = None,
         image_loader: Callable[[Path], Any] | None = None,
         name: str | None = None,
+        model_revision: str = "default",
+        space_id: str | None = None,
     ) -> None:
         self.model_name = model_name
         self.model = model if model is not None else self._load_model(model_name)
@@ -353,12 +544,27 @@ class SentenceTransformersCrossModalEncoder:
             raise ValueError("vector_dim must be positive.")
         self.vector_dim = int(inferred_dim)
         self.name = name or f"sentence-transformers/{model_name}"
+        self.embedding_space = CrossModalEmbeddingSpace(
+            space_id=space_id
+            or f"sentence-transformers:{model_name}@{model_revision}",
+            vector_dim=self.vector_dim,
+            modalities=("text", "image"),
+            encoder_name=self.name,
+            model_revision=model_revision,
+            production_eligible=True,
+        )
 
     def encode_payload(self, payload: MemoryPayload, descriptor: str) -> np.ndarray:
+        modality = self.embedding_space.require_modality(payload.kind)
         explicit = cross_modal_vector_from_metadata(payload.metadata, vector_dim=self.vector_dim)
         if explicit is not None:
+            _require_metadata_space_id(
+                payload.metadata,
+                expected_space_id=self.embedding_space.space_id,
+                context="Explicit payload vector",
+            )
             return explicit
-        model_input = self._payload_input(payload, descriptor)
+        model_input = self._payload_input(payload, modality=modality)
         return self._encode_one(model_input)
 
     def encode_query(
@@ -368,6 +574,8 @@ class SentenceTransformersCrossModalEncoder:
         target_modality: str | None,
         descriptor: str,
     ) -> np.ndarray:
+        if target_modality:
+            self.embedding_space.require_modality(target_modality)
         return self._encode_one(query or descriptor)
 
     @staticmethod
@@ -390,12 +598,16 @@ class SentenceTransformersCrossModalEncoder:
         vector = self._encode_raw("dimension probe")
         return int(vector.shape[0])
 
-    def _payload_input(self, payload: MemoryPayload, descriptor: str) -> Any:
-        if normalize_modality(payload.kind) != "image":
-            return descriptor
+    def _payload_input(self, payload: MemoryPayload, *, modality: str) -> Any:
+        if modality == "text":
+            return payload.text
         path = _local_uri_path(payload.metadata.get("uri"))
         if path is None:
-            return descriptor
+            raise ValueError(
+                "SentenceTransformersCrossModalEncoder requires a readable local "
+                "image path; descriptor, filename, metadata, and OCR-only fallbacks "
+                "are disabled."
+            )
         loader = self.image_loader or _load_pillow_image
         return loader(path)
 
@@ -433,10 +645,12 @@ class CrossModalMemoryLayer:
         *,
         encoder: TextEncoder | None = None,
         cross_modal_encoder: CrossModalEncoder | None = None,
+        space_registry: CrossModalSpaceRegistry | None = None,
         vector_dim: int = 128,
         base_weight: float = 0.20,
         cross_modal_weight: float = 0.75,
         modality_weight: float = 0.05,
+        strict_space_validation: bool = True,
     ) -> None:
         if cross_modal_encoder is not None and encoder is not None:
             raise ValueError("Use either encoder or cross_modal_encoder, not both.")
@@ -446,9 +660,29 @@ class CrossModalMemoryLayer:
             vector_dim=vector_dim,
         )
         self.vector_dim = int(self.cross_modal_encoder.vector_dim)
+        self.embedding_space = _encoder_embedding_space(self.cross_modal_encoder)
+        if self.embedding_space.vector_dim != self.vector_dim:
+            raise CrossModalSpaceMismatchError(
+                f"Encoder `{self.cross_modal_encoder.name}` declares vector_dim "
+                f"{self.vector_dim}, but embedding space `{self.embedding_space.space_id}` "
+                f"declares {self.embedding_space.vector_dim}."
+            )
+        self.space_registry = space_registry or CrossModalSpaceRegistry()
+        self.space_registry.register(self.embedding_space)
+        self.space_id = self.embedding_space.space_id
         self.base_weight = float(base_weight)
         self.cross_modal_weight = float(cross_modal_weight)
         self.modality_weight = float(modality_weight)
+        self.strict_space_validation = bool(strict_space_validation)
+        for name, value in (
+            ("base_weight", self.base_weight),
+            ("cross_modal_weight", self.cross_modal_weight),
+            ("modality_weight", self.modality_weight),
+        ):
+            if not math.isfinite(value) or value < 0.0:
+                raise ValueError(f"{name} must be finite and non-negative.")
+        if self.base_weight + self.cross_modal_weight + self.modality_weight <= 0.0:
+            raise ValueError("At least one cross-modal score weight must be positive.")
 
     def remember(
         self,
@@ -460,11 +694,17 @@ class CrossModalMemoryLayer:
         metadata: dict[str, Any] | None = None,
     ) -> int:
         merged_payload = MemoryPayload(
-            kind=payload.kind,
+            kind=self.embedding_space.require_modality(payload.kind),
             text=payload.text,
             metadata={**payload.metadata, **(metadata or {})},
             tags=payload.tags,
         )
+        supplied_space_id = _metadata_space_id(merged_payload.metadata)
+        if supplied_space_id and supplied_space_id != self.space_id:
+            raise CrossModalSpaceMismatchError(
+                f"Payload declares embedding space `{supplied_space_id}`, but layer "
+                f"uses `{self.space_id}`."
+            )
         descriptor = cross_modal_descriptor(merged_payload)
         vector = self.cross_modal_encoder.encode_payload(merged_payload, descriptor)
         vector = _normalize_vector(vector, vector_dim=self.vector_dim)
@@ -474,6 +714,9 @@ class CrossModalMemoryLayer:
             "source": "wavemind_cross_modal",
             "cross_modal_version": _CROSS_MODAL_VERSION,
             "cross_modal_encoder": self.cross_modal_encoder.name,
+            "cross_modal_space_id": self.space_id,
+            "cross_modal_model_revision": self.embedding_space.model_revision,
+            "cross_modal_space_production_eligible": self.embedding_space.production_eligible,
             "cross_modal_descriptor": descriptor,
             "cross_modal_embedding_dim": self.vector_dim,
             "cross_modal_vector": vector.astype(float).tolist(),
@@ -500,10 +743,15 @@ class CrossModalMemoryLayer:
         candidate_k: int | None = None,
         min_score: float | None = None,
         query_vector: Sequence[float] | np.ndarray | None = None,
+        query_space_id: str | None = None,
     ) -> list[CrossModalQueryResult]:
         if top_k <= 0:
             return []
-        modality = normalize_modality(target_modality) if target_modality else None
+        modality = (
+            self.embedding_space.require_modality(target_modality)
+            if target_modality
+            else None
+        )
         required_tags = ["multimodal", modality] if modality else ["multimodal"]
         records = self.memory.store.list(namespace=namespace, tags=required_tags)
         if not records:
@@ -511,12 +759,22 @@ class CrossModalMemoryLayer:
 
         query_descriptor = cross_modal_query_descriptor(query, target_modality=modality)
         if query_vector is None:
+            if query_space_id and str(query_space_id).strip() != self.space_id:
+                raise CrossModalSpaceMismatchError(
+                    f"Query declares embedding space `{query_space_id}`, but encoder "
+                    f"produces `{self.space_id}`."
+                )
             encoded_query_vector = self.cross_modal_encoder.encode_query(
                 query,
                 target_modality=modality,
                 descriptor=query_descriptor,
             )
         else:
+            _require_space_id(
+                query_space_id,
+                expected_space_id=self.space_id,
+                context="Precomputed query vector",
+            )
             encoded_query_vector = np.asarray(query_vector, dtype=np.float32)
         encoded_query_vector = _normalize_vector(encoded_query_vector, vector_dim=self.vector_dim)
         base_scores = self._base_scores(
@@ -529,6 +787,15 @@ class CrossModalMemoryLayer:
         scored: list[CrossModalQueryResult] = []
         for record in records:
             if record.id is None:
+                continue
+            record_space_id = _metadata_space_id(record.metadata)
+            if record_space_id != self.space_id:
+                message = (
+                    f"Memory {record.id} uses embedding space "
+                    f"`{record_space_id or '<missing>'}`, but query uses `{self.space_id}`."
+                )
+                if self.strict_space_validation:
+                    raise CrossModalSpaceMismatchError(message)
                 continue
             descriptor = str(
                 record.metadata.get("cross_modal_descriptor") or record.text
@@ -558,6 +825,17 @@ class CrossModalMemoryLayer:
                 + self.base_weight * base_score
                 + self.modality_weight * modality_score
             )
+            score_breakdown = {
+                "cross_modal_similarity": cross_score,
+                "cross_modal_weight": self.cross_modal_weight,
+                "cross_modal_contribution": self.cross_modal_weight * cross_score,
+                "base_similarity": base_score,
+                "base_weight": self.base_weight,
+                "base_contribution": self.base_weight * base_score,
+                "modality_match": modality_score,
+                "modality_weight": self.modality_weight,
+                "modality_contribution": self.modality_weight * modality_score,
+            }
             if min_score is not None and score < min_score:
                 continue
             descriptor_tokens = _tokens(descriptor)
@@ -575,10 +853,96 @@ class CrossModalMemoryLayer:
                     metadata=record.metadata,
                     matched_features=matched,
                     provenance=_provenance(record.metadata, int(record.id), record_modality),
+                    embedding_space_id=self.space_id,
+                    score_breakdown=score_breakdown,
                 )
             )
         scored.sort(key=lambda item: item.score, reverse=True)
         return scored[:top_k]
+
+    def query_mixed(
+        self,
+        parts: Sequence[CrossModalQueryPart],
+        *,
+        namespace: str = "default",
+        top_k: int = 3,
+        candidate_k: int | None = None,
+        min_score: float | None = None,
+    ) -> list[CrossModalQueryResult]:
+        """Fuse compatible query parts and return mixed-modality evidence.
+
+        Non-text parts must provide vectors from the layer's registered space.
+        Text parts may either provide explicit vectors or use the active encoder.
+        """
+
+        selected = tuple(parts)
+        if not selected:
+            raise ValueError("Mixed cross-modal query requires at least one part.")
+        vectors: list[np.ndarray] = []
+        raw_weights: list[float] = []
+        for part in selected:
+            self.embedding_space.require_modality(part.modality)
+            if part.vector is None:
+                if part.modality != "text":
+                    raise CrossModalSpaceError(
+                        f"Mixed `{part.modality}` query parts require a real vector "
+                        "and explicit space_id; descriptor fallbacks are disabled."
+                    )
+                if part.space_id and part.space_id != self.space_id:
+                    raise CrossModalSpaceMismatchError(
+                        f"Mixed text part declares `{part.space_id}`, but layer uses "
+                        f"`{self.space_id}`."
+                    )
+                descriptor = cross_modal_query_descriptor(part.text)
+                vector = self.cross_modal_encoder.encode_query(
+                    part.text,
+                    target_modality=None,
+                    descriptor=descriptor,
+                )
+            else:
+                _require_space_id(
+                    part.space_id,
+                    expected_space_id=self.space_id,
+                    context=f"Mixed `{part.modality}` query vector",
+                )
+                vector = np.asarray(part.vector, dtype=np.float32)
+            vectors.append(_normalize_vector(vector, vector_dim=self.vector_dim))
+            raw_weights.append(part.weight)
+
+        weight_total = float(sum(raw_weights))
+        normalized_weights = [weight / weight_total for weight in raw_weights]
+        fused = np.zeros(self.vector_dim, dtype=np.float32)
+        for weight, vector in zip(normalized_weights, vectors, strict=True):
+            fused += np.float32(weight) * vector
+        if float(np.linalg.norm(fused)) <= 1e-12:
+            raise CrossModalSpaceError(
+                "Mixed query vectors cancel to a zero vector; adjust parts or weights."
+            )
+        fused = _normalize_vector(fused, vector_dim=self.vector_dim)
+        fusion = {
+            "strategy": "normalized_weighted_sum",
+            "space_id": self.space_id,
+            "part_count": len(selected),
+            "parts": [
+                {
+                    "modality": part.modality,
+                    "weight": normalized_weights[index],
+                    "source": "vector" if part.vector is not None else "encoder",
+                }
+                for index, part in enumerate(selected)
+            ],
+        }
+        query_text = " | ".join(part.text for part in selected if part.text.strip())
+        results = self.query(
+            query_text or "mixed multimodal query",
+            namespace=namespace,
+            top_k=top_k,
+            candidate_k=candidate_k,
+            min_score=min_score,
+            query_vector=fused,
+            query_space_id=self.space_id,
+        )
+        return [replace(result, fusion=fusion) for result in results]
 
     def _base_scores(
         self,
@@ -740,11 +1104,14 @@ def validate_precomputed_cross_modal_contract(
             failures=("no fixtures provided",),
         )
     resolved_dim = int(vector_dim or len(selected[0].query_vector))
+    contract_space_id = f"wavemind.precomputed-contract:{encoder_name}.v1"
     layer = CrossModalMemoryLayer(
         memory,
         cross_modal_encoder=PrecomputedCrossModalEncoder(
             vector_dim=resolved_dim,
+            space_id=contract_space_id,
             name=encoder_name,
+            model_revision="contract-v1",
         ),
     )
     failures: list[str] = []
@@ -761,6 +1128,7 @@ def validate_precomputed_cross_modal_contract(
                 metadata={
                     "contract_modality": modality,
                     "contract_query": fixture.query,
+                    "cross_modal_space_id": contract_space_id,
                 },
             )
         except Exception as exc:
@@ -798,6 +1166,7 @@ def validate_precomputed_cross_modal_contract(
                 target_modality=modality,
                 top_k=2,
                 query_vector=fixture.query_vector,
+                query_space_id=contract_space_id,
             )
             if target and target[0].id == expected_id:
                 target_hits += 1
@@ -809,6 +1178,7 @@ def validate_precomputed_cross_modal_contract(
                 namespace=namespace,
                 top_k=2,
                 query_vector=fixture.query_vector,
+                query_space_id=contract_space_id,
             )
             if global_results and global_results[0].id == expected_id:
                 global_hits += 1
@@ -1784,6 +2154,56 @@ def cross_modal_vector_from_metadata(
     return None
 
 
+def _metadata_space_id(metadata: dict[str, Any]) -> str | None:
+    value = metadata.get(_CROSS_MODAL_SPACE_KEY)
+    if value is None:
+        return None
+    normalized = str(value).strip()
+    return normalized or None
+
+
+def _require_space_id(
+    space_id: str | None,
+    *,
+    expected_space_id: str,
+    context: str,
+) -> str:
+    normalized = str(space_id or "").strip()
+    if not normalized:
+        raise CrossModalSpaceError(
+            f"{context} requires explicit `space_id={expected_space_id!r}`."
+        )
+    if normalized != expected_space_id:
+        raise CrossModalSpaceMismatchError(
+            f"{context} uses embedding space `{normalized}`, but layer uses "
+            f"`{expected_space_id}`."
+        )
+    return normalized
+
+
+def _require_metadata_space_id(
+    metadata: dict[str, Any],
+    *,
+    expected_space_id: str,
+    context: str,
+) -> str:
+    return _require_space_id(
+        _metadata_space_id(metadata),
+        expected_space_id=expected_space_id,
+        context=context,
+    )
+
+
+def _encoder_embedding_space(encoder: CrossModalEncoder) -> CrossModalEmbeddingSpace:
+    space = getattr(encoder, "embedding_space", None)
+    if not isinstance(space, CrossModalEmbeddingSpace):
+        raise CrossModalSpaceError(
+            f"Cross-modal encoder `{getattr(encoder, 'name', encoder.__class__.__name__)}` "
+            "must declare a CrossModalEmbeddingSpace in `embedding_space`."
+        )
+    return space
+
+
 def _payload(
     kind: str,
     fields: dict[str, str],
@@ -1916,6 +2336,10 @@ def _provenance(metadata: dict[str, Any], memory_id: int, modality: str) -> dict
         "actor",
         "source",
         "cross_modal_version",
+        "cross_modal_encoder",
+        "cross_modal_space_id",
+        "cross_modal_model_revision",
+        "cross_modal_space_production_eligible",
         "asset_uri",
         "asset_sha256",
         "asset_bytes",

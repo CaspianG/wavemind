@@ -5,9 +5,33 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "wavemind"
 version = "2.6.3"
-description = "Local-first dynamic memory field with vector search and wave-field re-ranking"
+description = "Adaptive, local-first memory infrastructure for agents and applications"
 readme = "README.md"
 license = "MIT"
+authors = [
+  { name = "CaspianG" },
+]
+keywords = [
+  "agent-memory",
+  "ai-agents",
+  "llm",
+  "long-term-memory",
+  "rag",
+  "vector-search",
+  "sqlite",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+]
 requires-python = ">=3.10"
 dependencies = [
   "numpy>=1.24",
@@ -82,7 +106,12 @@ wavemind = "wavemind.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/CaspianG/wavemind"
+Documentation = "https://github.com/CaspianG/wavemind/blob/main/docs/README.md"
 Repository = "https://github.com/CaspianG/wavemind"
+Changelog = "https://github.com/CaspianG/wavemind/blob/main/CHANGELOG.md"
+Issues = "https://github.com/CaspianG/wavemind/issues"
+Discussions = "https://github.com/CaspianG/wavemind/discussions"
+Benchmarks = "https://caspiang.github.io/wavemind/"
 
 [tool.setuptools.packages.find]
 where = ["."]
