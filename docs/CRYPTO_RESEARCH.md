@@ -350,6 +350,44 @@ Reproducible outputs:
 - `benchmarks/results/crypto/capitulation_field_replication_24h.json`
 - `benchmarks/results/crypto/capitulation_field_replication_24h.md`
 
+### Cross-exchange and market-episode audit
+
+Asset-level accuracy can still be overstated when many coins fire during the
+same market crash. The Bybit replication therefore adds two stricter views:
+
+1. group all signals into UTC 24-hour market blocks and resample whole blocks;
+2. merge adjacent signals into market episodes and count each episode once.
+
+The expanded 40-asset Bybit audit initially looks strong at signal level:
+frozen feedback reaches 72/83 (`0.867`, Wilson low `0.778`). All selected
+predictions are up, however, and only 24 market blocks remain. Its block-macro
+accuracy is `0.712`, while the block-bootstrap lower bound is only `0.535`.
+The dependence-aware gate rejects it.
+
+A second protocol was committed before downloading a new Bybit dataset:
+24 assets, official 4h candles/OI, and 2021-03-15 through 2026-07-27. The
+frozen thresholds and four horizons were not changed after download.
+
+| horizon | asset signals | signal accuracy | market episodes | episode accuracy | episode Wilson low | unconditional up | uplift | gate |
+|---|---:|---:|---:|---:|---:|---:|---:|:---:|
+| 12h | 163 | 0.681 | 45 | 0.533 | 0.391 | 0.490 | +0.043 | no |
+| 24h | 148 | 0.676 | 46 | 0.565 | 0.422 | 0.471 | +0.095 | no |
+| 48h | 137 | 0.723 | 45 | 0.622 | 0.476 | 0.480 | +0.142 | no |
+| 7d | 133 | 0.639 | 42 | 0.500 | 0.355 | 0.431 | +0.069 | no |
+
+The `48h` result is the most promising: it adds 14.2 percentage points over
+the unconditional up rate. It still does not pass 70%, Wilson, or per-asset
+stability. This is evidence that the event detector finds a real rebound-prone
+regime, but not evidence for universal or trade-ready accuracy.
+
+Reproducible outputs:
+
+- `benchmarks/protocols/bybit_longitudinal_capitulation_v1.json`
+- `benchmarks/results/crypto/bybit_dynamic_feedback_replication.json`
+- `benchmarks/results/crypto/bybit_dynamic_feedback_replication.md`
+- `benchmarks/results/crypto/bybit_longitudinal_capitulation.json`
+- `benchmarks/results/crypto/bybit_longitudinal_capitulation.md`
+
 ### Universal full-coverage direction gate
 
 `benchmarks/crypto_orientation_memory_benchmark.py` tests the stronger claim
@@ -1067,8 +1105,23 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
     only `0.497` on the final folds and `0.498` across individual assets. A
     future-market-factor oracle explains `0.887` of asset directions, proving
     that common movement is strong but not that its future sign is predictable.
-39. Add remaining richer baselines: moving-average crossovers, volatility
-    filters, DTW on smaller samples, and matrix-profile style analogues.
-40. Add signal construction only after retrieval quality is stable.
-41. Publish results separately from the main README to avoid confusing memory
-    benchmarks with market-performance claims.
+39. Done, negative: added causal temporal analogues with 3d/7d/14d sequences,
+    k-NN, DTW, WaveField, and hybrid arms. Validation selected 3d DTW, but
+    untouched final market accuracy is `0.480`, asset accuracy `0.477`, and
+    the worst final fold `0.457`.
+40. Done, negative: added official Bybit cross-exchange transfer, rich causal
+    analogue features, and dynamic reliability feedback. The apparent frozen
+    feedback score is `0.867` on 83 asset signals, but those signals occupy
+    only 24 market blocks; block-bootstrap low is `0.535`, and the
+    dependence-aware gate rejects it.
+41. Done, negative but informative: preregistered a 24-asset Bybit
+    longitudinal replication before download. On 2021-2026 data, the strongest
+    horizon is 48h at `0.622` across 45 market episodes, `+0.142` over the
+    unconditional up rate, but Wilson low is `0.476`. The 24h primary reaches
+    only `0.565`.
+42. Next: learn bounce-vs-continuation transitions at market-episode grain,
+    with a frozen future-period policy and episode-clustered uncertainty. The
+    model must beat the event detector and unconditional direction, not merely
+    re-rank correlated asset signals.
+43. Keep market research reports separate from the main README so memory
+    benchmark evidence is never confused with trading performance.

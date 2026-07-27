@@ -22,7 +22,6 @@ from benchmarks.crypto_current_forecast import (  # noqa: E402
     guarded_state_field_forecast,
 )
 from benchmarks.crypto_ohlcv import (  # noqa: E402
-    OHLCVBar,
     OHLCVWindow,
     fetch_ohlcv_ccxt,
     generate_synthetic_ohlcv,

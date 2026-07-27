@@ -89,3 +89,7 @@ Repository = "https://github.com/CaspianG/wavemind"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["wavemind*"]
+
+[tool.ruff.lint.per-file-ignores]
+"benchmarks/*.py" = ["E402"]
+"examples/*.py" = ["E402"]

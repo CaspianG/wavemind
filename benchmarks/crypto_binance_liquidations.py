@@ -44,6 +44,11 @@ LIQUIDATION_FEATURES = (
     "liquidation_imbalance_shift6",
     "liquidation_persistence6",
     "liquidation_slippage_bps",
+    "liquidation_log_quantity_sum6",
+    "liquidation_log_count_sum6",
+    "liquidation_quantity_z36_max6",
+    "liquidation_count_z36_max6",
+    "liquidation_weighted_imbalance6",
 )
 
 
@@ -227,6 +232,9 @@ def add_liquidation_features(
     quantities: list[float] = []
     counts: list[float] = []
     imbalances: list[float] = []
+    signed_quantities: list[float] = []
+    quantity_z_scores: list[float] = []
+    count_z_scores: list[float] = []
     output = []
     for row in ordered:
         bucket_timestamp = (row.timestamp // interval_seconds) * interval_seconds
@@ -244,9 +252,21 @@ def add_liquidation_features(
         quantities.append(total_quantity)
         counts.append(float(total_count))
         imbalances.append(imbalance)
+        signed_quantities.append(current.buy_quantity - current.sell_quantity)
         quantity_history = np.asarray(quantities[-36:], dtype=float)
         count_history = np.asarray(counts[-36:], dtype=float)
         imbalance_history = np.asarray(imbalances[-6:], dtype=float)
+        quantity_z = _robust_z(quantity_history)
+        count_z = _robust_z(count_history)
+        quantity_z_scores.append(quantity_z)
+        count_z_scores.append(count_z)
+        quantity_sum6 = float(sum(quantities[-6:]))
+        count_sum6 = float(sum(counts[-6:]))
+        weighted_imbalance6 = (
+            float(sum(signed_quantities[-6:])) / quantity_sum6
+            if quantity_sum6 > 0.0
+            else 0.0
+        )
         nonzero = imbalance_history[np.abs(imbalance_history) > 1e-12]
         persistence = (
             float(np.mean(np.sign(nonzero) == np.sign(imbalance)))
@@ -257,8 +277,8 @@ def add_liquidation_features(
             "liquidation_log_quantity": math.log1p(total_quantity),
             "liquidation_log_count": math.log1p(total_count),
             "liquidation_imbalance": imbalance,
-            "liquidation_quantity_z36": _robust_z(quantity_history),
-            "liquidation_count_z36": _robust_z(count_history),
+            "liquidation_quantity_z36": quantity_z,
+            "liquidation_count_z36": count_z,
             "liquidation_imbalance_mean6": float(np.mean(imbalance_history)),
             "liquidation_imbalance_shift6": float(
                 imbalance - np.mean(imbalance_history[:-1])
@@ -267,6 +287,11 @@ def add_liquidation_features(
             ),
             "liquidation_persistence6": persistence,
             "liquidation_slippage_bps": current.slippage_bps,
+            "liquidation_log_quantity_sum6": math.log1p(quantity_sum6),
+            "liquidation_log_count_sum6": math.log1p(count_sum6),
+            "liquidation_quantity_z36_max6": float(max(quantity_z_scores[-6:])),
+            "liquidation_count_z36_max6": float(max(count_z_scores[-6:])),
+            "liquidation_weighted_imbalance6": weighted_imbalance6,
         }
         output.append(
             FeatureRow(

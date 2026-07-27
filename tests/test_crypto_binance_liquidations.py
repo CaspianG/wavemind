@@ -99,6 +99,8 @@ def test_aggregation_and_features_are_causal():
         for name in LIQUIDATION_FEATURES:
             assert left.features[name] == right.features[name]
     assert first[1].features["liquidation_log_count"] > 0.0
+    assert first[1].features["liquidation_log_count_sum6"] > 0.0
+    assert first[1].features["liquidation_weighted_imbalance6"] > 0.0
 
 
 def test_missing_liquidations_are_zero_not_missing():
