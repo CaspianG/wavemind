@@ -317,8 +317,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "docs/benchmark-dashboard.html" in readme
     assert "docs/data/leaderboard-status.json" in readme
     assert "https://caspiang.github.io/wavemind/" in readme
-    assert "actions/upload-pages-artifact@v3" in readme
-    assert "actions/deploy-pages@v4" in readme
+    assert "actions/upload-pages-artifact@v5" in readme
+    assert "actions/deploy-pages@v5" in readme
     assert "benchmarks/production_streaming_load_ivfpq_10m_results.json" in readme
     assert "benchmarks/production_streaming_load_50m_plan.json" in readme
     assert "benchmarks/production_pgvector_tuning_results.json" in readme

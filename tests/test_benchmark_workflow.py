@@ -154,9 +154,9 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "cp docs/benchmark-dashboard.html site/index.html" in workflow
     assert "cp docs/data/leaderboard-status.json site/data/leaderboard-status.json" in workflow
     assert "cp benchmarks/benchmark_matrix_results.json site/data/benchmark_matrix_results.json" in workflow
-    assert "actions/configure-pages@v5" in workflow
-    assert "actions/upload-pages-artifact@v3" in workflow
-    assert "actions/deploy-pages@v4" in workflow
+    assert "actions/configure-pages@v6" in workflow
+    assert "actions/upload-pages-artifact@v5" in workflow
+    assert "actions/deploy-pages@v5" in workflow
     assert "docs/assets/benchmark-summary.svg" in workflow
     assert "docs/benchmark-dashboard.html" in workflow
     assert "docs/data/leaderboard-status.json" in workflow

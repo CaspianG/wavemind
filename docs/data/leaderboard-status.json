@@ -19,8 +19,8 @@
     "refresh_profile": "local",
     "expected_scheduled_refresh_profile": "weekly-fast",
     "github_pages": {
-      "artifact_action": "actions/upload-pages-artifact@v3",
-      "deploy_action": "actions/deploy-pages@v4",
+      "artifact_action": "actions/upload-pages-artifact@v5",
+      "deploy_action": "actions/deploy-pages@v5",
       "status_json": "data/leaderboard-status.json"
     },
     "review_policy": "Scheduled runs publish GitHub Pages and upload the benchmark-leaderboard artifact for maintainer review; they do not commit generated benchmark artifacts back to main.",

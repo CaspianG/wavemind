@@ -176,8 +176,8 @@ validates freshness with `benchmarks/validate_benchmark_artifacts.py`, writes
 `docs/data/leaderboard-status.json`, and uploads changed benchmark artifacts for
 maintainer review. It also builds a static GitHub Pages bundle from the
 dashboard, reports, summary SVG, public status JSON, and machine-readable JSON evidence,
-then deploys the living leaderboard with `actions/upload-pages-artifact@v3` and
-`actions/deploy-pages@v4`. `docs/data/leaderboard-status.json` records this as a
+then deploys the living leaderboard with `actions/upload-pages-artifact@v5` and
+`actions/deploy-pages@v5`. `docs/data/leaderboard-status.json` records this as a
 machine-readable `publication_contract`, including the cron schedule, Pages
 deployment actions, status JSON path, review policy, and claim boundary. The
 workflow does not push scheduled bot commits to `main`; reviewed benchmark

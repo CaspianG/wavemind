@@ -539,8 +539,8 @@ def _publication_contract(
 
     weekly_cron = 'cron: "17 4 * * 1"' in workflow or "cron: '17 4 * * 1'" in workflow
     manual_dispatch = "workflow_dispatch:" in workflow
-    pages_upload = "actions/upload-pages-artifact@v3" in workflow
-    pages_deploy = "actions/deploy-pages@v4" in workflow
+    pages_upload = "actions/upload-pages-artifact@v5" in workflow
+    pages_deploy = "actions/deploy-pages@v5" in workflow
     review_artifact = "name: benchmark-leaderboard" in workflow
     no_bot_commit_to_main = "git push" not in workflow and "git commit -m" not in workflow
     strict_freshness = "--max-age-days 8" in workflow
@@ -569,8 +569,8 @@ def _publication_contract(
         "refresh_profile": refresh_profile,
         "expected_scheduled_refresh_profile": "weekly-fast",
         "github_pages": {
-            "artifact_action": "actions/upload-pages-artifact@v3",
-            "deploy_action": "actions/deploy-pages@v4",
+            "artifact_action": "actions/upload-pages-artifact@v5",
+            "deploy_action": "actions/deploy-pages@v5",
             "status_json": "data/leaderboard-status.json",
         },
         "review_policy": (

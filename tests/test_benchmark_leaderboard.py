@@ -89,9 +89,9 @@ def test_benchmark_leaderboard_workflow_reruns_core_artifacts():
     assert "id-token: write" in workflow
     assert "Build GitHub Pages leaderboard" in workflow
     assert "cp docs/benchmark-dashboard.html site/index.html" in workflow
-    assert "actions/configure-pages@v5" in workflow
-    assert "actions/upload-pages-artifact@v3" in workflow
-    assert "actions/deploy-pages@v4" in workflow
+    assert "actions/configure-pages@v6" in workflow
+    assert "actions/upload-pages-artifact@v5" in workflow
+    assert "actions/deploy-pages@v5" in workflow
     assert "agent_coherence_benchmark.py" in workflow
     assert "benchmarks/agent_coherence_results.json" in workflow
     assert "tests/test_agent_coherence_benchmark.py" in workflow
