@@ -10,7 +10,7 @@ remembers facts, preferences, state changes, workflows, errors, and feedback;
 returns a compact relevant context; reinforces what works; suppresses stale
 information; and forgets on purpose.
 
-<p><a href="https://pypi.org/project/wavemind/"><img alt="PyPI" src="https://img.shields.io/pypi/v/wavemind?style=flat-square"></a>&nbsp;<a href="https://github.com/CaspianG/wavemind/actions/workflows/full-check.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/CaspianG/wavemind/full-check.yml?branch=main&amp;style=flat-square&amp;label=CI"></a>&nbsp;<a href="https://github.com/CaspianG/wavemind/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/CaspianG/wavemind?style=flat-square&amp;label=release"></a>&nbsp;<a href="https://github.com/CaspianG/wavemind/blob/main/pyproject.toml"><img alt="Python 3.10+" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square"></a>&nbsp;<a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/CaspianG/wavemind?style=flat-square"></a></p>
+<p><a href="https://pypi.org/project/wavemind/"><strong>PyPI</strong></a> &middot; <a href="https://github.com/CaspianG/wavemind/actions/workflows/full-check.yml">Build status</a> &middot; <a href="https://github.com/CaspianG/wavemind/releases/latest">Latest release</a> &middot; <a href="https://github.com/CaspianG/wavemind/blob/main/pyproject.toml">Python &gt;=3.10</a> &middot; <a href="LICENSE">MIT</a></p>
 
 <img src="https://raw.githubusercontent.com/CaspianG/wavemind/main/docs/assets/wavemind-social-card.svg" alt="WaveMind dynamic memory overview" width="820">
 
