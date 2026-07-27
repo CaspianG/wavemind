@@ -3989,12 +3989,15 @@ def run_multimodal_profile() -> dict[str, object]:
                 ),
             )
             try:
-                incompatible_layer.query(
+                incompatible_results = incompatible_layer.query(
                     "same dimension but incompatible space",
                     namespace="precomputed",
                     top_k=1,
                     query_vector=[1.0, 0.0, 0.0, 0.0],
                     query_space_id="scale-readiness:incompatible-space.v1",
+                )
+                same_dimension_space_mismatch_rejected = (
+                    not incompatible_results
                 )
             except CrossModalSpaceMismatchError:
                 same_dimension_space_mismatch_rejected = True
