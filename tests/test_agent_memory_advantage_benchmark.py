@@ -38,8 +38,16 @@ def test_advantage_benchmark_reports_paired_confidence_and_honest_skips():
         > 0.0
     )
     assert (
+        payload["paired_lift"]["categories"]["knowledge_update"]["observations"]
+        == 9
+    )
+    assert (
         payload["paired_lift"]["categories"]["workflow_gotcha"]["lower"]
         > 0.0
+    )
+    assert (
+        payload["paired_lift"]["categories"]["workflow_gotcha"]["observations"]
+        == 6
     )
     assert payload["strongest_local_baseline"]["combined_lift"] > 0.0
     skipped = {row["engine"]: row for row in payload["skipped"]}

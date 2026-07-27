@@ -42,4 +42,5 @@ def test_memory_os_ab_uses_identical_protocol_and_proves_uplift():
     )
     assert len(memory_os["trial_task_success_rates"]) == 5
     assert len(memory_os["trial_category_success"]) == 5
+    assert len(memory_os["trial_case_outcomes"]) == 5
     assert memory_os["context_budget_saved"] >= 0.30

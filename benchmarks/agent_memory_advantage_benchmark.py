@@ -80,6 +80,7 @@ def _bootstrap_ci(
         "mean": statistics.mean(values),
         "lower": means[lower_index],
         "upper": means[upper_index],
+        "observations": len(values),
     }
 
 
@@ -315,6 +316,9 @@ def _ab_rows(
                     "stale_error_rate": stale_error,
                     "context_budget_saved": context_saved,
                     "category_success": dict(category_trials[index]),
+                    "case_outcomes": list(
+                        source["trial_case_outcomes"][index]
+                    ),
                     "p50_latency_ms": float(
                         source["latency_trials_ms"]["p50_latency_ms"][index]
                     ),
@@ -335,6 +339,61 @@ def _ab_rows(
         return row
 
     return build(baseline, "WaveMind Core"), build(memory_os, "WaveMind + Memory OS")
+
+
+def _paired_case_lifts(
+    memory_os: dict[str, Any],
+    core: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
+    def average_cases(row: dict[str, Any]) -> dict[str, dict[str, Any]]:
+        values: dict[str, dict[str, Any]] = {}
+        for trial in row["trial_metrics"]:
+            for case in trial.get("case_outcomes") or []:
+                namespace = str(case["namespace"])
+                current = values.setdefault(
+                    namespace,
+                    {
+                        "category": str(case["category"]),
+                        "successes": [],
+                    },
+                )
+                current["successes"].append(float(case["success_rate"]))
+        return {
+            namespace: {
+                "category": value["category"],
+                "success_rate": statistics.mean(value["successes"]),
+            }
+            for namespace, value in values.items()
+        }
+
+    memory_os_cases = average_cases(memory_os)
+    core_cases = average_cases(core)
+    shared = sorted(set(memory_os_cases) & set(core_cases))
+    differences = {
+        namespace: (
+            str(memory_os_cases[namespace]["category"]),
+            float(memory_os_cases[namespace]["success_rate"])
+            - float(core_cases[namespace]["success_rate"]),
+        )
+        for namespace in shared
+    }
+    category_lifts: dict[str, dict[str, Any]] = {}
+    for offset, category in enumerate(
+        sorted({value[0] for value in differences.values()})
+    ):
+        category_lifts[category] = _bootstrap_ci(
+            [
+                difference
+                for row_category, difference in differences.values()
+                if row_category == category
+            ],
+            seed=BOOTSTRAP_SEED + 100 + offset,
+        )
+    overall = _bootstrap_ci(
+        [difference for _, difference in differences.values()],
+        seed=BOOTSTRAP_SEED + 200,
+    )
+    return overall, category_lifts
 
 
 def _optional_competitors() -> list[dict[str, Any]]:
@@ -466,17 +525,9 @@ def run_benchmark(
             )
         )
 
-    category_lifts = {}
-    for offset, category in enumerate(sorted(category_counts)):
-        category_lifts[category] = _paired_ci(
-            memory_os["category_success_trials"][category],
-            wavemind_core["category_success_trials"][category],
-            seed_offset=100 + offset,
-        )
-    overall_lift = _paired_ci(
-        [row["task_success_rate"] for row in memory_os["trial_metrics"]],
-        [row["task_success_rate"] for row in wavemind_core["trial_metrics"]],
-        seed_offset=200,
+    overall_lift, category_lifts = _paired_case_lifts(
+        memory_os,
+        wavemind_core,
     )
     strongest_baseline = max(
         (row for row in rows if row["engine"] != "WaveMind + Memory OS"),

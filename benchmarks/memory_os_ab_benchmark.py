@@ -315,6 +315,9 @@ def _aggregate_variant(trials: list[dict[str, Any]]) -> dict[str, Any]:
         "trial_category_success": [
             dict(trial["category_success"]) for trial in trials
         ],
+        "trial_case_outcomes": [
+            list(trial["case_outcomes"]) for trial in trials
+        ],
         "latency_trials_ms": {
             key: [float(trial[key]) for trial in trials] for key in latency_keys
         },
