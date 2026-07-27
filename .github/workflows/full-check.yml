@@ -8,6 +8,24 @@ on:
   workflow_dispatch:
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install lint dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Run Ruff
+        run: ruff check wavemind tests benchmarks examples
+
   pytest:
     runs-on: ubuntu-latest
     strategy:
@@ -496,3 +514,43 @@ jobs:
           grep -q "WAVEMIND_QDRANT_API_KEY" /tmp/wavemind-chart.yaml
           grep -q "WAVEMIND_REDIS_URL" /tmp/wavemind-chart.yaml
           grep -q "ghcr.io/caspiang/wavemind:ci" /tmp/wavemind-chart.yaml
+
+  required:
+    name: required / full-check
+    if: always()
+    needs:
+      - lint
+      - pytest
+      - package
+      - smoke
+      - benchmarks
+      - benchmark-artifact-gate
+      - redis-api-load
+      - local-http-cluster-smoke
+      - local-http-active-active-smoke
+      - external-http-active-active-loopback
+      - qdrant-sharded-streaming-smoke
+      - docker
+      - helm
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Verify required jobs
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import os
+
+          needs = json.loads(os.environ["NEEDS_JSON"])
+          failed = {
+              job: details["result"]
+              for job, details in needs.items()
+              if details["result"] != "success"
+          }
+          if failed:
+              raise SystemExit(f"Required jobs did not pass: {failed}")
+          print(f"All {len(needs)} required jobs passed.")
+          PY

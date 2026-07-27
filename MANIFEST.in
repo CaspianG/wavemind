@@ -1,6 +1,7 @@
 include README.md
 include LICENSE
 include CONTRIBUTING.md
+include CODE_OF_CONDUCT.md
 include SECURITY.md
 include SUPPORT.md
 include install.sh
@@ -21,6 +22,10 @@ include docs/CHROMA_MIGRATION.md
 include docs/OBSERVABILITY.md
 include docs/RU_LAUNCH_POSTS.md
 include docs/USE_CASES.md
+include docs/SCALE_AND_PRODUCTION.md
+include docs/MULTIMODAL_AND_STORAGE.md
+include docs/INTEGRATIONS.md
+include docs/BENCHMARKS.md
 include docs/assets/benchmark-summary.svg
 include docs/assets/wavemind-social-card.svg
 include docs/assets/wavemind-demo.gif
