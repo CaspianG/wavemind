@@ -915,7 +915,7 @@ def build_parser() -> argparse.ArgumentParser:
     multimodal_external.add_argument(
         "--output",
         type=Path,
-        default=Path("benchmarks/multimodal_external_encoder_results.json"),
+        default=Path("benchmarks/multimodal_precomputed_contract_results.json"),
     )
     multimodal_external.add_argument(
         "--markdown-output",

@@ -43,7 +43,7 @@ def test_benchmark_dashboard_renderer_writes_static_html(tmp_path):
     assert "Encoder query p95" in html
     assert "benchmarks/STRUCTURED_MEMORY.md" in html
     assert "Multimodal Admission" in html
-    assert "Production multimodal claims stay locked" in html
+    assert "The pinned real local text, image, audio, video, and 3D suite is admitted" in html
     assert "benchmarks/MULTIMODAL_ADMISSION.md" in html
     assert "Memory OS Intelligence" in html
     assert "Worker evidence: hot-query prewarm" in html

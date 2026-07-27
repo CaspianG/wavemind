@@ -435,12 +435,8 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert payload["multimodal_admission"]["schema"] == (
         "wavemind.multimodal_admission.v2"
     )
-    assert payload["multimodal_admission"]["status"] in {
-        "admitted",
-        "plan_only",
-        "blocked",
-    }
-    assert payload["multimodal_admission"]["admitted"] is False
+    assert payload["multimodal_admission"]["status"] == "admitted"
+    assert payload["multimodal_admission"]["admitted"] is True
     assert payload["multimodal_admission"]["claim_boundary"] == (
         "real_multimodal_encoder_and_lifecycle_evidence_required"
     )
@@ -448,9 +444,12 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert payload["multimodal_admission"]["required_evidence"]["id"] == (
         "real_multimodal_encoder"
     )
-    assert payload["multimodal_admission"]["requested_evidence"]["status"] == (
-        "action_required"
-    )
+    assert payload["multimodal_admission"]["requested_evidence"]["status"] == "pass"
+    multimodal_summary = payload["multimodal_admission"]["summary"]
+    assert multimodal_summary["evidence_modality_count"] == 5
+    assert multimodal_summary["evidence_payload_count"] == 1000
+    assert multimodal_summary["evidence_query_count"] == 200
+    assert multimodal_summary["blocking_issue_count"] == 0
     assert payload["production_scale_run_plan"]["schema"] == "wavemind.production_scale_run_plan.v1"
     assert payload["production_scale_run_plan"]["total_profiles"] == 5
     assert payload["production_scale_run_plan"]["target_memories_total"] == 180_000_000

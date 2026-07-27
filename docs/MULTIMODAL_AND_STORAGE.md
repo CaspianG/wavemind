@@ -171,6 +171,17 @@ valid object-store target. Descriptor, filename, metadata, OCR-only,
 synthetic-vector, and precomputed-vector shortcuts are rejected as encoder
 evidence.
 
+The checked public suite currently passes that boundary. It uses pinned local
+SentenceTransformers, CLIP, CLAP, and OpenShape PointBERT revisions over 1000
+public assets and 200 independent held-out queries. Three exact-SHA runs report
+macro, cross-modal, and mixed precision@1 `0.925`, persisted/reload parity
+`1.000`, retrieval p99 `48.64 ms`, and zero errors. The artifacts are
+`benchmarks/multimodal_external_encoder_results.json`,
+`benchmarks/multimodal_per_query.jsonl`,
+`benchmarks/multimodal_per_asset.jsonl`, and
+`benchmarks/multimodal_admission_results.json`. This admission is bounded to
+the pinned suite, model revisions, source SHA, and tested local MinIO topology.
+
 For production media, keep large files in S3-compatible object storage and store
 a verified content-addressed manifest with the memory. This keeps SQLite/Postgres
 as metadata source of truth while video, audio, image, and 3D bytes live in S3,

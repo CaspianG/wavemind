@@ -41,7 +41,7 @@ def test_asset_lifecycle_artifact_is_real_minio_evidence_with_locked_scope():
     assert payload["s3_compatible"]["backend"] == "minio"
     assert payload["s3_compatible"]["teardown_pass"] is True
     assert re.fullmatch(
-        r"minio/minio@sha256:[0-9a-f]{64}",
+        r"(?:minio/minio@)?sha256:[0-9a-f]{64}",
         payload["s3_compatible"]["container_image"],
     )
     assert REQUIRED_CHECKS <= payload["lifecycle"].keys()

@@ -300,12 +300,23 @@ def _multimodal_admission_panel(status: dict[str, Any]) -> str:
             "</tr>"
         )
     table.append("</tbody></table>")
+    admitted = (
+        admission.get("status") == "admitted"
+        and admission.get("admitted") is True
+    )
+    description = (
+        "The pinned real local text, image, audio, video, and 3D suite is "
+        "admitted for its exact models, datasets, source SHA, and MinIO "
+        "lifecycle. Broader domains and topologies need their own evidence."
+        if admitted
+        else "Production multimodal claims stay locked until real local text, "
+        "image, audio, video, and 3D encoder evidence proves quality, "
+        "persistence, lifecycle integrity, latency, and zero errors."
+    )
     return (
         '<section class="panel">'
         "<h2>Multimodal Admission</h2>"
-        "<p>Production multimodal claims stay locked until real external image, "
-        "audio, video, and 3D encoder evidence proves object-store persistence, "
-        "cross-modal routing, provenance, latency, and error-rate thresholds.</p>"
+        f"<p>{html.escape(description)}</p>"
         f"{''.join(table)}"
         '<p><a href="../benchmarks/MULTIMODAL_ADMISSION.md">Read the multimodal admission report</a></p>'
         "</section>"

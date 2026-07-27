@@ -180,8 +180,9 @@ def _write_external_multimodal_evidence(
     return artifact
 
 
-def test_multimodal_admission_blocks_without_external_evidence():
-    payload = evaluate_multimodal_admission(PROJECT_ROOT, allow_plan_only=False)
+def test_multimodal_admission_blocks_without_external_evidence(tmp_path):
+    _write_structured_report(tmp_path)
+    payload = evaluate_multimodal_admission(tmp_path, allow_plan_only=False)
 
     assert payload["schema"] == "wavemind.multimodal_admission.v2"
     assert payload["status"] == "blocked"
@@ -199,8 +200,9 @@ def test_multimodal_admission_blocks_without_external_evidence():
     assert any("requested_evidence_status=action_required" in item for item in payload["issues"])
 
 
-def test_multimodal_admission_allows_plan_only_reporting():
-    payload = evaluate_multimodal_admission(PROJECT_ROOT, allow_plan_only=True)
+def test_multimodal_admission_allows_plan_only_reporting(tmp_path):
+    _write_structured_report(tmp_path)
+    payload = evaluate_multimodal_admission(tmp_path, allow_plan_only=True)
 
     assert payload["status"] == "plan_only"
     assert payload["admitted"] is False
@@ -310,7 +312,18 @@ def test_multimodal_admission_markdown_documents_boundary():
     assert "Requested Evidence" in markdown
 
 
+def test_checked_repository_multimodal_admission_is_admitted():
+    payload = evaluate_multimodal_admission(PROJECT_ROOT)
+
+    assert payload["status"] == "admitted"
+    assert payload["admitted"] is True
+    assert payload["summary"]["requested_evidence_status"] == "pass"
+    assert payload["issues"] == []
+
+
 def test_multimodal_admission_cli_writes_artifacts(tmp_path):
+    root = tmp_path / "root"
+    _write_structured_report(root)
     output = tmp_path / "multimodal.json"
     markdown_output = tmp_path / "multimodal.md"
 
@@ -321,7 +334,7 @@ def test_multimodal_admission_cli_writes_artifacts(tmp_path):
             "wavemind",
             "multimodal-admission",
             "--root",
-            str(PROJECT_ROOT),
+            str(root),
             "--allow-plan-only",
             "--write-artifacts",
             "--output",
@@ -347,7 +360,9 @@ def test_multimodal_admission_cli_writes_artifacts(tmp_path):
     )
 
 
-def test_multimodal_admission_cli_fail_on_blocked_exits_nonzero():
+def test_multimodal_admission_cli_fail_on_blocked_exits_nonzero(tmp_path):
+    root = tmp_path / "root"
+    _write_structured_report(root)
     completed = subprocess.run(
         [
             sys.executable,
@@ -355,7 +370,7 @@ def test_multimodal_admission_cli_fail_on_blocked_exits_nonzero():
             "wavemind",
             "multimodal-admission",
             "--root",
-            str(PROJECT_ROOT),
+            str(root),
             "--fail-on-blocked",
             "--json",
         ],

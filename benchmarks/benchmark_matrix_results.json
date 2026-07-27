@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-27T14:38:41Z",
-  "source_ref": "693840ec9708",
+  "generated_at": "2026-07-27T21:23:27Z",
+  "source_ref": "1db5ce3110ed",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -2527,7 +2527,7 @@
         "WaveMind external multimodal evidence": {
           "runner_ready": true,
           "checked_in_result": false,
-          "requires": "wavemind multimodal-external-evidence --manifest external_multimodal_manifest.json --write-artifacts --output benchmarks/multimodal_external_encoder_results.json"
+          "requires": "wavemind multimodal-external-evidence --manifest external_multimodal_manifest.json --write-artifacts --output benchmarks/multimodal_precomputed_contract_results.json"
         }
       },
       "target": "Keep this runner as a strict persistence/provenance contract for externally supplied vectors; it must not unlock real-encoder admission.",
@@ -2537,8 +2537,8 @@
       "id": "local_multimodal_encoder_benchmark",
       "name": "Real local multimodal encoder benchmark",
       "category": "multimodal-memory",
-      "status": "planned",
-      "source": "planned local open-source encoder runner",
+      "status": "implemented",
+      "source": "wavemind/multimodal_public_benchmark.py",
       "dataset": "Pinned public text, image, audio, video, and 3D assets with checked manifests, ground truth, and MinIO lifecycle evidence.",
       "competitors": [
         "WaveMind Core",
@@ -2557,14 +2557,68 @@
         "repeatability"
       ],
       "current": {
+        "WaveMind real local multimodal retrieval": {
+          "status": "pass",
+          "admission_eligible": true,
+          "source_sha": "1db5ce3110edbca67db3679674a6785f407c33b8",
+          "deployment": "local-evidence",
+          "environment": "local",
+          "asset_source": "real_public_assets",
+          "object_store": "minio-s3-compatible",
+          "modalities": 5,
+          "payloads": 1000,
+          "queries": 200,
+          "macro_precision_at_1": 0.925,
+          "cross_modal_precision_at_1": 0.925,
+          "mixed_multimodal_precision_at_1": 0.925,
+          "persisted_vector_parity": 1.0,
+          "reload_query_parity": 1.0,
+          "retrieval_p99_ms": 48.64370000723284,
+          "batch_throughput_assets_per_second": 3.6099816385073176,
+          "error_rate": 0.0,
+          "per_modality": {
+            "text": {
+              "precision_at_1": 0.8875,
+              "encode_p95_ms": 219.5337000011932
+            },
+            "image": {
+              "precision_at_1": 0.975,
+              "encode_p95_ms": 133.42980000015814
+            },
+            "audio": {
+              "precision_at_1": 1.0,
+              "encode_p95_ms": 297.1804999979213
+            },
+            "video": {
+              "precision_at_1": 0.9,
+              "encode_p95_ms": 794.4003000011435
+            },
+            "3d": {
+              "precision_at_1": 0.9,
+              "encode_p95_ms": 452.2863000020152
+            }
+          },
+          "cross_modal_pairs": {
+            "text->image": 0.95,
+            "image->text": 0.85,
+            "text->audio": 1.0,
+            "audio->text": 0.95,
+            "text->video": 0.95,
+            "video->text": 0.9,
+            "text->3d": 0.95,
+            "3d->text": 0.85
+          },
+          "repeat_count": 3,
+          "stable_verdict": true
+        },
         "Multimodal admission": {
-          "status": "plan_only",
+          "status": "admitted",
           "artifact": "benchmarks/multimodal_admission_results.json",
           "claim_boundary": "real_multimodal_encoder_and_lifecycle_evidence_required"
         }
       },
       "target": "Admit only after >=1000 real/public assets and >=200 independent queries cover text, image, audio, video, and 3D with explicit shared spaces, per-modality budgets, MinIO lifecycle safety, and stable repeated verdicts.",
-      "next_step": "Implement the real local encoder registry and benchmark runner; descriptor, filename, metadata, OCR-only, synthetic-vector, and precomputed-vector shortcuts are forbidden."
+      "next_step": "Keep the pinned three-run suite and lifecycle gates green, then add independently maintained public multimodal datasets without relaxing per-modality or latency thresholds."
     },
     {
       "id": "multimodal_asset_lifecycle",
@@ -2592,7 +2646,7 @@
       "current": {
         "WaveMind asset lifecycle": {
           "status": "pass",
-          "source_ref": "8a5181b4188622665ccf675479b254a75510eba9",
+          "source_ref": "1db5ce3110edbca67db3679674a6785f407c33b8",
           "filesystem_status": "pass",
           "object_store_backend": "minio",
           "object_store_pass": true,
@@ -2608,12 +2662,12 @@
           "backup_restore_pass": true,
           "orphan_cleanup_pass": true,
           "teardown_pass": true,
-          "container_image": "minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e",
+          "container_image": "sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e",
           "claim_boundary": "This artifact proves filesystem and S3-compatible asset lifecycle behavior only. It does not prove multimodal encoder quality, cross-modal retrieval quality, or the 1000-asset admission gate."
         }
       },
       "target": "Keep filesystem and real local MinIO lifecycle checks green with a pinned container digest, complete teardown, and no use of this fixture as encoder-quality evidence.",
-      "next_step": "Run the 1000-public-asset encoder benchmark and embed this verified lifecycle result into the strict multimodal admission artifact."
+      "next_step": "Keep the pinned filesystem and MinIO lifecycle checks reproducible alongside every real-encoder evidence refresh."
     },
     {
       "id": "memory_os_policy_evolution",

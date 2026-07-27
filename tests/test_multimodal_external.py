@@ -11,6 +11,7 @@ from wavemind import (
     render_external_multimodal_evidence_markdown,
     run_external_multimodal_evidence,
 )
+from wavemind.cli import build_parser
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -205,6 +206,20 @@ def test_external_multimodal_evidence_cli_writes_artifacts(tmp_path):
     assert file_payload["schema"] == EXTERNAL_MULTIMODAL_SCHEMA
     assert markdown_output.read_text(encoding="utf-8").startswith(
         "# WaveMind External Multimodal Evidence"
+    )
+
+
+def test_external_multimodal_evidence_default_cannot_overwrite_real_encoder_artifact():
+    args = build_parser().parse_args(
+        [
+            "multimodal-external-evidence",
+            "--manifest",
+            "external_multimodal_manifest.json",
+        ]
+    )
+
+    assert args.output == Path(
+        "benchmarks/multimodal_precomputed_contract_results.json"
     )
 
 

@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.leaderboard_status.v1",
-  "generated_at": "2026-07-27T14:39:14Z",
-  "source_ref": "693840ec9708",
+  "generated_at": "2026-07-27T21:23:28Z",
+  "source_ref": "1db5ce3110ed",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "public_url": "https://caspiang.github.io/wavemind/",
@@ -14,7 +14,7 @@
     "timezone": "UTC",
     "public_url": "https://caspiang.github.io/wavemind/",
     "publishing_status": "publishable_with_claim_limits",
-    "source_ref": "693840ec9708",
+    "source_ref": "1db5ce3110ed",
     "workflow_run_id": null,
     "refresh_profile": "local",
     "expected_scheduled_refresh_profile": "weekly-fast",
@@ -39,8 +39,8 @@
   "freshness_gate": {
     "schema": "wavemind.leaderboard_freshness.v1",
     "status": "pass",
-    "checked_at": "2026-07-27T14:39:14Z",
-    "max_age_days": null,
+    "checked_at": "2026-07-27T21:23:28Z",
+    "max_age_days": 8.0,
     "source_count": 33,
     "fresh_count": 31,
     "snapshot_count": 2,
@@ -60,15 +60,15 @@
         "path": "benchmarks/benchmark_matrix_results.json",
         "schema": "wavemind.benchmark_matrix.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-27T14:38:41Z",
-        "age_days": 0.00038194444444444446,
+        "timestamp": "2026-07-27T21:23:27Z",
+        "age_days": 1.1574074074074073e-05,
         "status": "pass"
       },
       {
         "path": "benchmarks/benchmark_artifact_audit.json",
         "schema": "wavemind.benchmark_artifact_audit.v1",
         "timestamp_key": "checked_at",
-        "timestamp": "2026-07-27T14:39:14Z",
+        "timestamp": "2026-07-27T21:23:28Z",
         "age_days": 0.0,
         "status": "pass"
       },
@@ -77,7 +77,7 @@
         "schema": "wavemind.production_readiness.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T13:29:27Z",
-        "age_days": 0.04846064814814815,
+        "age_days": 0.32917824074074076,
         "status": "pass"
       },
       {
@@ -85,7 +85,7 @@
         "schema": "wavemind.production_evidence.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T10:53:27Z",
-        "age_days": 0.1567939814814815,
+        "age_days": 0.4375115740740741,
         "status": "pass"
       },
       {
@@ -93,7 +93,7 @@
         "schema": "wavemind.production_evidence_preflight.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T10:53:27Z",
-        "age_days": 0.1567939814814815,
+        "age_days": 0.4375115740740741,
         "status": "pass"
       },
       {
@@ -101,7 +101,7 @@
         "schema": "wavemind.production_evidence_env_contract.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T10:53:27Z",
-        "age_days": 0.1567939814814815,
+        "age_days": 0.4375115740740741,
         "status": "pass"
       },
       {
@@ -109,7 +109,7 @@
         "schema": "wavemind.production_evidence_bundle.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T10:53:29Z",
-        "age_days": 0.15677083333333333,
+        "age_days": 0.4374884259259259,
         "status": "pass"
       },
       {
@@ -117,7 +117,7 @@
         "schema": "wavemind.release_claims.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T10:53:29Z",
-        "age_days": 0.15677083333333333,
+        "age_days": 0.4374884259259259,
         "status": "pass"
       },
       {
@@ -125,7 +125,7 @@
         "schema": "wavemind.scale_gap.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T10:53:29Z",
-        "age_days": 0.15677083333333333,
+        "age_days": 0.4374884259259259,
         "status": "pass"
       },
       {
@@ -133,7 +133,7 @@
         "schema": "wavemind.strict_evidence_readiness.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T10:53:29Z",
-        "age_days": 0.15677083333333333,
+        "age_days": 0.4374884259259259,
         "status": "pass"
       },
       {
@@ -141,7 +141,7 @@
         "schema": "wavemind.cluster_admission.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T13:17:21Z",
-        "age_days": 0.05686342592592593,
+        "age_days": 0.3375810185185185,
         "status": "pass"
       },
       {
@@ -149,7 +149,7 @@
         "schema": "wavemind.active_active_admission.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T10:53:30Z",
-        "age_days": 0.15675925925925926,
+        "age_days": 0.43747685185185187,
         "status": "pass"
       },
       {
@@ -157,15 +157,15 @@
         "schema": "wavemind.serverless_admission.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T10:53:30Z",
-        "age_days": 0.15675925925925926,
+        "age_days": 0.43747685185185187,
         "status": "pass"
       },
       {
         "path": "benchmarks/multimodal_admission_results.json",
         "schema": "wavemind.multimodal_admission.v2",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-27T11:40:14Z",
-        "age_days": 0.12430555555555556,
+        "timestamp": "2026-07-27T21:12:12Z",
+        "age_days": 0.007824074074074074,
         "status": "pass"
       },
       {
@@ -189,7 +189,7 @@
         "schema": "wavemind.memory_os_canary.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T10:53:31Z",
-        "age_days": 0.1567476851851852,
+        "age_days": 0.4374652777777778,
         "status": "pass"
       },
       {
@@ -197,7 +197,7 @@
         "schema": "wavemind.memory_os_policy_evolution.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T13:17:12Z",
-        "age_days": 0.05696759259259259,
+        "age_days": 0.3376851851851852,
         "status": "pass"
       },
       {
@@ -205,7 +205,7 @@
         "schema": "wavemind.memory_os_policy_bundle.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-20T07:09:38Z",
-        "age_days": 7.312222222222222,
+        "age_days": 7.592939814814815,
         "status": "pass"
       },
       {
@@ -213,7 +213,7 @@
         "schema": "wavemind.production_evidence_dispatch.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T10:53:28Z",
-        "age_days": 0.1567824074074074,
+        "age_days": 0.4375,
         "status": "pass"
       },
       {
@@ -221,7 +221,7 @@
         "schema": "wavemind.production_scale_run_plan.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T13:17:13Z",
-        "age_days": 0.05695601851851852,
+        "age_days": 0.3376736111111111,
         "status": "pass"
       },
       {
@@ -229,7 +229,7 @@
         "schema": "wavemind.agent_coherence_benchmark.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T10:51:49Z",
-        "age_days": 0.15792824074074074,
+        "age_days": 0.43864583333333335,
         "status": "pass"
       },
       {
@@ -237,7 +237,7 @@
         "schema": "wavemind.agent_impact_leaderboard.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T10:53:35Z",
-        "age_days": 0.15670138888888888,
+        "age_days": 0.4374189814814815,
         "status": "pass"
       },
       {
@@ -245,7 +245,7 @@
         "schema": "wavemind.structured_memory_report.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T13:29:25Z",
-        "age_days": 0.048483796296296296,
+        "age_days": 0.3292013888888889,
         "status": "pass"
       },
       {
@@ -253,7 +253,7 @@
         "schema": "wavemind.memory_os_intelligence_report.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T10:52:52Z",
-        "age_days": 0.15719907407407407,
+        "age_days": 0.4379166666666667,
         "status": "pass"
       },
       {
@@ -261,7 +261,7 @@
         "schema": "wavemind.cluster_autoscale_report.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T10:52:52Z",
-        "age_days": 0.15719907407407407,
+        "age_days": 0.4379166666666667,
         "status": "pass"
       },
       {
@@ -269,7 +269,7 @@
         "schema": "wavemind.kubernetes_operator_smoke.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T12:29:17.527926Z",
-        "age_days": 0.09023694530092592,
+        "age_days": 0.3709545378935185,
         "status": "pass"
       },
       {
@@ -277,7 +277,7 @@
         "schema": "wavemind.kubernetes_cluster_network_smoke.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T12:29:38.197546+00:00",
-        "age_days": 0.08999771358796296,
+        "age_days": 0.37071530618055554,
         "status": "pass"
       },
       {
@@ -285,7 +285,7 @@
         "schema": "wavemind.kubernetes_active_active_region_smoke.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T12:30:24.029488+00:00",
-        "age_days": 0.08946725129629629,
+        "age_days": 0.3701848438888889,
         "status": "pass"
       },
       {
@@ -293,7 +293,7 @@
         "schema": "wavemind.kubernetes_serverless_lifecycle_smoke.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T12:32:04.141906+00:00",
-        "age_days": 0.08830854275462963,
+        "age_days": 0.36902613534722223,
         "status": "pass"
       },
       {
@@ -301,7 +301,7 @@
         "schema": "wavemind.kubernetes_postgres_qdrant_dr_smoke.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T12:32:27.339861+00:00",
-        "age_days": 0.0880400479050926,
+        "age_days": 0.36875764049768517,
         "status": "pass"
       },
       {
@@ -309,7 +309,7 @@
         "schema": "wavemind.scale_readiness_benchmark.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T13:29:25Z",
-        "age_days": 0.048483796296296296,
+        "age_days": 0.3292013888888889,
         "status": "pass"
       },
       {
@@ -317,21 +317,21 @@
         "schema": "wavemind.cost_efficiency_leaderboard.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T10:53:35Z",
-        "age_days": 0.15670138888888888,
+        "age_days": 0.4374189814814815,
         "status": "pass"
       }
     ]
   },
   "benchmark_matrix": {
     "schema": "wavemind.benchmark_matrix.v1",
-    "generated_at": "2026-07-27T14:38:41Z",
-    "implemented_count": 41,
+    "generated_at": "2026-07-27T21:23:27Z",
+    "implemented_count": 42,
     "runner_ready_count": 3,
-    "planned_count": 7,
+    "planned_count": 6,
     "total_count": 51,
     "status_counts": {
-      "implemented": 41,
-      "planned": 7,
+      "implemented": 42,
+      "planned": 6,
       "runner-ready": 3
     },
     "category_counts": {
@@ -356,9 +356,9 @@
   "artifact_audit": {
     "schema": "wavemind.benchmark_artifact_audit.v1",
     "status": "pass",
-    "checked_at": "2026-07-27T14:39:14Z",
-    "age_days": 0.0003883839236111111,
-    "max_age_days": null,
+    "checked_at": "2026-07-27T21:23:28Z",
+    "age_days": 1.5293958333333335e-05,
+    "max_age_days": 8.0,
     "errors": []
   },
   "production_readiness": {
@@ -488,21 +488,21 @@
   },
   "multimodal_admission": {
     "schema": "wavemind.multimodal_admission.v2",
-    "status": "plan_only",
-    "admitted": false,
+    "status": "admitted",
+    "admitted": true,
     "claim_boundary": "real_multimodal_encoder_and_lifecycle_evidence_required",
     "summary": {
-      "status": "plan_only",
-      "admitted": false,
+      "status": "admitted",
+      "admitted": true,
       "structured_status": "pass",
       "structured_pass": true,
-      "requested_evidence_status": "action_required",
+      "requested_evidence_status": "pass",
       "required_artifact": "benchmarks/multimodal_external_encoder_results.json",
       "structured_modality_count": 7,
-      "evidence_modality_count": 0,
-      "evidence_payload_count": 0,
-      "evidence_query_count": 0,
-      "blocking_issue_count": 2,
+      "evidence_modality_count": 5,
+      "evidence_payload_count": 1000,
+      "evidence_query_count": 200,
+      "blocking_issue_count": 0,
       "warning_count": 0
     },
     "structured_contract": {
@@ -526,21 +526,25 @@
         "query_count": 7,
         "precision_at_1": 1.0,
         "cross_modal_precision_at_1": 1.0,
+        "cross_modal_space_id": "wavemind.descriptor.v1.d64",
+        "cross_modal_space_production_eligible": false,
         "cross_modal_vectors_persisted_rate": 1.0,
         "cross_modal_provenance_rate": 1.0,
         "precomputed_vector_precision_at_1": 1.0,
         "precomputed_vector_persisted_rate": 1.0,
+        "precomputed_vector_space_id": "scale-readiness:external-precomputed.v1",
+        "same_dimension_space_mismatch_rejected": true,
         "encoder_contract_ok": true,
         "encoder_contract_target_precision_at_1": 1.0,
         "encoder_contract_global_precision_at_1": 1.0,
-        "encoder_contract_margin": 0.8113164444259024,
+        "encoder_contract_margin": 0.811328690622853,
         "encoder_contract_min_required_margin": 0.2,
         "encoder_health_ok": true,
         "encoder_health_global_precision_at_1": 1.0,
         "encoder_health_target_modality_routing_rate": 1.0,
         "encoder_health_dimension_match_rate": 1.0,
-        "encoder_health_payload_encode_p95_ms": 8.334220002143411,
-        "encoder_health_query_encode_p95_ms": 1.5152499952819198,
+        "encoder_health_payload_encode_p95_ms": 3.103920003923122,
+        "encoder_health_query_encode_p95_ms": 0.8351299984497018,
         "encoder_health_margin": 0.24988913536071777,
         "encoder_health_min_required_margin": 0.01,
         "temporal_event_precision_at_1": 1.0,
@@ -550,36 +554,898 @@
         "knowledge_graph_path_precision_at_1": 1.0,
         "knowledge_graph_persistence_rate": 1.0,
         "knowledge_graph_provenance_rate": 1.0,
-        "avg_latency_ms": 1.9594857138664727,
-        "cross_modal_avg_latency_ms": 4.714814283943269,
-        "temporal_event_avg_latency_ms": 2.565499999036547,
-        "knowledge_graph_avg_latency_ms": 2.338574999157572,
+        "avg_latency_ms": 2.2998714287366187,
+        "cross_modal_avg_latency_ms": 3.447385714805153,
+        "temporal_event_avg_latency_ms": 2.840524997736793,
+        "knowledge_graph_avg_latency_ms": 2.4531499984732363,
         "asset_manifest_verified": true
       }
     },
     "required_evidence": {
       "id": "real_multimodal_encoder",
       "title": "Real local multimodal encoder and MinIO lifecycle benchmark",
-      "status": "action_required",
+      "status": "pass",
       "artifact": "benchmarks/multimodal_external_encoder_results.json",
-      "evidence": "missing real multimodal encoder evidence",
-      "issues": [
-        "missing required artifact: benchmarks/multimodal_external_encoder_results.json"
-      ],
+      "evidence": "real local/open-source multimodal encoder evidence",
+      "issues": [],
       "claim_unlocked": "Production multimodal encoder quality, cross-modal recall, MinIO lifecycle safety, reproducibility, and latency SLO."
     },
     "requested_evidence": {
-      "status": "action_required",
-      "evidence": "missing real multimodal encoder evidence",
-      "issues": [
-        "missing required artifact: benchmarks/multimodal_external_encoder_results.json"
+      "status": "pass",
+      "evidence": "real local/open-source multimodal encoder evidence",
+      "issues": [],
+      "checks": [
+        {
+          "name": "real_public_assets",
+          "value": "real_public_assets",
+          "target": "real or publicly licensed assets",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "dataset_identity",
+          "value": {
+            "name": "WaveMind Public Multimodal Retrieval Suite",
+            "revision": "wavemind-public-multimodal-v1",
+            "license": "mixed; see per-dataset license and terms"
+          },
+          "target": "name + pinned revision + license",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "dataset_checksums",
+          "value": {
+            "manifest": "6d686b4434a886b176c982da52718b39c51599c88229920cc227dd1f41d49e2d",
+            "ground_truth": "4feea95a5ea756ffa7f6118881d30f21feee6d28faadf47d06b3b33d1f6fa52f"
+          },
+          "target": "two SHA-256 checksums",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "source_sha",
+          "value": "1db5ce3110edbca67db3679674a6785f407c33b8",
+          "target": "exact 40-character git SHA",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "environment_fingerprint",
+          "value": [
+            "dependency_lock_sha256",
+            "hardware",
+            "platform",
+            "python"
+          ],
+          "target": "python, platform, hardware, dependency lock",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "modalities",
+          "value": 5,
+          "target": 5,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "required_encoder_modalities",
+          "value": [
+            "3d",
+            "audio",
+            "image",
+            "text",
+            "video"
+          ],
+          "target": [
+            "text",
+            "image",
+            "audio",
+            "video",
+            "3d"
+          ],
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "payload_count",
+          "value": 1000,
+          "target": 1000,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "query_count",
+          "value": 200,
+          "target": 200,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "precision_at_1",
+          "value": 0.925,
+          "target": 0.9,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "cross_modal_precision_at_1",
+          "value": 0.925,
+          "target": 0.9,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "mixed_multimodal_precision_at_1",
+          "value": 0.925,
+          "target": 0.9,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "persisted_vector_parity",
+          "value": 1.0,
+          "target": 1.0,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "retrieval_p99_ms",
+          "value": 48.64370000723284,
+          "target": 250.0,
+          "op": "<=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "error_rate",
+          "value": 0.0,
+          "target": 0.0,
+          "op": "<=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "batch_throughput",
+          "value": 3.6099816385073176,
+          "target": 1e-06,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "shared_space_registry",
+          "value": [
+            "clap:laion/clap-htsat-unfused@8fa0f1c6d0433df6e97c127f64b2a1d6c0dcda8a",
+            "clip:sentence-transformers/clip-ViT-B-32@327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd",
+            "text:sentence-transformers/paraphrase-multilingual-mpnet-base-v2@4328cf26390c98c5e3c738b4460a05b95f4911f5"
+          ],
+          "target": "explicit non-empty shared-space registry",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "leakage_checks",
+          "value": {
+            "pass": true,
+            "filename_leakage": false,
+            "caption_leakage": false,
+            "id_leakage": false,
+            "metadata_leakage": false,
+            "contract": "opaque filenames + separate ground truth + no semantic asset metadata"
+          },
+          "target": "pass with filename/caption/id/metadata leakage disabled",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "repeatability",
+          "value": {
+            "run_count": 3,
+            "stable_verdict": true,
+            "verdicts": [
+              "pass",
+              "pass",
+              "pass"
+            ],
+            "summaries": [
+              {
+                "precision_at_1": 0.925,
+                "cross_modal_precision_at_1": 0.925,
+                "mixed_multimodal_precision_at_1": 0.925,
+                "retrieval_p99_ms": 42.0398000132991,
+                "query_p99_ms": 1726.2092000019038,
+                "encoding_p95_ms": 1544.2004000069574,
+                "persisted_vector_parity": 1.0,
+                "reload_query_parity": 1.0,
+                "error_rate": 0.0,
+                "repeat": 1,
+                "asset_encode_p95_ms": {
+                  "text": 215.78199999930803,
+                  "image": 124.66220000351314,
+                  "audio": 317.3453000053996,
+                  "video": 787.7499000023818,
+                  "3d": 478.3488999964902
+                },
+                "batch_throughput_assets_per_second": 3.597343074208444
+              },
+              {
+                "precision_at_1": 0.925,
+                "cross_modal_precision_at_1": 0.925,
+                "mixed_multimodal_precision_at_1": 0.925,
+                "retrieval_p99_ms": 41.78909999609459,
+                "query_p99_ms": 1689.2936000076588,
+                "encoding_p95_ms": 1543.9099999930477,
+                "persisted_vector_parity": 1.0,
+                "reload_query_parity": 1.0,
+                "error_rate": 0.0,
+                "repeat": 2,
+                "asset_encode_p95_ms": {
+                  "text": 220.02740000607446,
+                  "image": 123.93980000342708,
+                  "audio": 304.37569999776315,
+                  "video": 784.1217000095639,
+                  "3d": 540.139899996575
+                },
+                "batch_throughput_assets_per_second": 3.6472129130849593
+              },
+              {
+                "precision_at_1": 0.925,
+                "cross_modal_precision_at_1": 0.925,
+                "mixed_multimodal_precision_at_1": 0.925,
+                "retrieval_p99_ms": 48.64370000723284,
+                "query_p99_ms": 1987.2020999900997,
+                "encoding_p95_ms": 1542.7083999966271,
+                "persisted_vector_parity": 1.0,
+                "reload_query_parity": 1.0,
+                "error_rate": 0.0,
+                "repeat": 3,
+                "asset_encode_p95_ms": {
+                  "text": 219.5337000011932,
+                  "image": 133.42980000015814,
+                  "audio": 297.1804999979213,
+                  "video": 794.4003000011435,
+                  "3d": 452.2863000020152
+                },
+                "batch_throughput_assets_per_second": 3.6099816385073176
+              }
+            ]
+          },
+          "target": "at least 3 runs with one stable verdict",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "evidence_files",
+          "value": [
+            "per_asset",
+            "per_query"
+          ],
+          "target": "per-query and per-asset files with SHA-256",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "object_store_backend",
+          "value": "minio",
+          "target": "verified S3-compatible store (local MinIO allowed)",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "object_store_verified",
+          "value": true,
+          "target": true,
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "lifecycle_ingest_pass",
+          "value": true,
+          "target": true,
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "lifecycle_checksum_pass",
+          "value": true,
+          "target": true,
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "lifecycle_reload_pass",
+          "value": true,
+          "target": true,
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "lifecycle_persistence_pass",
+          "value": true,
+          "target": true,
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "lifecycle_namespace_isolation_pass",
+          "value": true,
+          "target": true,
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "lifecycle_ttl_pass",
+          "value": true,
+          "target": true,
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "lifecycle_physical_delete_pass",
+          "value": true,
+          "target": true,
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "lifecycle_tombstone_pass",
+          "value": true,
+          "target": true,
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "lifecycle_backup_restore_pass",
+          "value": true,
+          "target": true,
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "lifecycle_orphan_cleanup_pass",
+          "value": true,
+          "target": true,
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "text_asset_count",
+          "value": 200,
+          "target": 100,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "text_query_count",
+          "value": 80,
+          "target": 20,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "text_precision_at_1",
+          "value": 0.8875,
+          "target": 0.85,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "text_encode_p95_ms",
+          "value": 219.5337000011932,
+          "target": 250.0,
+          "op": "<=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "text_real_encoder",
+          "value": "clap/laion/clap-htsat-unfused+clip/sentence-transformers/clip-ViT-B-32+openshape/OpenShape/openshape-pointbert-vitb32-rgb+sentence-transformers/sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+          "target": "real local encoder backend",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "text_model_revision",
+          "value": "327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd+4328cf26390c98c5e3c738b4460a05b95f4911f5+8fa0f1c6d0433df6e97c127f64b2a1d6c0dcda8a",
+          "target": "pinned model revision",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "text_shared_spaces",
+          "value": [
+            "clap:laion/clap-htsat-unfused@8fa0f1c6d0433df6e97c127f64b2a1d6c0dcda8a",
+            "clip:sentence-transformers/clip-ViT-B-32@327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd",
+            "text:sentence-transformers/paraphrase-multilingual-mpnet-base-v2@4328cf26390c98c5e3c738b4460a05b95f4911f5"
+          ],
+          "target": "registered compatible shared space",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "image_asset_count",
+          "value": 200,
+          "target": 100,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "image_query_count",
+          "value": 40,
+          "target": 20,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "image_precision_at_1",
+          "value": 0.975,
+          "target": 0.85,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "image_encode_p95_ms",
+          "value": 133.42980000015814,
+          "target": 250.0,
+          "op": "<=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "image_real_encoder",
+          "value": "clip/sentence-transformers/clip-ViT-B-32+openshape/OpenShape/openshape-pointbert-vitb32-rgb",
+          "target": "real local encoder backend",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "image_model_revision",
+          "value": "327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd",
+          "target": "pinned model revision",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "image_shared_spaces",
+          "value": [
+            "clip:sentence-transformers/clip-ViT-B-32@327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd"
+          ],
+          "target": "registered compatible shared space",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "audio_asset_count",
+          "value": 200,
+          "target": 100,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "audio_query_count",
+          "value": 40,
+          "target": 20,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "audio_precision_at_1",
+          "value": 1.0,
+          "target": 0.85,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "audio_encode_p95_ms",
+          "value": 297.1804999979213,
+          "target": 1000.0,
+          "op": "<=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "audio_real_encoder",
+          "value": "clap/laion/clap-htsat-unfused",
+          "target": "real local encoder backend",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "audio_model_revision",
+          "value": "8fa0f1c6d0433df6e97c127f64b2a1d6c0dcda8a",
+          "target": "pinned model revision",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "audio_shared_spaces",
+          "value": [
+            "clap:laion/clap-htsat-unfused@8fa0f1c6d0433df6e97c127f64b2a1d6c0dcda8a"
+          ],
+          "target": "registered compatible shared space",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "video_asset_count",
+          "value": 200,
+          "target": 100,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "video_query_count",
+          "value": 40,
+          "target": 20,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "video_precision_at_1",
+          "value": 0.9,
+          "target": 0.85,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "video_encode_p95_ms",
+          "value": 794.4003000011435,
+          "target": 2000.0,
+          "op": "<=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "video_real_encoder",
+          "value": "clip/sentence-transformers/clip-ViT-B-32+openshape/OpenShape/openshape-pointbert-vitb32-rgb",
+          "target": "real local encoder backend",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "video_model_revision",
+          "value": "327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd",
+          "target": "pinned model revision",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "video_shared_spaces",
+          "value": [
+            "clip:sentence-transformers/clip-ViT-B-32@327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd"
+          ],
+          "target": "registered compatible shared space",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "3d_asset_count",
+          "value": 200,
+          "target": 100,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "3d_query_count",
+          "value": 40,
+          "target": 20,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "3d_precision_at_1",
+          "value": 0.9,
+          "target": 0.85,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "3d_encode_p95_ms",
+          "value": 452.2863000020152,
+          "target": 1000.0,
+          "op": "<=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "3d_real_encoder",
+          "value": "clip/sentence-transformers/clip-ViT-B-32+openshape/OpenShape/openshape-pointbert-vitb32-rgb",
+          "target": "real local encoder backend",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "3d_model_revision",
+          "value": "327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd",
+          "target": "pinned model revision",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "3d_shared_spaces",
+          "value": [
+            "clip:sentence-transformers/clip-ViT-B-32@327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd"
+          ],
+          "target": "registered compatible shared space",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "text_to_image_query_count",
+          "value": 20,
+          "target": 20,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "text_to_image_precision_at_1",
+          "value": 0.95,
+          "target": 0.85,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "text_to_image_shared_space",
+          "value": "clip:sentence-transformers/clip-ViT-B-32@327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd",
+          "target": "registered space containing both modalities",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "image_to_text_query_count",
+          "value": 20,
+          "target": 20,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "image_to_text_precision_at_1",
+          "value": 0.85,
+          "target": 0.85,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "image_to_text_shared_space",
+          "value": "clip:sentence-transformers/clip-ViT-B-32@327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd",
+          "target": "registered space containing both modalities",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "text_to_audio_query_count",
+          "value": 20,
+          "target": 20,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "text_to_audio_precision_at_1",
+          "value": 1.0,
+          "target": 0.85,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "text_to_audio_shared_space",
+          "value": "clap:laion/clap-htsat-unfused@8fa0f1c6d0433df6e97c127f64b2a1d6c0dcda8a",
+          "target": "registered space containing both modalities",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "audio_to_text_query_count",
+          "value": 20,
+          "target": 20,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "audio_to_text_precision_at_1",
+          "value": 0.95,
+          "target": 0.85,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "audio_to_text_shared_space",
+          "value": "clap:laion/clap-htsat-unfused@8fa0f1c6d0433df6e97c127f64b2a1d6c0dcda8a",
+          "target": "registered space containing both modalities",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "text_to_video_query_count",
+          "value": 20,
+          "target": 20,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "text_to_video_precision_at_1",
+          "value": 0.95,
+          "target": 0.85,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "text_to_video_shared_space",
+          "value": "clip:sentence-transformers/clip-ViT-B-32@327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd",
+          "target": "registered space containing both modalities",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "video_to_text_query_count",
+          "value": 20,
+          "target": 20,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "video_to_text_precision_at_1",
+          "value": 0.9,
+          "target": 0.85,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "video_to_text_shared_space",
+          "value": "clip:sentence-transformers/clip-ViT-B-32@327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd",
+          "target": "registered space containing both modalities",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "text_to_3d_query_count",
+          "value": 20,
+          "target": 20,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "text_to_3d_precision_at_1",
+          "value": 0.95,
+          "target": 0.85,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "text_to_3d_shared_space",
+          "value": "clip:sentence-transformers/clip-ViT-B-32@327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd",
+          "target": "registered space containing both modalities",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "3d_to_text_query_count",
+          "value": 20,
+          "target": 20,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "3d_to_text_precision_at_1",
+          "value": 0.85,
+          "target": 0.85,
+          "op": ">=",
+          "pass": true,
+          "issue": ""
+        },
+        {
+          "name": "3d_to_text_shared_space",
+          "value": "clip:sentence-transformers/clip-ViT-B-32@327ab6726d33c0e22f920c83f2ff9e4bd38ca37f+47e04daac585b2ce1cbbc72a42c0bf11971acddd",
+          "target": "registered space containing both modalities",
+          "op": "evidence",
+          "pass": true,
+          "issue": ""
+        }
       ],
-      "checks": [],
+      "modality_count": 5,
+      "payload_count": 1000,
+      "query_count": 200,
+      "modalities": [
+        "text",
+        "image",
+        "audio",
+        "video",
+        "3d"
+      ],
+      "environment": "local",
+      "source": "local-open-source-multimodal-benchmark",
+      "object_store": "minio-s3-compatible",
+      "asset_source": "real_public_assets",
+      "shared_space_count": 3,
+      "cross_modal_pair_count": 8,
       "min_modalities": 5,
       "min_payloads": 1000,
       "min_queries": 200,
       "min_precision_at_1": 0.9,
       "min_cross_modal_precision_at_1": 0.9,
+      "max_retrieval_p99_ms": 250.0,
       "max_query_p99_ms": 250.0,
       "max_encode_p95_ms": null,
       "encoding_budgets_ms": {

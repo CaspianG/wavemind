@@ -129,22 +129,26 @@ README keeps only the decisions most users need before installation.
 
 ## Multimodal Evidence
 
-- The current cross-modal layer supports deterministic descriptor embeddings, a
-  strict precomputed-vector storage path, and an optional sentence-transformers
-  backend for CLIP-style local image/text retrieval. Those integration paths do
-  not count as real audio, video, or 3D encoder evidence.
-- `wavemind multimodal-admission` keeps production claims locked until a real
-  local benchmark proves text/image/audio/video/3D quality, compatible shared
-  spaces, persistence, provenance, lifecycle integrity, p99 retrieval latency,
-  per-modality encoding budgets, and zero errors. The external precomputed
-  runner verifies storage and retrieval only; no fixture unlocks this claim.
+- The checked real-encoder artifact covers 1000 public text/image/audio/video/3D
+  assets and 200 independent queries with pinned SentenceTransformers, CLIP,
+  CLAP, and OpenShape PointBERT revisions. Three exact-SHA runs reach macro,
+  cross-modal, and mixed precision@1 `0.925`, persisted/reload parity `1.000`,
+  retrieval p99 `48.64 ms`, and zero errors.
+- `wavemind multimodal-admission` is `admitted` for that exact source SHA,
+  model set, public-suite revision, and local MinIO lifecycle. It does not prove
+  universal quality on unrelated domains, remote object-store SLOs, GPU
+  performance, or independently hosted production behavior.
+- Deterministic descriptors and externally precomputed vectors remain useful
+  development/integration paths, but neither is accepted as real-encoder
+  evidence.
 
 ## Current Claim Boundary
 
 The admitted Production Memory OS topology and its remote soak are valid
 checked evidence. Remote multi-region active-active, managed serverless,
-100M service operation, and universal multimodal memory remain locked until
-their own admission artifacts pass.
+100M service operation, and universal-domain multimodal quality remain locked
+until their own admission artifacts pass. The pinned local multimodal suite is
+admitted only within the boundaries above.
 
 Use the [living dashboard](https://caspiang.github.io/wavemind/),
 [Benchmark Guide](BENCHMARKS.md), and
