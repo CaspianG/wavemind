@@ -316,6 +316,13 @@ def test_public_suite_rejects_semantic_asset_metadata(tmp_path):
 def test_public_benchmark_exercises_cross_modal_restart_and_evidence(tmp_path):
     suite = _build_suite(tmp_path)
     result_path = tmp_path / "multimodal-result.json"
+    factory_calls = 0
+
+    def factory():
+        nonlocal factory_calls
+        factory_calls += 1
+        return _encoder_factory()
+
     result = write_public_multimodal_benchmark_artifacts(
         suite,
         output_dir=tmp_path / "output",
@@ -324,9 +331,10 @@ def test_public_benchmark_exercises_cross_modal_restart_and_evidence(tmp_path):
         batch_size=2,
         top_k=2,
         lifecycle_artifact=_lifecycle_artifact(tmp_path),
-        encoder_factory=_encoder_factory,
+        encoder_factory=factory,
     )
 
+    assert factory_calls == 1
     assert result["schema"] == PUBLIC_MULTIMODAL_RESULT_SCHEMA
     assert result["status"] == "fail"
     assert result["admission_eligible"] is False

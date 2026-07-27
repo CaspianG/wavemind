@@ -346,20 +346,21 @@ def run_public_multimodal_benchmark(
     per_asset_rows: list[dict[str, Any]] = []
     per_query_rows: list[dict[str, Any]] = []
     repeat_summaries: list[dict[str, Any]] = []
-    spaces: dict[str, dict[str, Any]] = {}
-    modality_encoders: dict[str, list[tuple[str, Any]]] = {}
+    factory = encoder_factory or (
+        lambda: _default_encoders(cache_folder=cache_folder)
+    )
+    encoders = dict(factory())
+    _validate_encoder_set(encoders)
+    spaces = {
+        space_id: encoder.embedding_space.as_dict()
+        for space_id, encoder in encoders.items()
+    }
+    modality_encoders = _modality_encoder_index(encoders)
 
+    # Models are immutable inference runtimes. Reuse them while rebuilding every
+    # store and query run independently so repeated evidence does not reload
+    # large torch libraries or retain duplicate model allocations.
     for repeat_index in range(repeats):
-        factory = encoder_factory or (
-            lambda: _default_encoders(cache_folder=cache_folder)
-        )
-        encoders = dict(factory())
-        _validate_encoder_set(encoders)
-        spaces = {
-            space_id: encoder.embedding_space.as_dict()
-            for space_id, encoder in encoders.items()
-        }
-        modality_encoders = _modality_encoder_index(encoders)
         repeat_root = output_root / f"repeat-{repeat_index + 1}"
         repeat_root.mkdir(parents=True, exist_ok=True)
         layers: dict[str, CrossModalMemoryLayer] = {}
