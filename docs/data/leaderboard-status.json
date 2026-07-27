@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.leaderboard_status.v1",
   "generated_at": "2026-07-27T13:29:28Z",
-  "source_ref": "f3a23b2fc832",
+  "source_ref": "693840ec9708",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "public_url": "https://caspiang.github.io/wavemind/",
@@ -14,7 +14,7 @@
     "timezone": "UTC",
     "public_url": "https://caspiang.github.io/wavemind/",
     "publishing_status": "publishable_with_claim_limits",
-    "source_ref": "f3a23b2fc832",
+    "source_ref": "693840ec9708",
     "workflow_run_id": null,
     "refresh_profile": "local",
     "expected_scheduled_refresh_profile": "weekly-fast",
@@ -60,8 +60,8 @@
         "path": "benchmarks/benchmark_matrix_results.json",
         "schema": "wavemind.benchmark_matrix.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-27T13:29:25Z",
-        "age_days": 3.472222222222222e-05,
+        "timestamp": "2026-07-27T14:38:41Z",
+        "age_days": 0.0,
         "status": "pass"
       },
       {
@@ -324,13 +324,13 @@
   },
   "benchmark_matrix": {
     "schema": "wavemind.benchmark_matrix.v1",
-    "generated_at": "2026-07-27T13:29:25Z",
-    "implemented_count": 40,
+    "generated_at": "2026-07-27T14:38:41Z",
+    "implemented_count": 41,
     "runner_ready_count": 3,
     "planned_count": 7,
-    "total_count": 50,
+    "total_count": 51,
     "status_counts": {
-      "implemented": 40,
+      "implemented": 41,
       "planned": 7,
       "runner-ready": 3
     },
@@ -343,6 +343,7 @@
       "memory-embedding": 1,
       "multilingual-retrieval": 2,
       "multimodal-contract": 1,
+      "multimodal-lifecycle": 1,
       "multimodal-memory": 1,
       "production-ops": 3,
       "production-scale": 20,
