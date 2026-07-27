@@ -1,0 +1,86 @@
+{
+  "schema": "wavemind.crypto.transfer-protocol.v1",
+  "name": "binance_market_regime_asset_transfer_v1",
+  "frozen_utc": "2026-07-28T00:00:00+00:00",
+  "hypothesis": "A topology-aware WaveField hybrid can transfer market-regime information to asset-disjoint universes after causal unlabeled domain normalization.",
+  "source": {
+    "venue": "Binance",
+    "market": "USD-M perpetuals",
+    "bar_interval": "4h",
+    "range": "2022-01-01 through 2026-06-30",
+    "inputs": "checksum-verified completed bars and causally available derivatives features"
+  },
+  "development_universes": {
+    "base": [
+      "ADAUSDT",
+      "BNBUSDT",
+      "BTCUSDT",
+      "DOGEUSDT",
+      "ETHUSDT",
+      "LINKUSDT",
+      "SOLUSDT",
+      "XRPUSDT"
+    ],
+    "holdout1_seen_before_freeze": [
+      "ATOMUSDT",
+      "AVAXUSDT",
+      "BCHUSDT",
+      "DOTUSDT",
+      "ETCUSDT",
+      "LTCUSDT",
+      "TRXUSDT",
+      "XLMUSDT"
+    ]
+  },
+  "untouched_replication_universes": {
+    "holdout3": [
+      "AAVEUSDT",
+      "ALGOUSDT",
+      "FILUSDT",
+      "MANAUSDT",
+      "SANDUSDT",
+      "UNIUSDT",
+      "XTZUSDT",
+      "ZECUSDT"
+    ],
+    "holdout4": [
+      "COMPUSDT",
+      "DASHUSDT",
+      "GRTUSDT",
+      "HBARUSDT",
+      "RUNEUSDT",
+      "THETAUSDT",
+      "VETUSDT",
+      "XMRUSDT"
+    ]
+  },
+  "target": {
+    "primary": "high_cross_asset_dispersion",
+    "horizon": "24h",
+    "threshold": "past-only 75th percentile within each universe",
+    "sampling": "one completed UTC-day panel"
+  },
+  "domain_adaptation": {
+    "allowed": "median imputation and z-score parameters from pre-2024 unlabeled features in the target universe",
+    "forbidden": "target-universe outcome labels for model fitting or decision-threshold selection"
+  },
+  "selection": {
+    "model_training": "base-universe outcomes completed before 2024",
+    "decision_threshold": "base-universe 2024-H1",
+    "model_family": "base-universe 2024-H2",
+    "final_period": "2025-01-01 through 2026-06-30"
+  },
+  "admission_gate": {
+    "minimum_independent_days": 300,
+    "minimum_accuracy": 0.7,
+    "minimum_wilson_low_95": 0.65,
+    "minimum_balanced_accuracy": 0.65,
+    "minimum_roc_auc": 0.7,
+    "minimum_supported_year_balanced_accuracy": 0.6,
+    "required_replications": [
+      "holdout3",
+      "holdout4"
+    ]
+  },
+  "immutability": "No feature, target, normalization, model family, threshold, or gate may change after this protocol commit. Holdout3 and holdout4 must be reported even if they fail."
+}
