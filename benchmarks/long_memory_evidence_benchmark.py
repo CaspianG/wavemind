@@ -4,6 +4,7 @@ import argparse
 import json
 import math
 import statistics
+import subprocess
 import sys
 import tempfile
 import time
@@ -21,6 +22,19 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from wavemind import HotMemoryCache, MemoryOSWorker, WaveMind, query_with_cache
 from wavemind.encoders import create_text_encoder
+
+
+def repository_commit() -> str:
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "HEAD"],
+            cwd=PROJECT_ROOT,
+            text=True,
+            encoding="utf-8",
+            stderr=subprocess.DEVNULL,
+        ).strip()
+    except Exception:
+        return "unknown"
 
 
 @dataclass(frozen=True)
@@ -253,8 +267,20 @@ def run_wavemind(dataset: EvidenceDataset, encoder, top_k: int) -> EvidenceMetri
     with tempfile.TemporaryDirectory() as tmp:
         memory = WaveMind(db_path=Path(tmp) / "long-memory.sqlite3", encoder=encoder, index_kind="numpy", score_threshold=0.0, evolve_on_feed=0, vector_weight=0.78, field_weight=0.06, priority_weight=0.16, lexical_weight=0.35, short_query_lexical_weight=1.5, rerank_k=max(top_k, 30), persist_access_on_query=False, query_feedback_strength=0.0)
         try:
-            for item in dataset.memories:
-                memory.remember(item.text, namespace=item.namespace, tags=item.tags, ttl_seconds=item.ttl_seconds, priority=item.priority, metadata={"evidence_id": item.id, "timestamp": item.timestamp})
+            memory.remember_batch(
+                {
+                    "text": item.text,
+                    "namespace": item.namespace,
+                    "tags": item.tags,
+                    "ttl_seconds": item.ttl_seconds,
+                    "priority": item.priority,
+                    "metadata": {
+                        "evidence_id": item.id,
+                        "timestamp": item.timestamp,
+                    },
+                }
+                for item in dataset.memories
+            )
             rankings: dict[str, list[str]] = {}
             texts: dict[str, list[str]] = {}
             latencies: list[float] = []
@@ -302,15 +328,20 @@ def run_wavemind_memory_os(
         )
         cache = HotMemoryCache(capacity=max(128, len(dataset.queries) * 2), ttl_seconds=300.0)
         try:
-            for item in dataset.memories:
-                memory.remember(
-                    item.text,
-                    namespace=item.namespace,
-                    tags=item.tags,
-                    ttl_seconds=item.ttl_seconds,
-                    priority=item.priority,
-                    metadata={"evidence_id": item.id, "timestamp": item.timestamp},
-                )
+            memory.remember_batch(
+                {
+                    "text": item.text,
+                    "namespace": item.namespace,
+                    "tags": item.tags,
+                    "ttl_seconds": item.ttl_seconds,
+                    "priority": item.priority,
+                    "metadata": {
+                        "evidence_id": item.id,
+                        "timestamp": item.timestamp,
+                    },
+                }
+                for item in dataset.memories
+            )
             rankings: dict[str, list[str]] = {}
             texts: dict[str, list[str]] = {}
             retrieval_latencies: list[float] = []

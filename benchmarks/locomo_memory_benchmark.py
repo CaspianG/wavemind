@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import sys
@@ -22,12 +23,21 @@ from benchmarks.long_memory_evidence_benchmark import (
     run_static_vector,
     run_wavemind,
     run_wavemind_memory_os,
+    repository_commit,
 )
 from wavemind.encoders import create_text_encoder
 
 
 SOURCE_URL = "https://github.com/snap-research/locomo"
 SESSION_RE = re.compile(r"^session_(\d+)$")
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        while block := handle.read(1024 * 1024):
+            digest.update(block)
+    return digest.hexdigest()
 
 
 def _read_json(path: Path) -> Any:
@@ -267,10 +277,13 @@ def run_benchmark(
 
     conversations = len({memory.namespace for memory in dataset.memories})
     return {
+        "schema": "wavemind.locomo_memory_os.v1",
+        "source_sha": repository_commit(),
         "scenario": {
             "name": "locomo_evidence_retrieval",
             "dataset": str(dataset_path),
             "source_url": SOURCE_URL,
+            "dataset_sha256": _sha256(Path(dataset_path)),
             "conversations": conversations,
             "memories": len(dataset.memories),
             "queries": len(dataset.queries),

@@ -109,6 +109,9 @@ def test_locomo_cli_writes_public_benchmark_json(tmp_path):
     payload = json.loads(output.read_text(encoding="utf-8"))
 
     assert payload["scenario"]["name"] == "locomo_evidence_retrieval"
+    assert payload["schema"] == "wavemind.locomo_memory_os.v1"
+    assert len(payload["source_sha"]) == 40
+    assert len(payload["scenario"]["dataset_sha256"]) == 64
     assert payload["scenario"]["dataset"] == str(locomo_path)
     assert payload["scenario"]["conversations"] == 1
     assert payload["scenario"]["memories"] == 4

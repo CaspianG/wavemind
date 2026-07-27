@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from dataclasses import asdict
@@ -21,12 +22,21 @@ from benchmarks.long_memory_evidence_benchmark import (
     run_static_vector,
     run_wavemind,
     run_wavemind_memory_os,
+    repository_commit,
 )
 from wavemind.encoders import create_text_encoder
 
 
 SOURCE_URL = "https://github.com/xiaowu0162/LongMemEval"
 DATA_URL = "https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned"
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        while block := handle.read(1024 * 1024):
+            digest.update(block)
+    return digest.hexdigest()
 
 
 def _read_json(path: Path) -> Any:
@@ -277,11 +287,14 @@ def run_benchmark(
             raise ValueError(f"Unknown engine: {engine}")
         results.append(asdict(runners[key](dataset, encoder, top_k)))
     return {
+        "schema": "wavemind.longmemeval_memory_os.v1",
+        "source_sha": repository_commit(),
         "scenario": {
             "name": "longmemeval_evidence_retrieval",
             "dataset": str(dataset_path),
             "source_url": SOURCE_URL,
             "data_url": DATA_URL,
+            "dataset_sha256": _sha256(Path(dataset_path)),
             "granularity": granularity,
             "memories": len(dataset.memories),
             "queries": len(dataset.queries),

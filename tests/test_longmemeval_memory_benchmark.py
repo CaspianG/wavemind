@@ -93,6 +93,9 @@ def test_longmemeval_cli_writes_json(tmp_path):
     payload = json.loads(output.read_text(encoding="utf-8"))
 
     assert payload["scenario"]["name"] == "longmemeval_evidence_retrieval"
+    assert payload["schema"] == "wavemind.longmemeval_memory_os.v1"
+    assert len(payload["source_sha"]) == 40
+    assert len(payload["scenario"]["dataset_sha256"]) == 64
     assert payload["scenario"]["queries"] == 1
     assert payload["scenario"]["granularity"] == "session"
     assert payload["results"][0]["engine"] == "WaveMind"
