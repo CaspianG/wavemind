@@ -6,6 +6,10 @@ authoritative release sources.
 
 ## Unreleased
 
+No unreleased changes.
+
+## [2.7.0] - 2026-07-27
+
 - Hardened multimodal admission so descriptor, metadata, and precomputed-vector
   paths cannot be presented as real encoder evidence.
 - Improved the public repository entrypoint, documentation navigation, package
@@ -13,6 +17,8 @@ authoritative release sources.
 - Added namespace-bound filesystem and S3-compatible multimodal asset
   lifecycles with checksummed reload, TTL cleanup, physical deletion,
   tombstones, backup/restore, provenance, and orphan cleanup.
+
+Release: [WaveMind v2.7.0](https://github.com/CaspianG/wavemind/releases/tag/v2.7.0)
 
 ## [2.6.3] - 2026-07-27
 
@@ -31,6 +37,8 @@ Release: [WaveMind v2.6.3](https://github.com/CaspianG/wavemind/releases/tag/v2.
 
 | Version | Published | Notes |
 |---|---|---|
+| [v2.7.0](https://github.com/CaspianG/wavemind/releases/tag/v2.7.0) | 2026-07-27 | Multimodal lifecycle and public presentation |
+| [v2.6.3](https://github.com/CaspianG/wavemind/releases/tag/v2.6.3) | 2026-07-27 | Production Memory OS release |
 | [v2.6.2](https://github.com/CaspianG/wavemind/releases/tag/v2.6.2) | 2026-07-17 | Full release notes and artifacts |
 | [v2.6.1](https://github.com/CaspianG/wavemind/releases/tag/v2.6.1) | 2026-07-13 | Full release notes and artifacts |
 | [v2.6.0](https://github.com/CaspianG/wavemind/releases/tag/v2.6.0) | 2026-07-13 | Full release notes and artifacts |
@@ -39,4 +47,5 @@ Release: [WaveMind v2.6.3](https://github.com/CaspianG/wavemind/releases/tag/v2.
 See the complete [release archive](https://github.com/CaspianG/wavemind/releases)
 for earlier versions and attached evidence bundles.
 
+[2.7.0]: https://github.com/CaspianG/wavemind/compare/v2.6.3...v2.7.0
 [2.6.3]: https://github.com/CaspianG/wavemind/compare/v2.6.2...v2.6.3
