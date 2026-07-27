@@ -24,6 +24,7 @@ from wavemind.encoders import create_text_encoder
 @dataclass(frozen=True)
 class AdaptiveCase:
     namespace: str
+    category: str
     current: str
     stale: str
     observed_query: str
@@ -31,14 +32,24 @@ class AdaptiveCase:
 
 
 CASES = (
-    AdaptiveCase("role", "The current role is crypto trader.", "The previous role is product manager.", "what is the current role?", "what does the user do?"),
-    AdaptiveCase("city", "The current city is Lisbon.", "The previous city is Berlin.", "what is the current city?", "where does the user live?"),
-    AdaptiveCase("budget", "The current budget is 2000 dollars.", "The previous budget is 50 dollars.", "what is the current budget?", "how much can the user spend?"),
-    AdaptiveCase("style", "The preferred answer style is concise.", "The previous answer style was detailed.", "what answer style is preferred?", "how should I answer?"),
-    AdaptiveCase("project", "The active project is WaveMind.", "The previous project was Garden Notes.", "what is the active project?", "which project matters?"),
-    AdaptiveCase("token", "The valid token is green 772.", "The expired token was blue 114.", "which token is valid?", "what login token should be used?"),
-    AdaptiveCase("language", "The current coding language is Rust.", "The previous coding language was Python.", "what is the current coding language?", "what language does the user code in?"),
-    AdaptiveCase("exchange", "The current exchange is Kraken.", "The previous exchange was Binance.", "what is the current exchange?", "where does the user trade?"),
+    AdaptiveCase("role", "knowledge_update", "The current role is crypto trader.", "The previous role is product manager.", "what is the current role?", "what does the user do?"),
+    AdaptiveCase("city", "knowledge_update", "The current city is Lisbon.", "The previous city is Berlin.", "what is the current city?", "where does the user live?"),
+    AdaptiveCase("budget", "knowledge_update", "The current budget is 2000 dollars.", "The previous budget is 50 dollars.", "what is the current budget?", "how much can the user spend?"),
+    AdaptiveCase("style", "preference_update", "The preferred answer style is concise.", "The previous answer style was detailed.", "what answer style is preferred?", "how should I answer?"),
+    AdaptiveCase("project", "state_tracking", "The active project is WaveMind.", "The previous project was Garden Notes.", "what is the active project?", "which project matters?"),
+    AdaptiveCase("token", "state_tracking", "The valid token is green 772.", "The expired token was blue 114.", "which token is valid?", "what login token should be used?"),
+    AdaptiveCase("language", "knowledge_update", "The current coding language is Rust.", "The previous coding language was Python.", "what is the current coding language?", "what language does the user code in?"),
+    AdaptiveCase("exchange", "knowledge_update", "The current exchange is Kraken.", "The previous exchange was Binance.", "what is the current exchange?", "where does the user trade?"),
+    AdaptiveCase("updated-budget", "knowledge_update", "The current project budget is 2000 dollars.", "The previous project budget was 50 dollars.", "what is the current project budget?", "is the project budget still 50 dollars?"),
+    AdaptiveCase("updated-region", "knowledge_update", "The current service region is Warsaw.", "The previous service region was Dublin.", "what is the current service region?", "is the service still hosted in Dublin?"),
+    AdaptiveCase("updated-owner", "knowledge_update", "The current incident owner is Alice.", "The previous incident owner was Bob.", "who is the current incident owner?", "does Bob still own the incident?"),
+    AdaptiveCase("updated-port", "knowledge_update", "The current API port is 8081.", "The previous API port was 3000.", "what is the current API port?", "does the API still use port 3000?"),
+    AdaptiveCase("backup-rule", "workflow_gotcha", "The active rule requires checksum validation before restoring a backup.", "The obsolete rule allows restoring a backup without checksum validation.", "what is the active rule?", "can the agent restore a backup without checksum validation?"),
+    AdaptiveCase("merge-rule", "workflow_gotcha", "The active deployment rule requires tests before merging.", "The obsolete deployment rule allows merging without tests.", "what is the active deployment rule?", "can a change be merged without tests?"),
+    AdaptiveCase("token-rule", "workflow_gotcha", "The active security rule requires token rotation before reconnecting.", "The obsolete security rule allows reconnecting without token rotation.", "what is the active security rule?", "can the agent reconnect without token rotation?"),
+    AdaptiveCase("recovery-rule", "workflow_gotcha", "The active recovery rule requires snapshot verification before replay.", "The obsolete recovery rule allows replay without snapshot verification.", "what is the active recovery rule?", "can recovery replay without snapshot verification?"),
+    AdaptiveCase("release-rule", "workflow_gotcha", "The active release rule requires artifact checksums before publishing.", "The obsolete release rule allows publishing without artifact checksums.", "what is the active release rule?", "can the release publish without artifact checksums?"),
+    AdaptiveCase("migration-rule", "workflow_gotcha", "The active database rule requires a backup before migration.", "The obsolete database rule allows migration without a backup.", "what is the active database rule?", "can the database migrate without a backup?"),
 )
 
 
@@ -65,6 +76,11 @@ def _percentile(values: list[float], percentile: float) -> float:
     ordered = sorted(values)
     index = min(len(ordered) - 1, int(len(ordered) * percentile))
     return float(ordered[index])
+
+
+def _estimate_tokens(text: str) -> int:
+    words = [word for word in str(text).replace("\n", " ").split(" ") if word]
+    return max(1, int(len(words) * 1.25 + 0.999))
 
 
 def _protocol_hash(
@@ -150,6 +166,13 @@ def _run_variant(
             cold_latencies: list[float] = []
             successes: list[bool] = []
             stale_errors: list[bool] = []
+            returned_context_tokens = 0
+            case_successes: dict[str, list[bool]] = {
+                case.namespace: [] for case in CASES
+            }
+            case_stale_errors: dict[str, list[bool]] = {
+                case.namespace: [] for case in CASES
+            }
             for repetition in range(evaluation_repetitions):
                 for case in CASES:
                     if use_memory_os and repetition < cold_repetitions:
@@ -174,16 +197,49 @@ def _run_variant(
                     if repetition < cold_repetitions:
                         cold_latencies.append(latency)
                     selected_id = results[0].id if results else None
-                    successes.append(selected_id == current_ids[case.namespace])
-                    stale_errors.append(selected_id == stale_ids[case.namespace])
+                    success = selected_id == current_ids[case.namespace]
+                    stale_error = selected_id == stale_ids[case.namespace]
+                    successes.append(success)
+                    stale_errors.append(stale_error)
+                    case_successes[case.namespace].append(success)
+                    case_stale_errors[case.namespace].append(stale_error)
+                    if results:
+                        returned_context_tokens += _estimate_tokens(results[0].text)
 
             cache_stats = cache.stats()
+            full_context_tokens = evaluation_repetitions * sum(
+                _estimate_tokens(case.current) + _estimate_tokens(case.stale)
+                for case in CASES
+            )
+            case_outcomes = [
+                {
+                    "namespace": case.namespace,
+                    "category": case.category,
+                    "success_rate": statistics.mean(case_successes[case.namespace]),
+                    "stale_error_rate": statistics.mean(
+                        case_stale_errors[case.namespace]
+                    ),
+                }
+                for case in CASES
+            ]
+            category_success: dict[str, float] = {}
+            category_stale_error: dict[str, float] = {}
+            for category in sorted({case.category for case in CASES}):
+                rows = [row for row in case_outcomes if row["category"] == category]
+                category_success[category] = statistics.mean(
+                    float(row["success_rate"]) for row in rows
+                )
+                category_stale_error[category] = statistics.mean(
+                    float(row["stale_error_rate"]) for row in rows
+                )
             return {
                 "engine": "WaveMind + Memory OS" if use_memory_os else "WaveMind baseline",
                 "task_success_rate": statistics.mean(successes),
                 "stale_error_rate": statistics.mean(stale_errors),
                 "avg_latency_ms": statistics.mean(latencies),
+                "p50_latency_ms": _percentile(latencies, 0.50),
                 "p95_latency_ms": _percentile(latencies, 0.95),
+                "p99_latency_ms": _percentile(latencies, 0.99),
                 "cold_p95_latency_ms": _percentile(cold_latencies, 0.95),
                 "steady_p95_latency_ms": _percentile(
                     latencies[cold_repetitions * len(CASES) :],
@@ -191,6 +247,16 @@ def _run_variant(
                 ),
                 "query_count": len(latencies),
                 "context_items_per_query": 1,
+                "context_tokens_returned": returned_context_tokens,
+                "full_context_tokens": full_context_tokens,
+                "context_budget_saved": (
+                    max(0.0, 1.0 - returned_context_tokens / full_context_tokens)
+                    if full_context_tokens
+                    else 0.0
+                ),
+                "case_outcomes": case_outcomes,
+                "category_success": category_success,
+                "category_stale_error": category_stale_error,
                 "cache_hits": cache_stats.hits,
                 "cache_misses": cache_stats.misses,
                 "priority_predictions": sum(int(report.get("priority_predictions") or 0) for report in worker_reports),
@@ -207,7 +273,9 @@ def _aggregate_variant(trials: list[dict[str, Any]]) -> dict[str, Any]:
     total_queries = sum(int(trial["query_count"]) for trial in trials)
     latency_keys = (
         "avg_latency_ms",
+        "p50_latency_ms",
         "p95_latency_ms",
+        "p99_latency_ms",
         "cold_p95_latency_ms",
         "steady_p95_latency_ms",
     )
@@ -232,10 +300,44 @@ def _aggregate_variant(trials: list[dict[str, Any]]) -> dict[str, Any]:
         "priority_predictions": sum(int(trial["priority_predictions"]) for trial in trials),
         "forgetting_demotions": sum(int(trial["forgetting_demotions"]) for trial in trials),
         "worker_runs": sum(int(trial["worker_runs"]) for trial in trials),
+        "context_tokens_returned": sum(
+            int(trial["context_tokens_returned"]) for trial in trials
+        ),
+        "full_context_tokens": sum(
+            int(trial["full_context_tokens"]) for trial in trials
+        ),
+        "trial_task_success_rates": [
+            float(trial["task_success_rate"]) for trial in trials
+        ],
+        "trial_stale_error_rates": [
+            float(trial["stale_error_rate"]) for trial in trials
+        ],
+        "trial_category_success": [
+            dict(trial["category_success"]) for trial in trials
+        ],
         "latency_trials_ms": {
             key: [float(trial[key]) for trial in trials] for key in latency_keys
         },
     }
+    payload["context_budget_saved"] = max(
+        0.0,
+        1.0
+        - float(payload["context_tokens_returned"])
+        / max(1, int(payload["full_context_tokens"])),
+    )
+    payload["category_success"] = {
+        category: statistics.mean(
+            float(trial["category_success"][category]) for trial in trials
+        )
+        for category in sorted(trials[0]["category_success"])
+    }
+    payload["category_stale_error"] = {
+        category: statistics.mean(
+            float(trial["category_stale_error"][category]) for trial in trials
+        )
+        for category in sorted(trials[0]["category_stale_error"])
+    }
+    payload["case_outcomes"] = list(trials[0]["case_outcomes"])
     for key in latency_keys:
         payload[key] = statistics.median(float(trial[key]) for trial in trials)
     return payload
@@ -287,6 +389,11 @@ def run_benchmark(
             "hash": protocol_hash,
             "workload": "sequential_adaptive_recall",
             "case_count": len(CASES),
+            "categories": sorted({case.category for case in CASES}),
+            "category_case_counts": {
+                category: sum(1 for case in CASES if case.category == category)
+                for category in sorted({case.category for case in CASES})
+            },
             "observed_repetitions": observed_repetitions,
             "evaluation_repetitions": evaluation_repetitions,
             "cold_repetitions": cold_repetitions,

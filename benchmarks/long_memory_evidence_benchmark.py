@@ -63,7 +63,9 @@ class EvidenceMetrics:
     context_tokens_returned: int
     context_budget_saved: float
     avg_latency_ms: float
+    p50_latency_ms: float
     p95_latency_ms: float
+    p99_latency_ms: float
     queries: int
     execution_mode: str = "retrieval"
     worker_runs: int = 0
@@ -199,7 +201,9 @@ def compute_evidence_metrics(queries: Iterable[EvidenceQuery], rankings: dict[st
     context_tokens = sum(_estimate_tokens(text) for values in returned_texts.values() for text in values[:top_k])
     saved = max(0.0, 1.0 - (context_tokens / full_context_tokens)) if full_context_tokens else 0.0
     sorted_latencies = sorted(latencies_ms)
+    p50_index = min(len(sorted_latencies) - 1, int(len(sorted_latencies) * 0.50)) if sorted_latencies else 0
     p95_index = min(len(sorted_latencies) - 1, int(len(sorted_latencies) * 0.95)) if sorted_latencies else 0
+    p99_index = min(len(sorted_latencies) - 1, int(len(sorted_latencies) * 0.99)) if sorted_latencies else 0
     return EvidenceMetrics(
         engine=engine,
         evidence_recall_at_k=statistics.mean(recalls) if recalls else 0.0,
@@ -211,7 +215,9 @@ def compute_evidence_metrics(queries: Iterable[EvidenceQuery], rankings: dict[st
         context_tokens_returned=context_tokens,
         context_budget_saved=saved,
         avg_latency_ms=statistics.mean(latencies_ms) if latencies_ms else 0.0,
+        p50_latency_ms=sorted_latencies[p50_index] if sorted_latencies else 0.0,
         p95_latency_ms=sorted_latencies[p95_index] if sorted_latencies else 0.0,
+        p99_latency_ms=sorted_latencies[p99_index] if sorted_latencies else 0.0,
         queries=len(query_list),
     )
 

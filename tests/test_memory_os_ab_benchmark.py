@@ -28,3 +28,18 @@ def test_memory_os_ab_uses_identical_protocol_and_proves_uplift():
     assert memory_os["stale_error_rate"] < baseline["stale_error_rate"]
     assert memory_os["priority_predictions"] >= payload["protocol"]["case_count"]
     assert memory_os["forgetting_demotions"] >= payload["protocol"]["case_count"]
+    assert {
+        "knowledge_update",
+        "workflow_gotcha",
+    }.issubset(memory_os["category_success"])
+    assert (
+        memory_os["category_success"]["knowledge_update"]
+        > baseline["category_success"]["knowledge_update"]
+    )
+    assert (
+        memory_os["category_success"]["workflow_gotcha"]
+        > baseline["category_success"]["workflow_gotcha"]
+    )
+    assert len(memory_os["trial_task_success_rates"]) == 5
+    assert len(memory_os["trial_category_success"]) == 5
+    assert memory_os["context_budget_saved"] >= 0.30
