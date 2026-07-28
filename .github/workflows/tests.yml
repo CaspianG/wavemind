@@ -46,3 +46,43 @@ jobs:
 
       - name: Run tests
         run: pytest -q
+
+  typescript-sdk:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: sdk/typescript
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: sdk/typescript/package-lock.json
+
+      - name: Install SDK dependencies
+        run: npm ci
+
+      - name: Build and test SDK
+        run: npm test
+
+  provider-contracts:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install official provider SDKs
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,providers]"
+
+      - name: Run official provider contract tests
+        run: pytest -q tests/test_official_provider_contracts.py

@@ -20,6 +20,18 @@ from .advisor import advise_memory_architecture
 from .cluster import ClusterNode, build_cluster_autoscale_plan, build_cluster_plan
 from .core import WaveMind
 from .encoders import create_text_encoder
+from .experience import (
+    ExperienceStatus,
+    SQLiteExperienceStore,
+    TrustClass,
+    experience_from_trajectory,
+    parse_tool_trajectory,
+)
+from .experience_compiler import ExperienceCompiler
+from .experience_portability import (
+    export_experience_bundle,
+    import_experience_bundle,
+)
 from .importers import import_path
 from .jobs import (
     CachePrewarmWorker,
@@ -35,6 +47,11 @@ from .jobs import (
     query_with_vector_cache,
 )
 from .observability import configure_observability, instrument_fastapi_app
+from .memory_firewall import (
+    FirewallContext,
+    MemoryFirewall,
+    MemoryFirewallPolicy,
+)
 from .studio import STUDIO_HTML, field_heatmap, studio_snapshot
 
 
@@ -1053,6 +1070,35 @@ class ConsolidateResponse(BaseModel):
     concepts: list[dict[str, Any]]
 
 
+class ExperiencePacketRequest(BaseModel):
+    query: str = Field(min_length=1)
+    namespace: str = Field(default="default", min_length=1)
+    token_budget: int = Field(default=800, ge=32)
+    top_k: int = Field(default=8, ge=1, le=100)
+    domains: list[str] = Field(default_factory=list)
+    task_types: list[str] = Field(default_factory=list)
+    tools: list[str] = Field(default_factory=list)
+    include_canary: bool = False
+
+
+class ExperienceTrajectoryRequest(BaseModel):
+    payload: Any
+    provider: str | None = None
+    namespace: str = Field(default="default", min_length=1)
+    trajectory_id: str | None = None
+    trust: str = TrustClass.TOOL_OUTPUT.value
+    status: str = ExperienceStatus.SHADOW.value
+    confidence: float = Field(default=0.5, ge=0.0, le=1.0)
+
+
+class ExperienceBundleRequest(BaseModel):
+    namespace: str | None = None
+
+
+class ExperienceBundleImportRequest(BaseModel):
+    bundle: dict[str, Any]
+
+
 def _remember_response_id(result: Any) -> int:
     if isinstance(result, int):
         return result
@@ -1203,7 +1249,11 @@ def build_default_mind() -> WaveMind:
     )
 
 
-def create_app(mind: WaveMind | None = None) -> FastAPI:
+def create_app(
+    mind: WaveMind | None = None,
+    *,
+    experience_store: SQLiteExperienceStore | None = None,
+) -> FastAPI:
     logging.basicConfig(level=os.environ.get("WAVEMIND_LOG_LEVEL", "INFO"))
     app = FastAPI(title="WaveMind", version=__version__)
     observability = configure_observability(service_version=__version__)
@@ -1226,6 +1276,52 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
     app.state.operation_metrics = APIOperationMetrics(
         max_samples=int(os.environ.get("WAVEMIND_METRICS_SAMPLE_SIZE", "512"))
     )
+    app.state.experience_store = experience_store
+    app.state.experience_store_owned = False
+    app.state.experience_compilers = {}
+    app.state.experience_lock = Lock()
+
+    def _experience_compiler(namespace: str) -> ExperienceCompiler:
+        selected = namespace.strip()
+        if not selected:
+            raise HTTPException(status_code=422, detail="namespace must not be empty")
+        with app.state.experience_lock:
+            store = app.state.experience_store
+            if store is None:
+                store = SQLiteExperienceStore(
+                    Path(
+                        os.environ.get(
+                            "WAVEMIND_EXPERIENCE_DB",
+                            "wavemind-experience.db",
+                        )
+                    )
+                )
+                app.state.experience_store = store
+                app.state.experience_store_owned = True
+            compiler = app.state.experience_compilers.get(selected)
+            if compiler is None:
+                compiler = ExperienceCompiler(
+                    store,
+                    MemoryFirewall(
+                        MemoryFirewallPolicy(
+                            namespace=selected,
+                            policy_id=f"http-api:{selected}",
+                        )
+                    ),
+                )
+                app.state.experience_compilers[selected] = compiler
+            return compiler
+
+    def _close_experience_store() -> None:
+        if (
+            app.state.experience_store_owned
+            and app.state.experience_store is not None
+        ):
+            app.state.experience_store.close()
+            app.state.experience_store = None
+            app.state.experience_compilers.clear()
+
+    app.router.add_event_handler("shutdown", _close_experience_store)
 
     def _query_results(request: QueryRequest):
         if app.state.cache is None:
@@ -1488,6 +1584,117 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
         with _api_operation(app, "query"):
             results = _query_results(request)
         return QueryResponse(results=_query_result_responses(results))
+
+    @app.post(
+        "/experience/packet",
+        dependencies=[Depends(require_role("read"))],
+    )
+    def compile_experience_packet(request: ExperiencePacketRequest):
+        compiler = _experience_compiler(request.namespace)
+        packet = compiler.compile_packet(
+            request.query,
+            namespace=request.namespace,
+            context=FirewallContext(
+                namespace=request.namespace,
+                actor="http_api",
+            ),
+            token_budget=request.token_budget,
+            top_k=request.top_k,
+            domains=request.domains,
+            task_types=request.task_types,
+            tools=request.tools,
+            include_canary=request.include_canary,
+        )
+        return packet.as_dict()
+
+    @app.get(
+        "/experience/{experience_id}",
+        dependencies=[Depends(require_role("read"))],
+    )
+    def expand_experience(experience_id: str, namespace: str = "default"):
+        compiler = _experience_compiler(namespace)
+        details = compiler.expand(
+            [experience_id],
+            namespace=namespace,
+            context=FirewallContext(namespace=namespace, actor="http_api"),
+        )
+        if not details:
+            raise HTTPException(status_code=404, detail="Experience not found")
+        return details[0].__dict__
+
+    @app.post(
+        "/experience/trajectories",
+        dependencies=[Depends(require_role("write"))],
+    )
+    def ingest_experience_trajectory(request: ExperienceTrajectoryRequest):
+        try:
+            trajectory = parse_tool_trajectory(
+                request.payload,
+                provider=request.provider,
+                namespace=request.namespace,
+                trajectory_id=request.trajectory_id,
+            )
+            record = experience_from_trajectory(
+                trajectory,
+                trust=TrustClass(request.trust),
+                status=ExperienceStatus(request.status),
+                confidence=request.confidence,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        compiler = _experience_compiler(request.namespace)
+        with app.state.experience_lock:
+            existing = compiler.store.get_trajectory_by_source(
+                namespace=request.namespace,
+                source_sha256=trajectory.source_sha256,
+            )
+            if existing is not None:
+                records = compiler.store.list_for_trajectory(existing.id)
+                return {
+                    "experience": records[0].as_dict() if records else None,
+                    "trajectory": existing.as_dict(),
+                    "firewall": None,
+                    "inserted": False,
+                }
+            stored, decision = compiler.submit(
+                record,
+                context=FirewallContext(
+                    namespace=request.namespace,
+                    actor="http_api",
+                    actor_trust=TrustClass.TOOL_OUTPUT,
+                ),
+            )
+            compiler.store.restore_trajectory(trajectory)
+        return {
+            "experience": stored.as_dict(),
+            "trajectory": trajectory.as_dict(),
+            "firewall": decision.as_dict(),
+            "inserted": True,
+        }
+
+    @app.post(
+        "/experience/export",
+        dependencies=[Depends(require_role("admin"))],
+    )
+    def export_experiences(request: ExperienceBundleRequest):
+        compiler = _experience_compiler(request.namespace or "default")
+        return export_experience_bundle(
+            compiler.store,
+            namespace=request.namespace,
+        )
+
+    @app.post(
+        "/experience/import",
+        dependencies=[Depends(require_role("admin"))],
+    )
+    def import_experiences(request: ExperienceBundleImportRequest):
+        namespace = str(request.bundle.get("namespace") or "default")
+        compiler = _experience_compiler(namespace)
+        try:
+            report = import_experience_bundle(compiler.store, request.bundle)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return report.__dict__
 
     @app.post(
         "/query/batch",
