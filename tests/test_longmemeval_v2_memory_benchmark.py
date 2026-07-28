@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+import urllib.request
 from pathlib import Path
 
 from benchmarks.longmemeval_v2_memory_benchmark import (
+    OllamaReader,
     V2Question,
     load_longmemeval_v2_small,
     run_benchmark,
@@ -171,3 +173,70 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
     assert reader.answer_calls == 2
     assert len(rows) == 4
     assert all(row["context_sha256"] for row in rows)
+
+
+def test_v2_runner_resumes_only_matching_non_error_contexts(tmp_path):
+    _write_fixture(tmp_path)
+    first_reader = FixtureReader()
+    first_payload, first_rows = run_benchmark(
+        tmp_path,
+        reader=first_reader,
+        top_k=3,
+        work_dir=tmp_path,
+    )
+
+    class NoCallReader(FixtureReader):
+        def answer(self, *, question, context):
+            raise AssertionError("matching checkpoint should avoid inference")
+
+    resumed_payload, resumed_rows = run_benchmark(
+        tmp_path,
+        reader=NoCallReader(),
+        top_k=3,
+        work_dir=tmp_path,
+        resume_rows=first_rows,
+        resume_metadata={
+            "used": True,
+            "source_sha": first_payload["source_sha"],
+            "rows": len(first_rows),
+        },
+    )
+
+    assert resumed_payload["resume"]["used"] is True
+    assert all(result["errors"] == 0 for result in resumed_payload["results"])
+    assert all(result["generated_answers"] == 0 for result in resumed_payload["results"])
+    assert len(resumed_rows) == 4
+
+
+def test_ollama_reader_expands_context_only_for_images(tmp_path):
+    image_path = tmp_path / "question.png"
+    image_path.write_bytes(b"image")
+    requests = []
+
+    class Response:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return None
+
+        def read(self):
+            return b'{"response":"\\\\boxed{ok}"}'
+
+    class Opener:
+        def open(self, request, timeout):
+            assert isinstance(request, urllib.request.Request)
+            requests.append(json.loads(request.data.decode("utf-8")))
+            return Response()
+
+    reader = OllamaReader(
+        model="fixture",
+        vision_model="fixture-vision",
+        image_context_window=8192,
+    )
+    reader._opener = Opener()
+    reader._generate("text only")
+    reader._generate("with image", image=str(image_path))
+
+    assert "num_ctx" not in requests[0]["options"]
+    assert requests[1]["options"]["num_ctx"] == 8192

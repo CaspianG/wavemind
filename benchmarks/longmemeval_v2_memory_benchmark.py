@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import urllib.error
 import urllib.request
 from collections import Counter
 from dataclasses import dataclass
@@ -285,6 +286,7 @@ class OllamaReader:
         base_url: str = "http://127.0.0.1:11434",
         supports_images: bool = False,
         timeout_seconds: float = 180.0,
+        image_context_window: int = 8192,
         seed: int = 20260728,
     ) -> None:
         self.model = model
@@ -292,6 +294,9 @@ class OllamaReader:
         self.base_url = base_url.rstrip("/")
         self.supports_images = bool(supports_images or vision_model)
         self.timeout_seconds = float(timeout_seconds)
+        self.image_context_window = int(image_context_window)
+        if self.image_context_window < 4096:
+            raise ValueError("image_context_window must be at least 4096")
         self.seed = int(seed)
         self._opener = urllib.request.build_opener(
             urllib.request.ProxyHandler({})
@@ -327,17 +332,24 @@ class OllamaReader:
             payload["images"] = [
                 base64.b64encode(Path(image).read_bytes()).decode("ascii")
             ]
+            payload["options"]["num_ctx"] = self.image_context_window
         request = urllib.request.Request(
             f"{self.base_url}/api/generate",
             data=json.dumps(payload).encode("utf-8"),
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        with self._opener.open(
-            request,
-            timeout=self.timeout_seconds,
-        ) as response:
-            body = json.loads(response.read().decode("utf-8"))
+        try:
+            with self._opener.open(
+                request,
+                timeout=self.timeout_seconds,
+            ) as response:
+                body = json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="replace")
+            raise RuntimeError(
+                f"Ollama HTTP {exc.code} for model {selected_model}: {detail}"
+            ) from exc
         return str(body.get("response") or "").strip()
 
     def answer(
@@ -553,7 +565,8 @@ def _evaluate_contexts(
     contexts: dict[str, list[str]],
     *,
     reader: Reader | None,
-    reuse_rows: dict[str, dict[str, Any]] | None = None,
+    reuse_rows: dict[str, list[dict[str, Any]]] | None = None,
+    reuse_source: str = "matching checkpoint",
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     if reader is None:
         return (
@@ -575,12 +588,24 @@ def _evaluate_contexts(
                 ensure_ascii=False,
             ).encode("utf-8")
         ).hexdigest()
-        reusable = (reuse_rows or {}).get(question.id)
-        if reusable and reusable.get("context_sha256") == context_sha:
+        reusable = next(
+            (
+                row
+                for row in (reuse_rows or {}).get(question.id, [])
+                if row.get("context_sha256") == context_sha
+                and not row.get("error")
+            ),
+            None,
+        )
+        if reusable:
             per_query.append(
                 {
-                    **reusable,
-                    "response_reused_from": "WaveMind Core",
+                    **{
+                        key: value
+                        for key, value in reusable.items()
+                        if key not in {"engine", "response_reused_from"}
+                    },
+                    "response_reused_from": reuse_source,
                 }
             )
             answer_latencies.append(0.0)
@@ -651,6 +676,8 @@ def run_benchmark(
     top_k: int = 5,
     limit_questions: int | None = None,
     work_dir: str | Path | None = None,
+    resume_rows: list[dict[str, Any]] | None = None,
+    resume_metadata: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     dataset = load_longmemeval_v2_small(
         data_root,
@@ -705,19 +732,36 @@ def run_benchmark(
             )
         finally:
             memory.close()
+    prior_core: dict[str, list[dict[str, Any]]] = {}
+    prior_os: dict[str, list[dict[str, Any]]] = {}
+    for row in resume_rows or []:
+        target = (
+            prior_core
+            if row.get("engine") == "WaveMind"
+            else prior_os
+            if row.get("engine") == "WaveMind + Memory OS"
+            else None
+        )
+        if target is not None and row.get("question_id"):
+            target.setdefault(str(row["question_id"]), []).append(row)
     core_quality, core_rows = _evaluate_contexts(
         dataset,
         core_contexts,
         reader=reader,
+        reuse_rows=prior_core,
+        reuse_source="WaveMind checkpoint",
     )
+    os_reuse: dict[str, list[dict[str, Any]]] = {}
+    for row in core_rows:
+        os_reuse.setdefault(str(row["question_id"]), []).append(row)
+    for question_id, rows in prior_os.items():
+        os_reuse.setdefault(question_id, []).extend(rows)
     os_quality, os_rows = _evaluate_contexts(
         dataset,
         os_contexts,
         reader=reader,
-        reuse_rows={
-            str(row["question_id"]): row
-            for row in core_rows
-        },
+        reuse_rows=os_reuse,
+        reuse_source="matching Core or Memory OS checkpoint",
     )
     results = [
         {"engine": "WaveMind", **core_metrics, **core_quality},
@@ -781,7 +825,17 @@ def run_benchmark(
                 "supports_images": (
                     reader.supports_images if reader is not None else False
                 ),
+                "image_context_window": (
+                    getattr(reader, "image_context_window", None)
+                    if reader is not None
+                    else None
+                ),
                 "cost_per_query_usd": 0.0,
+            },
+            "resume": resume_metadata or {
+                "used": False,
+                "source_sha": None,
+                "rows": 0,
             },
             "results": results,
             "per_query_count": len(per_query),
@@ -807,6 +861,9 @@ def main() -> int:
         default=os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434"),
     )
     parser.add_argument("--reader-supports-images", action="store_true")
+    parser.add_argument("--ollama-image-context-window", type=int, default=8192)
+    parser.add_argument("--resume-result", type=Path)
+    parser.add_argument("--resume-per-query", type=Path)
     parser.add_argument(
         "--output",
         type=Path,
@@ -818,12 +875,39 @@ def main() -> int:
         default=Path("benchmarks/longmemeval_v2_small_per_query.jsonl"),
     )
     args = parser.parse_args()
+    if bool(args.resume_result) != bool(args.resume_per_query):
+        parser.error("--resume-result and --resume-per-query must be supplied together")
+    resume_rows: list[dict[str, Any]] | None = None
+    resume_metadata: dict[str, Any] | None = None
+    if args.resume_result:
+        resume_payload = json.loads(
+            args.resume_result.read_text(encoding="utf-8")
+        )
+        resume_rows = _read_jsonl(args.resume_per_query)
+        expected_reader = resume_payload.get("reader") or {}
+        expected_scenario = resume_payload.get("scenario") or {}
+        if resume_payload.get("schema") != "wavemind.longmemeval_v2_small.v1":
+            parser.error("resume result has an unsupported schema")
+        if expected_scenario.get("top_k") != args.top_k:
+            parser.error("resume result top_k does not match this run")
+        if expected_reader.get("model") != args.ollama_model:
+            parser.error("resume reader model does not match this run")
+        if expected_reader.get("vision_model") != args.ollama_vision_model:
+            parser.error("resume vision model does not match this run")
+        resume_metadata = {
+            "used": True,
+            "source_sha": resume_payload.get("source_sha"),
+            "rows": len(resume_rows),
+            "result_sha256": _sha256(args.resume_result),
+            "per_query_sha256": _sha256(args.resume_per_query),
+        }
     reader = (
         OllamaReader(
             model=args.ollama_model,
             vision_model=args.ollama_vision_model,
             base_url=args.ollama_base_url,
             supports_images=args.reader_supports_images,
+            image_context_window=args.ollama_image_context_window,
         )
         if args.ollama_model
         else None
@@ -834,6 +918,8 @@ def main() -> int:
         top_k=args.top_k,
         limit_questions=args.limit_questions,
         work_dir=args.work_dir,
+        resume_rows=resume_rows,
+        resume_metadata=resume_metadata,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
