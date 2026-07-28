@@ -1,8 +1,8 @@
 {
   "schema": "wavemind.experienced_work_agent_benchmark.v1",
   "status": "pass",
-  "generated_at": "2026-07-28T17:24:47Z",
-  "source_sha": "3fd809796157f2c2092b4d5f4ab194fedcc270f8",
+  "generated_at": "2026-07-28T17:57:36Z",
+  "source_sha": "d011eb848e031e1383a8437da3ca8d8f86dcb74e",
   "dataset": {
     "revision": "experienced-work-agent-v1-frozen-20260728",
     "fingerprint_sha256": "0d8a6b2de3e18f6273f3b148e6fb4b1fbfb7fa0b79dd82c42efb3973caf41225",
@@ -49,7 +49,9 @@
     "same_tool_implementations": true,
     "no_paid_api": true,
     "experience_promotion_gates": true,
-    "core_top_k": 3
+    "core_top_k": 3,
+    "paired_latency_samples": true,
+    "latency_repetitions_per_case": 3
   },
   "training": {
     "successful": 48,
@@ -75,7 +77,7 @@
       "repeated_error_rate": 1.0,
       "median_tool_steps": 4.0,
       "median_context_tokens": 0.0,
-      "p95_latency_ms": 28.957700000319164,
+      "p95_latency_ms": 28.50419999958831,
       "domain_success": {
         "coding_repository": 0.0,
         "enterprise_workflow": 0.0,
@@ -89,10 +91,10 @@
       "repeated_error_rate": 0.8333333333333334,
       "median_tool_steps": 4.0,
       "median_context_tokens": 60.0,
-      "p95_latency_ms": 36.997600000177044,
+      "p95_latency_ms": 33.85049999997136,
       "domain_success": {
-        "coding_repository": 0.3,
-        "enterprise_workflow": 0.2,
+        "coding_repository": 0.4,
+        "enterprise_workflow": 0.1,
         "support_crm": 0.0
       },
       "case_count": 30
@@ -103,7 +105,7 @@
       "repeated_error_rate": 0.0,
       "median_tool_steps": 3.0,
       "median_context_tokens": 36.0,
-      "p95_latency_ms": 19.228799999837065,
+      "p95_latency_ms": 19.56600000085018,
       "domain_success": {
         "coding_repository": 1.0,
         "enterprise_workflow": 1.0,
@@ -117,7 +119,7 @@
     "repeated_error_relative_reduction": 1.0,
     "tool_step_relative_reduction": 0.25,
     "context_token_relative_reduction": 0.4,
-    "p95_latency_regression": -0.4802689904278913
+    "p95_latency_regression": -0.42198785835167174
   },
   "checks": [
     {
@@ -136,8 +138,8 @@
       "id": "held-out-domain-balance",
       "passed": true,
       "evidence": {
-        "coding_repository": 10,
         "support_crm": 10,
+        "coding_repository": 10,
         "enterprise_workflow": 10
       },
       "target": "10 per domain"
@@ -169,7 +171,7 @@
     {
       "id": "p95-latency",
       "passed": true,
-      "evidence": -0.4802689904278913,
+      "evidence": -0.42198785835167174,
       "target": "<= 0.20 relative"
     }
   ],
@@ -190,7 +192,7 @@
         "repeated_error_codes": [
           "config_keys_lost"
         ],
-        "latency_ms": 6.6246999995200895,
+        "latency_ms": 8.090300001640571,
         "domain": "coding_repository",
         "task_type": "safe_config_change"
       },
@@ -209,7 +211,7 @@
         "repeated_error_codes": [
           "config_keys_lost"
         ],
-        "latency_ms": 6.146099998659338,
+        "latency_ms": 7.022599998890655,
         "domain": "coding_repository",
         "task_type": "safe_config_change"
       },
@@ -228,7 +230,7 @@
         "repeated_error_codes": [
           "config_keys_lost"
         ],
-        "latency_ms": 6.051800000932417,
+        "latency_ms": 5.907100001422805,
         "domain": "coding_repository",
         "task_type": "safe_config_change"
       },
@@ -247,7 +249,7 @@
         "repeated_error_codes": [
           "config_keys_lost"
         ],
-        "latency_ms": 6.5549000009923475,
+        "latency_ms": 5.592600000454695,
         "domain": "coding_repository",
         "task_type": "safe_config_change"
       },
@@ -266,7 +268,7 @@
         "repeated_error_codes": [
           "config_keys_lost"
         ],
-        "latency_ms": 7.2880999996414175,
+        "latency_ms": 6.210099998497753,
         "domain": "coding_repository",
         "task_type": "safe_config_change"
       },
@@ -285,7 +287,7 @@
         "repeated_error_codes": [
           "schema_field_lost"
         ],
-        "latency_ms": 7.058099999994738,
+        "latency_ms": 5.616699998427066,
         "domain": "coding_repository",
         "task_type": "compatible_schema_migration"
       },
@@ -304,7 +306,7 @@
         "repeated_error_codes": [
           "schema_field_lost"
         ],
-        "latency_ms": 7.334800000535324,
+        "latency_ms": 5.795699998998316,
         "domain": "coding_repository",
         "task_type": "compatible_schema_migration"
       },
@@ -323,7 +325,7 @@
         "repeated_error_codes": [
           "schema_field_lost"
         ],
-        "latency_ms": 6.486100000984152,
+        "latency_ms": 7.18349999988277,
         "domain": "coding_repository",
         "task_type": "compatible_schema_migration"
       },
@@ -342,7 +344,7 @@
         "repeated_error_codes": [
           "schema_field_lost"
         ],
-        "latency_ms": 6.824699999924633,
+        "latency_ms": 5.764800000179093,
         "domain": "coding_repository",
         "task_type": "compatible_schema_migration"
       },
@@ -361,7 +363,7 @@
         "repeated_error_codes": [
           "schema_field_lost"
         ],
-        "latency_ms": 5.783200000223587,
+        "latency_ms": 6.835500000306638,
         "domain": "coding_repository",
         "task_type": "compatible_schema_migration"
       },
@@ -382,7 +384,7 @@
           "identity_not_verified",
           "update_missing"
         ],
-        "latency_ms": 18.938799999887124,
+        "latency_ms": 19.283900001028087,
         "domain": "support_crm",
         "task_type": "verified_customer_update"
       },
@@ -403,7 +405,7 @@
           "identity_not_verified",
           "update_missing"
         ],
-        "latency_ms": 19.909000000552624,
+        "latency_ms": 18.611899999086745,
         "domain": "support_crm",
         "task_type": "verified_customer_update"
       },
@@ -424,7 +426,7 @@
           "identity_not_verified",
           "update_missing"
         ],
-        "latency_ms": 20.663100000092527,
+        "latency_ms": 18.69319999968866,
         "domain": "support_crm",
         "task_type": "verified_customer_update"
       },
@@ -445,7 +447,7 @@
           "identity_not_verified",
           "update_missing"
         ],
-        "latency_ms": 20.745699999679346,
+        "latency_ms": 20.409799999470124,
         "domain": "support_crm",
         "task_type": "verified_customer_update"
       },
@@ -466,7 +468,7 @@
           "identity_not_verified",
           "update_missing"
         ],
-        "latency_ms": 20.130900000367546,
+        "latency_ms": 19.933600000513252,
         "domain": "support_crm",
         "task_type": "verified_customer_update"
       },
@@ -486,7 +488,7 @@
           "case_closed_before_merge",
           "merge_not_completed"
         ],
-        "latency_ms": 25.574600000254577,
+        "latency_ms": 26.337799999964773,
         "domain": "support_crm",
         "task_type": "duplicate_case_resolution"
       },
@@ -506,7 +508,7 @@
           "case_closed_before_merge",
           "merge_not_completed"
         ],
-        "latency_ms": 26.794299999892246,
+        "latency_ms": 28.170800000225427,
         "domain": "support_crm",
         "task_type": "duplicate_case_resolution"
       },
@@ -526,7 +528,7 @@
           "case_closed_before_merge",
           "merge_not_completed"
         ],
-        "latency_ms": 26.555700000244542,
+        "latency_ms": 26.511599999139435,
         "domain": "support_crm",
         "task_type": "duplicate_case_resolution"
       },
@@ -546,7 +548,7 @@
           "case_closed_before_merge",
           "merge_not_completed"
         ],
-        "latency_ms": 26.78599999853759,
+        "latency_ms": 28.441700000257697,
         "domain": "support_crm",
         "task_type": "duplicate_case_resolution"
       },
@@ -566,7 +568,7 @@
           "case_closed_before_merge",
           "merge_not_completed"
         ],
-        "latency_ms": 26.289199999155244,
+        "latency_ms": 26.14230000108364,
         "domain": "support_crm",
         "task_type": "duplicate_case_resolution"
       },
@@ -586,7 +588,7 @@
           "approval_missing",
           "execution_missing"
         ],
-        "latency_ms": 27.747600001021056,
+        "latency_ms": 26.88800000032643,
         "domain": "enterprise_workflow",
         "task_type": "approval_gated_execution"
       },
@@ -606,7 +608,7 @@
           "approval_missing",
           "execution_missing"
         ],
-        "latency_ms": 27.135099999213708,
+        "latency_ms": 25.643200000558863,
         "domain": "enterprise_workflow",
         "task_type": "approval_gated_execution"
       },
@@ -626,7 +628,7 @@
           "approval_missing",
           "execution_missing"
         ],
-        "latency_ms": 28.783699999621604,
+        "latency_ms": 27.465200000733603,
         "domain": "enterprise_workflow",
         "task_type": "approval_gated_execution"
       },
@@ -646,7 +648,7 @@
           "approval_missing",
           "execution_missing"
         ],
-        "latency_ms": 28.57650000078138,
+        "latency_ms": 25.43630000036501,
         "domain": "enterprise_workflow",
         "task_type": "approval_gated_execution"
       },
@@ -666,7 +668,7 @@
           "approval_missing",
           "execution_missing"
         ],
-        "latency_ms": 28.844500000559492,
+        "latency_ms": 26.73309999954654,
         "domain": "enterprise_workflow",
         "task_type": "approval_gated_execution"
       },
@@ -685,7 +687,7 @@
         "repeated_error_codes": [
           "duplicate_ledger_entry"
         ],
-        "latency_ms": 27.556499999263906,
+        "latency_ms": 33.569100000022445,
         "domain": "enterprise_workflow",
         "task_type": "idempotent_operation"
       },
@@ -704,7 +706,7 @@
         "repeated_error_codes": [
           "duplicate_ledger_entry"
         ],
-        "latency_ms": 28.957700000319164,
+        "latency_ms": 26.259599999320926,
         "domain": "enterprise_workflow",
         "task_type": "idempotent_operation"
       },
@@ -723,7 +725,7 @@
         "repeated_error_codes": [
           "duplicate_ledger_entry"
         ],
-        "latency_ms": 28.59819999866886,
+        "latency_ms": 26.12069999850064,
         "domain": "enterprise_workflow",
         "task_type": "idempotent_operation"
       },
@@ -742,7 +744,7 @@
         "repeated_error_codes": [
           "duplicate_ledger_entry"
         ],
-        "latency_ms": 30.346699999427074,
+        "latency_ms": 28.50419999958831,
         "domain": "enterprise_workflow",
         "task_type": "idempotent_operation"
       },
@@ -761,7 +763,7 @@
         "repeated_error_codes": [
           "duplicate_ledger_entry"
         ],
-        "latency_ms": 28.35359999880893,
+        "latency_ms": 26.347299999542884,
         "domain": "enterprise_workflow",
         "task_type": "idempotent_operation"
       }
@@ -782,9 +784,14 @@
         "repeated_error_codes": [
           "config_keys_lost"
         ],
-        "latency_ms": 12.277499999981956,
+        "latency_ms": 11.563799998839386,
         "domain": "coding_repository",
-        "task_type": "safe_config_change"
+        "task_type": "safe_config_change",
+        "latency_samples_ms": [
+          11.563799998839386,
+          11.899700000867597,
+          11.167399999976624
+        ]
       },
       {
         "request_id": "heldout-coding-config-01",
@@ -801,9 +808,14 @@
         "repeated_error_codes": [
           "config_keys_lost"
         ],
-        "latency_ms": 10.844799999176757,
+        "latency_ms": 10.865399999602232,
         "domain": "coding_repository",
-        "task_type": "safe_config_change"
+        "task_type": "safe_config_change",
+        "latency_samples_ms": [
+          12.54020000124001,
+          10.859199999686098,
+          10.865399999602232
+        ]
       },
       {
         "request_id": "heldout-coding-config-02",
@@ -820,9 +832,14 @@
         "repeated_error_codes": [
           "config_keys_lost"
         ],
-        "latency_ms": 12.490800001614843,
+        "latency_ms": 11.600399999224464,
         "domain": "coding_repository",
-        "task_type": "safe_config_change"
+        "task_type": "safe_config_change",
+        "latency_samples_ms": [
+          10.733299999628798,
+          11.600399999224464,
+          12.671800001044176
+        ]
       },
       {
         "request_id": "heldout-coding-config-03",
@@ -839,9 +856,14 @@
         "repeated_error_codes": [
           "config_keys_lost"
         ],
-        "latency_ms": 11.898199998540804,
+        "latency_ms": 11.748499999157502,
         "domain": "coding_repository",
-        "task_type": "safe_config_change"
+        "task_type": "safe_config_change",
+        "latency_samples_ms": [
+          12.009699999907752,
+          11.748499999157502,
+          10.499899999558693
+        ]
       },
       {
         "request_id": "heldout-coding-config-04",
@@ -855,28 +877,35 @@
         "tool_steps": 3,
         "context_tokens": 60,
         "repeated_error_codes": [],
-        "latency_ms": 13.00210000044899,
+        "latency_ms": 11.450799998783623,
         "domain": "coding_repository",
-        "task_type": "safe_config_change"
+        "task_type": "safe_config_change",
+        "latency_samples_ms": [
+          12.964999999894644,
+          11.450799998783623,
+          10.562700001173653
+        ]
       },
       {
         "request_id": "heldout-coding-schema-00",
-        "success": false,
-        "plan_source": "fallback",
+        "success": true,
+        "plan_source": "wavemind_core",
         "plan": [
-          "replace_schema",
-          "run_schema_tests",
           "inspect_schema",
-          "migrate_schema"
+          "migrate_schema",
+          "run_schema_tests"
         ],
-        "tool_steps": 4,
+        "tool_steps": 3,
         "context_tokens": 60,
-        "repeated_error_codes": [
-          "schema_field_lost"
-        ],
-        "latency_ms": 13.092799999867566,
+        "repeated_error_codes": [],
+        "latency_ms": 12.299600000915234,
         "domain": "coding_repository",
-        "task_type": "compatible_schema_migration"
+        "task_type": "compatible_schema_migration",
+        "latency_samples_ms": [
+          12.299600000915234,
+          11.755099998481455,
+          12.365700000373181
+        ]
       },
       {
         "request_id": "heldout-coding-schema-01",
@@ -890,9 +919,14 @@
         "tool_steps": 3,
         "context_tokens": 60,
         "repeated_error_codes": [],
-        "latency_ms": 12.36129999961122,
+        "latency_ms": 10.882300000957912,
         "domain": "coding_repository",
-        "task_type": "compatible_schema_migration"
+        "task_type": "compatible_schema_migration",
+        "latency_samples_ms": [
+          10.362099999838392,
+          10.965400000713998,
+          10.882300000957912
+        ]
       },
       {
         "request_id": "heldout-coding-schema-02",
@@ -906,9 +940,14 @@
         "tool_steps": 3,
         "context_tokens": 60,
         "repeated_error_codes": [],
-        "latency_ms": 11.229600000660866,
+        "latency_ms": 11.481999999887194,
         "domain": "coding_repository",
-        "task_type": "compatible_schema_migration"
+        "task_type": "compatible_schema_migration",
+        "latency_samples_ms": [
+          11.481999999887194,
+          11.402099999031634,
+          12.246399999639834
+        ]
       },
       {
         "request_id": "heldout-coding-schema-03",
@@ -925,9 +964,14 @@
         "repeated_error_codes": [
           "schema_field_lost"
         ],
-        "latency_ms": 11.62339999973483,
+        "latency_ms": 11.942999999519088,
         "domain": "coding_repository",
-        "task_type": "compatible_schema_migration"
+        "task_type": "compatible_schema_migration",
+        "latency_samples_ms": [
+          11.942999999519088,
+          11.376799999197829,
+          12.278599999262951
+        ]
       },
       {
         "request_id": "heldout-coding-schema-04",
@@ -944,9 +988,14 @@
         "repeated_error_codes": [
           "schema_field_lost"
         ],
-        "latency_ms": 12.173199998869677,
+        "latency_ms": 12.137200001234305,
         "domain": "coding_repository",
-        "task_type": "compatible_schema_migration"
+        "task_type": "compatible_schema_migration",
+        "latency_samples_ms": [
+          12.137200001234305,
+          13.925799999924493,
+          11.218599998755963
+        ]
       },
       {
         "request_id": "heldout-support-identity-00",
@@ -965,9 +1014,14 @@
           "identity_not_verified",
           "update_missing"
         ],
-        "latency_ms": 41.77680000066175,
+        "latency_ms": 25.321799999801442,
         "domain": "support_crm",
-        "task_type": "verified_customer_update"
+        "task_type": "verified_customer_update",
+        "latency_samples_ms": [
+          28.814100000090548,
+          25.321799999801442,
+          25.156300000162446
+        ]
       },
       {
         "request_id": "heldout-support-identity-01",
@@ -986,9 +1040,14 @@
           "identity_not_verified",
           "update_missing"
         ],
-        "latency_ms": 25.426899999729358,
+        "latency_ms": 24.385200000324403,
         "domain": "support_crm",
-        "task_type": "verified_customer_update"
+        "task_type": "verified_customer_update",
+        "latency_samples_ms": [
+          23.850799998399452,
+          25.018799999088515,
+          24.385200000324403
+        ]
       },
       {
         "request_id": "heldout-support-identity-02",
@@ -1007,9 +1066,14 @@
           "identity_not_verified",
           "update_missing"
         ],
-        "latency_ms": 23.949500000526314,
+        "latency_ms": 25.55660000143689,
         "domain": "support_crm",
-        "task_type": "verified_customer_update"
+        "task_type": "verified_customer_update",
+        "latency_samples_ms": [
+          25.55660000143689,
+          24.66180000010354,
+          26.5226999999868
+        ]
       },
       {
         "request_id": "heldout-support-identity-03",
@@ -1028,9 +1092,14 @@
           "identity_not_verified",
           "update_missing"
         ],
-        "latency_ms": 24.958800000604242,
+        "latency_ms": 25.961499999539228,
         "domain": "support_crm",
-        "task_type": "verified_customer_update"
+        "task_type": "verified_customer_update",
+        "latency_samples_ms": [
+          24.885599999834085,
+          25.961499999539228,
+          26.578499999232008
+        ]
       },
       {
         "request_id": "heldout-support-identity-04",
@@ -1049,9 +1118,14 @@
           "identity_not_verified",
           "update_missing"
         ],
-        "latency_ms": 25.117000001046108,
+        "latency_ms": 26.081099998918944,
         "domain": "support_crm",
-        "task_type": "verified_customer_update"
+        "task_type": "verified_customer_update",
+        "latency_samples_ms": [
+          24.33310000014899,
+          26.805999999851338,
+          26.081099998918944
+        ]
       },
       {
         "request_id": "heldout-support-duplicate-00",
@@ -1069,9 +1143,14 @@
           "case_closed_before_merge",
           "merge_not_completed"
         ],
-        "latency_ms": 31.911800000671064,
+        "latency_ms": 30.500999999276246,
         "domain": "support_crm",
-        "task_type": "duplicate_case_resolution"
+        "task_type": "duplicate_case_resolution",
+        "latency_samples_ms": [
+          32.43300000031013,
+          30.500999999276246,
+          28.320600000370177
+        ]
       },
       {
         "request_id": "heldout-support-duplicate-01",
@@ -1089,9 +1168,14 @@
           "case_closed_before_merge",
           "merge_not_completed"
         ],
-        "latency_ms": 30.414599999858183,
+        "latency_ms": 33.85049999997136,
         "domain": "support_crm",
-        "task_type": "duplicate_case_resolution"
+        "task_type": "duplicate_case_resolution",
+        "latency_samples_ms": [
+          33.85049999997136,
+          32.50750000006519,
+          36.30390000034822
+        ]
       },
       {
         "request_id": "heldout-support-duplicate-02",
@@ -1109,9 +1193,14 @@
           "case_closed_before_merge",
           "merge_not_completed"
         ],
-        "latency_ms": 33.59930000078748,
+        "latency_ms": 33.10819999933301,
         "domain": "support_crm",
-        "task_type": "duplicate_case_resolution"
+        "task_type": "duplicate_case_resolution",
+        "latency_samples_ms": [
+          33.10819999933301,
+          35.43619999982184,
+          29.465100000379607
+        ]
       },
       {
         "request_id": "heldout-support-duplicate-03",
@@ -1129,9 +1218,14 @@
           "case_closed_before_merge",
           "merge_not_completed"
         ],
-        "latency_ms": 31.070099999851664,
+        "latency_ms": 30.591099999583093,
         "domain": "support_crm",
-        "task_type": "duplicate_case_resolution"
+        "task_type": "duplicate_case_resolution",
+        "latency_samples_ms": [
+          30.591099999583093,
+          30.932100000427454,
+          30.03760000137845
+        ]
       },
       {
         "request_id": "heldout-support-duplicate-04",
@@ -1149,9 +1243,14 @@
           "case_closed_before_merge",
           "merge_not_completed"
         ],
-        "latency_ms": 31.04220000022906,
+        "latency_ms": 30.293300000266754,
         "domain": "support_crm",
-        "task_type": "duplicate_case_resolution"
+        "task_type": "duplicate_case_resolution",
+        "latency_samples_ms": [
+          31.028299999888986,
+          30.293300000266754,
+          29.51039999970817
+        ]
       },
       {
         "request_id": "heldout-enterprise-approval-00",
@@ -1169,9 +1268,14 @@
           "approval_missing",
           "execution_missing"
         ],
-        "latency_ms": 30.395300000236603,
+        "latency_ms": 30.85769999961485,
         "domain": "enterprise_workflow",
-        "task_type": "approval_gated_execution"
+        "task_type": "approval_gated_execution",
+        "latency_samples_ms": [
+          30.261200001405086,
+          30.85769999961485,
+          30.911800000467338
+        ]
       },
       {
         "request_id": "heldout-enterprise-approval-01",
@@ -1189,9 +1293,14 @@
           "approval_missing",
           "execution_missing"
         ],
-        "latency_ms": 31.588299998475122,
+        "latency_ms": 31.053499998961342,
         "domain": "enterprise_workflow",
-        "task_type": "approval_gated_execution"
+        "task_type": "approval_gated_execution",
+        "latency_samples_ms": [
+          30.290700000477955,
+          31.053499998961342,
+          31.398399998579407
+        ]
       },
       {
         "request_id": "heldout-enterprise-approval-02",
@@ -1209,25 +1318,39 @@
           "approval_missing",
           "execution_missing"
         ],
-        "latency_ms": 29.952299999422394,
+        "latency_ms": 30.992199999673176,
         "domain": "enterprise_workflow",
-        "task_type": "approval_gated_execution"
+        "task_type": "approval_gated_execution",
+        "latency_samples_ms": [
+          30.984999999418505,
+          31.90579999863985,
+          30.992199999673176
+        ]
       },
       {
         "request_id": "heldout-enterprise-approval-03",
-        "success": true,
-        "plan_source": "wavemind_core",
+        "success": false,
+        "plan_source": "fallback",
         "plan": [
+          "execute_request",
           "inspect_policy",
           "collect_approval",
-          "execute_request"
+          "audit_request"
         ],
-        "tool_steps": 3,
+        "tool_steps": 4,
         "context_tokens": 60,
-        "repeated_error_codes": [],
-        "latency_ms": 36.997600000177044,
+        "repeated_error_codes": [
+          "approval_missing",
+          "execution_missing"
+        ],
+        "latency_ms": 31.969800000297255,
         "domain": "enterprise_workflow",
-        "task_type": "approval_gated_execution"
+        "task_type": "approval_gated_execution",
+        "latency_samples_ms": [
+          31.969800000297255,
+          30.967400000008638,
+          34.17929999886837
+        ]
       },
       {
         "request_id": "heldout-enterprise-approval-04",
@@ -1245,9 +1368,14 @@
           "approval_missing",
           "execution_missing"
         ],
-        "latency_ms": 31.008500000098138,
+        "latency_ms": 30.73939999922004,
         "domain": "enterprise_workflow",
-        "task_type": "approval_gated_execution"
+        "task_type": "approval_gated_execution",
+        "latency_samples_ms": [
+          30.48510000007809,
+          32.97489999931713,
+          30.73939999922004
+        ]
       },
       {
         "request_id": "heldout-enterprise-idempotency-00",
@@ -1264,9 +1392,14 @@
         "repeated_error_codes": [
           "duplicate_ledger_entry"
         ],
-        "latency_ms": 29.982899999595247,
+        "latency_ms": 31.69710000111081,
         "domain": "enterprise_workflow",
-        "task_type": "idempotent_operation"
+        "task_type": "idempotent_operation",
+        "latency_samples_ms": [
+          34.007100000962964,
+          31.69710000111081,
+          31.32240000013553
+        ]
       },
       {
         "request_id": "heldout-enterprise-idempotency-01",
@@ -1280,9 +1413,14 @@
         "tool_steps": 3,
         "context_tokens": 60,
         "repeated_error_codes": [],
-        "latency_ms": 23.42580000004091,
+        "latency_ms": 25.93210000122781,
         "domain": "enterprise_workflow",
-        "task_type": "idempotent_operation"
+        "task_type": "idempotent_operation",
+        "latency_samples_ms": [
+          25.93210000122781,
+          25.406499999007792,
+          26.477600000362145
+        ]
       },
       {
         "request_id": "heldout-enterprise-idempotency-02",
@@ -1299,9 +1437,14 @@
         "repeated_error_codes": [
           "duplicate_ledger_entry"
         ],
-        "latency_ms": 31.14319999986037,
+        "latency_ms": 36.08969999913825,
         "domain": "enterprise_workflow",
-        "task_type": "idempotent_operation"
+        "task_type": "idempotent_operation",
+        "latency_samples_ms": [
+          75.9635000013077,
+          33.84090000145079,
+          36.08969999913825
+        ]
       },
       {
         "request_id": "heldout-enterprise-idempotency-03",
@@ -1318,9 +1461,14 @@
         "repeated_error_codes": [
           "duplicate_ledger_entry"
         ],
-        "latency_ms": 29.19300000030489,
+        "latency_ms": 33.62790000028326,
         "domain": "enterprise_workflow",
-        "task_type": "idempotent_operation"
+        "task_type": "idempotent_operation",
+        "latency_samples_ms": [
+          33.965700000408106,
+          33.62790000028326,
+          31.366700000944547
+        ]
       },
       {
         "request_id": "heldout-enterprise-idempotency-04",
@@ -1337,15 +1485,20 @@
         "repeated_error_codes": [
           "duplicate_ledger_entry"
         ],
-        "latency_ms": 31.91279999919061,
+        "latency_ms": 32.911199999944074,
         "domain": "enterprise_workflow",
-        "task_type": "idempotent_operation"
+        "task_type": "idempotent_operation",
+        "latency_samples_ms": [
+          32.821299999341136,
+          32.911199999944074,
+          33.612699999139295
+        ]
       }
     ],
     "experience": [
       {
         "request_id": "heldout-coding-config-00",
-        "run_id": "work_addd2e5193fc4a4ca108154966af90d2",
+        "run_id": "work_f9dd9901a249493fb0fec2ecb9d1c9f7",
         "success": true,
         "plan_source": "experience",
         "plan": [
@@ -1365,7 +1518,7 @@
               }
             },
             "error_code": null,
-            "duration_ms": 1.8006999998760875
+            "duration_ms": 1.3575999983004294
           },
           {
             "name": "update_config",
@@ -1376,7 +1529,7 @@
               "timeout": 30
             },
             "error_code": null,
-            "duration_ms": 0.7432000002154382
+            "duration_ms": 0.6620000003749738
           },
           {
             "name": "run_config_tests",
@@ -1385,7 +1538,7 @@
               "passed": true
             },
             "error_code": null,
-            "duration_ms": 1.5579999999317806
+            "duration_ms": 1.5097999985300703
           }
         ],
         "packet": {
@@ -1417,17 +1570,17 @@
                 "source": {
                   "provider": "wavemind_work_agent",
                   "source_type": "repeated_verified_outcome",
-                  "source_id": "work_bfef333476704835b5ac7eaba65a0873"
+                  "source_id": "work_5901e09bd6894566a2bbb42cae859def"
                 },
-                "trajectory_id": "work_bfef333476704835b5ac7eaba65a0873",
-                "content_sha256": "ade3b1ea53a62a154394d0a25a3f20da365f8b5983b9ef66f7f81a67ce2bbbd9"
+                "trajectory_id": "work_5901e09bd6894566a2bbb42cae859def",
+                "content_sha256": "a112ae1eedabb44aa5b92f7d9267ad9b92ae6f9e48c69fd8bd93ebae8c437766"
               },
               "estimated_tokens": 24,
               "canary": false
             }
           ],
           "omitted_count": 0,
-          "generated_at": 1785259486.4621837,
+          "generated_at": 1785261451.6820166,
           "compiler_policy": {
             "signal_weights": {
               "vector": 0.38,
@@ -1448,18 +1601,23 @@
           ]
         },
         "selected_experience_id": "exp_strategy_a2e65f2266f3c4e4381c1295",
-        "trajectory_id": "work_addd2e5193fc4a4ca108154966af90d2",
+        "trajectory_id": "work_f9dd9901a249493fb0fec2ecb9d1c9f7",
         "learned_experience_id": null,
         "repeated_error_codes": [],
         "context_tokens": 35,
-        "latency_ms": 8.205800000723684,
+        "latency_ms": 9.166899999399902,
         "tool_steps": 3,
         "domain": "coding_repository",
-        "task_type": "safe_config_change"
+        "task_type": "safe_config_change",
+        "latency_samples_ms": [
+          7.634900000994094,
+          9.166899999399902,
+          9.444599998460035
+        ]
       },
       {
         "request_id": "heldout-coding-config-01",
-        "run_id": "work_06c8b0c8378e4da6ac55f42a1ca472e5",
+        "run_id": "work_74efb08ffddc41d79934e71f22c05630",
         "success": true,
         "plan_source": "experience",
         "plan": [
@@ -1479,7 +1637,7 @@
               }
             },
             "error_code": null,
-            "duration_ms": 1.3997000005474547
+            "duration_ms": 1.3044000006630085
           },
           {
             "name": "update_config",
@@ -1490,7 +1648,7 @@
               "timeout": 30
             },
             "error_code": null,
-            "duration_ms": 0.7522000014432706
+            "duration_ms": 0.7210999992821598
           },
           {
             "name": "run_config_tests",
@@ -1499,7 +1657,7 @@
               "passed": true
             },
             "error_code": null,
-            "duration_ms": 1.6995000005408656
+            "duration_ms": 1.4265000008890638
           }
         ],
         "packet": {
@@ -1531,17 +1689,17 @@
                 "source": {
                   "provider": "wavemind_work_agent",
                   "source_type": "repeated_verified_outcome",
-                  "source_id": "work_bfef333476704835b5ac7eaba65a0873"
+                  "source_id": "work_5901e09bd6894566a2bbb42cae859def"
                 },
-                "trajectory_id": "work_bfef333476704835b5ac7eaba65a0873",
-                "content_sha256": "ade3b1ea53a62a154394d0a25a3f20da365f8b5983b9ef66f7f81a67ce2bbbd9"
+                "trajectory_id": "work_5901e09bd6894566a2bbb42cae859def",
+                "content_sha256": "a112ae1eedabb44aa5b92f7d9267ad9b92ae6f9e48c69fd8bd93ebae8c437766"
               },
               "estimated_tokens": 24,
               "canary": false
             }
           ],
           "omitted_count": 0,
-          "generated_at": 1785259486.4719,
+          "generated_at": 1785261451.7365212,
           "compiler_policy": {
             "signal_weights": {
               "vector": 0.38,
@@ -1562,18 +1720,23 @@
           ]
         },
         "selected_experience_id": "exp_strategy_a2e65f2266f3c4e4381c1295",
-        "trajectory_id": "work_06c8b0c8378e4da6ac55f42a1ca472e5",
+        "trajectory_id": "work_74efb08ffddc41d79934e71f22c05630",
         "learned_experience_id": null,
         "repeated_error_codes": [],
         "context_tokens": 35,
-        "latency_ms": 7.9164999988279305,
+        "latency_ms": 8.192899998903158,
         "tool_steps": 3,
         "domain": "coding_repository",
-        "task_type": "safe_config_change"
+        "task_type": "safe_config_change",
+        "latency_samples_ms": [
+          7.307399999262998,
+          9.08759999947506,
+          8.192899998903158
+        ]
       },
       {
         "request_id": "heldout-coding-config-02",
-        "run_id": "work_aeed95bc9c614c2fb4bc56066e9d2257",
+        "run_id": "work_f4231a63e90c4ae8be4e00585d04879c",
         "success": true,
         "plan_source": "experience",
         "plan": [
@@ -1593,7 +1756,7 @@
               }
             },
             "error_code": null,
-            "duration_ms": 1.49049999890849
+            "duration_ms": 1.5679999996791594
           },
           {
             "name": "update_config",
@@ -1604,7 +1767,7 @@
               "timeout": 30
             },
             "error_code": null,
-            "duration_ms": 0.7332000004680594
+            "duration_ms": 0.637700000879704
           },
           {
             "name": "run_config_tests",
@@ -1613,7 +1776,7 @@
               "passed": true
             },
             "error_code": null,
-            "duration_ms": 1.3070000004518079
+            "duration_ms": 1.38150000020687
           }
         ],
         "packet": {
@@ -1645,17 +1808,17 @@
                 "source": {
                   "provider": "wavemind_work_agent",
                   "source_type": "repeated_verified_outcome",
-                  "source_id": "work_bfef333476704835b5ac7eaba65a0873"
+                  "source_id": "work_5901e09bd6894566a2bbb42cae859def"
                 },
-                "trajectory_id": "work_bfef333476704835b5ac7eaba65a0873",
-                "content_sha256": "ade3b1ea53a62a154394d0a25a3f20da365f8b5983b9ef66f7f81a67ce2bbbd9"
+                "trajectory_id": "work_5901e09bd6894566a2bbb42cae859def",
+                "content_sha256": "a112ae1eedabb44aa5b92f7d9267ad9b92ae6f9e48c69fd8bd93ebae8c437766"
               },
               "estimated_tokens": 24,
               "canary": false
             }
           ],
           "omitted_count": 0,
-          "generated_at": 1785259486.4818146,
+          "generated_at": 1785261451.8130188,
           "compiler_policy": {
             "signal_weights": {
               "vector": 0.38,
@@ -1676,18 +1839,23 @@
           ]
         },
         "selected_experience_id": "exp_strategy_a2e65f2266f3c4e4381c1295",
-        "trajectory_id": "work_aeed95bc9c614c2fb4bc56066e9d2257",
+        "trajectory_id": "work_f4231a63e90c4ae8be4e00585d04879c",
         "learned_experience_id": null,
         "repeated_error_codes": [],
         "context_tokens": 35,
-        "latency_ms": 7.511899999371963,
+        "latency_ms": 8.333499999935157,
         "tool_steps": 3,
         "domain": "coding_repository",
-        "task_type": "safe_config_change"
+        "task_type": "safe_config_change",
+        "latency_samples_ms": [
+          9.157399999821791,
+          8.333499999935157,
+          7.431700001689023
+        ]
       },
       {
         "request_id": "heldout-coding-config-03",
-        "run_id": "work_aaeac8da4cc44449bd45b32bddd5a503",
+        "run_id": "work_22609cb16e2845878f24f238e3d28203",
         "success": true,
         "plan_source": "experience",
         "plan": [
@@ -1707,7 +1875,7 @@
               }
             },
             "error_code": null,
-            "duration_ms": 1.6118000003189081
+            "duration_ms": 1.4902999992045807
           },
           {
             "name": "update_config",
@@ -1718,7 +1886,7 @@
               "timeout": 30
             },
             "error_code": null,
-            "duration_ms": 0.7408000001305481
+            "duration_ms": 0.8350999996764585
           },
           {
             "name": "run_config_tests",
@@ -1727,7 +1895,7 @@
               "passed": true
             },
             "error_code": null,
-            "duration_ms": 1.4406999998755055
+            "duration_ms": 1.4688999999634689
           }
         ],
         "packet": {
@@ -1759,17 +1927,17 @@
                 "source": {
                   "provider": "wavemind_work_agent",
                   "source_type": "repeated_verified_outcome",
-                  "source_id": "work_bfef333476704835b5ac7eaba65a0873"
+                  "source_id": "work_5901e09bd6894566a2bbb42cae859def"
                 },
-                "trajectory_id": "work_bfef333476704835b5ac7eaba65a0873",
-                "content_sha256": "ade3b1ea53a62a154394d0a25a3f20da365f8b5983b9ef66f7f81a67ce2bbbd9"
+                "trajectory_id": "work_5901e09bd6894566a2bbb42cae859def",
+                "content_sha256": "a112ae1eedabb44aa5b92f7d9267ad9b92ae6f9e48c69fd8bd93ebae8c437766"
               },
               "estimated_tokens": 24,
               "canary": false
             }
           ],
           "omitted_count": 0,
-          "generated_at": 1785259486.4910262,
+          "generated_at": 1785261451.867449,
           "compiler_policy": {
             "signal_weights": {
               "vector": 0.38,
@@ -1790,18 +1958,23 @@
           ]
         },
         "selected_experience_id": "exp_strategy_a2e65f2266f3c4e4381c1295",
-        "trajectory_id": "work_aaeac8da4cc44449bd45b32bddd5a503",
+        "trajectory_id": "work_22609cb16e2845878f24f238e3d28203",
         "learned_experience_id": null,
         "repeated_error_codes": [],
         "context_tokens": 35,
-        "latency_ms": 7.736499999737134,
+        "latency_ms": 8.264000000053784,
         "tool_steps": 3,
         "domain": "coding_repository",
-        "task_type": "safe_config_change"
+        "task_type": "safe_config_change",
+        "latency_samples_ms": [
+          8.752000001550186,
+          8.264000000053784,
+          7.448099999237456
+        ]
       },
       {
         "request_id": "heldout-coding-config-04",
-        "run_id": "work_454a03b7e84643a7a8379f22a0c96988",
+        "run_id": "work_14a5f9d9311a45b78ec33439f8b09ad0",
         "success": true,
         "plan_source": "experience",
         "plan": [
@@ -1821,7 +1994,7 @@
               }
             },
             "error_code": null,
-            "duration_ms": 1.5449999991687946
+            "duration_ms": 1.382000000376138
           },
           {
             "name": "update_config",
@@ -1832,7 +2005,7 @@
               "timeout": 30
             },
             "error_code": null,
-            "duration_ms": 0.6936999998288229
+            "duration_ms": 0.680500001180917
           },
           {
             "name": "run_config_tests",
@@ -1841,7 +2014,7 @@
               "passed": true
             },
             "error_code": null,
-            "duration_ms": 1.5050000001792796
+            "duration_ms": 1.3544000012188917
           }
         ],
         "packet": {
@@ -1873,17 +2046,17 @@
                 "source": {
                   "provider": "wavemind_work_agent",
                   "source_type": "repeated_verified_outcome",
-                  "source_id": "work_bfef333476704835b5ac7eaba65a0873"
+                  "source_id": "work_5901e09bd6894566a2bbb42cae859def"
                 },
-                "trajectory_id": "work_bfef333476704835b5ac7eaba65a0873",
-                "content_sha256": "ade3b1ea53a62a154394d0a25a3f20da365f8b5983b9ef66f7f81a67ce2bbbd9"
+                "trajectory_id": "work_5901e09bd6894566a2bbb42cae859def",
+                "content_sha256": "a112ae1eedabb44aa5b92f7d9267ad9b92ae6f9e48c69fd8bd93ebae8c437766"
               },
               "estimated_tokens": 24,
               "canary": false
             }
           ],
           "omitted_count": 0,
-          "generated_at": 1785259486.5010386,
+          "generated_at": 1785261451.945125,
           "compiler_policy": {
             "signal_weights": {
               "vector": 0.38,
@@ -1904,18 +2077,23 @@
           ]
         },
         "selected_experience_id": "exp_strategy_a2e65f2266f3c4e4381c1295",
-        "trajectory_id": "work_454a03b7e84643a7a8379f22a0c96988",
+        "trajectory_id": "work_14a5f9d9311a45b78ec33439f8b09ad0",
         "learned_experience_id": null,
         "repeated_error_codes": [],
         "context_tokens": 35,
-        "latency_ms": 7.908099998530815,
+        "latency_ms": 8.105900000373367,
         "tool_steps": 3,
         "domain": "coding_repository",
-        "task_type": "safe_config_change"
+        "task_type": "safe_config_change",
+        "latency_samples_ms": [
+          27.817700000014156,
+          8.105900000373367,
+          7.963500000187196
+        ]
       },
       {
         "request_id": "heldout-coding-schema-00",
-        "run_id": "work_089c6e121b534e988bfad8625f4bbdbc",
+        "run_id": "work_3cb367c3ee3c4bd7b28f9c589850c137",
         "success": true,
         "plan_source": "experience",
         "plan": [
@@ -1938,7 +2116,7 @@
               }
             },
             "error_code": null,
-            "duration_ms": 1.5334999989136122
+            "duration_ms": 1.323200000115321
           },
           {
             "name": "migrate_schema",
@@ -1953,7 +2131,7 @@
               "version": 2
             },
             "error_code": null,
-            "duration_ms": 0.7150999990699347
+            "duration_ms": 0.6352000000333646
           },
           {
             "name": "run_schema_tests",
@@ -1962,7 +2140,7 @@
               "passed": true
             },
             "error_code": null,
-            "duration_ms": 1.4468999997916399
+            "duration_ms": 1.4644999992015073
           }
         ],
         "packet": {
@@ -1994,17 +2172,17 @@
                 "source": {
                   "provider": "wavemind_work_agent",
                   "source_type": "repeated_verified_outcome",
-                  "source_id": "work_1427b8ec7ec641208daee5d64288415a"
+                  "source_id": "work_e7e4d6aba606439b98ddb3ddad204e15"
                 },
-                "trajectory_id": "work_1427b8ec7ec641208daee5d64288415a",
-                "content_sha256": "ab72f5f7ab1dcc4fa20020f21eae81771410b67d22825ba6dfd7f013cc7ca220"
+                "trajectory_id": "work_e7e4d6aba606439b98ddb3ddad204e15",
+                "content_sha256": "ce96c9d90b58583cacfdc49ba5e62bb3a85593465fbc1c8d5115f19b59acdc3a"
               },
               "estimated_tokens": 26,
               "canary": false
             }
           ],
           "omitted_count": 0,
-          "generated_at": 1785259486.5113244,
+          "generated_at": 1785261452.0164201,
           "compiler_policy": {
             "signal_weights": {
               "vector": 0.38,
@@ -2025,18 +2203,23 @@
           ]
         },
         "selected_experience_id": "exp_strategy_e491ebf75c46661ad092a5bb",
-        "trajectory_id": "work_089c6e121b534e988bfad8625f4bbdbc",
+        "trajectory_id": "work_3cb367c3ee3c4bd7b28f9c589850c137",
         "learned_experience_id": null,
         "repeated_error_codes": [],
         "context_tokens": 37,
-        "latency_ms": 7.949999999254942,
+        "latency_ms": 8.339099998920574,
         "tool_steps": 3,
         "domain": "coding_repository",
-        "task_type": "compatible_schema_migration"
+        "task_type": "compatible_schema_migration",
+        "latency_samples_ms": [
+          7.945399998789071,
+          8.339099998920574,
+          8.807300000626128
+        ]
       },
       {
         "request_id": "heldout-coding-schema-01",
-        "run_id": "work_6634937b12084f2d86cd304816f79ca3",
+        "run_id": "work_d376813c98854ca8b383b43fba7d41e1",
         "success": true,
         "plan_source": "experience",
         "plan": [
@@ -2059,7 +2242,7 @@
               }
             },
             "error_code": null,
-            "duration_ms": 1.5280000006896444
+            "duration_ms": 1.2972999993507983
           },
           {
             "name": "migrate_schema",
@@ -2074,7 +2257,7 @@
               "version": 2
             },
             "error_code": null,
-            "duration_ms": 0.7200999989436241
+            "duration_ms": 0.6237999987206422
           },
           {
             "name": "run_schema_tests",
@@ -2083,7 +2266,7 @@
               "passed": true
             },
             "error_code": null,
-            "duration_ms": 1.671399999395362
+            "duration_ms": 1.3044000006630085
           }
         ],
         "packet": {
@@ -2115,17 +2298,17 @@
                 "source": {
                   "provider": "wavemind_work_agent",
                   "source_type": "repeated_verified_outcome",
-                  "source_id": "work_1427b8ec7ec641208daee5d64288415a"
+                  "source_id": "work_e7e4d6aba606439b98ddb3ddad204e15"
                 },
-                "trajectory_id": "work_1427b8ec7ec641208daee5d64288415a",
-                "content_sha256": "ab72f5f7ab1dcc4fa20020f21eae81771410b67d22825ba6dfd7f013cc7ca220"
+                "trajectory_id": "work_e7e4d6aba606439b98ddb3ddad204e15",
+                "content_sha256": "ce96c9d90b58583cacfdc49ba5e62bb3a85593465fbc1c8d5115f19b59acdc3a"
               },
               "estimated_tokens": 26,
               "canary": false
             }
           ],
           "omitted_count": 0,
-          "generated_at": 1785259486.5208793,
+          "generated_at": 1785261452.0936024,
           "compiler_policy": {
             "signal_weights": {
               "vector": 0.38,
@@ -2146,18 +2329,23 @@
           ]
         },
         "selected_experience_id": "exp_strategy_e491ebf75c46661ad092a5bb",
-        "trajectory_id": "work_6634937b12084f2d86cd304816f79ca3",
+        "trajectory_id": "work_d376813c98854ca8b383b43fba7d41e1",
         "learned_experience_id": null,
         "repeated_error_codes": [],
         "context_tokens": 37,
-        "latency_ms": 7.9502999997203005,
+        "latency_ms": 7.145300000047428,
         "tool_steps": 3,
         "domain": "coding_repository",
-        "task_type": "compatible_schema_migration"
+        "task_type": "compatible_schema_migration",
+        "latency_samples_ms": [
+          7.145300000047428,
+          8.492599999954109,
+          7.094200000210549
+        ]
       },
       {
         "request_id": "heldout-coding-schema-02",
-        "run_id": "work_5fa917b4a7f744c39696849658a8c498",
+        "run_id": "work_3758b6286b214e05a42fc0456dc3273b",
         "success": true,
         "plan_source": "experience",
         "plan": [
@@ -2180,7 +2368,7 @@
               }
             },
             "error_code": null,
-            "duration_ms": 1.438699999198434
+            "duration_ms": 1.8168000005971408
           },
           {
             "name": "migrate_schema",
@@ -2195,7 +2383,7 @@
               "version": 2
             },
             "error_code": null,
-            "duration_ms": 0.7257000015670201
+            "duration_ms": 0.6814000007580034
           },
           {
             "name": "run_schema_tests",
@@ -2204,7 +2392,7 @@
               "passed": true
             },
             "error_code": null,
-            "duration_ms": 1.5621999991708435
+            "duration_ms": 1.5032999999675667
           }
         ],
         "packet": {
@@ -2236,17 +2424,17 @@
                 "source": {
                   "provider": "wavemind_work_agent",
                   "source_type": "repeated_verified_outcome",
-                  "source_id": "work_1427b8ec7ec641208daee5d64288415a"
+                  "source_id": "work_e7e4d6aba606439b98ddb3ddad204e15"
                 },
-                "trajectory_id": "work_1427b8ec7ec641208daee5d64288415a",
-                "content_sha256": "ab72f5f7ab1dcc4fa20020f21eae81771410b67d22825ba6dfd7f013cc7ca220"
+                "trajectory_id": "work_e7e4d6aba606439b98ddb3ddad204e15",
+                "content_sha256": "ce96c9d90b58583cacfdc49ba5e62bb3a85593465fbc1c8d5115f19b59acdc3a"
               },
               "estimated_tokens": 26,
               "canary": false
             }
           ],
           "omitted_count": 0,
-          "generated_at": 1785259486.530664,
+          "generated_at": 1785261452.143687,
           "compiler_policy": {
             "signal_weights": {
               "vector": 0.38,
@@ -2267,18 +2455,23 @@
           ]
         },
         "selected_experience_id": "exp_strategy_e491ebf75c46661ad092a5bb",
-        "trajectory_id": "work_5fa917b4a7f744c39696849658a8c498",
+        "trajectory_id": "work_3758b6286b214e05a42fc0456dc3273b",
         "learned_experience_id": null,
         "repeated_error_codes": [],
         "context_tokens": 37,
-        "latency_ms": 7.780300000376883,
+        "latency_ms": 8.632300001409021,
         "tool_steps": 3,
         "domain": "coding_repository",
-        "task_type": "compatible_schema_migration"
+        "task_type": "compatible_schema_migration",
+        "latency_samples_ms": [
+          9.02719999976398,
+          7.075800000166055,
+          8.632300001409021
+        ]
       },
       {
         "request_id": "heldout-coding-schema-03",
-        "run_id": "work_d6f2492983e743a0ab9ac8f9ce277349",
+        "run_id": "work_6db0552a8d504797aff1725aa8574e90",
         "success": true,
         "plan_source": "experience",
         "plan": [
@@ -2301,7 +2494,7 @@
               }
             },
             "error_code": null,
-            "duration_ms": 1.547599998957594
+            "duration_ms": 1.3139000002411194
           },
           {
             "name": "migrate_schema",
@@ -2316,7 +2509,7 @@
               "version": 2
             },
             "error_code": null,
-            "duration_ms": 0.9076999995158985
+            "duration_ms": 1.0916999999608379
           },
           {
             "name": "run_schema_tests",
@@ -2325,7 +2518,7 @@
               "passed": true
             },
             "error_code": null,
-            "duration_ms": 1.4615000000048894
+            "duration_ms": 2.157800001441501
           }
         ],
         "packet": {
@@ -2357,17 +2550,17 @@
                 "source": {
                   "provider": "wavemind_work_agent",
                   "source_type": "repeated_verified_outcome",
-                  "source_id": "work_1427b8ec7ec641208daee5d64288415a"
+                  "source_id": "work_e7e4d6aba606439b98ddb3ddad204e15"
                 },
-                "trajectory_id": "work_1427b8ec7ec641208daee5d64288415a",
-                "content_sha256": "ab72f5f7ab1dcc4fa20020f21eae81771410b67d22825ba6dfd7f013cc7ca220"
+                "trajectory_id": "work_e7e4d6aba606439b98ddb3ddad204e15",
+                "content_sha256": "ce96c9d90b58583cacfdc49ba5e62bb3a85593465fbc1c8d5115f19b59acdc3a"
               },
               "estimated_tokens": 26,
               "canary": false
             }
           ],
           "omitted_count": 0,
-          "generated_at": 1785259486.5403018,
+          "generated_at": 1785261452.2205942,
           "compiler_policy": {
             "signal_weights": {
               "vector": 0.38,
@@ -2388,18 +2581,23 @@
           ]
         },
         "selected_experience_id": "exp_strategy_e491ebf75c46661ad092a5bb",
-        "trajectory_id": "work_d6f2492983e743a0ab9ac8f9ce277349",
+        "trajectory_id": "work_6db0552a8d504797aff1725aa8574e90",
         "learned_experience_id": null,
         "repeated_error_codes": [],
         "context_tokens": 37,
-        "latency_ms": 8.309999999255524,
+        "latency_ms": 8.625999998912448,
         "tool_steps": 3,
         "domain": "coding_repository",
-        "task_type": "compatible_schema_migration"
+        "task_type": "compatible_schema_migration",
+        "latency_samples_ms": [
+          8.587700000134646,
+          8.680100001583924,
+          8.625999998912448
+        ]
       },
       {
         "request_id": "heldout-coding-schema-04",
-        "run_id": "work_12fcdb2b6ae64a6a874f90b63840b070",
+        "run_id": "work_c3ed403a1d8e401f9bc9359c02925c1e",
         "success": true,
         "plan_source": "experience",
         "plan": [
@@ -2422,7 +2620,7 @@
               }
             },
             "error_code": null,
-            "duration_ms": 1.6782000002422137
+            "duration_ms": 1.7953000005945796
           },
           {
             "name": "migrate_schema",
@@ -2437,7 +2635,7 @@
               "version": 2
             },
             "error_code": null,
-            "duration_ms": 0.7893000001786277
+            "duration_ms": 0.6867000010970514
           },
           {
             "name": "run_schema_tests",
@@ -2446,7 +2644,7 @@
               "passed": true
             },
             "error_code": null,
-            "duration_ms": 1.2141999995947117
+            "duration_ms": 1.3870000002498273
           }
         ],
         "packet": {
@@ -2478,17 +2676,17 @@
                 "source": {
                   "provider": "wavemind_work_agent",
                   "source_type": "repeated_verified_outcome",
-                  "source_id": "work_1427b8ec7ec641208daee5d64288415a"
+                  "source_id": "work_e7e4d6aba606439b98ddb3ddad204e15"
                 },
-                "trajectory_id": "work_1427b8ec7ec641208daee5d64288415a",
-                "content_sha256": "ab72f5f7ab1dcc4fa20020f21eae81771410b67d22825ba6dfd7f013cc7ca220"
+                "trajectory_id": "work_e7e4d6aba606439b98ddb3ddad204e15",
+                "content_sha256": "ce96c9d90b58583cacfdc49ba5e62bb3a85593465fbc1c8d5115f19b59acdc3a"
               },
               "estimated_tokens": 26,
               "canary": false
             }
           ],
           "omitted_count": 0,
-          "generated_at": 1785259486.5512173,
+          "generated_at": 1785261452.2787101,
           "compiler_policy": {
             "signal_weights": {
               "vector": 0.38,
@@ -2509,18 +2707,23 @@
           ]
         },
         "selected_experience_id": "exp_strategy_e491ebf75c46661ad092a5bb",
-        "trajectory_id": "work_12fcdb2b6ae64a6a874f90b63840b070",
+        "trajectory_id": "work_c3ed403a1d8e401f9bc9359c02925c1e",
         "learned_experience_id": null,
         "repeated_error_codes": [],
         "context_tokens": 37,
-        "latency_ms": 8.212400000047637,
+        "latency_ms": 8.676600000399048,
         "tool_steps": 3,
         "domain": "coding_repository",
-        "task_type": "compatible_schema_migration"
+        "task_type": "compatible_schema_migration",
+        "latency_samples_ms": [
+          10.00680000106513,
+          8.676600000399048,
+          7.917500000985456
+        ]
       },
       {
         "request_id": "heldout-support-identity-00",
-        "run_id": "work_6cd4731525974663bdef6e1cc6bf61d0",
+        "run_id": "work_383b9d5ff6b249a7979bfb0addbbc1f3",
         "success": true,
         "plan_source": "experience",
         "plan": [
@@ -2536,7 +2739,7 @@
               "customer_id": 1
             },
             "error_code": null,
-            "duration_ms": 0.0018000009731622413
+            "duration_ms": 0.0032999996619764715
           },
           {
             "name": "verify_identity",
@@ -2545,7 +2748,7 @@
               "verified": true
             },
             "error_code": null,
-            "duration_ms": 6.2315999985003145
+            "duration_ms": 7.04300000143121
           },
           {
             "name": "update_customer",
@@ -2554,7 +2757,7 @@
               "updated": true
             },
             "error_code": null,
-            "duration_ms": 7.446900001014001
+            "duration_ms": 7.486799999242066
           }
         ],
         "packet": {
@@ -2586,17 +2789,17 @@
                 "source": {
                   "provider": "wavemind_work_agent",
                   "source_type": "repeated_verified_outcome",
-                  "source_id": "work_3b043b51a55247f28599ffb0e5f354ef"
+                  "source_id": "work_88f3b4b48ff64481a74ec56f0cf4df63"
                 },
-                "trajectory_id": "work_3b043b51a55247f28599ffb0e5f354ef",
-                "content_sha256": "016ca233be55fa1b94ecf3c06d1b9bef623ceca949f0866aabdc821ee9fac8a5"
+                "trajectory_id": "work_88f3b4b48ff64481a74ec56f0cf4df63",
+                "content_sha256": "f30375d9753da978b566278ce419037095ff70fff990404ea3129fc51f1b94d2"
               },
               "estimated_tokens": 26,
               "canary": false
             }
           ],
           "omitted_count": 0,
-          "generated_at": 1785259486.5778277,
+          "generated_at": 1785261452.3921843,
           "compiler_policy": {
             "signal_weights": {
               "vector": 0.38,
@@ -2617,18 +2820,23 @@
           ]
         },
         "selected_experience_id": "exp_strategy_f5ecdd51dae0f35d3ba3f359",
-        "trajectory_id": "work_6cd4731525974663bdef6e1cc6bf61d0",
+        "trajectory_id": "work_383b9d5ff6b249a7979bfb0addbbc1f3",
         "learned_experience_id": null,
         "repeated_error_codes": [],
         "context_tokens": 36,
-        "latency_ms": 17.617000001337146,
+        "latency_ms": 18.67869999841787,
         "tool_steps": 3,
         "domain": "support_crm",
-        "task_type": "verified_customer_update"
+        "task_type": "verified_customer_update",
+        "latency_samples_ms": [
+          18.698399999266258,
+          18.67869999841787,
+          18.160199999329052
+        ]
       },
       {
         "request_id": "heldout-support-identity-01",
-        "run_id": "work_5ca6c15c0ea44e74afcf753de6581af5",
+        "run_id": "work_093a5513703742f7a9ff80e0a911b925",
         "success": true,
         "plan_source": "experience",
         "plan": [
@@ -2644,7 +2852,7 @@
               "customer_id": 1
             },
             "error_code": null,
-            "duration_ms": 0.002200000380980782
+            "duration_ms": 0.0024000000848900527
           },
           {
             "name": "verify_identity",
@@ -2653,7 +2861,7 @@
               "verified": true
             },
             "error_code": null,
-            "duration_ms": 5.994499999360414
+            "duration_ms": 6.532999999762978
           },
           {
             "name": "update_customer",
@@ -2662,7 +2870,7 @@
               "updated": true
             },
             "error_code": null,
-            "duration_ms": 7.221300000310293
+            "duration_ms": 7.300199999008328
           }
         ],
         "packet": {
@@ -2694,17 +2902,17 @@
                 "source": {
                   "provider": "wavemind_work_agent",
                   "source_type": "repeated_verified_outcome",
-                  "source_id": "work_3b043b51a55247f28599ffb0e5f354ef"
+                  "source_id": "work_88f3b4b48ff64481a74ec56f0cf4df63"
                 },
-                "trajectory_id": "work_3b043b51a55247f28599ffb0e5f354ef",
-                "content_sha256": "016ca233be55fa1b94ecf3c06d1b9bef623ceca949f0866aabdc821ee9fac8a5"
+                "trajectory_id": "work_88f3b4b48ff64481a74ec56f0cf4df63",
+                "content_sha256": "f30375d9753da978b566278ce419037095ff70fff990404ea3129fc51f1b94d2"
               },
               "estimated_tokens": 26,
               "canary": false
             }
           ],
           "omitted_count": 0,
-          "generated_at": 1785259486.6144774,
+          "generated_at": 1785261452.554709,
           "compiler_policy": {
             "signal_weights": {
               "vector": 0.38,
@@ -2725,18 +2933,23 @@
           ]
         },
         "selected_experience_id": "exp_strategy_f5ecdd51dae0f35d3ba3f359",
-        "trajectory_id": "work_5ca6c15c0ea44e74afcf753de6581af5",
+        "trajectory_id": "work_093a5513703742f7a9ff80e0a911b925",
         "learned_experience_id": null,
         "repeated_error_codes": [],
         "context_tokens": 36,
-        "latency_ms": 17.185000000608852,
+        "latency_ms": 18.287400000190246,
         "tool_steps": 3,
         "domain": "support_crm",
-        "task_type": "verified_customer_update"
+        "task_type": "verified_customer_update",
+        "latency_samples_ms": [
+          18.287400000190246,
+          17.86270000047807,
+          18.929399999251473
+        ]
       },
       {
         "request_id": "heldout-support-identity-02",
-        "run_id": "work_c9ee621fdec24bb4befaa06a6e6792ce",
+        "run_id": "work_f05dc973eca74c1a844beb559051730d",
         "success": true,
         "plan_source": "experience",
         "plan": [
@@ -2752,7 +2965,7 @@
               "customer_id": 1
             },
             "error_code": null,
-            "duration_ms": 0.0018999999156221747
+            "duration_ms": 0.0024000000848900527
           },
           {
             "name": "verify_identity",
@@ -2761,7 +2974,7 @@
               "verified": true
             },
             "error_code": null,
-            "duration_ms": 5.892200000744197
+            "duration_ms": 6.976700000450364
           },
           {
             "name": "update_customer",
@@ -2770,7 +2983,7 @@
               "updated": true
             },
             "error_code": null,
-            "duration_ms": 6.937899999684305
+            "duration_ms": 7.350899999437388
           }
         ],
         "packet": {
@@ -2802,17 +3015,17 @@
                 "source": {
                   "provider": "wavemind_work_agent",
                   "source_type": "repeated_verified_outcome",
-                  "source_id": "work_3b043b51a55247f28599ffb0e5f354ef"
+                  "source_id": "work_88f3b4b48ff64481a74ec56f0cf4df63"
                 },
-                "trajectory_id": "work_3b043b51a55247f28599ffb0e5f354ef",
-                "content_sha256": "016ca233be55fa1b94ecf3c06d1b9bef623ceca949f0866aabdc821ee9fac8a5"
+                "trajectory_id": "work_88f3b4b48ff64481a74ec56f0cf4df63",
+                "content_sha256": "f30375d9753da978b566278ce419037095ff70fff990404ea3129fc51f1b94d2"
               },
               "estimated_tokens": 26,
               "canary": false
             }
           ],
           "omitted_count": 0,
-          "generated_at": 1785259486.6497662,
+          "generated_at": 1785261452.7657614,
           "compiler_policy": {
             "signal_weights": {
               "vector": 0.38,
@@ -2833,18 +3046,23 @@
           ]
         },
         "selected_experience_id": "exp_strategy_f5ecdd51dae0f35d3ba3f359",
-        "trajectory_id": "work_c9ee621fdec24bb4befaa06a6e6792ce",
+        "trajectory_id": "work_f05dc973eca74c1a844beb559051730d",
         "learned_experience_id": null,
         "repeated_error_codes": [],
         "context_tokens": 36,
-        "latency_ms": 28.269999998883577,
+        "latency_ms": 19.56600000085018,
         "tool_steps": 3,
         "domain": "support_crm",
-        "task_type": "verified_customer_update"
+        "task_type": "verified_customer_update",
+        "latency_samples_ms": [
+          18.51879999958328,
+          19.56600000085018,
+          25.703499999508495
+        ]
       },
       {
         "request_id": "heldout-support-identity-03",
-        "run_id": "work_955b9b894b494d60b68115e57353a5af",
+        "run_id": "work_ce884ee9ad0b43c78f6ccc325dacfb66",
         "success": true,
         "plan_source": "experience",
         "plan": [
@@ -2860,7 +3078,7 @@
               "customer_id": 1
             },
             "error_code": null,
-            "duration_ms": 0.0017999991541728377
+            "duration_ms": 0.0017000002117129043
           },
           {
             "name": "verify_identity",
@@ -2869,7 +3087,7 @@
               "verified": true
             },
             "error_code": null,
-            "duration_ms": 6.098900001234142
+            "duration_ms": 6.548500001372304
           },
           {
             "name": "update_customer",
@@ -2878,7 +3096,7 @@
               "updated": true
             },
             "error_code": null,
-            "duration_ms": 8.111700000881683
+            "duration_ms": 7.581600000776234
           }
         ],
         "packet": {
@@ -2910,17 +3128,17 @@
                 "source": {
                   "provider": "wavemind_work_agent",
                   "source_type": "repeated_verified_outcome",
-                  "source_id": "work_3b043b51a55247f28599ffb0e5f354ef"
+                  "source_id": "work_88f3b4b48ff64481a74ec56f0cf4df63"
                 },
-                "trajectory_id": "work_3b043b51a55247f28599ffb0e5f354ef",
-                "content_sha256": "016ca233be55fa1b94ecf3c06d1b9bef623ceca949f0866aabdc821ee9fac8a5"
+                "trajectory_id": "work_88f3b4b48ff64481a74ec56f0cf4df63",
+                "content_sha256": "f30375d9753da978b566278ce419037095ff70fff990404ea3129fc51f1b94d2"
               },
               "estimated_tokens": 26,
               "canary": false
             }
           ],
           "omitted_count": 0,
-          "generated_at": 1785259486.6978095,
+          "generated_at": 1785261452.9387994,
           "compiler_policy": {
             "signal_weights": {
               "vector": 0.38,
@@ -2941,18 +3159,23 @@
           ]
         },
         "selected_experience_id": "exp_strategy_f5ecdd51dae0f35d3ba3f359",
-        "trajectory_id": "work_955b9b894b494d60b68115e57353a5af",
+        "trajectory_id": "work_ce884ee9ad0b43c78f6ccc325dacfb66",
         "learned_experience_id": null,
         "repeated_error_codes": [],
         "context_tokens": 36,
-        "latency_ms": 19.228799999837065,
+        "latency_ms": 18.897599999036174,
         "tool_steps": 3,
         "domain": "support_crm",
-        "task_type": "verified_customer_update"
+        "task_type": "verified_customer_update",
+        "latency_samples_ms": [
+          18.413699999655364,
+          18.897599999036174,
+          19.882500000676373
+        ]
       },
       {
         "request_id": "heldout-support-identity-04",
-        "run_id": "work_843eaefd957d4374b5124e185fc384b0",
+        "run_id": "work_00fb937076e84700bc1d828025feb13b",
         "success": true,
         "plan_source": "experience",
         "plan": [
@@ -2968,7 +3191,7 @@
               "customer_id": 1
             },
             "error_code": null,
-            "duration_ms": 0.0018999999156221747
+            "duration_ms": 0.002999999196617864
           },
           {
             "name": "verify_identity",
@@ -2977,7 +3200,7 @@
               "verified": true
             },
             "error_code": null,
-            "duration_ms": 7.516100000430015
+            "duration_ms": 6.577500000275904
           },
           {
             "name": "update_customer",
@@ -2986,7 +3209,7 @@
               "updated": true
             },
             "error_code": null,
-            "duration_ms": 6.097200001022429
+            "duration_ms": 7.934199998999247
           }
         ],
         "packet": {
@@ -3018,17 +3241,17 @@
                 "source": {
                   "provider": "wavemind_work_agent",
                   "source_type": "repeated_verified_outcome",
-                  "source_id": "work_3b043b51a55247f28599ffb0e5f354ef"
+                  "source_id": "work_88f3b4b48ff64481a74ec56f0cf4df63"
                 },
-                "trajectory_id": "work_3b043b51a55247f28599ffb0e5f354ef",
-                "content_sha256": "016ca233be55fa1b94ecf3c06d1b9bef623ceca949f0866aabdc821ee9fac8a5"
+                "trajectory_id": "work_88f3b4b48ff64481a74ec56f0cf4df63",
+                "content_sha256": "f30375d9753da978b566278ce419037095ff70fff990404ea3129fc51f1b94d2"
               },
               "estimated_tokens": 26,
               "canary": false
             }
           ],
           "omitted_count": 0,
-          "generated_at": 1785259486.7354906,
+          "generated_at": 1785261453.1560943,
           "compiler_policy": {
             "signal_weights": {
               "vector": 0.38,
@@ -3049,18 +3272,23 @@
           ]
         },
         "selected_experience_id": "exp_strategy_f5ecdd51dae0f35d3ba3f359",
-        "trajectory_id": "work_843eaefd957d4374b5124e185fc384b0",
+        "trajectory_id": "work_00fb937076e84700bc1d828025feb13b",
         "learned_experience_id": null,
         "repeated_error_codes": [],
         "context_tokens": 36,
-        "latency_ms": 17.85560000098485,
+        "latency_ms": 19.856200000504032,
         "tool_steps": 3,
         "domain": "support_crm",
-        "task_type": "verified_customer_update"
+        "task_type": "verified_customer_update",
+        "latency_samples_ms": [
+          18.844400001398753,
+          19.856200000504032,
+          22.508800000650808
+        ]
       },
       {
         "request_id": "heldout-support-duplicate-00",
-        "run_id": "work_d676ccaa09004ae4a9980b2459ce696b",
+        "run_id": "work_176f02b4be334ce08577ebaccadba1b5",
         "success": true,
         "plan_source": "experience",
         "plan": [
@@ -3079,7 +3307,7 @@
               ]
             },
             "error_code": null,
-            "duration_ms": 0.2421000008325791
+            "duration_ms": 0.4170000011072261
           },
           {
             "name": "merge_cases",
@@ -3089,7 +3317,7 @@
               "into": 1
             },
             "error_code": null,
-            "duration_ms": 7.568500001070788
+            "duration_ms": 4.432200001247111
           },
           {
             "name": "notify_customer",
@@ -3098,7 +3326,7 @@
               "notified": true
             },
             "error_code": null,
-            "duration_ms": 0.14089999967836775
+            "duration_ms": 0.20450000010896474
           }
         ],
         "packet": {
@@ -3130,17 +3358,17 @@
                 "source": {
                   "provider": "wavemind_work_agent",
                   "source_type": "repeated_verified_outcome",
-                  "source_id": "work_24dea7808da543ffb4260b26b11939a0"
+                  "source_id": "work_cc2934be566a443ebd5d33d47db283f2"
                 },
-                "trajectory_id": "work_24dea7808da543ffb4260b26b11939a0",
-                "content_sha256": "4e6fd03276c485b0a8f9c9660ded31ece8e1e4ecd5f0a35c36c79d9f9acd96f5"
+                "trajectory_id": "work_cc2934be566a443ebd5d33d47db283f2",
+                "content_sha256": "d25829da64bdb855ad4abf2245692056102ef3b2c3f2b3d65c343526bf9b5025"
               },
               "estimated_tokens": 26,
               "canary": false
             }
           ],
           "omitted_count": 0,
-          "generated_at": 1785259486.7723446,
+          "generated_at": 1785261453.3294485,
           "compiler_policy": {
             "signal_weights": {
               "vector": 0.38,
@@ -3161,18 +3389,23 @@
           ]
         },
         "selected_experience_id": "exp_strategy_03d20d207c0db95d891a4ce7",
-        "trajectory_id": "work_d676ccaa09004ae4a9980b2459ce696b",
+        "trajectory_id": "work_176f02b4be334ce08577ebaccadba1b5",
         "learned_experience_id": null,
         "repeated_error_codes": [],
         "context_tokens": 36,
-        "latency_ms": 12.316800000917283,
+        "latency_ms": 9.514299999864306,
         "tool_steps": 3,
         "domain": "support_crm",
-        "task_type": "duplicate_case_resolution"
+        "task_type": "duplicate_case_resolution",
+        "latency_samples_ms": [
+          9.514299999864306,
+          8.771999999225955,
+          10.31689999945229
+        ]
       },
       {
         "request_id": "heldout-support-duplicate-01",
-        "run_id": "work_2e448b77fd504cba994589b5158f26da",
+        "run_id": "work_f6f406283e47490780eb7313050f0aa5",
         "success": true,
         "plan_source": "experience",
         "plan": [
@@ -3191,7 +3424,7 @@
               ]
             },
             "error_code": null,
-            "duration_ms": 0.13919999946665484
+            "duration_ms": 0.24510000002919696
           },
           {
             "name": "merge_cases",
@@ -3201,7 +3434,7 @@
               "into": 1
             },
             "error_code": null,
-            "duration_ms": 5.753399998866371
+            "duration_ms": 6.937599999218946
           },
           {
             "name": "notify_customer",
@@ -3210,7 +3443,7 @@
               "notified": true
             },
             "error_code": null,
-            "duration_ms": 0.12590000005729962
+            "duration_ms": 0.1319999992119847
           }
         ],
         "packet": {
@@ -3242,17 +3475,17 @@
                 "source": {
                   "provider": "wavemind_work_agent",
                   "source_type": "repeated_verified_outcome",
-                  "source_id": "work_24dea7808da543ffb4260b26b11939a0"
+                  "source_id": "work_cc2934be566a443ebd5d33d47db283f2"
                 },
-                "trajectory_id": "work_24dea7808da543ffb4260b26b11939a0",
-                "content_sha256": "4e6fd03276c485b0a8f9c9660ded31ece8e1e4ecd5f0a35c36c79d9f9acd96f5"
+                "trajectory_id": "work_cc2934be566a443ebd5d33d47db283f2",
+                "content_sha256": "d25829da64bdb855ad4abf2245692056102ef3b2c3f2b3d65c343526bf9b5025"
               },
               "estimated_tokens": 26,
               "canary": false
             }
           ],
           "omitted_count": 0,
-          "generated_at": 1785259486.8843055,
+          "generated_at": 1785261453.531827,
           "compiler_policy": {
             "signal_weights": {
               "vector": 0.38,
@@ -3273,18 +3506,23 @@
           ]
         },
         "selected_experience_id": "exp_strategy_03d20d207c0db95d891a4ce7",
-        "trajectory_id": "work_2e448b77fd504cba994589b5158f26da",
+        "trajectory_id": "work_f6f406283e47490780eb7313050f0aa5",
         "learned_experience_id": null,
         "repeated_error_codes": [],
         "context_tokens": 36,
-        "latency_ms": 9.966200001144898,
+        "latency_ms": 12.350999999398482,
         "tool_steps": 3,
         "domain": "support_crm",
-        "task_type": "duplicate_case_resolution"
+        "task_type": "duplicate_case_resolution",
+        "latency_samples_ms": [
+          12.350999999398482,
+          12.884899999335175,
+          11.281600000074832
+        ]
       },
       {
         "request_id": "heldout-support-duplicate-02",
-        "run_id": "work_c31133e6dc314d3a8da68f6d28b61f02",
+        "run_id": "work_6626b1c0228a4c8c8bb0e3127331cb0e",
         "success": true,
         "plan_source": "experience",
         "plan": [
@@ -3303,7 +3541,7 @@
               ]
             },
             "error_code": null,
-            "duration_ms": 0.16060000052675605
+            "duration_ms": 0.1604999997653067
           },
           {
             "name": "merge_cases",
@@ -3313,7 +3551,7 @@
               "into": 1
             },
             "error_code": null,
-            "duration_ms": 7.732399999440531
+            "duration_ms": 8.032099998672493
           },
           {
             "name": "notify_customer",
@@ -3322,7 +3560,7 @@
               "notified": true
             },
             "error_code": null,
-            "duration_ms": 0.14230000124371145
+            "duration_ms": 0.24250000024039764
           }
         ],
         "packet": {
@@ -3354,17 +3592,17 @@
                 "source": {
                   "provider": "wavemind_work_agent",
                   "source_type": "repeated_verified_outcome",
-                  "source_id": "work_24dea7808da543ffb4260b26b11939a0"
+                  "source_id": "work_cc2934be566a443ebd5d33d47db283f2"
                 },
-                "trajectory_id": "work_24dea7808da543ffb4260b26b11939a0",
-                "content_sha256": "4e6fd03276c485b0a8f9c9660ded31ece8e1e4ecd5f0a35c36c79d9f9acd96f5"
+                "trajectory_id": "work_cc2934be566a443ebd5d33d47db283f2",
+                "content_sha256": "d25829da64bdb855ad4abf2245692056102ef3b2c3f2b3d65c343526bf9b5025"
               },
               "estimated_tokens": 26,
               "canary": false
             }
           ],
           "omitted_count": 0,
-          "generated_at": 1785259486.9125142,
+          "generated_at": 1785261453.6959162,
           "compiler_policy": {
             "signal_weights": {
               "vector": 0.38,
@@ -3385,18 +3623,23 @@
           ]
         },
         "selected_experience_id": "exp_strategy_03d20d207c0db95d891a4ce7",
-        "trajectory_id": "work_c31133e6dc314d3a8da68f6d28b61f02",
+        "trajectory_id": "work_6626b1c0228a4c8c8bb0e3127331cb0e",
         "learned_experience_id": null,
         "repeated_error_codes": [],
         "context_tokens": 36,
-        "latency_ms": 11.927100000320934,
+        "latency_ms": 11.491499999465304,
         "tool_steps": 3,
         "domain": "support_crm",
-        "task_type": "duplicate_case_resolution"
+        "task_type": "duplicate_case_resolution",
+        "latency_samples_ms": [
+          12.656599999900209,
+          11.015099998985534,
+          11.491499999465304
+        ]
       },
       {
         "request_id": "heldout-support-duplicate-03",
-        "run_id": "work_9c953eaebfee460ca89293845ef70682",
+        "run_id": "work_c5e667012a7f4045a829e8850ffed585",
         "success": true,
         "plan_source": "experience",
         "plan": [
@@ -3415,7 +3658,7 @@
               ]
             },
             "error_code": null,
-            "duration_ms": 0.2488999998604413
+            "duration_ms": 0.20559999938996043
           },
           {
             "name": "merge_cases",
@@ -3425,7 +3668,7 @@
               "into": 1
             },
             "error_code": null,
-            "duration_ms": 6.267799999477575
+            "duration_ms": 5.649299999276991
           },
           {
             "name": "notify_customer",
@@ -3434,7 +3677,7 @@
               "notified": true
             },
             "error_code": null,
-            "duration_ms": 0.15100000018719584
+            "duration_ms": 0.1350999991700519
           }
         ],
         "packet": {
@@ -3466,17 +3709,17 @@
                 "source": {
                   "provider": "wavemind_work_agent",
                   "source_type": "repeated_verified_outcome",
-                  "source_id": "work_24dea7808da543ffb4260b26b11939a0"
+                  "source_id": "work_cc2934be566a443ebd5d33d47db283f2"
                 },
-                "trajectory_id": "work_24dea7808da543ffb4260b26b11939a0",
-                "content_sha256": "4e6fd03276c485b0a8f9c9660ded31ece8e1e4ecd5f0a35c36c79d9f9acd96f5"
+                "trajectory_id": "work_cc2934be566a443ebd5d33d47db283f2",
+                "content_sha256": "d25829da64bdb855ad4abf2245692056102ef3b2c3f2b3d65c343526bf9b5025"
               },
               "estimated_tokens": 26,
               "canary": false
             }
           ],
           "omitted_count": 0,
-          "generated_at": 1785259486.9435418,
+          "generated_at": 1785261453.916943,
           "compiler_policy": {
             "signal_weights": {
               "vector": 0.38,
@@ -3497,18 +3740,23 @@
           ]
         },
         "selected_experience_id": "exp_strategy_03d20d207c0db95d891a4ce7",
-        "trajectory_id": "work_9c953eaebfee460ca89293845ef70682",
+        "trajectory_id": "work_c5e667012a7f4045a829e8850ffed585",
         "learned_experience_id": null,
         "repeated_error_codes": [],
         "context_tokens": 36,
-        "latency_ms": 11.505800001032185,
+        "latency_ms": 10.099900000568596,
         "tool_steps": 3,
         "domain": "support_crm",
-        "task_type": "duplicate_case_resolution"
+        "task_type": "duplicate_case_resolution",
+        "latency_samples_ms": [
+          10.030400000687223,
+          12.411599998813472,
+          10.099900000568596
+        ]
       },
       {
         "request_id": "heldout-support-duplicate-04",
-        "run_id": "work_53172c6808c64ad8ace733c371b3f5f8",
+        "run_id": "work_41ba141c8c4d4384bb573e064cb1cb35",
         "success": true,
         "plan_source": "experience",
         "plan": [
@@ -3527,7 +3775,7 @@
               ]
             },
             "error_code": null,
-            "duration_ms": 0.16369999866583385
+            "duration_ms": 0.30469999910565093
           },
           {
             "name": "merge_cases",
@@ -3537,7 +3785,7 @@
               "into": 1
             },
             "error_code": null,
-            "duration_ms": 7.597600000735838
+            "duration_ms": 7.523400001446134
           },
           {
             "name": "notify_customer",
@@ -3546,7 +3794,7 @@
               "notified": true
             },
             "error_code": null,
-            "duration_ms": 0.14510000073642004
+            "duration_ms": 0.18540000019129366
           }
         ],
         "packet": {
@@ -3578,17 +3826,17 @@
                 "source": {
                   "provider": "wavemind_work_agent",
                   "source_type": "repeated_verified_outcome",
-                  "source_id": "work_24dea7808da543ffb4260b26b11939a0"
+                  "source_id": "work_cc2934be566a443ebd5d33d47db283f2"
                 },
-                "trajectory_id": "work_24dea7808da543ffb4260b26b11939a0",
-                "content_sha256": "4e6fd03276c485b0a8f9c9660ded31ece8e1e4ecd5f0a35c36c79d9f9acd96f5"
+                "trajectory_id": "work_cc2934be566a443ebd5d33d47db283f2",
+                "content_sha256": "d25829da64bdb855ad4abf2245692056102ef3b2c3f2b3d65c343526bf9b5025"
               },
               "estimated_tokens": 26,
               "canary": false
             }
           ],
           "omitted_count": 0,
-          "generated_at": 1785259486.9726455,
+          "generated_at": 1785261454.0641608,
           "compiler_policy": {
             "signal_weights": {
               "vector": 0.38,
@@ -3609,18 +3857,23 @@
           ]
         },
         "selected_experience_id": "exp_strategy_03d20d207c0db95d891a4ce7",
-        "trajectory_id": "work_53172c6808c64ad8ace733c371b3f5f8",
+        "trajectory_id": "work_41ba141c8c4d4384bb573e064cb1cb35",
         "learned_experience_id": null,
         "repeated_error_codes": [],
         "context_tokens": 36,
-        "latency_ms": 12.146999999458785,
+        "latency_ms": 12.607399999978952,
         "tool_steps": 3,
         "domain": "support_crm",
-        "task_type": "duplicate_case_resolution"
+        "task_type": "duplicate_case_resolution",
+        "latency_samples_ms": [
+          12.607399999978952,
+          12.278100000912673,
+          12.65880000028119
+        ]
       },
       {
         "request_id": "heldout-enterprise-approval-00",
-        "run_id": "work_163c33c0ad2d4ce39d07adf4e625caa9",
+        "run_id": "work_fe9156dfc76f43309d943972ddae790d",
         "success": true,
         "plan_source": "experience",
         "plan": [
@@ -3636,7 +3889,7 @@
               "inspected": true
             },
             "error_code": null,
-            "duration_ms": 0.0024000000848900527
+            "duration_ms": 0.0018999999156221747
           },
           {
             "name": "collect_approval",
@@ -3645,7 +3898,7 @@
               "approved": true
             },
             "error_code": null,
-            "duration_ms": 6.059999999706633
+            "duration_ms": 7.001100000707083
           },
           {
             "name": "execute_request",
@@ -3654,7 +3907,7 @@
               "executed": true
             },
             "error_code": null,
-            "duration_ms": 7.537800000136485
+            "duration_ms": 5.873000000065076
           }
         ],
         "packet": {
@@ -3686,17 +3939,17 @@
                 "source": {
                   "provider": "wavemind_work_agent",
                   "source_type": "repeated_verified_outcome",
-                  "source_id": "work_f49b6a4483c143848faf2d8d568bb284"
+                  "source_id": "work_6c584525b694471cab9ea0aff344b80d"
                 },
-                "trajectory_id": "work_f49b6a4483c143848faf2d8d568bb284",
-                "content_sha256": "a3c1836369f9476127721f2bfda690e984e7cd7f6bc40e9550a81ff6fd366ec5"
+                "trajectory_id": "work_6c584525b694471cab9ea0aff344b80d",
+                "content_sha256": "ef3a040e68d0309a27ef143adab1c5b9bfbd048475d8fe7dad5af4f607d326f5"
               },
               "estimated_tokens": 26,
               "canary": false
             }
           ],
           "omitted_count": 0,
-          "generated_at": 1785259487.0029678,
+          "generated_at": 1785261454.28046,
           "compiler_policy": {
             "signal_weights": {
               "vector": 0.38,
@@ -3717,18 +3970,23 @@
           ]
         },
         "selected_experience_id": "exp_strategy_5acb6a904e9ecc18bae98c5a",
-        "trajectory_id": "work_163c33c0ad2d4ce39d07adf4e625caa9",
+        "trajectory_id": "work_fe9156dfc76f43309d943972ddae790d",
         "learned_experience_id": null,
         "repeated_error_codes": [],
         "context_tokens": 36,
-        "latency_ms": 17.563800000061747,
+        "latency_ms": 19.352600000274833,
         "tool_steps": 3,
         "domain": "enterprise_workflow",
-        "task_type": "approval_gated_execution"
+        "task_type": "approval_gated_execution",
+        "latency_samples_ms": [
+          30.058399999688845,
+          18.180600000050617,
+          19.352600000274833
+        ]
       },
       {
         "request_id": "heldout-enterprise-approval-01",
-        "run_id": "work_6f9a0ebf10ef458090070295c5d920b4",
+        "run_id": "work_73e754ca8b8a48a696aabe9b84993996",
         "success": true,
         "plan_source": "experience",
         "plan": [
@@ -3753,7 +4011,7 @@
               "approved": true
             },
             "error_code": null,
-            "duration_ms": 6.356800000503426
+            "duration_ms": 7.3688000011316035
           },
           {
             "name": "execute_request",
@@ -3762,7 +4020,7 @@
               "executed": true
             },
             "error_code": null,
-            "duration_ms": 7.435499999701278
+            "duration_ms": 6.48410000030708
           }
         ],
         "packet": {
@@ -3794,17 +4052,17 @@
                 "source": {
                   "provider": "wavemind_work_agent",
                   "source_type": "repeated_verified_outcome",
-                  "source_id": "work_f49b6a4483c143848faf2d8d568bb284"
+                  "source_id": "work_6c584525b694471cab9ea0aff344b80d"
                 },
-                "trajectory_id": "work_f49b6a4483c143848faf2d8d568bb284",
-                "content_sha256": "a3c1836369f9476127721f2bfda690e984e7cd7f6bc40e9550a81ff6fd366ec5"
+                "trajectory_id": "work_6c584525b694471cab9ea0aff344b80d",
+                "content_sha256": "ef3a040e68d0309a27ef143adab1c5b9bfbd048475d8fe7dad5af4f607d326f5"
               },
               "estimated_tokens": 26,
               "canary": false
             }
           ],
           "omitted_count": 0,
-          "generated_at": 1785259487.0385783,
+          "generated_at": 1785261454.467389,
           "compiler_policy": {
             "signal_weights": {
               "vector": 0.38,
@@ -3825,18 +4083,23 @@
           ]
         },
         "selected_experience_id": "exp_strategy_5acb6a904e9ecc18bae98c5a",
-        "trajectory_id": "work_6f9a0ebf10ef458090070295c5d920b4",
+        "trajectory_id": "work_73e754ca8b8a48a696aabe9b84993996",
         "learned_experience_id": null,
         "repeated_error_codes": [],
         "context_tokens": 36,
-        "latency_ms": 17.670100000032107,
+        "latency_ms": 17.973999998503132,
         "tool_steps": 3,
         "domain": "enterprise_workflow",
-        "task_type": "approval_gated_execution"
+        "task_type": "approval_gated_execution",
+        "latency_samples_ms": [
+          17.973999998503132,
+          17.576099999132566,
+          18.438299999615992
+        ]
       },
       {
         "request_id": "heldout-enterprise-approval-02",
-        "run_id": "work_2f5d93933d724942843f9fcd86d1a330",
+        "run_id": "work_88bfbd9d68de436a9e0569fc9bfc01de",
         "success": true,
         "plan_source": "experience",
         "plan": [
@@ -3852,7 +4115,7 @@
               "inspected": true
             },
             "error_code": null,
-            "duration_ms": 0.0020000006770715117
+            "duration_ms": 0.002099999619531445
           },
           {
             "name": "collect_approval",
@@ -3861,7 +4124,7 @@
               "approved": true
             },
             "error_code": null,
-            "duration_ms": 5.7720000004337635
+            "duration_ms": 7.564400000774185
           },
           {
             "name": "execute_request",
@@ -3870,7 +4133,7 @@
               "executed": true
             },
             "error_code": null,
-            "duration_ms": 7.373399999778485
+            "duration_ms": 5.786199999420205
           }
         ],
         "packet": {
@@ -3902,17 +4165,17 @@
                 "source": {
                   "provider": "wavemind_work_agent",
                   "source_type": "repeated_verified_outcome",
-                  "source_id": "work_f49b6a4483c143848faf2d8d568bb284"
+                  "source_id": "work_6c584525b694471cab9ea0aff344b80d"
                 },
-                "trajectory_id": "work_f49b6a4483c143848faf2d8d568bb284",
-                "content_sha256": "a3c1836369f9476127721f2bfda690e984e7cd7f6bc40e9550a81ff6fd366ec5"
+                "trajectory_id": "work_6c584525b694471cab9ea0aff344b80d",
+                "content_sha256": "ef3a040e68d0309a27ef143adab1c5b9bfbd048475d8fe7dad5af4f607d326f5"
               },
               "estimated_tokens": 26,
               "canary": false
             }
           ],
           "omitted_count": 0,
-          "generated_at": 1785259487.0749514,
+          "generated_at": 1785261454.7010446,
           "compiler_policy": {
             "signal_weights": {
               "vector": 0.38,
@@ -3933,18 +4196,23 @@
           ]
         },
         "selected_experience_id": "exp_strategy_5acb6a904e9ecc18bae98c5a",
-        "trajectory_id": "work_2f5d93933d724942843f9fcd86d1a330",
+        "trajectory_id": "work_88bfbd9d68de436a9e0569fc9bfc01de",
         "learned_experience_id": null,
         "repeated_error_codes": [],
         "context_tokens": 36,
-        "latency_ms": 17.0667999991565,
+        "latency_ms": 17.958800000997144,
         "tool_steps": 3,
         "domain": "enterprise_workflow",
-        "task_type": "approval_gated_execution"
+        "task_type": "approval_gated_execution",
+        "latency_samples_ms": [
+          17.958800000997144,
+          17.583200000444776,
+          18.50419999937003
+        ]
       },
       {
         "request_id": "heldout-enterprise-approval-03",
-        "run_id": "work_829feb72f78a4f5988372a43836a8618",
+        "run_id": "work_2b8b295dfb654422a39aebb5281b506a",
         "success": true,
         "plan_source": "experience",
         "plan": [
@@ -3960,7 +4228,7 @@
               "inspected": true
             },
             "error_code": null,
-            "duration_ms": 0.002300001142430119
+            "duration_ms": 0.002099999619531445
           },
           {
             "name": "collect_approval",
@@ -3969,7 +4237,7 @@
               "approved": true
             },
             "error_code": null,
-            "duration_ms": 5.995800000164309
+            "duration_ms": 7.486500000595697
           },
           {
             "name": "execute_request",
@@ -3978,7 +4246,7 @@
               "executed": true
             },
             "error_code": null,
-            "duration_ms": 7.21499999963271
+            "duration_ms": 5.573300000833115
           }
         ],
         "packet": {
@@ -4010,17 +4278,17 @@
                 "source": {
                   "provider": "wavemind_work_agent",
                   "source_type": "repeated_verified_outcome",
-                  "source_id": "work_f49b6a4483c143848faf2d8d568bb284"
+                  "source_id": "work_6c584525b694471cab9ea0aff344b80d"
                 },
-                "trajectory_id": "work_f49b6a4483c143848faf2d8d568bb284",
-                "content_sha256": "a3c1836369f9476127721f2bfda690e984e7cd7f6bc40e9550a81ff6fd366ec5"
+                "trajectory_id": "work_6c584525b694471cab9ea0aff344b80d",
+                "content_sha256": "ef3a040e68d0309a27ef143adab1c5b9bfbd048475d8fe7dad5af4f607d326f5"
               },
               "estimated_tokens": 26,
               "canary": false
             }
           ],
           "omitted_count": 0,
-          "generated_at": 1785259487.1105986,
+          "generated_at": 1785261454.873804,
           "compiler_policy": {
             "signal_weights": {
               "vector": 0.38,
@@ -4041,18 +4309,23 @@
           ]
         },
         "selected_experience_id": "exp_strategy_5acb6a904e9ecc18bae98c5a",
-        "trajectory_id": "work_829feb72f78a4f5988372a43836a8618",
+        "trajectory_id": "work_2b8b295dfb654422a39aebb5281b506a",
         "learned_experience_id": null,
         "repeated_error_codes": [],
         "context_tokens": 36,
-        "latency_ms": 17.094400000132737,
+        "latency_ms": 16.983699999400415,
         "tool_steps": 3,
         "domain": "enterprise_workflow",
-        "task_type": "approval_gated_execution"
+        "task_type": "approval_gated_execution",
+        "latency_samples_ms": [
+          16.983699999400415,
+          18.369299999903888,
+          16.908600000533625
+        ]
       },
       {
         "request_id": "heldout-enterprise-approval-04",
-        "run_id": "work_ce8b13a5582d4c428fce25b803b7f6d2",
+        "run_id": "work_cdc2ba54afa543c98b7a433b414fbdf3",
         "success": true,
         "plan_source": "experience",
         "plan": [
@@ -4068,7 +4341,7 @@
               "inspected": true
             },
             "error_code": null,
-            "duration_ms": 0.002099999619531445
+            "duration_ms": 0.0018999999156221747
           },
           {
             "name": "collect_approval",
@@ -4077,7 +4350,7 @@
               "approved": true
             },
             "error_code": null,
-            "duration_ms": 5.885599999601254
+            "duration_ms": 7.416899999952875
           },
           {
             "name": "execute_request",
@@ -4086,7 +4359,7 @@
               "executed": true
             },
             "error_code": null,
-            "duration_ms": 7.087399999363697
+            "duration_ms": 6.818599998950958
           }
         ],
         "packet": {
@@ -4118,17 +4391,17 @@
                 "source": {
                   "provider": "wavemind_work_agent",
                   "source_type": "repeated_verified_outcome",
-                  "source_id": "work_f49b6a4483c143848faf2d8d568bb284"
+                  "source_id": "work_6c584525b694471cab9ea0aff344b80d"
                 },
-                "trajectory_id": "work_f49b6a4483c143848faf2d8d568bb284",
-                "content_sha256": "a3c1836369f9476127721f2bfda690e984e7cd7f6bc40e9550a81ff6fd366ec5"
+                "trajectory_id": "work_6c584525b694471cab9ea0aff344b80d",
+                "content_sha256": "ef3a040e68d0309a27ef143adab1c5b9bfbd048475d8fe7dad5af4f607d326f5"
               },
               "estimated_tokens": 26,
               "canary": false
             }
           ],
           "omitted_count": 0,
-          "generated_at": 1785259487.1458812,
+          "generated_at": 1785261455.1091049,
           "compiler_policy": {
             "signal_weights": {
               "vector": 0.38,
@@ -4149,18 +4422,23 @@
           ]
         },
         "selected_experience_id": "exp_strategy_5acb6a904e9ecc18bae98c5a",
-        "trajectory_id": "work_ce8b13a5582d4c428fce25b803b7f6d2",
+        "trajectory_id": "work_cdc2ba54afa543c98b7a433b414fbdf3",
         "learned_experience_id": null,
         "repeated_error_codes": [],
         "context_tokens": 36,
-        "latency_ms": 16.837500001201988,
+        "latency_ms": 18.18989999992482,
         "tool_steps": 3,
         "domain": "enterprise_workflow",
-        "task_type": "approval_gated_execution"
+        "task_type": "approval_gated_execution",
+        "latency_samples_ms": [
+          18.251100000270526,
+          18.053599998893333,
+          18.18989999992482
+        ]
       },
       {
         "request_id": "heldout-enterprise-idempotency-00",
-        "run_id": "work_e175f73d25ab4231ad073d0b28fe6a74",
+        "run_id": "work_18f8b232655b48c09f24772f453de826",
         "success": true,
         "plan_source": "experience",
         "plan": [
@@ -4176,7 +4454,7 @@
               "inspected": true
             },
             "error_code": null,
-            "duration_ms": 0.0018999999156221747
+            "duration_ms": 0.00270000055024866
           },
           {
             "name": "apply_once",
@@ -4185,7 +4463,7 @@
               "applied": true
             },
             "error_code": null,
-            "duration_ms": 7.878099999288679
+            "duration_ms": 6.557099999554339
           },
           {
             "name": "reconcile_ledger",
@@ -4194,7 +4472,7 @@
               "count": 1
             },
             "error_code": null,
-            "duration_ms": 0.12259999857633375
+            "duration_ms": 0.1807000007829629
           }
         ],
         "packet": {
@@ -4226,17 +4504,17 @@
                 "source": {
                   "provider": "wavemind_work_agent",
                   "source_type": "repeated_verified_outcome",
-                  "source_id": "work_8d13e0ac50934bb2a598c0a03b6a1338"
+                  "source_id": "work_8cdb0ceba3644d35abe10f12898e66d6"
                 },
-                "trajectory_id": "work_8d13e0ac50934bb2a598c0a03b6a1338",
-                "content_sha256": "76854edb1f92ab74baa8d21582959e9a157e1d4d5600d66aa93e1f2cc2dbf30b"
+                "trajectory_id": "work_8cdb0ceba3644d35abe10f12898e66d6",
+                "content_sha256": "6d50b7b9ac6b991e28611128e251bfad0868f0a7571d8145ccf2e0c8235593e5"
               },
               "estimated_tokens": 25,
               "canary": false
             }
           ],
           "omitted_count": 0,
-          "generated_at": 1785259487.1737196,
+          "generated_at": 1785261455.2777092,
           "compiler_policy": {
             "signal_weights": {
               "vector": 0.38,
@@ -4257,18 +4535,23 @@
           ]
         },
         "selected_experience_id": "exp_strategy_8a1248c2dfd1048607b6e158",
-        "trajectory_id": "work_e175f73d25ab4231ad073d0b28fe6a74",
+        "trajectory_id": "work_18f8b232655b48c09f24772f453de826",
         "learned_experience_id": null,
         "repeated_error_codes": [],
         "context_tokens": 35,
-        "latency_ms": 11.831900001197937,
+        "latency_ms": 11.24550000167801,
         "tool_steps": 3,
         "domain": "enterprise_workflow",
-        "task_type": "idempotent_operation"
+        "task_type": "idempotent_operation",
+        "latency_samples_ms": [
+          11.24550000167801,
+          11.146900000312598,
+          12.137499999880674
+        ]
       },
       {
         "request_id": "heldout-enterprise-idempotency-01",
-        "run_id": "work_9aba7bdeedca496da359b6335d351978",
+        "run_id": "work_58c544991a264abcb4def9540e488721",
         "success": true,
         "plan_source": "experience",
         "plan": [
@@ -4284,7 +4567,7 @@
               "inspected": true
             },
             "error_code": null,
-            "duration_ms": 0.0018999999156221747
+            "duration_ms": 0.002099999619531445
           },
           {
             "name": "apply_once",
@@ -4293,7 +4576,7 @@
               "applied": true
             },
             "error_code": null,
-            "duration_ms": 7.641199999852688
+            "duration_ms": 8.739400000195019
           },
           {
             "name": "reconcile_ledger",
@@ -4302,7 +4585,7 @@
               "count": 1
             },
             "error_code": null,
-            "duration_ms": 0.11360000098648015
+            "duration_ms": 0.11509999967529438
           }
         ],
         "packet": {
@@ -4334,17 +4617,17 @@
                 "source": {
                   "provider": "wavemind_work_agent",
                   "source_type": "repeated_verified_outcome",
-                  "source_id": "work_8d13e0ac50934bb2a598c0a03b6a1338"
+                  "source_id": "work_8cdb0ceba3644d35abe10f12898e66d6"
                 },
-                "trajectory_id": "work_8d13e0ac50934bb2a598c0a03b6a1338",
-                "content_sha256": "76854edb1f92ab74baa8d21582959e9a157e1d4d5600d66aa93e1f2cc2dbf30b"
+                "trajectory_id": "work_8cdb0ceba3644d35abe10f12898e66d6",
+                "content_sha256": "6d50b7b9ac6b991e28611128e251bfad0868f0a7571d8145ccf2e0c8235593e5"
               },
               "estimated_tokens": 25,
               "canary": false
             }
           ],
           "omitted_count": 0,
-          "generated_at": 1785259487.1964862,
+          "generated_at": 1785261455.4729834,
           "compiler_policy": {
             "signal_weights": {
               "vector": 0.38,
@@ -4365,18 +4648,23 @@
           ]
         },
         "selected_experience_id": "exp_strategy_8a1248c2dfd1048607b6e158",
-        "trajectory_id": "work_9aba7bdeedca496da359b6335d351978",
+        "trajectory_id": "work_58c544991a264abcb4def9540e488721",
         "learned_experience_id": null,
         "repeated_error_codes": [],
         "context_tokens": 35,
-        "latency_ms": 11.593400000492693,
+        "latency_ms": 12.7145999995264,
         "tool_steps": 3,
         "domain": "enterprise_workflow",
-        "task_type": "idempotent_operation"
+        "task_type": "idempotent_operation",
+        "latency_samples_ms": [
+          12.7145999995264,
+          11.756600000808248,
+          12.922699999762699
+        ]
       },
       {
         "request_id": "heldout-enterprise-idempotency-02",
-        "run_id": "work_6cc72c56fb77462793a9be52c6488181",
+        "run_id": "work_d53a257c492442668c8415c6a5b3bda5",
         "success": true,
         "plan_source": "experience",
         "plan": [
@@ -4392,7 +4680,7 @@
               "inspected": true
             },
             "error_code": null,
-            "duration_ms": 0.0020000006770715117
+            "duration_ms": 0.002599999788799323
           },
           {
             "name": "apply_once",
@@ -4401,7 +4689,7 @@
               "applied": true
             },
             "error_code": null,
-            "duration_ms": 7.648400000107358
+            "duration_ms": 8.729900000616908
           },
           {
             "name": "reconcile_ledger",
@@ -4410,7 +4698,7 @@
               "count": 1
             },
             "error_code": null,
-            "duration_ms": 0.12030000107188243
+            "duration_ms": 0.10640000073181
           }
         ],
         "packet": {
@@ -4442,17 +4730,17 @@
                 "source": {
                   "provider": "wavemind_work_agent",
                   "source_type": "repeated_verified_outcome",
-                  "source_id": "work_8d13e0ac50934bb2a598c0a03b6a1338"
+                  "source_id": "work_8cdb0ceba3644d35abe10f12898e66d6"
                 },
-                "trajectory_id": "work_8d13e0ac50934bb2a598c0a03b6a1338",
-                "content_sha256": "76854edb1f92ab74baa8d21582959e9a157e1d4d5600d66aa93e1f2cc2dbf30b"
+                "trajectory_id": "work_8cdb0ceba3644d35abe10f12898e66d6",
+                "content_sha256": "6d50b7b9ac6b991e28611128e251bfad0868f0a7571d8145ccf2e0c8235593e5"
               },
               "estimated_tokens": 25,
               "canary": false
             }
           ],
           "omitted_count": 0,
-          "generated_at": 1785259487.219118,
+          "generated_at": 1785261455.5970423,
           "compiler_policy": {
             "signal_weights": {
               "vector": 0.38,
@@ -4473,18 +4761,23 @@
           ]
         },
         "selected_experience_id": "exp_strategy_8a1248c2dfd1048607b6e158",
-        "trajectory_id": "work_6cc72c56fb77462793a9be52c6488181",
+        "trajectory_id": "work_d53a257c492442668c8415c6a5b3bda5",
         "learned_experience_id": null,
         "repeated_error_codes": [],
         "context_tokens": 35,
-        "latency_ms": 11.628300000666059,
+        "latency_ms": 11.586100001295563,
         "tool_steps": 3,
         "domain": "enterprise_workflow",
-        "task_type": "idempotent_operation"
+        "task_type": "idempotent_operation",
+        "latency_samples_ms": [
+          12.532599999758531,
+          11.477699999886681,
+          11.586100001295563
+        ]
       },
       {
         "request_id": "heldout-enterprise-idempotency-03",
-        "run_id": "work_da3f5a74168b422486cf29b9a640019b",
+        "run_id": "work_240438fde8c54d458dced130490791f9",
         "success": true,
         "plan_source": "experience",
         "plan": [
@@ -4500,7 +4793,7 @@
               "inspected": true
             },
             "error_code": null,
-            "duration_ms": 0.002200000380980782
+            "duration_ms": 0.0017000002117129043
           },
           {
             "name": "apply_once",
@@ -4509,7 +4802,7 @@
               "applied": true
             },
             "error_code": null,
-            "duration_ms": 6.076599998777965
+            "duration_ms": 6.321199998637894
           },
           {
             "name": "reconcile_ledger",
@@ -4518,7 +4811,7 @@
               "count": 1
             },
             "error_code": null,
-            "duration_ms": 0.10680000013962854
+            "duration_ms": 0.10959999963233713
           }
         ],
         "packet": {
@@ -4550,17 +4843,17 @@
                 "source": {
                   "provider": "wavemind_work_agent",
                   "source_type": "repeated_verified_outcome",
-                  "source_id": "work_8d13e0ac50934bb2a598c0a03b6a1338"
+                  "source_id": "work_8cdb0ceba3644d35abe10f12898e66d6"
                 },
-                "trajectory_id": "work_8d13e0ac50934bb2a598c0a03b6a1338",
-                "content_sha256": "76854edb1f92ab74baa8d21582959e9a157e1d4d5600d66aa93e1f2cc2dbf30b"
+                "trajectory_id": "work_8cdb0ceba3644d35abe10f12898e66d6",
+                "content_sha256": "6d50b7b9ac6b991e28611128e251bfad0868f0a7571d8145ccf2e0c8235593e5"
               },
               "estimated_tokens": 25,
               "canary": false
             }
           ],
           "omitted_count": 0,
-          "generated_at": 1785259487.2467945,
+          "generated_at": 1785261455.8560574,
           "compiler_policy": {
             "signal_weights": {
               "vector": 0.38,
@@ -4581,18 +4874,23 @@
           ]
         },
         "selected_experience_id": "exp_strategy_8a1248c2dfd1048607b6e158",
-        "trajectory_id": "work_da3f5a74168b422486cf29b9a640019b",
+        "trajectory_id": "work_240438fde8c54d458dced130490791f9",
         "learned_experience_id": null,
         "repeated_error_codes": [],
         "context_tokens": 35,
-        "latency_ms": 10.215599999355618,
+        "latency_ms": 10.673000000679167,
         "tool_steps": 3,
         "domain": "enterprise_workflow",
-        "task_type": "idempotent_operation"
+        "task_type": "idempotent_operation",
+        "latency_samples_ms": [
+          10.629899999912595,
+          10.992400000759517,
+          10.673000000679167
+        ]
       },
       {
         "request_id": "heldout-enterprise-idempotency-04",
-        "run_id": "work_c9a4c90c0ec5497396cd83d1324ce65b",
+        "run_id": "work_a20ae204b08c4451906b6581b2ec7117",
         "success": true,
         "plan_source": "experience",
         "plan": [
@@ -4608,7 +4906,7 @@
               "inspected": true
             },
             "error_code": null,
-            "duration_ms": 0.002099999619531445
+            "duration_ms": 0.0017000002117129043
           },
           {
             "name": "apply_once",
@@ -4617,7 +4915,7 @@
               "applied": true
             },
             "error_code": null,
-            "duration_ms": 6.227500000022701
+            "duration_ms": 6.788500000766362
           },
           {
             "name": "reconcile_ledger",
@@ -4626,7 +4924,7 @@
               "count": 1
             },
             "error_code": null,
-            "duration_ms": 0.14449999980570283
+            "duration_ms": 0.13750000107393134
           }
         ],
         "packet": {
@@ -4642,7 +4940,7 @@
               "kind": "successful_strategy",
               "title": "Verified idempotent_operation strategy",
               "excerpt": "",
-              "score": 0.358619,
+              "score": 0.358618,
               "signals": {
                 "vector": 0.001149,
                 "lexical": 0.045455,
@@ -4658,17 +4956,17 @@
                 "source": {
                   "provider": "wavemind_work_agent",
                   "source_type": "repeated_verified_outcome",
-                  "source_id": "work_8d13e0ac50934bb2a598c0a03b6a1338"
+                  "source_id": "work_8cdb0ceba3644d35abe10f12898e66d6"
                 },
-                "trajectory_id": "work_8d13e0ac50934bb2a598c0a03b6a1338",
-                "content_sha256": "76854edb1f92ab74baa8d21582959e9a157e1d4d5600d66aa93e1f2cc2dbf30b"
+                "trajectory_id": "work_8cdb0ceba3644d35abe10f12898e66d6",
+                "content_sha256": "6d50b7b9ac6b991e28611128e251bfad0868f0a7571d8145ccf2e0c8235593e5"
               },
               "estimated_tokens": 25,
               "canary": false
             }
           ],
           "omitted_count": 0,
-          "generated_at": 1785259487.269692,
+          "generated_at": 1785261455.9921408,
           "compiler_policy": {
             "signal_weights": {
               "vector": 0.38,
@@ -4689,14 +4987,19 @@
           ]
         },
         "selected_experience_id": "exp_strategy_8a1248c2dfd1048607b6e158",
-        "trajectory_id": "work_c9a4c90c0ec5497396cd83d1324ce65b",
+        "trajectory_id": "work_a20ae204b08c4451906b6581b2ec7117",
         "learned_experience_id": null,
         "repeated_error_codes": [],
         "context_tokens": 35,
-        "latency_ms": 10.206199998719967,
+        "latency_ms": 11.031300000468036,
         "tool_steps": 3,
         "domain": "enterprise_workflow",
-        "task_type": "idempotent_operation"
+        "task_type": "idempotent_operation",
+        "latency_samples_ms": [
+          11.143499999889173,
+          10.120299999471172,
+          11.031300000468036
+        ]
       }
     ]
   }

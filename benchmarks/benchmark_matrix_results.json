@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-28T17:24:48Z",
-  "source_ref": "3fd809796157",
+  "generated_at": "2026-07-28T17:57:37Z",
+  "source_ref": "d011eb848e03",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -142,21 +142,21 @@
           "repeated_error_rate": 1.0,
           "median_tool_steps": 4.0,
           "median_context_tokens": 0.0,
-          "p95_latency_ms": 28.957700000319164
+          "p95_latency_ms": 28.50419999958831
         },
         "WaveMind Core": {
           "task_success_rate": 0.16666666666666666,
           "repeated_error_rate": 0.8333333333333334,
           "median_tool_steps": 4.0,
           "median_context_tokens": 60.0,
-          "p95_latency_ms": 36.997600000177044
+          "p95_latency_ms": 33.85049999997136
         },
         "WaveMind Experience": {
           "task_success_rate": 1.0,
           "repeated_error_rate": 0.0,
           "median_tool_steps": 3.0,
           "median_context_tokens": 36.0,
-          "p95_latency_ms": 19.228799999837065
+          "p95_latency_ms": 19.56600000085018
         }
       },
       "target": "Beat WaveMind Core by at least 15 percentage points of task success, halve repeated errors, reduce steps by 25% and context by 35%, with no more than 20% p95 regression.",

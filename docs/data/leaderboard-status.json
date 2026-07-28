@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.leaderboard_status.v1",
-  "generated_at": "2026-07-28T17:26:30Z",
-  "source_ref": "3fd809796157",
+  "generated_at": "2026-07-28T17:57:38Z",
+  "source_ref": "d011eb848e03",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "public_url": "https://caspiang.github.io/wavemind/",
@@ -14,7 +14,7 @@
     "timezone": "UTC",
     "public_url": "https://caspiang.github.io/wavemind/",
     "publishing_status": "publishable_with_claim_limits",
-    "source_ref": "3fd809796157",
+    "source_ref": "d011eb848e03",
     "workflow_run_id": null,
     "refresh_profile": "local",
     "expected_scheduled_refresh_profile": "weekly-fast",
@@ -39,8 +39,8 @@
   "freshness_gate": {
     "schema": "wavemind.leaderboard_freshness.v1",
     "status": "pass",
-    "checked_at": "2026-07-28T17:26:30Z",
-    "max_age_days": 3650.0,
+    "checked_at": "2026-07-28T17:57:38Z",
+    "max_age_days": 8.0,
     "source_count": 34,
     "fresh_count": 32,
     "snapshot_count": 2,
@@ -60,15 +60,15 @@
         "path": "benchmarks/benchmark_matrix_results.json",
         "schema": "wavemind.benchmark_matrix.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-28T17:24:48Z",
-        "age_days": 0.0011805555555555556,
+        "timestamp": "2026-07-28T17:57:37Z",
+        "age_days": 1.1574074074074073e-05,
         "status": "pass"
       },
       {
         "path": "benchmarks/benchmark_artifact_audit.json",
         "schema": "wavemind.benchmark_artifact_audit.v1",
         "timestamp_key": "checked_at",
-        "timestamp": "2026-07-28T17:26:30Z",
+        "timestamp": "2026-07-28T17:57:38Z",
         "age_days": 0.0,
         "status": "pass"
       },
@@ -77,7 +77,7 @@
         "schema": "wavemind.production_readiness.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T13:29:27Z",
-        "age_days": 1.1646180555555556,
+        "age_days": 1.186238425925926,
         "status": "pass"
       },
       {
@@ -85,7 +85,7 @@
         "schema": "wavemind.production_evidence.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T10:53:27Z",
-        "age_days": 1.2729513888888888,
+        "age_days": 1.2945717592592592,
         "status": "pass"
       },
       {
@@ -93,7 +93,7 @@
         "schema": "wavemind.production_evidence_preflight.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T10:53:27Z",
-        "age_days": 1.2729513888888888,
+        "age_days": 1.2945717592592592,
         "status": "pass"
       },
       {
@@ -101,7 +101,7 @@
         "schema": "wavemind.production_evidence_env_contract.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T10:53:27Z",
-        "age_days": 1.2729513888888888,
+        "age_days": 1.2945717592592592,
         "status": "pass"
       },
       {
@@ -109,7 +109,7 @@
         "schema": "wavemind.production_evidence_bundle.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T10:53:29Z",
-        "age_days": 1.2729282407407407,
+        "age_days": 1.294548611111111,
         "status": "pass"
       },
       {
@@ -117,7 +117,7 @@
         "schema": "wavemind.release_claims.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T10:53:29Z",
-        "age_days": 1.2729282407407407,
+        "age_days": 1.294548611111111,
         "status": "pass"
       },
       {
@@ -125,7 +125,7 @@
         "schema": "wavemind.scale_gap.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T10:53:29Z",
-        "age_days": 1.2729282407407407,
+        "age_days": 1.294548611111111,
         "status": "pass"
       },
       {
@@ -133,7 +133,7 @@
         "schema": "wavemind.strict_evidence_readiness.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T10:53:29Z",
-        "age_days": 1.2729282407407407,
+        "age_days": 1.294548611111111,
         "status": "pass"
       },
       {
@@ -141,7 +141,7 @@
         "schema": "wavemind.cluster_admission.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T13:17:21Z",
-        "age_days": 1.1730208333333334,
+        "age_days": 1.1946412037037037,
         "status": "pass"
       },
       {
@@ -149,7 +149,7 @@
         "schema": "wavemind.active_active_admission.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T10:53:30Z",
-        "age_days": 1.2729166666666667,
+        "age_days": 1.294537037037037,
         "status": "pass"
       },
       {
@@ -157,7 +157,7 @@
         "schema": "wavemind.serverless_admission.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T10:53:30Z",
-        "age_days": 1.2729166666666667,
+        "age_days": 1.294537037037037,
         "status": "pass"
       },
       {
@@ -165,7 +165,7 @@
         "schema": "wavemind.multimodal_admission.v2",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T21:12:12Z",
-        "age_days": 0.8432638888888889,
+        "age_days": 0.8648842592592593,
         "status": "pass"
       },
       {
@@ -189,7 +189,7 @@
         "schema": "wavemind.memory_os_canary.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T10:53:31Z",
-        "age_days": 1.2729050925925927,
+        "age_days": 1.294525462962963,
         "status": "pass"
       },
       {
@@ -197,7 +197,7 @@
         "schema": "wavemind.memory_os_policy_evolution.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T13:17:12Z",
-        "age_days": 1.173125,
+        "age_days": 1.1947453703703703,
         "status": "pass"
       },
       {
@@ -205,7 +205,7 @@
         "schema": "wavemind.memory_os_policy_bundle.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-28T07:52:42Z",
-        "age_days": 0.3984722222222222,
+        "age_days": 0.4200925925925926,
         "status": "pass"
       },
       {
@@ -213,7 +213,7 @@
         "schema": "wavemind.production_evidence_dispatch.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T10:53:28Z",
-        "age_days": 1.2729398148148148,
+        "age_days": 1.2945601851851851,
         "status": "pass"
       },
       {
@@ -221,7 +221,7 @@
         "schema": "wavemind.production_scale_run_plan.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T13:17:13Z",
-        "age_days": 1.173113425925926,
+        "age_days": 1.1947337962962963,
         "status": "pass"
       },
       {
@@ -229,15 +229,15 @@
         "schema": "wavemind.agent_coherence_benchmark.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T10:51:49Z",
-        "age_days": 1.2740856481481482,
+        "age_days": 1.2957060185185185,
         "status": "pass"
       },
       {
         "path": "benchmarks/agent_impact_results.json",
         "schema": "wavemind.agent_impact_leaderboard.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-28T17:24:48Z",
-        "age_days": 0.0011805555555555556,
+        "timestamp": "2026-07-28T17:57:37Z",
+        "age_days": 1.1574074074074073e-05,
         "status": "pass"
       },
       {
@@ -245,7 +245,7 @@
         "schema": "wavemind.agent_memory_advantage_admission.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-28T07:23:22Z",
-        "age_days": 0.4188425925925926,
+        "age_days": 0.44046296296296295,
         "status": "pass"
       },
       {
@@ -253,7 +253,7 @@
         "schema": "wavemind.structured_memory_report.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T13:29:25Z",
-        "age_days": 1.1646412037037037,
+        "age_days": 1.186261574074074,
         "status": "pass"
       },
       {
@@ -261,7 +261,7 @@
         "schema": "wavemind.memory_os_intelligence_report.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T13:29:25Z",
-        "age_days": 1.1646412037037037,
+        "age_days": 1.186261574074074,
         "status": "pass"
       },
       {
@@ -269,7 +269,7 @@
         "schema": "wavemind.cluster_autoscale_report.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T10:52:52Z",
-        "age_days": 1.2733564814814815,
+        "age_days": 1.2949768518518519,
         "status": "pass"
       },
       {
@@ -277,7 +277,7 @@
         "schema": "wavemind.kubernetes_operator_smoke.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T12:29:17.527926Z",
-        "age_days": 1.2063943527083334,
+        "age_days": 1.2280147230787037,
         "status": "pass"
       },
       {
@@ -285,7 +285,7 @@
         "schema": "wavemind.kubernetes_cluster_network_smoke.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T12:29:38.197546+00:00",
-        "age_days": 1.2061551209953705,
+        "age_days": 1.2277754913657408,
         "status": "pass"
       },
       {
@@ -293,7 +293,7 @@
         "schema": "wavemind.kubernetes_active_active_region_smoke.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T12:30:24.029488+00:00",
-        "age_days": 1.2056246587037036,
+        "age_days": 1.2272450290740742,
         "status": "pass"
       },
       {
@@ -301,7 +301,7 @@
         "schema": "wavemind.kubernetes_serverless_lifecycle_smoke.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T12:32:04.141906+00:00",
-        "age_days": 1.204465950162037,
+        "age_days": 1.2260863205324073,
         "status": "pass"
       },
       {
@@ -309,7 +309,7 @@
         "schema": "wavemind.kubernetes_postgres_qdrant_dr_smoke.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T12:32:27.339861+00:00",
-        "age_days": 1.2041974553124999,
+        "age_days": 1.2258178256828705,
         "status": "pass"
       },
       {
@@ -317,7 +317,7 @@
         "schema": "wavemind.scale_readiness_benchmark.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T13:29:25Z",
-        "age_days": 1.1646412037037037,
+        "age_days": 1.186261574074074,
         "status": "pass"
       },
       {
@@ -325,14 +325,14 @@
         "schema": "wavemind.cost_efficiency_leaderboard.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-27T10:53:35Z",
-        "age_days": 1.2728587962962963,
+        "age_days": 1.2944791666666666,
         "status": "pass"
       }
     ]
   },
   "benchmark_matrix": {
     "schema": "wavemind.benchmark_matrix.v1",
-    "generated_at": "2026-07-28T17:24:48Z",
+    "generated_at": "2026-07-28T17:57:37Z",
     "implemented_count": 45,
     "runner_ready_count": 3,
     "planned_count": 5,
@@ -365,9 +365,9 @@
   "artifact_audit": {
     "schema": "wavemind.benchmark_artifact_audit.v1",
     "status": "pass",
-    "checked_at": "2026-07-28T17:26:30Z",
-    "age_days": 0.001180947962962963,
-    "max_age_days": 3650.0,
+    "checked_at": "2026-07-28T17:57:38Z",
+    "age_days": 1.5496840277777777e-05,
+    "max_age_days": 8.0,
     "errors": []
   },
   "production_readiness": {
