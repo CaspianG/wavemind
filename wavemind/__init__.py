@@ -325,6 +325,13 @@ from .storage import (
     create_memory_store,
     restore_recovery_journal,
 )
+from .work_agent import (
+    ExperiencedWorkAgent,
+    ToolExecution,
+    WorkAgentRun,
+    WorkRequest,
+    WorkRuntime,
+)
 
 __version__ = "2.8.0"
 
@@ -359,6 +366,7 @@ __all__ = [
     "ExperienceRecord",
     "ExperienceSource",
     "ExperienceStatus",
+    "ExperiencedWorkAgent",
     "ExperienceCompiler",
     "ExperienceCompilerPolicy",
     "ExperienceDetail",
@@ -508,6 +516,7 @@ __all__ = [
     "ServerlessObservedTelemetry",
     "ServerlessWorkloadTarget",
     "TextEncoder",
+    "ToolExecution",
     "ToolTrajectory",
     "TrajectoryProvenance",
     "TrajectoryStep",
@@ -517,6 +526,9 @@ __all__ = [
     "WaveMindClusterSpec",
     "WaveMind",
     "WaveMindServerlessSpec",
+    "WorkAgentRun",
+    "WorkRequest",
+    "WorkRuntime",
     "WriteQuorumError",
     "__version__",
     "asset3d_payload",

@@ -149,6 +149,15 @@ class ExperiencePacket:
         }
 
     def as_prompt(self) -> str:
+        reference_only = bool(self.compiler_policy.get("reference_only", False))
+        if reference_only:
+            lines = [f"Experience refs [{self.namespace}]:"]
+            for index, item in enumerate(self.items, start=1):
+                canary = " [canary]" if item.canary else ""
+                lines.append(
+                    f"[E{index}] {item.title}{canary} ({item.citation})"
+                )
+            return "\n".join(lines)
         lines = [
             f"Experience packet for namespace {self.namespace}:",
             "Use only when applicable. Cite bracketed experience references.",
@@ -177,6 +186,7 @@ class ExperienceDetail:
     outcome: dict[str, Any]
     source: dict[str, Any]
     trajectory: dict[str, Any] | None
+    metadata: dict[str, Any]
     citation: str
     content_sha256: str
 
@@ -394,6 +404,7 @@ class ExperienceCompiler:
         task_types: Iterable[str] = (),
         tools: Iterable[str] = (),
         include_canary: bool = False,
+        reference_only: bool = False,
     ) -> ExperiencePacket:
         query = query.strip()
         if not query:
@@ -436,6 +447,8 @@ class ExperienceCompiler:
             )
             if not decision.allowed:
                 continue
+            if not _matches_explicit_applicability(record, requested):
+                continue
             signals = self._signals(
                 record,
                 query_vector=query_vector,
@@ -449,28 +462,43 @@ class ExperienceCompiler:
             ranked.append((score, record, signals))
         ranked.sort(key=lambda row: (-row[0], -row[1].confidence, row[1].id))
 
-        header_tokens = _estimated_tokens(
-            f"Experience packet for namespace {namespace}. "
-            "Use only when applicable and cite experience references."
+        header = (
+            f"Experience refs [{namespace}]:"
+            if reference_only
+            else (
+                f"Experience packet for namespace {namespace}:\n"
+                "Use only when applicable. Cite bracketed experience references."
+            )
         )
+        header_tokens = _estimated_tokens(header)
         consumed = header_tokens
         items: list[ExperiencePacketItem] = []
         considered = ranked[: int(top_k)]
-        for score, record, signals in considered:
+        for index, (score, record, signals) in enumerate(considered, start=1):
             remaining = budget - consumed
             if remaining < 12:
                 break
-            excerpt_budget = min(
-                self.policy.max_item_tokens,
-                max(8, remaining - 8),
+            citation = f"experience:{record.id}@v{record.version}"
+            canary_label = (
+                " [canary]" if record.status == ExperienceStatus.CANARY else ""
             )
-            excerpt = _truncate_tokens(record.content, excerpt_budget)
-            item_tokens = _estimated_tokens(record.title) + _estimated_tokens(
-                excerpt
-            ) + 8
+            if reference_only:
+                excerpt = ""
+                item_tokens = _estimated_tokens(
+                    f"[E{index}] {record.title}{canary_label} ({citation})"
+                )
+            else:
+                excerpt_budget = min(
+                    self.policy.max_item_tokens,
+                    max(8, remaining - 8),
+                )
+                excerpt = _truncate_tokens(record.content, excerpt_budget)
+                item_tokens = _estimated_tokens(
+                    f"[E{index}] {record.title}{canary_label}: {excerpt} "
+                    f"({citation})"
+                )
             if item_tokens > remaining:
                 continue
-            citation = f"experience:{record.id}@v{record.version}"
             provenance = {
                 "source": {
                     "provider": record.source.provider,
@@ -502,6 +530,14 @@ class ExperienceCompiler:
                 )
             )
             consumed += item_tokens
+        if reference_only:
+            rendered = [header]
+            for index, item in enumerate(items, start=1):
+                canary = " [canary]" if item.canary else ""
+                rendered.append(
+                    f"[E{index}] {item.title}{canary} ({item.citation})"
+                )
+            consumed = _estimated_tokens("\n".join(rendered))
         return ExperiencePacket(
             namespace=namespace,
             query=query,
@@ -515,6 +551,7 @@ class ExperienceCompiler:
                 "recency_half_life_days": self.policy.recency_half_life_days,
                 "active_only": not include_canary,
                 "progressive_disclosure": True,
+                "reference_only": bool(reference_only),
             },
         )
 
@@ -550,6 +587,7 @@ class ExperienceCompiler:
                     trajectory=(
                         record.trajectory.as_dict() if record.trajectory else None
                     ),
+                    metadata=dict(record.metadata),
                     citation=f"experience:{record.id}@v{record.version}",
                     content_sha256=record.content_sha256,
                 )
@@ -658,6 +696,41 @@ def _applicability_score(
     if not scores:
         return 0.5
     return sum(scores) / len(scores)
+
+
+def _matches_explicit_applicability(
+    record: ExperienceRecord,
+    requested: Mapping[str, set[str]],
+) -> bool:
+    record_domains = {
+        value.lower() for value in record.applicability.domains
+    }
+    record_task_types = {
+        value.lower() for value in record.applicability.task_types
+    }
+    record_tools = {value.lower() for value in record.applicability.tools}
+    requested_domains = requested.get("domains", set())
+    requested_task_types = requested.get("task_types", set())
+    requested_tools = requested.get("tools", set())
+    if (
+        requested_domains
+        and record_domains
+        and record_domains.isdisjoint(requested_domains)
+    ):
+        return False
+    if (
+        requested_task_types
+        and record_task_types
+        and record_task_types.isdisjoint(requested_task_types)
+    ):
+        return False
+    if (
+        requested_tools
+        and record_tools
+        and record_tools.isdisjoint(requested_tools)
+    ):
+        return False
+    return True
 
 
 def _trust_signal(trust: TrustClass) -> float:
