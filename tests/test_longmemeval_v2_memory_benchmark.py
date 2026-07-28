@@ -233,7 +233,8 @@ def test_ollama_reader_expands_context_only_for_images(tmp_path):
         model="fixture",
         vision_model="fixture-vision",
         image_context_window=4096,
-        image_context_items=2,
+        image_context_items=1,
+        image_context_chars=1000,
     )
     reader._opener = Opener()
     reader._generate("text only")
@@ -249,12 +250,16 @@ def test_ollama_reader_expands_context_only_for_images(tmp_path):
             "answer",
             "llm_gotchas_checker",
         ),
-        context=["first evidence", "second evidence", "excluded evidence"],
+        context=[
+            "first evidence " + ("middle " * 300) + " first evidence tail",
+            "excluded evidence",
+        ],
     )
 
     assert "num_ctx" not in requests[0]["options"]
     assert requests[1]["options"]["num_ctx"] == 4096
     image_prompt = requests[2]["prompt"]
     assert "first evidence" in image_prompt
-    assert "second evidence" in image_prompt
+    assert "middle truncated for reader context budget" in image_prompt
+    assert "first evidence tail" in image_prompt
     assert "excluded evidence" not in image_prompt

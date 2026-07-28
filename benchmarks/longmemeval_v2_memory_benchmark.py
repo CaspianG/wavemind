@@ -287,7 +287,8 @@ class OllamaReader:
         supports_images: bool = False,
         timeout_seconds: float = 180.0,
         image_context_window: int = 4096,
-        image_context_items: int = 2,
+        image_context_items: int = 1,
+        image_context_chars: int = 4000,
         seed: int = 20260728,
     ) -> None:
         self.model = model
@@ -301,6 +302,9 @@ class OllamaReader:
         self.image_context_items = int(image_context_items)
         if self.image_context_items <= 0:
             raise ValueError("image_context_items must be positive")
+        self.image_context_chars = int(image_context_chars)
+        if self.image_context_chars < 1000:
+            raise ValueError("image_context_chars must be at least 1000")
         self.seed = int(seed)
         self._opener = urllib.request.build_opener(
             urllib.request.ProxyHandler({})
@@ -362,11 +366,12 @@ class OllamaReader:
         question: V2Question,
         context: list[str],
     ) -> str:
-        selected_context = (
-            context[: self.image_context_items]
-            if question.image is not None
-            else context
-        )
+        selected_context = context
+        if question.image is not None:
+            selected_context = [
+                _bounded_evidence(value, self.image_context_chars)
+                for value in context[: self.image_context_items]
+            ]
         prompt = (
             "Answer only from the past agent trajectory evidence below. "
             "If the premise conflicts with the evidence, say exactly what is wrong. "
@@ -409,6 +414,16 @@ def _normalize_phrase(text: str) -> str:
     text = re.sub(r"[,;]", " ", text)
     text = re.sub(r"[^\w\s]", "", text)
     return re.sub(r"\s+", " ", text).strip()
+
+
+def _bounded_evidence(value: str, max_chars: int) -> str:
+    if len(value) <= max_chars:
+        return value
+    separator = "\n...[middle truncated for reader context budget]...\n"
+    remaining = max_chars - len(separator)
+    head = remaining // 2
+    tail = remaining - head
+    return value[:head] + separator + value[-tail:]
 
 
 def _eval_options(spec: str) -> tuple[str, dict[str, str]]:
@@ -844,6 +859,11 @@ def run_benchmark(
                     if reader is not None
                     else None
                 ),
+                "image_context_chars": (
+                    getattr(reader, "image_context_chars", None)
+                    if reader is not None
+                    else None
+                ),
                 "cost_per_query_usd": 0.0,
             },
             "resume": resume_metadata or {
@@ -876,7 +896,8 @@ def main() -> int:
     )
     parser.add_argument("--reader-supports-images", action="store_true")
     parser.add_argument("--ollama-image-context-window", type=int, default=4096)
-    parser.add_argument("--ollama-image-context-items", type=int, default=2)
+    parser.add_argument("--ollama-image-context-items", type=int, default=1)
+    parser.add_argument("--ollama-image-context-chars", type=int, default=4000)
     parser.add_argument("--resume-result", type=Path)
     parser.add_argument("--resume-per-query", type=Path)
     parser.add_argument(
@@ -924,6 +945,7 @@ def main() -> int:
             supports_images=args.reader_supports_images,
             image_context_window=args.ollama_image_context_window,
             image_context_items=args.ollama_image_context_items,
+            image_context_chars=args.ollama_image_context_chars,
         )
         if args.ollama_model
         else None
