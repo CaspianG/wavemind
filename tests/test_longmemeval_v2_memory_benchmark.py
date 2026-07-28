@@ -232,11 +232,29 @@ def test_ollama_reader_expands_context_only_for_images(tmp_path):
     reader = OllamaReader(
         model="fixture",
         vision_model="fixture-vision",
-        image_context_window=8192,
+        image_context_window=4096,
+        image_context_items=2,
     )
     reader._opener = Opener()
     reader._generate("text only")
     reader._generate("with image", image=str(image_path))
+    reader.answer(
+        question=V2Question(
+            "image-question",
+            "web",
+            "shop",
+            "errors-gotchas",
+            "What is visible?",
+            str(image_path),
+            "answer",
+            "llm_gotchas_checker",
+        ),
+        context=["first evidence", "second evidence", "excluded evidence"],
+    )
 
     assert "num_ctx" not in requests[0]["options"]
-    assert requests[1]["options"]["num_ctx"] == 8192
+    assert requests[1]["options"]["num_ctx"] == 4096
+    image_prompt = requests[2]["prompt"]
+    assert "first evidence" in image_prompt
+    assert "second evidence" in image_prompt
+    assert "excluded evidence" not in image_prompt

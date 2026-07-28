@@ -286,7 +286,8 @@ class OllamaReader:
         base_url: str = "http://127.0.0.1:11434",
         supports_images: bool = False,
         timeout_seconds: float = 180.0,
-        image_context_window: int = 8192,
+        image_context_window: int = 4096,
+        image_context_items: int = 2,
         seed: int = 20260728,
     ) -> None:
         self.model = model
@@ -297,6 +298,9 @@ class OllamaReader:
         self.image_context_window = int(image_context_window)
         if self.image_context_window < 4096:
             raise ValueError("image_context_window must be at least 4096")
+        self.image_context_items = int(image_context_items)
+        if self.image_context_items <= 0:
+            raise ValueError("image_context_items must be positive")
         self.seed = int(seed)
         self._opener = urllib.request.build_opener(
             urllib.request.ProxyHandler({})
@@ -358,13 +362,18 @@ class OllamaReader:
         question: V2Question,
         context: list[str],
     ) -> str:
+        selected_context = (
+            context[: self.image_context_items]
+            if question.image is not None
+            else context
+        )
         prompt = (
             "Answer only from the past agent trajectory evidence below. "
             "If the premise conflicts with the evidence, say exactly what is wrong. "
             "End with one concise final answer inside \\boxed{...}.\n\n"
             f"Question:\n{question.question}\n\n"
             "Memory evidence:\n"
-            + "\n\n---\n\n".join(context)
+            + "\n\n---\n\n".join(selected_context)
         )
         return self._generate(prompt, image=question.image)
 
@@ -830,6 +839,11 @@ def run_benchmark(
                     if reader is not None
                     else None
                 ),
+                "image_context_items": (
+                    getattr(reader, "image_context_items", None)
+                    if reader is not None
+                    else None
+                ),
                 "cost_per_query_usd": 0.0,
             },
             "resume": resume_metadata or {
@@ -861,7 +875,8 @@ def main() -> int:
         default=os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434"),
     )
     parser.add_argument("--reader-supports-images", action="store_true")
-    parser.add_argument("--ollama-image-context-window", type=int, default=8192)
+    parser.add_argument("--ollama-image-context-window", type=int, default=4096)
+    parser.add_argument("--ollama-image-context-items", type=int, default=2)
     parser.add_argument("--resume-result", type=Path)
     parser.add_argument("--resume-per-query", type=Path)
     parser.add_argument(
@@ -908,6 +923,7 @@ def main() -> int:
             base_url=args.ollama_base_url,
             supports_images=args.reader_supports_images,
             image_context_window=args.ollama_image_context_window,
+            image_context_items=args.ollama_image_context_items,
         )
         if args.ollama_model
         else None
