@@ -1,36 +1,39 @@
 # WaveMind Agent Impact Leaderboard
 
-Generated: `2026-07-27T10:53:35Z`.
+Generated: `2026-07-28T07:47:34Z`.
 
 Agent-impact rows come from checked-in benchmark artifacts. They show behavioral lift on the configured tasks; they do not claim general agent success outside the listed scenarios.
 
 ## Summary
 
-- Benchmarks covered: `6`.
-- WaveMind rows: `7`.
-- Baseline rows: `12`.
-- WaveMind primary wins: `6`.
-- Average primary lift: `0.346`.
-- Average context saved: `0.719`.
-- Average stale-safety score: `1`.
-- Best impact profile: `agent-coherence-and-token-savings-wavemind`.
+- Benchmarks covered: `7`.
+- WaveMind rows: `9`.
+- Baseline rows: `17`.
+- WaveMind primary wins: `7`.
+- Average primary lift: `0.374`.
+- Average context saved: `0.657`.
+- Average stale-safety score: `0.924`.
+- Best impact profile: `adaptive-agent-memory-advantage-wavemind-plus-memory-os`.
 
 ## WaveMind Impact Ranking
 
 | rank | benchmark | engine | primary metric | value | best baseline | lift | stale safety | context saved | avg latency | source |
 |---:|---|---|---|---:|---:|---:|---:|---:|---:|---|
-| 1 | Agent coherence and token savings | WaveMind | task success | 0.917 | 0.417 | 0.5 | 1 | 0.931 | 1.43 | `benchmarks/agent_coherence_results.json` |
-| 2 | Agent coherence and token savings | WaveMind + Memory OS | task success | 0.917 | 0.417 | 0.5 | 1 | 0.931 | 1.637 | `benchmarks/agent_coherence_results.json` |
-| 3 | Long-term memory evidence | WaveMind | precision@1 | 1 | 0.571 | 0.429 | 1 | 0.866 | 6.103 | `benchmarks/long_memory_evidence_results.json` |
-| 4 | Dynamic memory policy | WaveMind | precision@1 | 1 | 0.571 | 0.429 | 1 | - | 2.158 | `benchmarks/dynamic_memory_results.json` |
-| 5 | LongMemEval evidence retrieval | WaveMind | evidence recall@k | 0.782 | 0.52 | 0.263 | 1 | 0.869 | 7.274 | `benchmarks/longmemeval_evidence_results.json` |
-| 6 | LongMemEval answer quality | WaveMind | token F1 | 0.333 | 0.17 | 0.163 | - | - | 36.59 | `benchmarks/longmemeval_answer_qwen25_1_5b_50_results.json` |
-| 7 | LoCoMo sentence evidence retrieval | WaveMind | evidence recall@k | 0.547 | 0.409 | 0.138 | 1 | 0 | 3.438 | `benchmarks/locomo_sentence_evidence_results.json` |
+| 1 | Adaptive agent-memory advantage | WaveMind + Memory OS | task success | 1 | 0.222 | 0.778 | 1 | 0.502 | - | `benchmarks/agent_memory_advantage_results.json` |
+| 2 | Agent coherence and token savings | WaveMind | task success | 0.917 | 0.417 | 0.5 | 1 | 0.931 | 1.43 | `benchmarks/agent_coherence_results.json` |
+| 3 | Agent coherence and token savings | WaveMind + Memory OS | task success | 0.917 | 0.417 | 0.5 | 1 | 0.931 | 1.637 | `benchmarks/agent_coherence_results.json` |
+| 4 | Long-term memory evidence | WaveMind | precision@1 | 1 | 0.571 | 0.429 | 1 | 0.866 | 6.103 | `benchmarks/long_memory_evidence_results.json` |
+| 5 | Dynamic memory policy | WaveMind | precision@1 | 1 | 0.571 | 0.429 | 1 | - | 3.918 | `benchmarks/dynamic_memory_results.json` |
+| 6 | LongMemEval evidence retrieval | WaveMind | evidence recall@k | 0.782 | 0.52 | 0.263 | 1 | 0.869 | 7.274 | `benchmarks/longmemeval_evidence_results.json` |
+| 7 | Adaptive agent-memory advantage | WaveMind Core | task success | 0.389 | 0.222 | 0.167 | 0.389 | 0.502 | - | `benchmarks/agent_memory_advantage_results.json` |
+| 8 | LongMemEval answer quality | WaveMind | token F1 | 0.333 | 0.17 | 0.163 | - | - | 36.59 | `benchmarks/longmemeval_answer_qwen25_1_5b_50_results.json` |
+| 9 | LoCoMo sentence evidence retrieval | WaveMind | evidence recall@k | 0.547 | 0.409 | 0.138 | 1 | 0 | 3.438 | `benchmarks/locomo_sentence_evidence_results.json` |
 
 ## Benchmark Groups
 
 | benchmark | category | best WaveMind | best baseline | primary lift | source |
 |---|---|---:|---:|---:|---|
+| Adaptive agent-memory advantage | agent_behavior | 1 | 0.222 | 0.778 | `benchmarks/agent_memory_advantage_results.json` |
 | Agent coherence and token savings | agent_behavior | 0.917 | 0.417 | 0.5 | `benchmarks/agent_coherence_results.json` |
 | Dynamic memory policy | memory_policy | 1 | 0.571 | 0.429 | `benchmarks/dynamic_memory_results.json` |
 | Long-term memory evidence | memory_policy | 1 | 0.571 | 0.429 | `benchmarks/long_memory_evidence_results.json` |
@@ -43,4 +46,5 @@ Agent-impact rows come from checked-in benchmark artifacts. They show behavioral
 - Primary lift compares the best WaveMind variant with the best non-WaveMind baseline inside the same artifact.
 - Stale safety is `1 - stale_error_rate` when the benchmark reports stale errors, otherwise `stale_suppression` or `suppression_rate`.
 - Context saved measures prompt/context reduction where the artifact reports `context_budget_saved`.
-- Answer-quality rows use the checked-in local Ollama LongMemEval smoke artifact, not a full independent LLM benchmark.
+- The adaptive advantage row uses seven identical-protocol trials and a 95% paired bootstrap interval; unavailable external competitors remain explicitly skipped.
+- The legacy LongMemEval answer-quality row is a 50-query local Ollama smoke. Full LongMemEval-V2 Small evidence is tracked separately in the admission artifact.

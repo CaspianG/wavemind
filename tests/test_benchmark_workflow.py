@@ -87,6 +87,13 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "python -m wavemind multimodal-admission" in workflow
     assert "--output benchmarks/multimodal_admission_results.json" in workflow
     assert "--markdown-output benchmarks/MULTIMODAL_ADMISSION.md" in workflow
+    assert "python -m wavemind agent-memory-advantage-admission" in workflow
+    assert "benchmarks/agent_memory_advantage_results.json" in workflow
+    assert "benchmarks/AGENT_MEMORY_ADVANTAGE_ADMISSION.md" in workflow
+    assert '--expected-source-sha "$AGENT_MEMORY_SOURCE_SHA"' in workflow
+    assert workflow.index("multimodal-admission") < workflow.index(
+        "agent-memory-advantage-admission"
+    )
     assert "python -m wavemind \\\n            --db .tmp-memory-os-canary.sqlite3" in workflow
     assert "memory-os-canary" in workflow
     assert "--output benchmarks/memory_os_canary_results.json" in workflow
@@ -111,7 +118,9 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     )
     assert workflow.index("serverless-admission") < workflow.index("memory-os-canary")
     assert workflow.index("serverless-admission") < workflow.index("multimodal-admission")
-    assert workflow.index("multimodal-admission") < workflow.index("memory-os-canary")
+    assert workflow.index("agent-memory-advantage-admission") < workflow.index(
+        "memory-os-canary"
+    )
     assert workflow.index("memory-os-canary") < workflow.index(
         "validate_memory_os_admission_artifacts.py"
     )

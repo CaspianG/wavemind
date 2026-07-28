@@ -118,6 +118,11 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         load_errors,
         required=False,
     )
+    agent_memory_admission = _load_json(
+        root / "benchmarks" / "agent_memory_advantage_admission_results.json",
+        load_errors,
+        required=False,
+    )
     structured_memory = _load_json(
         root / "benchmarks" / "structured_memory_results.json",
         load_errors,
@@ -209,6 +214,9 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "benchmarks/production_scale_run_plan.json": scale_run_plan,
         "benchmarks/agent_coherence_results.json": agent_coherence,
         "benchmarks/agent_impact_results.json": agent_impact,
+        "benchmarks/agent_memory_advantage_admission_results.json": (
+            agent_memory_admission
+        ),
         "benchmarks/structured_memory_results.json": structured_memory,
         "benchmarks/memory_os_intelligence_results.json": memory_os_intelligence,
         "benchmarks/cluster_autoscale_results.json": cluster_autoscale,
@@ -296,6 +304,16 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         },
         "agent_quality": _agent_quality_status(agent_coherence),
         "agent_impact": _agent_impact_status(agent_impact),
+        "agent_memory_admission": {
+            "schema": agent_memory_admission.get("schema"),
+            "status": agent_memory_admission.get("status", "missing"),
+            "admitted": agent_memory_admission.get("admitted", False),
+            "source_sha": agent_memory_admission.get("source_sha"),
+            "summary": agent_memory_admission.get("summary", {}),
+            "checks": agent_memory_admission.get("checks", []),
+            "public_evidence": agent_memory_admission.get("public_evidence", {}),
+            "claim_boundary": agent_memory_admission.get("claim_boundary", ""),
+        },
         "structured_memory": _structured_memory_status(structured_memory),
         "multimodal_admission": {
             "schema": multimodal_admission.get("schema"),

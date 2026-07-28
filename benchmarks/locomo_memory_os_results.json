@@ -1,0 +1,102 @@
+{
+  "schema": "wavemind.locomo_memory_os.v1",
+  "source_sha": "590bc8df80e0adf3125f5d33bee0b4f086fe17ab",
+  "scenario": {
+    "name": "locomo_evidence_retrieval",
+    "dataset": "C:\\work\\particles\\wavemind 2.0\\benchmarks\\data\\locomo10.json",
+    "source_url": "https://github.com/snap-research/locomo",
+    "dataset_sha256": "79fa87e90f04081343b8c8debecb80a9a6842b76a7aa537dc9fdf651ea698ff4",
+    "conversations": 10,
+    "memories": 5882,
+    "queries": 1977,
+    "top_k": 5,
+    "description": "LoCoMo retrieval-only evidence benchmark. It uses conversation turns as memories and QA evidence dialog ids as relevance labels."
+  },
+  "embedding": {
+    "kind": "hash-token",
+    "class": "HashingTextEncoder",
+    "cached": true,
+    "vector_dim": 384,
+    "char_ngram_weight": 0.0,
+    "note": "All engines receive embeddings from the same WaveMind encoder."
+  },
+  "field": {
+    "width": 32,
+    "height": 32,
+    "layers": 2
+  },
+  "results": [
+    {
+      "engine": "WaveMind",
+      "evidence_recall_at_k": 0.3870000056244812,
+      "evidence_precision_at_k": 0.08831562974203339,
+      "mrr_at_k": 0.3074102175012645,
+      "precision_at_1": 0.238745574102175,
+      "stale_suppression": 1.0,
+      "category_success": {
+        "1": 0.28113879003558717,
+        "2": 0.425,
+        "3": 0.23595505617977527,
+        "4": 0.5101070154577884,
+        "5": 0.3901345291479821
+      },
+      "context_tokens_returned": 450687,
+      "context_budget_saved": 0.0,
+      "avg_latency_ms": 4.606165503505966,
+      "p50_latency_ms": 4.374199983431026,
+      "p95_latency_ms": 7.609799999045208,
+      "p99_latency_ms": 9.427900018636137,
+      "queries": 1977,
+      "execution_mode": "retrieval",
+      "worker_runs": 0,
+      "maintenance_total_ms": 0.0,
+      "maintenance_avg_ms": 0.0,
+      "end_to_end_p95_ms": 0.0,
+      "cache_hits": 0,
+      "cache_misses": 0,
+      "priority_predictions": 0,
+      "forgetting_demotions": 0,
+      "memory_os_policy_mode": "",
+      "prewarmed_queries": 0,
+      "predictive_prefetch_warmed": 0,
+      "worker_errors": 0,
+      "maintenance_interval_queries": 0
+    },
+    {
+      "engine": "WaveMind + Memory OS",
+      "evidence_recall_at_k": 0.3839651042587756,
+      "evidence_precision_at_k": 0.08770864946889227,
+      "mrr_at_k": 0.30661777103355253,
+      "precision_at_1": 0.23823975720789076,
+      "stale_suppression": 1.0,
+      "category_success": {
+        "1": 0.28113879003558717,
+        "2": 0.425,
+        "3": 0.23595505617977527,
+        "4": 0.5041617122473246,
+        "5": 0.38789237668161436
+      },
+      "context_tokens_returned": 449936,
+      "context_budget_saved": 0.0,
+      "avg_latency_ms": 5.144030955652732,
+      "p50_latency_ms": 4.854300001170486,
+      "p95_latency_ms": 8.500199997797608,
+      "p99_latency_ms": 12.28550000814721,
+      "queries": 1977,
+      "execution_mode": "memory_os_direct_sequential",
+      "worker_runs": 68,
+      "maintenance_total_ms": 10041.6716998443,
+      "maintenance_avg_ms": 147.67164264476912,
+      "end_to_end_p95_ms": 11.077800008933991,
+      "cache_hits": 1464,
+      "cache_misses": 2145,
+      "priority_predictions": 0,
+      "forgetting_demotions": 0,
+      "memory_os_policy_mode": "feedback_free_safe",
+      "prewarmed_queries": 0,
+      "predictive_prefetch_warmed": 180,
+      "worker_errors": 0,
+      "maintenance_interval_queries": 32
+    }
+  ]
+}

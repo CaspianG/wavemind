@@ -384,6 +384,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "multimodal_admission_results.json" in readme
     assert "MULTIMODAL_ADMISSION.md" in readme
     assert "wavemind multimodal-admission" in readme
+    assert "agent_memory_advantage_admission_results.json" in readme
+    assert "longmemeval_v2_small_memory_os_results.json" in readme
     assert "wavemind multimodal-external-evidence" in readme
     assert "multimodal_external_encoder_results.json" in readme
     assert "MULTIMODAL_EXTERNAL_EVIDENCE.md" in readme
@@ -477,6 +479,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "serverless-admission --allow-plan-only" in benchmark_brief
     assert "MULTIMODAL_ADMISSION.md" in benchmark_brief
     assert "multimodal-admission --allow-plan-only" in benchmark_brief
+    assert "agent-memory-advantage-admission" in benchmark_brief
+    assert "longmemeval_v2_small_per_query.jsonl" in benchmark_brief
     assert "multimodal-external-evidence --manifest" in benchmark_brief
     assert "MEMORY_OS_ADMISSION.md" in benchmark_brief
     assert "memory-os-admission --target-memories" in benchmark_brief
@@ -488,6 +492,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "active-active-admission" in roadmap
     assert "serverless-admission" in roadmap
     assert "multimodal-admission" in roadmap
+    assert "agent-memory-advantage-admission" in roadmap
+    assert "LongMemEval-V2 Small" in roadmap
     assert "multimodal-external-evidence" in roadmap
     assert "memory-os-admission" in roadmap
     assert "memory-os-canary" in roadmap

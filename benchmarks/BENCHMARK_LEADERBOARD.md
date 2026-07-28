@@ -1,7 +1,7 @@
 # WaveMind Benchmark Leaderboard
 
 Generated from `benchmarks/benchmark_matrix_results.json`.
-Last refresh: `2026-07-27T21:23:27Z` from `1db5ce3110ed`.
+Last refresh: `2026-07-28T07:47:34Z` from `590bc8df80e0adf3125f5d33bee0b4f086fe17ab`.
 
 This is a compact reader-facing view of checked-in benchmark results. It is not a universal vector-database leaderboard: each row uses the primary quality metric for that benchmark, and latency is shown separately so quality wins are not confused with speed wins.
 
@@ -9,6 +9,7 @@ This is a compact reader-facing view of checked-in benchmark results. It is not 
 |---|---|---|---|---|---|
 | Agent user-memory retrieval | agent-memory | precision@1 | WaveMind: 0.82 / 2.249 ms | Chroma: 0.82 / 0.933 ms | Quality tie; WaveMind slower |
 | Agent coherence and token savings | agent-memory | task success | WaveMind: 0.917 / 1.43 ms | Chroma static: 0.417 / 2.833 ms | WaveMind leads on quality |
+| Adaptive agent-memory advantage | agent-memory | task success | WaveMind + Memory OS: 1 / - | Chroma static: 0.222 / - | WaveMind leads on quality |
 | Dynamic memory policy | agent-memory | precision@1 | WaveMind: 1 / 3.918 ms | Chroma static: 0.571 / 1.662 ms | WaveMind leads on quality |
 | Field memory graph dynamics | agent-memory | precision@1 | WaveMind graph: 1 / 0.332 ms | - | WaveMind-only check |
 | WaveMind capacity curve | capacity | precision@1 | WaveMind dynamic capacity: 1 / 48.4 ms | - | WaveMind-only check |
@@ -29,12 +30,13 @@ This is a compact reader-facing view of checked-in benchmark results. It is not 
 | Production readiness gate | production-scale | readiness score | WaveMind production readiness: 1 / - | - | WaveMind-only check |
 | Memory competitor adapter profile | agent-memory | precision@1 | WaveMind: 0.8 / 14.5 ms | GraphRAG static graph: 0.852 / 0.079 ms | Baseline leads on quality |
 | [LongMemEval answer generation](https://github.com/xiaowu0162/LongMemEval) | long-term-agent-memory | token F1 | WaveMind + qwen2.5:1.5b: 0.333 / - | Chroma static + qwen2.5:1.5b: 0.17 / - | WaveMind leads on quality |
+| [LongMemEval-V2](https://arxiv.org/abs/2605.12493) | web-agent-memory | task success | WaveMind + Memory OS: 0.091 / - | - | WaveMind-only check |
 
 ## Evidence Source Status
 
 | area | current source | claim status | next action |
 |---|---|---|---|
-| Artifact freshness | local matrix refresh at `2026-07-27T21:23:27Z` | source `1db5ce3110ed`; audit gate enforced by `validate_benchmark_artifacts.py` | Keep weekly refresh green before public claims. |
+| Artifact freshness | local matrix refresh at `2026-07-28T07:47:34Z` | source `590bc8df80e0adf3125f5d33bee0b4f086fe17ab`; audit gate enforced by `validate_benchmark_artifacts.py` | Keep weekly refresh green before public claims. |
 | Serverless telemetry | loopback API pool; `loopback-api-capacity-estimate`; 4 measured replicas | observed SLO `True`; loopback evidence, not a managed-serverless claim | Run `.github/workflows/serverless-observed-telemetry.yml` against deployed API nodes. |
 | External HTTP cluster load | kubernetes-kind-non-loopback-ci; `kubernetes-pod-dns-physical-node-drill`; 4 nodes | SLO `True`; non-loopback Kubernetes pod-DNS evidence | Run `.github/workflows/external-http-cluster-load.yml` with a remote node manifest. |
 | External HTTP active-active loopback | local-loopback; `loopback-api-regions`; 3 regions | SLO `True`; external URL contract over local API regions | Run `.github/workflows/external-http-active-active.yml` with remote regions for production evidence. |

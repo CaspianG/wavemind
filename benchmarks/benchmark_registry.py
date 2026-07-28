@@ -724,6 +724,12 @@ def _answer_result_summaries(
 
 def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     agent_payload = _load_json(root / "benchmarks" / "agent_memory_results.json")
+    agent_advantage_payload = _load_json(
+        root / "benchmarks" / "agent_memory_advantage_results.json"
+    )
+    agent_advantage_admission_payload = _load_json(
+        root / "benchmarks" / "agent_memory_advantage_admission_results.json"
+    )
     agent_coherence_payload = _load_json(root / "benchmarks" / "agent_coherence_results.json")
     dynamic_payload = _load_json(root / "benchmarks" / "dynamic_memory_results.json")
     field_payload = _load_json(root / "benchmarks" / "field_memory_dynamics_results.json")
@@ -732,8 +738,14 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     open_retrieval_payload = _load_json(root / "benchmarks" / "open_retrieval_scifact_results.json")
     nomiracl_payload = _load_json(root / "benchmarks" / "nomiracl_russian_results.json")
     locomo_payload = _load_json(root / "benchmarks" / "locomo_evidence_results.json")
+    locomo_memory_os_payload = _load_json(
+        root / "benchmarks" / "locomo_memory_os_results.json"
+    )
     locomo_sentence_payload = _load_json(root / "benchmarks" / "locomo_sentence_evidence_results.json")
     longmemeval_payload = _load_json(root / "benchmarks" / "longmemeval_evidence_results.json")
+    longmemeval_memory_os_payload = _load_json(
+        root / "benchmarks" / "longmemeval_memory_os_results.json"
+    )
     longmemeval_50_payload = _load_json(root / "benchmarks" / "longmemeval_evidence_50_results.json")
     ann_payload = _load_json(root / "benchmarks" / "ann_index_curve_results.json")
     production_index_payload = _load_json(root / "benchmarks" / "production_index_profile_results.json")
@@ -822,14 +834,17 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     memory_competitor_payload = _load_json(root / "benchmarks" / "memory_competitor_results.json")
     answer_payload = _load_json(root / "benchmarks" / "longmemeval_answer_extractive_20_results.json")
     agent_results = _engine_results(agent_payload)
+    agent_advantage_results = _engine_results(agent_advantage_payload)
     agent_coherence_results = _engine_results(agent_coherence_payload)
     dynamic_results = _engine_results(dynamic_payload)
     long_memory_results = _engine_results(long_memory_payload)
     open_retrieval_results = _engine_results(open_retrieval_payload)
     nomiracl_results = _engine_results(nomiracl_payload)
     locomo_results = _engine_results(locomo_payload)
+    locomo_memory_os_results = _engine_results(locomo_memory_os_payload)
     locomo_sentence_results = _engine_results(locomo_sentence_payload)
     longmemeval_results = _engine_results(longmemeval_payload)
+    longmemeval_memory_os_results = _engine_results(longmemeval_memory_os_payload)
     longmemeval_50_results = _engine_results(longmemeval_50_payload)
     ann_results = _ann_latest_results(ann_payload)
     production_index_results = _ann_latest_results(production_index_payload)
@@ -992,6 +1007,68 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 "and observable Memory OS learning signals."
             ),
             "next_step": "Move this scenario from deterministic task scoring to LLM answer-quality scoring on LoCoMo/LongMemEval-style tasks.",
+        },
+        {
+            "id": "agent_memory_advantage",
+            "name": "Adaptive agent-memory advantage",
+            "category": "agent-memory",
+            "status": (
+                "implemented"
+                if agent_advantage_admission_payload
+                and agent_advantage_admission_payload.get("admitted") is True
+                else "runner-ready"
+            ),
+            "source": "benchmarks/agent_memory_advantage_benchmark.py",
+            "dataset": (
+                "Sequential correction, preference, state-transition, and "
+                "workflow-gotcha cases with identical memories, queries, "
+                "embeddings, token budgets, and top-k across engines."
+            ),
+            "competitors": [
+                "WaveMind Core",
+                "full context",
+                "Chroma static",
+                "Qdrant static",
+            ],
+            "metrics": [
+                "task_success_rate",
+                "stale_error_rate",
+                "context_budget_saved",
+                "p95_latency_ms",
+                "combined_score",
+                "paired_ci95",
+            ],
+            "current": {
+                engine: _metric_summary(
+                    agent_advantage_results.get(engine),
+                    (
+                        "task_success_rate",
+                        "stale_error_rate",
+                        "context_budget_saved",
+                        "p50_latency_ms",
+                        "p95_latency_ms",
+                        "p99_latency_ms",
+                        "combined_score",
+                    ),
+                )
+                for engine in (
+                    "WaveMind Core",
+                    "WaveMind + Memory OS",
+                    "Full context",
+                    "Chroma static",
+                    "Qdrant static",
+                )
+            },
+            "target": (
+                "Keep the 13/13 admission green: positive paired lift in at "
+                "least two dynamic categories, positive combined lift over "
+                "the strongest local baseline, stale errors <= 2%, context "
+                "savings >= 30%, and p95 regression within 5 ms and 20%."
+            ),
+            "next_step": (
+                "Extend the same sequential protocol with more independently "
+                "authored tasks while preserving the exact-source admission."
+            ),
         },
         {
             "id": "dynamic_memory_policy",
@@ -1308,9 +1385,23 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                         "p95_latency_ms",
                     ),
                 ),
+                "WaveMind Core direct": _agent_memory_os_summary(
+                    locomo_memory_os_results.get("WaveMind")
+                ),
+                "WaveMind + Memory OS direct": _agent_memory_os_summary(
+                    locomo_memory_os_results.get("WaveMind + Memory OS")
+                ),
             },
-            "target": "Improve LoCoMo evidence_recall@5 with semantic embeddings and keep retrieval latency below 20 ms for WaveMind.",
-            "next_step": "Add LoCoMo answer generation with a local LLM and measure answer accuracy/faithfulness.",
+            "target": (
+                "Keep direct Memory OS execution within one percentage point "
+                "of WaveMind Core quality, expose its maintenance cost, and "
+                "improve LoCoMo evidence recall without hiding regressions."
+            ),
+            "next_step": (
+                "The current direct Memory OS run is admitted but slightly "
+                "below Core on recall; tune feedback-free policies before "
+                "claiming LoCoMo uplift."
+            ),
         },
         {
             "id": "longmemeval_evidence_retrieval",
@@ -1373,9 +1464,23 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                         "p95_latency_ms",
                     ),
                 ),
+                "WaveMind Core direct": _agent_memory_os_summary(
+                    longmemeval_memory_os_results.get("WaveMind")
+                ),
+                "WaveMind + Memory OS direct": _agent_memory_os_summary(
+                    longmemeval_memory_os_results.get("WaveMind + Memory OS")
+                ),
             },
-            "target": "Keep full LongMemEval-S evidence recall above static vector-store baselines while staying below 20 ms retrieval latency.",
-            "next_step": "Run turn-level evidence mode and sentence-transformers, then add LLM answer accuracy/abstention evaluation.",
+            "target": (
+                "Keep the full 470-query direct Memory OS run at Core quality "
+                "with zero worker errors and publish retrieval plus "
+                "maintenance latency separately."
+            ),
+            "next_step": (
+                "The direct run now matches Core retrieval quality; improve "
+                "maintenance amortization before enabling more aggressive "
+                "adaptive policies on this dataset."
+            ),
         },
         {
             "id": "longmemeval_evidence_50_smoke",
@@ -3200,6 +3305,71 @@ def _public_benchmarks(root: Path) -> list[dict[str, Any]]:
             if entry.get("id") == "vectordbbench":
                 entry["current"] = summary
                 break
+    longmemeval_v2_payload = _load_json(
+        root / "benchmarks" / "longmemeval_v2_small_memory_os_results.json"
+    )
+    if longmemeval_v2_payload:
+        results = _engine_results(longmemeval_v2_payload)
+        for entry in entries:
+            if entry.get("id") != "longmemeval_v2":
+                continue
+            entry.update(
+                {
+                    "status": "implemented",
+                    "source": "benchmarks/longmemeval_v2_memory_benchmark.py",
+                    "dataset": (
+                        "Official LongMemEval-V2 Small: 451 web-agent questions, "
+                        "including all 29 image questions, scored by the pinned "
+                        "local qwen2.5vl:3b reader."
+                    ),
+                    "metrics": [
+                        "task_success_rate",
+                        "category_success",
+                        "retrieval_p50_ms",
+                        "retrieval_p95_ms",
+                        "retrieval_p99_ms",
+                        "worker_errors",
+                    ],
+                    "current": {
+                        "WaveMind Core": _metric_summary(
+                            results.get("WaveMind"),
+                            (
+                                "task_success_rate",
+                                "p50_latency_ms",
+                                "p95_latency_ms",
+                                "p99_latency_ms",
+                                "scored_queries",
+                                "errors",
+                            ),
+                        ),
+                        "WaveMind + Memory OS": _metric_summary(
+                            results.get("WaveMind + Memory OS"),
+                            (
+                                "task_success_rate",
+                                "p50_latency_ms",
+                                "p95_latency_ms",
+                                "p99_latency_ms",
+                                "end_to_end_p95_ms",
+                                "worker_runs",
+                                "worker_errors",
+                                "scored_queries",
+                                "errors",
+                            ),
+                        ),
+                    },
+                    "target": (
+                        "Improve task success over WaveMind Core on the full "
+                        "Small tier without worker errors or more than one "
+                        "percentage point of quality regression."
+                    ),
+                    "next_step": (
+                        "Raise absolute answer quality with a stronger local "
+                        "reader while keeping the checked retrieval and Memory "
+                        "OS execution protocol unchanged."
+                    ),
+                }
+            )
+            break
     return entries
 
 

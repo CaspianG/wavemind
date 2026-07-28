@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.memory_os_policy_bundle.v1",
-  "generated_at": "2026-07-20T07:09:38Z",
-  "bundle_id": "memory-os-policy-20260720T070938Z",
+  "generated_at": "2026-07-28T07:52:42Z",
+  "bundle_id": "memory-os-policy-20260728T075242Z",
   "status": "production_ready",
   "ok": true,
   "claim_boundary": "This is an operator-applied Memory OS runtime policy bundle. Production promotion is allowed only when memory-os-admission is admitted with real Redis, distributed locks, runtime environment, and strict large-scale evidence. Automatic promotion remains disabled, and the admission applies only to the exact tested release and topology.",
@@ -169,8 +169,8 @@
           "action": "Keep collecting prewarm hit rate, predictive hit rate, and transition edges in readiness artifacts.",
           "evidence": {
             "namespace": "canary:memory-os",
-            "hot_queries": 16,
-            "prewarm_warmed": 16,
+            "hot_queries": 5,
+            "prewarm_warmed": 5,
             "predictive_generated": 1,
             "predictive_warmed": 1,
             "transition_edges": 0
@@ -184,7 +184,7 @@
           "action": "Keep priority deltas in release evidence and cap per-run boosts to prevent runaway reinforcement.",
           "evidence": {
             "namespace": "canary:memory-os",
-            "priority_predictions": 16
+            "priority_predictions": 5
           }
         },
         {
@@ -195,7 +195,7 @@
           "action": "Keep adaptive forgetting scheduled and validate stale suppression in dynamic benchmarks.",
           "evidence": {
             "namespace": "canary:memory-os",
-            "active_memories": 13
+            "active_memories": 7
           }
         },
         {
@@ -217,7 +217,7 @@
           "action": "Follow next_commands and keep scale-readiness artifacts current before raising release claims.",
           "evidence": {
             "namespace": "canary:memory-os",
-            "active_memories": 13,
+            "active_memories": 7,
             "target_memories": 100000,
             "recommendation_ids": [
               "scale-plan",
