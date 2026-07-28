@@ -13,10 +13,15 @@ from benchmarks.longmemeval_v2_memory_benchmark import (
 
 class FixtureReader:
     model = "fixture-reader"
+    vision_model = "fixture-vision-reader"
     supports_images = True
+
+    def __init__(self):
+        self.answer_calls = 0
 
     def answer(self, *, question, context):
         assert context
+        self.answer_calls += 1
         return f"Evidence considered. \\boxed{{{question.answer}}}"
 
     def judge(self, *, evaluator, question, response):
@@ -142,10 +147,11 @@ def test_official_style_deterministic_scorers():
 
 def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
     _write_fixture(tmp_path)
+    reader = FixtureReader()
 
     payload, rows = run_benchmark(
         tmp_path,
-        reader=FixtureReader(),
+        reader=reader,
         top_k=3,
         work_dir=tmp_path,
     )
@@ -160,5 +166,8 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
     assert memory_os["worker_errors"] == 0
     assert memory_os["maintenance_interval_queries"] == 32
     assert memory_os["task_success_rate"] == 1.0
+    assert memory_os["reused_answers"] == 2
+    assert memory_os["generated_answers"] == 0
+    assert reader.answer_calls == 2
     assert len(rows) == 4
     assert all(row["context_sha256"] for row in rows)

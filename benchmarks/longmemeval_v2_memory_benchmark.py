@@ -281,14 +281,16 @@ class OllamaReader:
         self,
         *,
         model: str,
+        vision_model: str | None = None,
         base_url: str = "http://127.0.0.1:11434",
         supports_images: bool = False,
         timeout_seconds: float = 180.0,
         seed: int = 20260728,
     ) -> None:
         self.model = model
+        self.vision_model = vision_model
         self.base_url = base_url.rstrip("/")
-        self.supports_images = bool(supports_images)
+        self.supports_images = bool(supports_images or vision_model)
         self.timeout_seconds = float(timeout_seconds)
         self.seed = int(seed)
 
@@ -299,8 +301,13 @@ class OllamaReader:
         image: str | None = None,
         max_tokens: int = 256,
     ) -> str:
+        selected_model = (
+            self.vision_model
+            if image is not None and self.vision_model
+            else self.model
+        )
         payload: dict[str, Any] = {
-            "model": self.model,
+            "model": selected_model,
             "prompt": prompt,
             "stream": False,
             "options": {
@@ -543,6 +550,7 @@ def _evaluate_contexts(
     contexts: dict[str, list[str]],
     *,
     reader: Reader | None,
+    reuse_rows: dict[str, dict[str, Any]] | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     if reader is None:
         return (
@@ -556,7 +564,25 @@ def _evaluate_contexts(
         )
     per_query: list[dict[str, Any]] = []
     answer_latencies: list[float] = []
+    reused_answers = 0
     for question in dataset.questions:
+        context_sha = hashlib.sha256(
+            json.dumps(
+                contexts[question.id],
+                ensure_ascii=False,
+            ).encode("utf-8")
+        ).hexdigest()
+        reusable = (reuse_rows or {}).get(question.id)
+        if reusable and reusable.get("context_sha256") == context_sha:
+            per_query.append(
+                {
+                    **reusable,
+                    "response_reused_from": "WaveMind Core",
+                }
+            )
+            answer_latencies.append(0.0)
+            reused_answers += 1
+            continue
         started = time.perf_counter()
         try:
             response = reader.answer(
@@ -579,12 +605,7 @@ def _evaluate_contexts(
                 "passed": passed,
                 "response": response,
                 "error": error,
-                "context_sha256": hashlib.sha256(
-                    json.dumps(
-                        contexts[question.id],
-                        ensure_ascii=False,
-                    ).encode("utf-8")
-                ).hexdigest(),
+                "context_sha256": context_sha,
             }
         )
     scored = len(per_query)
@@ -600,6 +621,7 @@ def _evaluate_contexts(
         {
             "evaluation_mode": "official_answer_local_reader",
             "reader_model": reader.model,
+            "reader_vision_model": getattr(reader, "vision_model", None),
             "task_success_rate": (
                 statistics.mean(1.0 if row["passed"] else 0.0 for row in per_query)
                 if per_query
@@ -612,6 +634,8 @@ def _evaluate_contexts(
             "answer_p99_latency_ms": _percentile(answer_latencies, 0.99),
             "image_questions_supported": reader.supports_images,
             "errors": sum(1 for row in per_query if row["error"]),
+            "generated_answers": scored - reused_answers,
+            "reused_answers": reused_answers,
         },
         per_query,
     )
@@ -638,6 +662,9 @@ def run_benchmark(
         memory = WaveMind(
             db_path=Path(temp_dir) / "longmemeval-v2-small.sqlite3",
             encoder=encoder,
+            width=32,
+            height=32,
+            layers=2,
             index_kind="numpy",
             score_threshold=0.0,
             evolve_on_feed=0,
@@ -680,18 +707,15 @@ def run_benchmark(
         core_contexts,
         reader=reader,
     )
-    if core_contexts == os_contexts:
-        os_quality = dict(core_quality)
-        os_rows = [
-            {**row, "response_reused_from": "WaveMind Core"}
+    os_quality, os_rows = _evaluate_contexts(
+        dataset,
+        os_contexts,
+        reader=reader,
+        reuse_rows={
+            str(row["question_id"]): row
             for row in core_rows
-        ]
-    else:
-        os_quality, os_rows = _evaluate_contexts(
-            dataset,
-            os_contexts,
-            reader=reader,
-        )
+        },
+    )
     results = [
         {"engine": "WaveMind", **core_metrics, **core_quality},
         {"engine": "WaveMind + Memory OS", **os_metrics, **os_quality},
@@ -737,13 +761,20 @@ def run_benchmark(
             },
             "dataset_checksums": dataset.source_files,
             "embedding": {
-                "kind": "hash",
+                "kind": "hash-token",
                 "class": type(encoder).__name__,
                 "vector_dim": int(encoder.vector_dim),
+                "char_ngram_weight": encoder.char_ngram_weight,
             },
+            "field": {"width": 32, "height": 32, "layers": 2},
             "reader": {
                 "kind": "ollama" if reader is not None else "none",
                 "model": reader.model if reader is not None else None,
+                "vision_model": (
+                    getattr(reader, "vision_model", None)
+                    if reader is not None
+                    else None
+                ),
                 "supports_images": (
                     reader.supports_images if reader is not None else False
                 ),
@@ -767,6 +798,7 @@ def main() -> int:
     parser.add_argument("--limit-questions", type=int)
     parser.add_argument("--work-dir", type=Path)
     parser.add_argument("--ollama-model")
+    parser.add_argument("--ollama-vision-model")
     parser.add_argument(
         "--ollama-base-url",
         default=os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434"),
@@ -786,6 +818,7 @@ def main() -> int:
     reader = (
         OllamaReader(
             model=args.ollama_model,
+            vision_model=args.ollama_vision_model,
             base_url=args.ollama_base_url,
             supports_images=args.reader_supports_images,
         )
