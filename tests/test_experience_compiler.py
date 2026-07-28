@@ -7,6 +7,7 @@ import pytest
 from wavemind import (
     ExperienceApplicability,
     ExperienceCompiler,
+    ExperienceCompilerPolicy,
     ExperienceKind,
     ExperienceOutcome,
     ExperienceRecord,
@@ -97,6 +98,11 @@ def test_submit_quarantines_prompt_injection(compiler):
     assert decision.tainted is True
     assert stored.status == ExperienceStatus.QUARANTINED
     assert stored.metadata["tainted"] is True
+
+
+def test_compiler_policy_rejects_non_positive_recency_half_life():
+    with pytest.raises(ValueError, match="recency_half_life_days"):
+        ExperienceCompilerPolicy(recency_half_life_days=0.0)
 
 
 def test_repeated_validation_promotes_shadow_to_canary_then_active(compiler):

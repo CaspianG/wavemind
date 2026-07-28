@@ -63,6 +63,8 @@ class ExperienceCompilerPolicy:
             raise ValueError("default_token_budget must be at least 32")
         if self.max_item_tokens < 8:
             raise ValueError("max_item_tokens must be at least 8")
+        if self.recency_half_life_days <= 0.0:
+            raise ValueError("recency_half_life_days must be positive")
         weights = (
             self.vector_weight,
             self.lexical_weight,
