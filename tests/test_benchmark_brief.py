@@ -8,6 +8,10 @@ def test_public_benchmark_brief_links_checked_in_artifacts_and_commands():
         "benchmarks/agent_memory_advantage_results.json",
         "benchmarks/agent_memory_advantage_admission_results.json",
         "benchmarks/AGENT_MEMORY_ADVANTAGE_ADMISSION.md",
+        "benchmarks/experienced_work_agent_results.json",
+        "benchmarks/EXPERIENCED_WORK_AGENT.md",
+        "benchmarks/experience_quality_admission_results.json",
+        "benchmarks/EXPERIENCE_QUALITY_ADMISSION.md",
         "benchmarks/agent_impact_results.json",
         "benchmarks/AGENT_IMPACT.md",
         "benchmarks/structured_memory_results.json",
@@ -44,6 +48,8 @@ def test_public_benchmark_brief_links_checked_in_artifacts_and_commands():
     commands = [
         "python benchmarks/agent_coherence_benchmark.py",
         "python benchmarks/agent_memory_advantage_benchmark.py",
+        "python benchmarks/experienced_work_agent_benchmark.py",
+        "wavemind experience-quality-admission",
         "python benchmarks/agent_impact_leaderboard.py",
         "python benchmarks/structured_memory_report.py",
         "python benchmarks/memory_os_intelligence_report.py",
@@ -69,7 +75,8 @@ def test_public_benchmark_brief_links_checked_in_artifacts_and_commands():
 
     assert "does not claim WaveMind is a faster static vector database" in brief
     assert "Agent impact leaderboard" in brief
-    assert "7/7` primary wins" in brief
+    assert "8/8` primary wins" in brief
+    assert "Experienced Work Agent" in brief
     assert "Structured memory report" in brief
     assert "7` modalities" in brief
     assert "Memory OS intelligence report" in brief

@@ -1,0 +1,148 @@
+{
+  "schema": "wavemind.experience_quality_admission.v1",
+  "status": "admitted",
+  "admitted": true,
+  "evaluated_at": "2026-07-28T17:24:48Z",
+  "source_sha": "3fd809796157f2c2092b4d5f4ab194fedcc270f8",
+  "artifact": "benchmarks/experienced_work_agent_results.json",
+  "checks": [
+    {
+      "id": "artifact-schema",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "schema": "wavemind.experienced_work_agent_benchmark.v1",
+        "status": "pass"
+      },
+      "target": "passing experienced-work-agent v1 artifact",
+      "issue": ""
+    },
+    {
+      "id": "source-sha",
+      "passed": true,
+      "status": "pass",
+      "evidence": "3fd809796157f2c2092b4d5f4ab194fedcc270f8",
+      "target": "3fd809796157f2c2092b4d5f4ab194fedcc270f8",
+      "issue": ""
+    },
+    {
+      "id": "frozen-split",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "revision": "experienced-work-agent-v1-frozen-20260728",
+        "fingerprint_sha256": "0d8a6b2de3e18f6273f3b148e6fb4b1fbfb7fa0b79dd82c42efb3973caf41225",
+        "training_trajectories": 60,
+        "held_out_tasks": 30,
+        "metadata_leakage": false
+      },
+      "target": "frozen 60/30 split with exact fingerprint and no leakage",
+      "issue": ""
+    },
+    {
+      "id": "fair-protocol",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "same_held_out_tasks": true,
+        "same_runtime_verifiers": true,
+        "same_tool_implementations": true,
+        "no_paid_api": true,
+        "experience_promotion_gates": true,
+        "core_top_k": 3
+      },
+      "target": "same tasks, runtimes, tools, and gated experience promotion",
+      "issue": ""
+    },
+    {
+      "id": "training-evidence",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "successful": 48,
+        "failed": 12,
+        "known_error_codes": [
+          "approval_missing",
+          "case_closed_before_merge",
+          "config_keys_lost",
+          "duplicate_ledger_entry",
+          "execution_missing",
+          "identity_lookup_missing",
+          "identity_not_verified",
+          "merge_not_completed",
+          "schema_field_lost",
+          "update_missing"
+        ],
+        "active_strategies": 6
+      },
+      "target": "48 verified successes, 12 observed failures, 6 active strategies",
+      "issue": ""
+    },
+    {
+      "id": "task-success-uplift",
+      "passed": true,
+      "status": "pass",
+      "evidence": 0.8333333333333334,
+      "target": ">= 0.15",
+      "issue": ""
+    },
+    {
+      "id": "repeated-error-reduction",
+      "passed": true,
+      "status": "pass",
+      "evidence": 1.0,
+      "target": ">= 0.50",
+      "issue": ""
+    },
+    {
+      "id": "tool-step-reduction",
+      "passed": true,
+      "status": "pass",
+      "evidence": 0.25,
+      "target": ">= 0.25",
+      "issue": ""
+    },
+    {
+      "id": "context-token-reduction",
+      "passed": true,
+      "status": "pass",
+      "evidence": 0.4,
+      "target": ">= 0.35",
+      "issue": ""
+    },
+    {
+      "id": "p95-latency",
+      "passed": true,
+      "status": "pass",
+      "evidence": -0.4802689904278913,
+      "target": "<= 0.20 relative regression",
+      "issue": ""
+    },
+    {
+      "id": "held-out-parity",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "cold": 30,
+        "core": 30,
+        "experience": 30
+      },
+      "target": "same 30 ordered held-out IDs for all engines",
+      "issue": ""
+    },
+    {
+      "id": "embedded-checks",
+      "passed": true,
+      "status": "pass",
+      "evidence": 8,
+      "target": "all embedded benchmark checks pass",
+      "issue": ""
+    }
+  ],
+  "summary": {
+    "checks_passed": 12,
+    "checks_total": 12,
+    "blocker_count": 0
+  },
+  "issues": []
+}

@@ -48,6 +48,7 @@ claim that one vector database should replace every other system.
 |---|---|---|
 | Production Memory OS | `admitted`, 13/13 requirements | [`memory_os_admission_results.json`](benchmarks/memory_os_admission_results.json) |
 | Adaptive agent-memory advantage | `admitted`, 13/13 checks; task success `38.9%` -> `100%`, stale errors `61.1%` -> `0%` | [`agent_memory_advantage_admission_results.json`](benchmarks/agent_memory_advantage_admission_results.json) |
+| Experienced Work Agent | `admitted`, 12/12 checks; held-out success `16.7%` -> `100%`, repeated errors `83.3%` -> `0%`, context `-40%` | [`experience_quality_admission_results.json`](benchmarks/experience_quality_admission_results.json) |
 | Remote Redis/worker soak | 6 hours, 500/500 cycles, 2,500 attempts, zero failures or state corruption | [`memory_os_remote_worker_soak_results.json`](benchmarks/memory_os_remote_worker_soak_results.json) |
 | LongMemEval-V2 Small | 451/451 questions, all 29 image questions; task success `7.54%` -> `9.09%` with Memory OS | [`longmemeval_v2_small_memory_os_results.json`](benchmarks/longmemeval_v2_small_memory_os_results.json) |
 | Core production readiness | `pass`, 39/39 criteria | [`production_readiness_results.json`](benchmarks/production_readiness_results.json) |

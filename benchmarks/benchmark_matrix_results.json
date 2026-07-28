@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-28T07:47:34Z",
-  "source_ref": "590bc8df80e0adf3125f5d33bee0b4f086fe17ab",
+  "generated_at": "2026-07-28T17:24:48Z",
+  "source_ref": "3fd809796157",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -117,6 +117,50 @@
       },
       "target": "Show that dynamic memory improves agent behavior, not only retrieval: higher task success, fewer stale errors, longer coherent runs, compact context, and observable Memory OS learning signals.",
       "next_step": "Move this scenario from deterministic task scoring to LLM answer-quality scoring on LoCoMo/LongMemEval-style tasks."
+    },
+    {
+      "id": "experienced_work_agent",
+      "name": "Experienced Work Agent",
+      "category": "agent-experience",
+      "status": "implemented",
+      "source": "benchmarks/experienced_work_agent_benchmark.py",
+      "dataset": "60 verified training trajectories and 30 frozen held-out coding, support, and enterprise work tasks",
+      "competitors": [
+        "Cold work agent",
+        "WaveMind Core"
+      ],
+      "metrics": [
+        "task_success_rate",
+        "repeated_error_rate",
+        "median_tool_steps",
+        "median_context_tokens",
+        "p95_latency_ms"
+      ],
+      "current": {
+        "Cold work agent": {
+          "task_success_rate": 0.0,
+          "repeated_error_rate": 1.0,
+          "median_tool_steps": 4.0,
+          "median_context_tokens": 0.0,
+          "p95_latency_ms": 28.957700000319164
+        },
+        "WaveMind Core": {
+          "task_success_rate": 0.16666666666666666,
+          "repeated_error_rate": 0.8333333333333334,
+          "median_tool_steps": 4.0,
+          "median_context_tokens": 60.0,
+          "p95_latency_ms": 36.997600000177044
+        },
+        "WaveMind Experience": {
+          "task_success_rate": 1.0,
+          "repeated_error_rate": 0.0,
+          "median_tool_steps": 3.0,
+          "median_context_tokens": 36.0,
+          "p95_latency_ms": 19.228799999837065
+        }
+      },
+      "target": "Beat WaveMind Core by at least 15 percentage points of task success, halve repeated errors, reduce steps by 25% and context by 35%, with no more than 20% p95 regression.",
+      "next_step": "Add independently sourced public work-agent tasks and real Mem0, Zep, and Letta provider baselines."
     },
     {
       "id": "agent_memory_advantage",

@@ -6,7 +6,10 @@ authoritative release sources.
 
 ## Unreleased
 
-No unreleased changes.
+- Added the Experienced Work Agent runtime, which compiles guarded experience
+  records into tool plans and learns only from verified trajectories.
+- Added a frozen 60/30 coding, support, and enterprise benchmark plus a strict
+  12-check quality admission and weekly evidence refresh.
 
 ## [2.8.0] - 2026-07-28
 
