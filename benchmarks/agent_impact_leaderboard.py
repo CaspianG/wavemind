@@ -28,6 +28,13 @@ IMPACT_ARTIFACTS = (
         "primary_label": "task success",
     },
     {
+        "path": "benchmarks/experienced_work_agent_results.json",
+        "benchmark": "Experienced Work Agent",
+        "category": "agent_experience",
+        "primary_metric": "task_success_rate",
+        "primary_label": "task success",
+    },
+    {
         "path": "benchmarks/dynamic_memory_results.json",
         "benchmark": "Dynamic memory policy",
         "category": "memory_policy",

@@ -142,6 +142,16 @@ jobs:
             --engines wavemind chroma \
             --memories 200 \
             --output benchmarks/dynamic_memory_results.json
+          python benchmarks/experienced_work_agent_benchmark.py \
+            --output benchmarks/experienced_work_agent_results.json \
+            --markdown benchmarks/EXPERIENCED_WORK_AGENT.md
+          python -m wavemind experience-quality-admission \
+            --root . \
+            --expected-source-sha "${GITHUB_SHA}" \
+            --write-artifacts \
+            --fail-on-blocked \
+            --output benchmarks/experience_quality_admission_results.json \
+            --markdown-output benchmarks/EXPERIENCE_QUALITY_ADMISSION.md
           python benchmarks/field_memory_dynamics_benchmark.py \
             --output benchmarks/field_memory_dynamics_results.json
           python benchmarks/serverless_observed_telemetry_benchmark.py \

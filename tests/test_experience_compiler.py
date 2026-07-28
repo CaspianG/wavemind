@@ -302,6 +302,41 @@ def test_packet_excludes_quarantined_and_shadow_records(compiler):
     assert packet.items == ()
 
 
+def test_packet_filters_explicit_applicability_and_supports_references(
+    compiler,
+):
+    matching = _record(id="matching", status=ExperienceStatus.ACTIVE)
+    incompatible = replace(
+        _record(id="incompatible", status=ExperienceStatus.ACTIVE),
+        applicability=ExperienceApplicability(
+            domains=("customer-support",),
+            task_types=("ticket-triage",),
+            tools=("crm",),
+        ),
+    )
+    compiler.store.put(matching)
+    compiler.store.put(incompatible)
+
+    packet = compiler.compile_packet(
+        "Recover the failed deployment.",
+        namespace="agent",
+        context=FirewallContext(namespace="agent"),
+        domains=("release-engineering",),
+        task_types=("deployment-recovery",),
+        tools=("kubectl", "git", "pytest"),
+        reference_only=True,
+    )
+
+    assert [item.experience_id for item in packet.items] == ["matching"]
+    assert packet.items[0].excerpt == ""
+    assert packet.compiler_policy["reference_only"] is True
+    assert "Experience refs [agent]:" in packet.as_prompt()
+    assert matching.content not in packet.as_prompt()
+    assert packet.estimated_tokens == max(
+        1, (len(packet.as_prompt()) + 3) // 4
+    )
+
+
 def test_protected_delete_requires_privileged_consent(compiler):
     protected = _record(
         id="protected",

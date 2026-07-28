@@ -731,6 +731,9 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
         root / "benchmarks" / "agent_memory_advantage_admission_results.json"
     )
     agent_coherence_payload = _load_json(root / "benchmarks" / "agent_coherence_results.json")
+    experienced_work_agent_payload = _load_json(
+        root / "benchmarks" / "experienced_work_agent_results.json"
+    )
     dynamic_payload = _load_json(root / "benchmarks" / "dynamic_memory_results.json")
     field_payload = _load_json(root / "benchmarks" / "field_memory_dynamics_results.json")
     capacity_payload = _load_json(root / "benchmarks" / "wavemind_capacity_results.json")
@@ -836,6 +839,9 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     agent_results = _engine_results(agent_payload)
     agent_advantage_results = _engine_results(agent_advantage_payload)
     agent_coherence_results = _engine_results(agent_coherence_payload)
+    experienced_work_agent_results = _engine_results(
+        experienced_work_agent_payload
+    )
     dynamic_results = _engine_results(dynamic_payload)
     long_memory_results = _engine_results(long_memory_payload)
     open_retrieval_results = _engine_results(open_retrieval_payload)
@@ -1007,6 +1013,56 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 "and observable Memory OS learning signals."
             ),
             "next_step": "Move this scenario from deterministic task scoring to LLM answer-quality scoring on LoCoMo/LongMemEval-style tasks.",
+        },
+        {
+            "id": "experienced_work_agent",
+            "name": "Experienced Work Agent",
+            "category": "agent-experience",
+            "status": (
+                "implemented"
+                if experienced_work_agent_payload
+                and experienced_work_agent_payload.get("status") == "pass"
+                else "runner-ready"
+            ),
+            "source": "benchmarks/experienced_work_agent_benchmark.py",
+            "dataset": (
+                "60 verified training trajectories and 30 frozen held-out "
+                "coding, support, and enterprise work tasks"
+            ),
+            "competitors": ["Cold work agent", "WaveMind Core"],
+            "metrics": [
+                "task_success_rate",
+                "repeated_error_rate",
+                "median_tool_steps",
+                "median_context_tokens",
+                "p95_latency_ms",
+            ],
+            "current": {
+                engine: _metric_summary(
+                    experienced_work_agent_results.get(engine),
+                    (
+                        "task_success_rate",
+                        "repeated_error_rate",
+                        "median_tool_steps",
+                        "median_context_tokens",
+                        "p95_latency_ms",
+                    ),
+                )
+                for engine in (
+                    "Cold work agent",
+                    "WaveMind Core",
+                    "WaveMind Experience",
+                )
+            },
+            "target": (
+                "Beat WaveMind Core by at least 15 percentage points of task "
+                "success, halve repeated errors, reduce steps by 25% and "
+                "context by 35%, with no more than 20% p95 regression."
+            ),
+            "next_step": (
+                "Add independently sourced public work-agent tasks and real "
+                "Mem0, Zep, and Letta provider baselines."
+            ),
         },
         {
             "id": "agent_memory_advantage",

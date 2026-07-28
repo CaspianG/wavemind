@@ -136,6 +136,13 @@ policy matters more than raw vector-database scale:
   public evidence layer for "agents use fewer tokens and make fewer memory
   mistakes"; it remains bounded to the listed scenarios until larger public
   answer-quality runs are checked in.
+- The Experienced Work Agent now compiles typed, firewall-checked experience
+  references into executable tool plans and learns only from verified runtime
+  outcomes. Its frozen 60-training / 30-held-out local benchmark covers coding,
+  support, and enterprise workflows; the current 12/12 admission records task
+  success `16.7% -> 100%`, repeated errors `83.3% -> 0%`, 25% fewer tool
+  steps, 40% less context, and p95 within the 20% budget. This is controlled
+  local product evidence, not yet a public-dataset or external-agent claim.
 - `benchmarks/memory_os_intelligence_report.py` now turns checked-in Memory OS
   worker evidence into `benchmarks/memory_os_intelligence_results.json` and
   `benchmarks/MEMORY_OS_INTELLIGENCE.md`. It exposes hot-query prewarm,

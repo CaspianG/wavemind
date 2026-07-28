@@ -1,0 +1,4703 @@
+{
+  "schema": "wavemind.experienced_work_agent_benchmark.v1",
+  "status": "pass",
+  "generated_at": "2026-07-28T17:24:47Z",
+  "source_sha": "3fd809796157f2c2092b4d5f4ab194fedcc270f8",
+  "dataset": {
+    "revision": "experienced-work-agent-v1-frozen-20260728",
+    "fingerprint_sha256": "0d8a6b2de3e18f6273f3b148e6fb4b1fbfb7fa0b79dd82c42efb3973caf41225",
+    "training_trajectories": 60,
+    "held_out_tasks": 30,
+    "held_out_ids": [
+      "heldout-coding-config-00",
+      "heldout-coding-config-01",
+      "heldout-coding-config-02",
+      "heldout-coding-config-03",
+      "heldout-coding-config-04",
+      "heldout-coding-schema-00",
+      "heldout-coding-schema-01",
+      "heldout-coding-schema-02",
+      "heldout-coding-schema-03",
+      "heldout-coding-schema-04",
+      "heldout-support-identity-00",
+      "heldout-support-identity-01",
+      "heldout-support-identity-02",
+      "heldout-support-identity-03",
+      "heldout-support-identity-04",
+      "heldout-support-duplicate-00",
+      "heldout-support-duplicate-01",
+      "heldout-support-duplicate-02",
+      "heldout-support-duplicate-03",
+      "heldout-support-duplicate-04",
+      "heldout-enterprise-approval-00",
+      "heldout-enterprise-approval-01",
+      "heldout-enterprise-approval-02",
+      "heldout-enterprise-approval-03",
+      "heldout-enterprise-approval-04",
+      "heldout-enterprise-idempotency-00",
+      "heldout-enterprise-idempotency-01",
+      "heldout-enterprise-idempotency-02",
+      "heldout-enterprise-idempotency-03",
+      "heldout-enterprise-idempotency-04"
+    ],
+    "split_frozen_before_training": true,
+    "metadata_leakage": false
+  },
+  "protocol": {
+    "same_held_out_tasks": true,
+    "same_runtime_verifiers": true,
+    "same_tool_implementations": true,
+    "no_paid_api": true,
+    "experience_promotion_gates": true,
+    "core_top_k": 3
+  },
+  "training": {
+    "successful": 48,
+    "failed": 12,
+    "known_error_codes": [
+      "approval_missing",
+      "case_closed_before_merge",
+      "config_keys_lost",
+      "duplicate_ledger_entry",
+      "execution_missing",
+      "identity_lookup_missing",
+      "identity_not_verified",
+      "merge_not_completed",
+      "schema_field_lost",
+      "update_missing"
+    ],
+    "active_strategies": 6
+  },
+  "results": [
+    {
+      "engine": "Cold work agent",
+      "task_success_rate": 0.0,
+      "repeated_error_rate": 1.0,
+      "median_tool_steps": 4.0,
+      "median_context_tokens": 0.0,
+      "p95_latency_ms": 28.957700000319164,
+      "domain_success": {
+        "coding_repository": 0.0,
+        "enterprise_workflow": 0.0,
+        "support_crm": 0.0
+      },
+      "case_count": 30
+    },
+    {
+      "engine": "WaveMind Core",
+      "task_success_rate": 0.16666666666666666,
+      "repeated_error_rate": 0.8333333333333334,
+      "median_tool_steps": 4.0,
+      "median_context_tokens": 60.0,
+      "p95_latency_ms": 36.997600000177044,
+      "domain_success": {
+        "coding_repository": 0.3,
+        "enterprise_workflow": 0.2,
+        "support_crm": 0.0
+      },
+      "case_count": 30
+    },
+    {
+      "engine": "WaveMind Experience",
+      "task_success_rate": 1.0,
+      "repeated_error_rate": 0.0,
+      "median_tool_steps": 3.0,
+      "median_context_tokens": 36.0,
+      "p95_latency_ms": 19.228799999837065,
+      "domain_success": {
+        "coding_repository": 1.0,
+        "enterprise_workflow": 1.0,
+        "support_crm": 1.0
+      },
+      "case_count": 30
+    }
+  ],
+  "uplift": {
+    "task_success_absolute": 0.8333333333333334,
+    "repeated_error_relative_reduction": 1.0,
+    "tool_step_relative_reduction": 0.25,
+    "context_token_relative_reduction": 0.4,
+    "p95_latency_regression": -0.4802689904278913
+  },
+  "checks": [
+    {
+      "id": "training-count",
+      "passed": true,
+      "evidence": 60,
+      "target": 60
+    },
+    {
+      "id": "held-out-count",
+      "passed": true,
+      "evidence": 30,
+      "target": 30
+    },
+    {
+      "id": "held-out-domain-balance",
+      "passed": true,
+      "evidence": {
+        "coding_repository": 10,
+        "support_crm": 10,
+        "enterprise_workflow": 10
+      },
+      "target": "10 per domain"
+    },
+    {
+      "id": "task-success-uplift",
+      "passed": true,
+      "evidence": 0.8333333333333334,
+      "target": ">= 0.15 absolute over WaveMind Core"
+    },
+    {
+      "id": "repeated-error-reduction",
+      "passed": true,
+      "evidence": 1.0,
+      "target": ">= 0.50 relative"
+    },
+    {
+      "id": "tool-step-reduction",
+      "passed": true,
+      "evidence": 0.25,
+      "target": ">= 0.25 relative"
+    },
+    {
+      "id": "context-token-reduction",
+      "passed": true,
+      "evidence": 0.4,
+      "target": ">= 0.35 relative"
+    },
+    {
+      "id": "p95-latency",
+      "passed": true,
+      "evidence": -0.4802689904278913,
+      "target": "<= 0.20 relative"
+    }
+  ],
+  "held_out_results": {
+    "cold": [
+      {
+        "request_id": "heldout-coding-config-00",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "overwrite_config",
+          "run_config_tests",
+          "inspect_config",
+          "update_config"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 0,
+        "repeated_error_codes": [
+          "config_keys_lost"
+        ],
+        "latency_ms": 6.6246999995200895,
+        "domain": "coding_repository",
+        "task_type": "safe_config_change"
+      },
+      {
+        "request_id": "heldout-coding-config-01",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "overwrite_config",
+          "run_config_tests",
+          "inspect_config",
+          "update_config"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 0,
+        "repeated_error_codes": [
+          "config_keys_lost"
+        ],
+        "latency_ms": 6.146099998659338,
+        "domain": "coding_repository",
+        "task_type": "safe_config_change"
+      },
+      {
+        "request_id": "heldout-coding-config-02",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "overwrite_config",
+          "run_config_tests",
+          "inspect_config",
+          "update_config"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 0,
+        "repeated_error_codes": [
+          "config_keys_lost"
+        ],
+        "latency_ms": 6.051800000932417,
+        "domain": "coding_repository",
+        "task_type": "safe_config_change"
+      },
+      {
+        "request_id": "heldout-coding-config-03",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "overwrite_config",
+          "run_config_tests",
+          "inspect_config",
+          "update_config"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 0,
+        "repeated_error_codes": [
+          "config_keys_lost"
+        ],
+        "latency_ms": 6.5549000009923475,
+        "domain": "coding_repository",
+        "task_type": "safe_config_change"
+      },
+      {
+        "request_id": "heldout-coding-config-04",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "overwrite_config",
+          "run_config_tests",
+          "inspect_config",
+          "update_config"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 0,
+        "repeated_error_codes": [
+          "config_keys_lost"
+        ],
+        "latency_ms": 7.2880999996414175,
+        "domain": "coding_repository",
+        "task_type": "safe_config_change"
+      },
+      {
+        "request_id": "heldout-coding-schema-00",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "replace_schema",
+          "run_schema_tests",
+          "inspect_schema",
+          "migrate_schema"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 0,
+        "repeated_error_codes": [
+          "schema_field_lost"
+        ],
+        "latency_ms": 7.058099999994738,
+        "domain": "coding_repository",
+        "task_type": "compatible_schema_migration"
+      },
+      {
+        "request_id": "heldout-coding-schema-01",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "replace_schema",
+          "run_schema_tests",
+          "inspect_schema",
+          "migrate_schema"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 0,
+        "repeated_error_codes": [
+          "schema_field_lost"
+        ],
+        "latency_ms": 7.334800000535324,
+        "domain": "coding_repository",
+        "task_type": "compatible_schema_migration"
+      },
+      {
+        "request_id": "heldout-coding-schema-02",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "replace_schema",
+          "run_schema_tests",
+          "inspect_schema",
+          "migrate_schema"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 0,
+        "repeated_error_codes": [
+          "schema_field_lost"
+        ],
+        "latency_ms": 6.486100000984152,
+        "domain": "coding_repository",
+        "task_type": "compatible_schema_migration"
+      },
+      {
+        "request_id": "heldout-coding-schema-03",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "replace_schema",
+          "run_schema_tests",
+          "inspect_schema",
+          "migrate_schema"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 0,
+        "repeated_error_codes": [
+          "schema_field_lost"
+        ],
+        "latency_ms": 6.824699999924633,
+        "domain": "coding_repository",
+        "task_type": "compatible_schema_migration"
+      },
+      {
+        "request_id": "heldout-coding-schema-04",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "replace_schema",
+          "run_schema_tests",
+          "inspect_schema",
+          "migrate_schema"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 0,
+        "repeated_error_codes": [
+          "schema_field_lost"
+        ],
+        "latency_ms": 5.783200000223587,
+        "domain": "coding_repository",
+        "task_type": "compatible_schema_migration"
+      },
+      {
+        "request_id": "heldout-support-identity-00",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "update_customer",
+          "verify_identity",
+          "confirm_update",
+          "lookup_customer"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 0,
+        "repeated_error_codes": [
+          "identity_lookup_missing",
+          "identity_not_verified",
+          "update_missing"
+        ],
+        "latency_ms": 18.938799999887124,
+        "domain": "support_crm",
+        "task_type": "verified_customer_update"
+      },
+      {
+        "request_id": "heldout-support-identity-01",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "update_customer",
+          "verify_identity",
+          "confirm_update",
+          "lookup_customer"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 0,
+        "repeated_error_codes": [
+          "identity_lookup_missing",
+          "identity_not_verified",
+          "update_missing"
+        ],
+        "latency_ms": 19.909000000552624,
+        "domain": "support_crm",
+        "task_type": "verified_customer_update"
+      },
+      {
+        "request_id": "heldout-support-identity-02",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "update_customer",
+          "verify_identity",
+          "confirm_update",
+          "lookup_customer"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 0,
+        "repeated_error_codes": [
+          "identity_lookup_missing",
+          "identity_not_verified",
+          "update_missing"
+        ],
+        "latency_ms": 20.663100000092527,
+        "domain": "support_crm",
+        "task_type": "verified_customer_update"
+      },
+      {
+        "request_id": "heldout-support-identity-03",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "update_customer",
+          "verify_identity",
+          "confirm_update",
+          "lookup_customer"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 0,
+        "repeated_error_codes": [
+          "identity_lookup_missing",
+          "identity_not_verified",
+          "update_missing"
+        ],
+        "latency_ms": 20.745699999679346,
+        "domain": "support_crm",
+        "task_type": "verified_customer_update"
+      },
+      {
+        "request_id": "heldout-support-identity-04",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "update_customer",
+          "verify_identity",
+          "confirm_update",
+          "lookup_customer"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 0,
+        "repeated_error_codes": [
+          "identity_lookup_missing",
+          "identity_not_verified",
+          "update_missing"
+        ],
+        "latency_ms": 20.130900000367546,
+        "domain": "support_crm",
+        "task_type": "verified_customer_update"
+      },
+      {
+        "request_id": "heldout-support-duplicate-00",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "close_case",
+          "search_duplicates",
+          "merge_cases",
+          "notify_customer"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 0,
+        "repeated_error_codes": [
+          "case_closed_before_merge",
+          "merge_not_completed"
+        ],
+        "latency_ms": 25.574600000254577,
+        "domain": "support_crm",
+        "task_type": "duplicate_case_resolution"
+      },
+      {
+        "request_id": "heldout-support-duplicate-01",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "close_case",
+          "search_duplicates",
+          "merge_cases",
+          "notify_customer"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 0,
+        "repeated_error_codes": [
+          "case_closed_before_merge",
+          "merge_not_completed"
+        ],
+        "latency_ms": 26.794299999892246,
+        "domain": "support_crm",
+        "task_type": "duplicate_case_resolution"
+      },
+      {
+        "request_id": "heldout-support-duplicate-02",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "close_case",
+          "search_duplicates",
+          "merge_cases",
+          "notify_customer"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 0,
+        "repeated_error_codes": [
+          "case_closed_before_merge",
+          "merge_not_completed"
+        ],
+        "latency_ms": 26.555700000244542,
+        "domain": "support_crm",
+        "task_type": "duplicate_case_resolution"
+      },
+      {
+        "request_id": "heldout-support-duplicate-03",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "close_case",
+          "search_duplicates",
+          "merge_cases",
+          "notify_customer"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 0,
+        "repeated_error_codes": [
+          "case_closed_before_merge",
+          "merge_not_completed"
+        ],
+        "latency_ms": 26.78599999853759,
+        "domain": "support_crm",
+        "task_type": "duplicate_case_resolution"
+      },
+      {
+        "request_id": "heldout-support-duplicate-04",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "close_case",
+          "search_duplicates",
+          "merge_cases",
+          "notify_customer"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 0,
+        "repeated_error_codes": [
+          "case_closed_before_merge",
+          "merge_not_completed"
+        ],
+        "latency_ms": 26.289199999155244,
+        "domain": "support_crm",
+        "task_type": "duplicate_case_resolution"
+      },
+      {
+        "request_id": "heldout-enterprise-approval-00",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "execute_request",
+          "inspect_policy",
+          "collect_approval",
+          "audit_request"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 0,
+        "repeated_error_codes": [
+          "approval_missing",
+          "execution_missing"
+        ],
+        "latency_ms": 27.747600001021056,
+        "domain": "enterprise_workflow",
+        "task_type": "approval_gated_execution"
+      },
+      {
+        "request_id": "heldout-enterprise-approval-01",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "execute_request",
+          "inspect_policy",
+          "collect_approval",
+          "audit_request"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 0,
+        "repeated_error_codes": [
+          "approval_missing",
+          "execution_missing"
+        ],
+        "latency_ms": 27.135099999213708,
+        "domain": "enterprise_workflow",
+        "task_type": "approval_gated_execution"
+      },
+      {
+        "request_id": "heldout-enterprise-approval-02",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "execute_request",
+          "inspect_policy",
+          "collect_approval",
+          "audit_request"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 0,
+        "repeated_error_codes": [
+          "approval_missing",
+          "execution_missing"
+        ],
+        "latency_ms": 28.783699999621604,
+        "domain": "enterprise_workflow",
+        "task_type": "approval_gated_execution"
+      },
+      {
+        "request_id": "heldout-enterprise-approval-03",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "execute_request",
+          "inspect_policy",
+          "collect_approval",
+          "audit_request"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 0,
+        "repeated_error_codes": [
+          "approval_missing",
+          "execution_missing"
+        ],
+        "latency_ms": 28.57650000078138,
+        "domain": "enterprise_workflow",
+        "task_type": "approval_gated_execution"
+      },
+      {
+        "request_id": "heldout-enterprise-approval-04",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "execute_request",
+          "inspect_policy",
+          "collect_approval",
+          "audit_request"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 0,
+        "repeated_error_codes": [
+          "approval_missing",
+          "execution_missing"
+        ],
+        "latency_ms": 28.844500000559492,
+        "domain": "enterprise_workflow",
+        "task_type": "approval_gated_execution"
+      },
+      {
+        "request_id": "heldout-enterprise-idempotency-00",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "apply_unchecked",
+          "apply_unchecked",
+          "inspect_status",
+          "reconcile_ledger"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 0,
+        "repeated_error_codes": [
+          "duplicate_ledger_entry"
+        ],
+        "latency_ms": 27.556499999263906,
+        "domain": "enterprise_workflow",
+        "task_type": "idempotent_operation"
+      },
+      {
+        "request_id": "heldout-enterprise-idempotency-01",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "apply_unchecked",
+          "apply_unchecked",
+          "inspect_status",
+          "reconcile_ledger"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 0,
+        "repeated_error_codes": [
+          "duplicate_ledger_entry"
+        ],
+        "latency_ms": 28.957700000319164,
+        "domain": "enterprise_workflow",
+        "task_type": "idempotent_operation"
+      },
+      {
+        "request_id": "heldout-enterprise-idempotency-02",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "apply_unchecked",
+          "apply_unchecked",
+          "inspect_status",
+          "reconcile_ledger"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 0,
+        "repeated_error_codes": [
+          "duplicate_ledger_entry"
+        ],
+        "latency_ms": 28.59819999866886,
+        "domain": "enterprise_workflow",
+        "task_type": "idempotent_operation"
+      },
+      {
+        "request_id": "heldout-enterprise-idempotency-03",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "apply_unchecked",
+          "apply_unchecked",
+          "inspect_status",
+          "reconcile_ledger"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 0,
+        "repeated_error_codes": [
+          "duplicate_ledger_entry"
+        ],
+        "latency_ms": 30.346699999427074,
+        "domain": "enterprise_workflow",
+        "task_type": "idempotent_operation"
+      },
+      {
+        "request_id": "heldout-enterprise-idempotency-04",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "apply_unchecked",
+          "apply_unchecked",
+          "inspect_status",
+          "reconcile_ledger"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 0,
+        "repeated_error_codes": [
+          "duplicate_ledger_entry"
+        ],
+        "latency_ms": 28.35359999880893,
+        "domain": "enterprise_workflow",
+        "task_type": "idempotent_operation"
+      }
+    ],
+    "core": [
+      {
+        "request_id": "heldout-coding-config-00",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "overwrite_config",
+          "run_config_tests",
+          "inspect_config",
+          "update_config"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 60,
+        "repeated_error_codes": [
+          "config_keys_lost"
+        ],
+        "latency_ms": 12.277499999981956,
+        "domain": "coding_repository",
+        "task_type": "safe_config_change"
+      },
+      {
+        "request_id": "heldout-coding-config-01",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "overwrite_config",
+          "run_config_tests",
+          "inspect_config",
+          "update_config"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 60,
+        "repeated_error_codes": [
+          "config_keys_lost"
+        ],
+        "latency_ms": 10.844799999176757,
+        "domain": "coding_repository",
+        "task_type": "safe_config_change"
+      },
+      {
+        "request_id": "heldout-coding-config-02",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "overwrite_config",
+          "run_config_tests",
+          "inspect_config",
+          "update_config"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 60,
+        "repeated_error_codes": [
+          "config_keys_lost"
+        ],
+        "latency_ms": 12.490800001614843,
+        "domain": "coding_repository",
+        "task_type": "safe_config_change"
+      },
+      {
+        "request_id": "heldout-coding-config-03",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "overwrite_config",
+          "run_config_tests",
+          "inspect_config",
+          "update_config"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 60,
+        "repeated_error_codes": [
+          "config_keys_lost"
+        ],
+        "latency_ms": 11.898199998540804,
+        "domain": "coding_repository",
+        "task_type": "safe_config_change"
+      },
+      {
+        "request_id": "heldout-coding-config-04",
+        "success": true,
+        "plan_source": "wavemind_core",
+        "plan": [
+          "inspect_config",
+          "update_config",
+          "run_config_tests"
+        ],
+        "tool_steps": 3,
+        "context_tokens": 60,
+        "repeated_error_codes": [],
+        "latency_ms": 13.00210000044899,
+        "domain": "coding_repository",
+        "task_type": "safe_config_change"
+      },
+      {
+        "request_id": "heldout-coding-schema-00",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "replace_schema",
+          "run_schema_tests",
+          "inspect_schema",
+          "migrate_schema"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 60,
+        "repeated_error_codes": [
+          "schema_field_lost"
+        ],
+        "latency_ms": 13.092799999867566,
+        "domain": "coding_repository",
+        "task_type": "compatible_schema_migration"
+      },
+      {
+        "request_id": "heldout-coding-schema-01",
+        "success": true,
+        "plan_source": "wavemind_core",
+        "plan": [
+          "inspect_schema",
+          "migrate_schema",
+          "run_schema_tests"
+        ],
+        "tool_steps": 3,
+        "context_tokens": 60,
+        "repeated_error_codes": [],
+        "latency_ms": 12.36129999961122,
+        "domain": "coding_repository",
+        "task_type": "compatible_schema_migration"
+      },
+      {
+        "request_id": "heldout-coding-schema-02",
+        "success": true,
+        "plan_source": "wavemind_core",
+        "plan": [
+          "inspect_schema",
+          "migrate_schema",
+          "run_schema_tests"
+        ],
+        "tool_steps": 3,
+        "context_tokens": 60,
+        "repeated_error_codes": [],
+        "latency_ms": 11.229600000660866,
+        "domain": "coding_repository",
+        "task_type": "compatible_schema_migration"
+      },
+      {
+        "request_id": "heldout-coding-schema-03",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "replace_schema",
+          "run_schema_tests",
+          "inspect_schema",
+          "migrate_schema"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 60,
+        "repeated_error_codes": [
+          "schema_field_lost"
+        ],
+        "latency_ms": 11.62339999973483,
+        "domain": "coding_repository",
+        "task_type": "compatible_schema_migration"
+      },
+      {
+        "request_id": "heldout-coding-schema-04",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "replace_schema",
+          "run_schema_tests",
+          "inspect_schema",
+          "migrate_schema"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 60,
+        "repeated_error_codes": [
+          "schema_field_lost"
+        ],
+        "latency_ms": 12.173199998869677,
+        "domain": "coding_repository",
+        "task_type": "compatible_schema_migration"
+      },
+      {
+        "request_id": "heldout-support-identity-00",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "update_customer",
+          "verify_identity",
+          "confirm_update",
+          "lookup_customer"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 60,
+        "repeated_error_codes": [
+          "identity_lookup_missing",
+          "identity_not_verified",
+          "update_missing"
+        ],
+        "latency_ms": 41.77680000066175,
+        "domain": "support_crm",
+        "task_type": "verified_customer_update"
+      },
+      {
+        "request_id": "heldout-support-identity-01",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "update_customer",
+          "verify_identity",
+          "confirm_update",
+          "lookup_customer"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 60,
+        "repeated_error_codes": [
+          "identity_lookup_missing",
+          "identity_not_verified",
+          "update_missing"
+        ],
+        "latency_ms": 25.426899999729358,
+        "domain": "support_crm",
+        "task_type": "verified_customer_update"
+      },
+      {
+        "request_id": "heldout-support-identity-02",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "update_customer",
+          "verify_identity",
+          "confirm_update",
+          "lookup_customer"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 60,
+        "repeated_error_codes": [
+          "identity_lookup_missing",
+          "identity_not_verified",
+          "update_missing"
+        ],
+        "latency_ms": 23.949500000526314,
+        "domain": "support_crm",
+        "task_type": "verified_customer_update"
+      },
+      {
+        "request_id": "heldout-support-identity-03",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "update_customer",
+          "verify_identity",
+          "confirm_update",
+          "lookup_customer"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 60,
+        "repeated_error_codes": [
+          "identity_lookup_missing",
+          "identity_not_verified",
+          "update_missing"
+        ],
+        "latency_ms": 24.958800000604242,
+        "domain": "support_crm",
+        "task_type": "verified_customer_update"
+      },
+      {
+        "request_id": "heldout-support-identity-04",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "update_customer",
+          "verify_identity",
+          "confirm_update",
+          "lookup_customer"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 60,
+        "repeated_error_codes": [
+          "identity_lookup_missing",
+          "identity_not_verified",
+          "update_missing"
+        ],
+        "latency_ms": 25.117000001046108,
+        "domain": "support_crm",
+        "task_type": "verified_customer_update"
+      },
+      {
+        "request_id": "heldout-support-duplicate-00",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "close_case",
+          "search_duplicates",
+          "merge_cases",
+          "notify_customer"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 60,
+        "repeated_error_codes": [
+          "case_closed_before_merge",
+          "merge_not_completed"
+        ],
+        "latency_ms": 31.911800000671064,
+        "domain": "support_crm",
+        "task_type": "duplicate_case_resolution"
+      },
+      {
+        "request_id": "heldout-support-duplicate-01",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "close_case",
+          "search_duplicates",
+          "merge_cases",
+          "notify_customer"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 60,
+        "repeated_error_codes": [
+          "case_closed_before_merge",
+          "merge_not_completed"
+        ],
+        "latency_ms": 30.414599999858183,
+        "domain": "support_crm",
+        "task_type": "duplicate_case_resolution"
+      },
+      {
+        "request_id": "heldout-support-duplicate-02",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "close_case",
+          "search_duplicates",
+          "merge_cases",
+          "notify_customer"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 60,
+        "repeated_error_codes": [
+          "case_closed_before_merge",
+          "merge_not_completed"
+        ],
+        "latency_ms": 33.59930000078748,
+        "domain": "support_crm",
+        "task_type": "duplicate_case_resolution"
+      },
+      {
+        "request_id": "heldout-support-duplicate-03",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "close_case",
+          "search_duplicates",
+          "merge_cases",
+          "notify_customer"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 60,
+        "repeated_error_codes": [
+          "case_closed_before_merge",
+          "merge_not_completed"
+        ],
+        "latency_ms": 31.070099999851664,
+        "domain": "support_crm",
+        "task_type": "duplicate_case_resolution"
+      },
+      {
+        "request_id": "heldout-support-duplicate-04",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "close_case",
+          "search_duplicates",
+          "merge_cases",
+          "notify_customer"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 60,
+        "repeated_error_codes": [
+          "case_closed_before_merge",
+          "merge_not_completed"
+        ],
+        "latency_ms": 31.04220000022906,
+        "domain": "support_crm",
+        "task_type": "duplicate_case_resolution"
+      },
+      {
+        "request_id": "heldout-enterprise-approval-00",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "execute_request",
+          "inspect_policy",
+          "collect_approval",
+          "audit_request"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 60,
+        "repeated_error_codes": [
+          "approval_missing",
+          "execution_missing"
+        ],
+        "latency_ms": 30.395300000236603,
+        "domain": "enterprise_workflow",
+        "task_type": "approval_gated_execution"
+      },
+      {
+        "request_id": "heldout-enterprise-approval-01",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "execute_request",
+          "inspect_policy",
+          "collect_approval",
+          "audit_request"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 60,
+        "repeated_error_codes": [
+          "approval_missing",
+          "execution_missing"
+        ],
+        "latency_ms": 31.588299998475122,
+        "domain": "enterprise_workflow",
+        "task_type": "approval_gated_execution"
+      },
+      {
+        "request_id": "heldout-enterprise-approval-02",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "execute_request",
+          "inspect_policy",
+          "collect_approval",
+          "audit_request"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 60,
+        "repeated_error_codes": [
+          "approval_missing",
+          "execution_missing"
+        ],
+        "latency_ms": 29.952299999422394,
+        "domain": "enterprise_workflow",
+        "task_type": "approval_gated_execution"
+      },
+      {
+        "request_id": "heldout-enterprise-approval-03",
+        "success": true,
+        "plan_source": "wavemind_core",
+        "plan": [
+          "inspect_policy",
+          "collect_approval",
+          "execute_request"
+        ],
+        "tool_steps": 3,
+        "context_tokens": 60,
+        "repeated_error_codes": [],
+        "latency_ms": 36.997600000177044,
+        "domain": "enterprise_workflow",
+        "task_type": "approval_gated_execution"
+      },
+      {
+        "request_id": "heldout-enterprise-approval-04",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "execute_request",
+          "inspect_policy",
+          "collect_approval",
+          "audit_request"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 60,
+        "repeated_error_codes": [
+          "approval_missing",
+          "execution_missing"
+        ],
+        "latency_ms": 31.008500000098138,
+        "domain": "enterprise_workflow",
+        "task_type": "approval_gated_execution"
+      },
+      {
+        "request_id": "heldout-enterprise-idempotency-00",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "apply_unchecked",
+          "apply_unchecked",
+          "inspect_status",
+          "reconcile_ledger"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 0,
+        "repeated_error_codes": [
+          "duplicate_ledger_entry"
+        ],
+        "latency_ms": 29.982899999595247,
+        "domain": "enterprise_workflow",
+        "task_type": "idempotent_operation"
+      },
+      {
+        "request_id": "heldout-enterprise-idempotency-01",
+        "success": true,
+        "plan_source": "wavemind_core",
+        "plan": [
+          "inspect_status",
+          "apply_once",
+          "reconcile_ledger"
+        ],
+        "tool_steps": 3,
+        "context_tokens": 60,
+        "repeated_error_codes": [],
+        "latency_ms": 23.42580000004091,
+        "domain": "enterprise_workflow",
+        "task_type": "idempotent_operation"
+      },
+      {
+        "request_id": "heldout-enterprise-idempotency-02",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "apply_unchecked",
+          "apply_unchecked",
+          "inspect_status",
+          "reconcile_ledger"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 60,
+        "repeated_error_codes": [
+          "duplicate_ledger_entry"
+        ],
+        "latency_ms": 31.14319999986037,
+        "domain": "enterprise_workflow",
+        "task_type": "idempotent_operation"
+      },
+      {
+        "request_id": "heldout-enterprise-idempotency-03",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "apply_unchecked",
+          "apply_unchecked",
+          "inspect_status",
+          "reconcile_ledger"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 60,
+        "repeated_error_codes": [
+          "duplicate_ledger_entry"
+        ],
+        "latency_ms": 29.19300000030489,
+        "domain": "enterprise_workflow",
+        "task_type": "idempotent_operation"
+      },
+      {
+        "request_id": "heldout-enterprise-idempotency-04",
+        "success": false,
+        "plan_source": "fallback",
+        "plan": [
+          "apply_unchecked",
+          "apply_unchecked",
+          "inspect_status",
+          "reconcile_ledger"
+        ],
+        "tool_steps": 4,
+        "context_tokens": 60,
+        "repeated_error_codes": [
+          "duplicate_ledger_entry"
+        ],
+        "latency_ms": 31.91279999919061,
+        "domain": "enterprise_workflow",
+        "task_type": "idempotent_operation"
+      }
+    ],
+    "experience": [
+      {
+        "request_id": "heldout-coding-config-00",
+        "run_id": "work_addd2e5193fc4a4ca108154966af90d2",
+        "success": true,
+        "plan_source": "experience",
+        "plan": [
+          "inspect_config",
+          "update_config",
+          "run_config_tests"
+        ],
+        "executions": [
+          {
+            "name": "inspect_config",
+            "success": true,
+            "output": {
+              "document": {
+                "retries": 1,
+                "service": "api",
+                "timeout": 30
+              }
+            },
+            "error_code": null,
+            "duration_ms": 1.8006999998760875
+          },
+          {
+            "name": "update_config",
+            "success": true,
+            "output": {
+              "retries": 3,
+              "service": "api",
+              "timeout": 30
+            },
+            "error_code": null,
+            "duration_ms": 0.7432000002154382
+          },
+          {
+            "name": "run_config_tests",
+            "success": true,
+            "output": {
+              "passed": true
+            },
+            "error_code": null,
+            "duration_ms": 1.5579999999317806
+          }
+        ],
+        "packet": {
+          "schema": "wavemind.experience_packet.v1",
+          "namespace": "experienced-work-agent",
+          "query": "Raise retry attempts while preserving every existing service setting.",
+          "token_budget": 400,
+          "estimated_tokens": 35,
+          "items": [
+            {
+              "experience_id": "exp_strategy_a2e65f2266f3c4e4381c1295",
+              "version": 1,
+              "kind": "successful_strategy",
+              "title": "Verified safe_config_change strategy",
+              "excerpt": "",
+              "score": 0.35,
+              "signals": {
+                "vector": 0.0,
+                "lexical": 0.0,
+                "applicability": 0.916667,
+                "confidence": 0.8,
+                "trust": 0.4,
+                "outcome": 1.0,
+                "recency": 0.999999
+              },
+              "citation": "experience:exp_strategy_a2e65f2266f3c4e4381c1295@v1",
+              "detail_ref": "experience://exp_strategy_a2e65f2266f3c4e4381c1295?version=1",
+              "provenance": {
+                "source": {
+                  "provider": "wavemind_work_agent",
+                  "source_type": "repeated_verified_outcome",
+                  "source_id": "work_bfef333476704835b5ac7eaba65a0873"
+                },
+                "trajectory_id": "work_bfef333476704835b5ac7eaba65a0873",
+                "content_sha256": "ade3b1ea53a62a154394d0a25a3f20da365f8b5983b9ef66f7f81a67ce2bbbd9"
+              },
+              "estimated_tokens": 24,
+              "canary": false
+            }
+          ],
+          "omitted_count": 0,
+          "generated_at": 1785259486.4621837,
+          "compiler_policy": {
+            "signal_weights": {
+              "vector": 0.38,
+              "lexical": 0.18,
+              "applicability": 0.12,
+              "confidence": 0.1,
+              "trust": 0.1,
+              "outcome": 0.07,
+              "recency": 0.05
+            },
+            "recency_half_life_days": 30.0,
+            "active_only": true,
+            "progressive_disclosure": true,
+            "reference_only": true
+          },
+          "citations": [
+            "experience:exp_strategy_a2e65f2266f3c4e4381c1295@v1"
+          ]
+        },
+        "selected_experience_id": "exp_strategy_a2e65f2266f3c4e4381c1295",
+        "trajectory_id": "work_addd2e5193fc4a4ca108154966af90d2",
+        "learned_experience_id": null,
+        "repeated_error_codes": [],
+        "context_tokens": 35,
+        "latency_ms": 8.205800000723684,
+        "tool_steps": 3,
+        "domain": "coding_repository",
+        "task_type": "safe_config_change"
+      },
+      {
+        "request_id": "heldout-coding-config-01",
+        "run_id": "work_06c8b0c8378e4da6ac55f42a1ca472e5",
+        "success": true,
+        "plan_source": "experience",
+        "plan": [
+          "inspect_config",
+          "update_config",
+          "run_config_tests"
+        ],
+        "executions": [
+          {
+            "name": "inspect_config",
+            "success": true,
+            "output": {
+              "document": {
+                "retries": 1,
+                "service": "api",
+                "timeout": 30
+              }
+            },
+            "error_code": null,
+            "duration_ms": 1.3997000005474547
+          },
+          {
+            "name": "update_config",
+            "success": true,
+            "output": {
+              "retries": 3,
+              "service": "api",
+              "timeout": 30
+            },
+            "error_code": null,
+            "duration_ms": 0.7522000014432706
+          },
+          {
+            "name": "run_config_tests",
+            "success": true,
+            "output": {
+              "passed": true
+            },
+            "error_code": null,
+            "duration_ms": 1.6995000005408656
+          }
+        ],
+        "packet": {
+          "schema": "wavemind.experience_packet.v1",
+          "namespace": "experienced-work-agent",
+          "query": "Modify the retry policy without replacing unrelated configuration.",
+          "token_budget": 400,
+          "estimated_tokens": 35,
+          "items": [
+            {
+              "experience_id": "exp_strategy_a2e65f2266f3c4e4381c1295",
+              "version": 1,
+              "kind": "successful_strategy",
+              "title": "Verified safe_config_change strategy",
+              "excerpt": "",
+              "score": 0.36202,
+              "signals": {
+                "vector": 0.007948,
+                "lexical": 0.05,
+                "applicability": 0.916667,
+                "confidence": 0.8,
+                "trust": 0.4,
+                "outcome": 1.0,
+                "recency": 0.999999
+              },
+              "citation": "experience:exp_strategy_a2e65f2266f3c4e4381c1295@v1",
+              "detail_ref": "experience://exp_strategy_a2e65f2266f3c4e4381c1295?version=1",
+              "provenance": {
+                "source": {
+                  "provider": "wavemind_work_agent",
+                  "source_type": "repeated_verified_outcome",
+                  "source_id": "work_bfef333476704835b5ac7eaba65a0873"
+                },
+                "trajectory_id": "work_bfef333476704835b5ac7eaba65a0873",
+                "content_sha256": "ade3b1ea53a62a154394d0a25a3f20da365f8b5983b9ef66f7f81a67ce2bbbd9"
+              },
+              "estimated_tokens": 24,
+              "canary": false
+            }
+          ],
+          "omitted_count": 0,
+          "generated_at": 1785259486.4719,
+          "compiler_policy": {
+            "signal_weights": {
+              "vector": 0.38,
+              "lexical": 0.18,
+              "applicability": 0.12,
+              "confidence": 0.1,
+              "trust": 0.1,
+              "outcome": 0.07,
+              "recency": 0.05
+            },
+            "recency_half_life_days": 30.0,
+            "active_only": true,
+            "progressive_disclosure": true,
+            "reference_only": true
+          },
+          "citations": [
+            "experience:exp_strategy_a2e65f2266f3c4e4381c1295@v1"
+          ]
+        },
+        "selected_experience_id": "exp_strategy_a2e65f2266f3c4e4381c1295",
+        "trajectory_id": "work_06c8b0c8378e4da6ac55f42a1ca472e5",
+        "learned_experience_id": null,
+        "repeated_error_codes": [],
+        "context_tokens": 35,
+        "latency_ms": 7.9164999988279305,
+        "tool_steps": 3,
+        "domain": "coding_repository",
+        "task_type": "safe_config_change"
+      },
+      {
+        "request_id": "heldout-coding-config-02",
+        "run_id": "work_aeed95bc9c614c2fb4bc56066e9d2257",
+        "success": true,
+        "plan_source": "experience",
+        "plan": [
+          "inspect_config",
+          "update_config",
+          "run_config_tests"
+        ],
+        "executions": [
+          {
+            "name": "inspect_config",
+            "success": true,
+            "output": {
+              "document": {
+                "retries": 1,
+                "service": "api",
+                "timeout": 30
+              }
+            },
+            "error_code": null,
+            "duration_ms": 1.49049999890849
+          },
+          {
+            "name": "update_config",
+            "success": true,
+            "output": {
+              "retries": 3,
+              "service": "api",
+              "timeout": 30
+            },
+            "error_code": null,
+            "duration_ms": 0.7332000004680594
+          },
+          {
+            "name": "run_config_tests",
+            "success": true,
+            "output": {
+              "passed": true
+            },
+            "error_code": null,
+            "duration_ms": 1.3070000004518079
+          }
+        ],
+        "packet": {
+          "schema": "wavemind.experience_packet.v1",
+          "namespace": "experienced-work-agent",
+          "query": "Patch a project setting and keep the current timeout and service name.",
+          "token_budget": 400,
+          "estimated_tokens": 35,
+          "items": [
+            {
+              "experience_id": "exp_strategy_a2e65f2266f3c4e4381c1295",
+              "version": 1,
+              "kind": "successful_strategy",
+              "title": "Verified safe_config_change strategy",
+              "excerpt": "",
+              "score": 0.357826,
+              "signals": {
+                "vector": 0.0,
+                "lexical": 0.043478,
+                "applicability": 0.916667,
+                "confidence": 0.8,
+                "trust": 0.4,
+                "outcome": 1.0,
+                "recency": 0.999999
+              },
+              "citation": "experience:exp_strategy_a2e65f2266f3c4e4381c1295@v1",
+              "detail_ref": "experience://exp_strategy_a2e65f2266f3c4e4381c1295?version=1",
+              "provenance": {
+                "source": {
+                  "provider": "wavemind_work_agent",
+                  "source_type": "repeated_verified_outcome",
+                  "source_id": "work_bfef333476704835b5ac7eaba65a0873"
+                },
+                "trajectory_id": "work_bfef333476704835b5ac7eaba65a0873",
+                "content_sha256": "ade3b1ea53a62a154394d0a25a3f20da365f8b5983b9ef66f7f81a67ce2bbbd9"
+              },
+              "estimated_tokens": 24,
+              "canary": false
+            }
+          ],
+          "omitted_count": 0,
+          "generated_at": 1785259486.4818146,
+          "compiler_policy": {
+            "signal_weights": {
+              "vector": 0.38,
+              "lexical": 0.18,
+              "applicability": 0.12,
+              "confidence": 0.1,
+              "trust": 0.1,
+              "outcome": 0.07,
+              "recency": 0.05
+            },
+            "recency_half_life_days": 30.0,
+            "active_only": true,
+            "progressive_disclosure": true,
+            "reference_only": true
+          },
+          "citations": [
+            "experience:exp_strategy_a2e65f2266f3c4e4381c1295@v1"
+          ]
+        },
+        "selected_experience_id": "exp_strategy_a2e65f2266f3c4e4381c1295",
+        "trajectory_id": "work_aeed95bc9c614c2fb4bc56066e9d2257",
+        "learned_experience_id": null,
+        "repeated_error_codes": [],
+        "context_tokens": 35,
+        "latency_ms": 7.511899999371963,
+        "tool_steps": 3,
+        "domain": "coding_repository",
+        "task_type": "safe_config_change"
+      },
+      {
+        "request_id": "heldout-coding-config-03",
+        "run_id": "work_aaeac8da4cc44449bd45b32bddd5a503",
+        "success": true,
+        "plan_source": "experience",
+        "plan": [
+          "inspect_config",
+          "update_config",
+          "run_config_tests"
+        ],
+        "executions": [
+          {
+            "name": "inspect_config",
+            "success": true,
+            "output": {
+              "document": {
+                "retries": 1,
+                "service": "api",
+                "timeout": 30
+              }
+            },
+            "error_code": null,
+            "duration_ms": 1.6118000003189081
+          },
+          {
+            "name": "update_config",
+            "success": true,
+            "output": {
+              "retries": 3,
+              "service": "api",
+              "timeout": 30
+            },
+            "error_code": null,
+            "duration_ms": 0.7408000001305481
+          },
+          {
+            "name": "run_config_tests",
+            "success": true,
+            "output": {
+              "passed": true
+            },
+            "error_code": null,
+            "duration_ms": 1.4406999998755055
+          }
+        ],
+        "packet": {
+          "schema": "wavemind.experience_packet.v1",
+          "namespace": "experienced-work-agent",
+          "query": "Safely adjust resilience settings in the repository configuration.",
+          "token_budget": 400,
+          "estimated_tokens": 35,
+          "items": [
+            {
+              "experience_id": "exp_strategy_a2e65f2266f3c4e4381c1295",
+              "version": 1,
+              "kind": "successful_strategy",
+              "title": "Verified safe_config_change strategy",
+              "excerpt": "",
+              "score": 0.359,
+              "signals": {
+                "vector": 0.0,
+                "lexical": 0.05,
+                "applicability": 0.916667,
+                "confidence": 0.8,
+                "trust": 0.4,
+                "outcome": 1.0,
+                "recency": 0.999999
+              },
+              "citation": "experience:exp_strategy_a2e65f2266f3c4e4381c1295@v1",
+              "detail_ref": "experience://exp_strategy_a2e65f2266f3c4e4381c1295?version=1",
+              "provenance": {
+                "source": {
+                  "provider": "wavemind_work_agent",
+                  "source_type": "repeated_verified_outcome",
+                  "source_id": "work_bfef333476704835b5ac7eaba65a0873"
+                },
+                "trajectory_id": "work_bfef333476704835b5ac7eaba65a0873",
+                "content_sha256": "ade3b1ea53a62a154394d0a25a3f20da365f8b5983b9ef66f7f81a67ce2bbbd9"
+              },
+              "estimated_tokens": 24,
+              "canary": false
+            }
+          ],
+          "omitted_count": 0,
+          "generated_at": 1785259486.4910262,
+          "compiler_policy": {
+            "signal_weights": {
+              "vector": 0.38,
+              "lexical": 0.18,
+              "applicability": 0.12,
+              "confidence": 0.1,
+              "trust": 0.1,
+              "outcome": 0.07,
+              "recency": 0.05
+            },
+            "recency_half_life_days": 30.0,
+            "active_only": true,
+            "progressive_disclosure": true,
+            "reference_only": true
+          },
+          "citations": [
+            "experience:exp_strategy_a2e65f2266f3c4e4381c1295@v1"
+          ]
+        },
+        "selected_experience_id": "exp_strategy_a2e65f2266f3c4e4381c1295",
+        "trajectory_id": "work_aaeac8da4cc44449bd45b32bddd5a503",
+        "learned_experience_id": null,
+        "repeated_error_codes": [],
+        "context_tokens": 35,
+        "latency_ms": 7.736499999737134,
+        "tool_steps": 3,
+        "domain": "coding_repository",
+        "task_type": "safe_config_change"
+      },
+      {
+        "request_id": "heldout-coding-config-04",
+        "run_id": "work_454a03b7e84643a7a8379f22a0c96988",
+        "success": true,
+        "plan_source": "experience",
+        "plan": [
+          "inspect_config",
+          "update_config",
+          "run_config_tests"
+        ],
+        "executions": [
+          {
+            "name": "inspect_config",
+            "success": true,
+            "output": {
+              "document": {
+                "retries": 1,
+                "service": "api",
+                "timeout": 30
+              }
+            },
+            "error_code": null,
+            "duration_ms": 1.5449999991687946
+          },
+          {
+            "name": "update_config",
+            "success": true,
+            "output": {
+              "retries": 3,
+              "service": "api",
+              "timeout": 30
+            },
+            "error_code": null,
+            "duration_ms": 0.6936999998288229
+          },
+          {
+            "name": "run_config_tests",
+            "success": true,
+            "output": {
+              "passed": true
+            },
+            "error_code": null,
+            "duration_ms": 1.5050000001792796
+          }
+        ],
+        "packet": {
+          "schema": "wavemind.experience_packet.v1",
+          "namespace": "experienced-work-agent",
+          "query": "Update retry behavior without damaging the rest of the config file.",
+          "token_budget": 400,
+          "estimated_tokens": 35,
+          "items": [
+            {
+              "experience_id": "exp_strategy_a2e65f2266f3c4e4381c1295",
+              "version": 1,
+              "kind": "successful_strategy",
+              "title": "Verified safe_config_change strategy",
+              "excerpt": "",
+              "score": 0.360702,
+              "signals": {
+                "vector": 0.006632,
+                "lexical": 0.045455,
+                "applicability": 0.916667,
+                "confidence": 0.8,
+                "trust": 0.4,
+                "outcome": 1.0,
+                "recency": 0.999999
+              },
+              "citation": "experience:exp_strategy_a2e65f2266f3c4e4381c1295@v1",
+              "detail_ref": "experience://exp_strategy_a2e65f2266f3c4e4381c1295?version=1",
+              "provenance": {
+                "source": {
+                  "provider": "wavemind_work_agent",
+                  "source_type": "repeated_verified_outcome",
+                  "source_id": "work_bfef333476704835b5ac7eaba65a0873"
+                },
+                "trajectory_id": "work_bfef333476704835b5ac7eaba65a0873",
+                "content_sha256": "ade3b1ea53a62a154394d0a25a3f20da365f8b5983b9ef66f7f81a67ce2bbbd9"
+              },
+              "estimated_tokens": 24,
+              "canary": false
+            }
+          ],
+          "omitted_count": 0,
+          "generated_at": 1785259486.5010386,
+          "compiler_policy": {
+            "signal_weights": {
+              "vector": 0.38,
+              "lexical": 0.18,
+              "applicability": 0.12,
+              "confidence": 0.1,
+              "trust": 0.1,
+              "outcome": 0.07,
+              "recency": 0.05
+            },
+            "recency_half_life_days": 30.0,
+            "active_only": true,
+            "progressive_disclosure": true,
+            "reference_only": true
+          },
+          "citations": [
+            "experience:exp_strategy_a2e65f2266f3c4e4381c1295@v1"
+          ]
+        },
+        "selected_experience_id": "exp_strategy_a2e65f2266f3c4e4381c1295",
+        "trajectory_id": "work_454a03b7e84643a7a8379f22a0c96988",
+        "learned_experience_id": null,
+        "repeated_error_codes": [],
+        "context_tokens": 35,
+        "latency_ms": 7.908099998530815,
+        "tool_steps": 3,
+        "domain": "coding_repository",
+        "task_type": "safe_config_change"
+      },
+      {
+        "request_id": "heldout-coding-schema-00",
+        "run_id": "work_089c6e121b534e988bfad8625f4bbdbc",
+        "success": true,
+        "plan_source": "experience",
+        "plan": [
+          "inspect_schema",
+          "migrate_schema",
+          "run_schema_tests"
+        ],
+        "executions": [
+          {
+            "name": "inspect_schema",
+            "success": true,
+            "output": {
+              "document": {
+                "fields": [
+                  "id",
+                  "name",
+                  "legacy_reference"
+                ],
+                "version": 1
+              }
+            },
+            "error_code": null,
+            "duration_ms": 1.5334999989136122
+          },
+          {
+            "name": "migrate_schema",
+            "success": true,
+            "output": {
+              "fields": [
+                "id",
+                "name",
+                "legacy_reference",
+                "display_name"
+              ],
+              "version": 2
+            },
+            "error_code": null,
+            "duration_ms": 0.7150999990699347
+          },
+          {
+            "name": "run_schema_tests",
+            "success": true,
+            "output": {
+              "passed": true
+            },
+            "error_code": null,
+            "duration_ms": 1.4468999997916399
+          }
+        ],
+        "packet": {
+          "schema": "wavemind.experience_packet.v1",
+          "namespace": "experienced-work-agent",
+          "query": "Upgrade the project schema without losing backward-compatible data.",
+          "token_budget": 400,
+          "estimated_tokens": 37,
+          "items": [
+            {
+              "experience_id": "exp_strategy_e491ebf75c46661ad092a5bb",
+              "version": 1,
+              "kind": "successful_strategy",
+              "title": "Verified compatible_schema_migration strategy",
+              "excerpt": "",
+              "score": 0.362544,
+              "signals": {
+                "vector": 0.009326,
+                "lexical": 0.05,
+                "applicability": 0.916667,
+                "confidence": 0.8,
+                "trust": 0.4,
+                "outcome": 1.0,
+                "recency": 0.999999
+              },
+              "citation": "experience:exp_strategy_e491ebf75c46661ad092a5bb@v1",
+              "detail_ref": "experience://exp_strategy_e491ebf75c46661ad092a5bb?version=1",
+              "provenance": {
+                "source": {
+                  "provider": "wavemind_work_agent",
+                  "source_type": "repeated_verified_outcome",
+                  "source_id": "work_1427b8ec7ec641208daee5d64288415a"
+                },
+                "trajectory_id": "work_1427b8ec7ec641208daee5d64288415a",
+                "content_sha256": "ab72f5f7ab1dcc4fa20020f21eae81771410b67d22825ba6dfd7f013cc7ca220"
+              },
+              "estimated_tokens": 26,
+              "canary": false
+            }
+          ],
+          "omitted_count": 0,
+          "generated_at": 1785259486.5113244,
+          "compiler_policy": {
+            "signal_weights": {
+              "vector": 0.38,
+              "lexical": 0.18,
+              "applicability": 0.12,
+              "confidence": 0.1,
+              "trust": 0.1,
+              "outcome": 0.07,
+              "recency": 0.05
+            },
+            "recency_half_life_days": 30.0,
+            "active_only": true,
+            "progressive_disclosure": true,
+            "reference_only": true
+          },
+          "citations": [
+            "experience:exp_strategy_e491ebf75c46661ad092a5bb@v1"
+          ]
+        },
+        "selected_experience_id": "exp_strategy_e491ebf75c46661ad092a5bb",
+        "trajectory_id": "work_089c6e121b534e988bfad8625f4bbdbc",
+        "learned_experience_id": null,
+        "repeated_error_codes": [],
+        "context_tokens": 37,
+        "latency_ms": 7.949999999254942,
+        "tool_steps": 3,
+        "domain": "coding_repository",
+        "task_type": "compatible_schema_migration"
+      },
+      {
+        "request_id": "heldout-coding-schema-01",
+        "run_id": "work_6634937b12084f2d86cd304816f79ca3",
+        "success": true,
+        "plan_source": "experience",
+        "plan": [
+          "inspect_schema",
+          "migrate_schema",
+          "run_schema_tests"
+        ],
+        "executions": [
+          {
+            "name": "inspect_schema",
+            "success": true,
+            "output": {
+              "document": {
+                "fields": [
+                  "id",
+                  "name",
+                  "legacy_reference"
+                ],
+                "version": 1
+              }
+            },
+            "error_code": null,
+            "duration_ms": 1.5280000006896444
+          },
+          {
+            "name": "migrate_schema",
+            "success": true,
+            "output": {
+              "fields": [
+                "id",
+                "name",
+                "legacy_reference",
+                "display_name"
+              ],
+              "version": 2
+            },
+            "error_code": null,
+            "duration_ms": 0.7200999989436241
+          },
+          {
+            "name": "run_schema_tests",
+            "success": true,
+            "output": {
+              "passed": true
+            },
+            "error_code": null,
+            "duration_ms": 1.671399999395362
+          }
+        ],
+        "packet": {
+          "schema": "wavemind.experience_packet.v1",
+          "namespace": "experienced-work-agent",
+          "query": "Introduce display names while retaining old reference fields.",
+          "token_budget": 400,
+          "estimated_tokens": 37,
+          "items": [
+            {
+              "experience_id": "exp_strategy_e491ebf75c46661ad092a5bb",
+              "version": 1,
+              "kind": "successful_strategy",
+              "title": "Verified compatible_schema_migration strategy",
+              "excerpt": "",
+              "score": 0.354623,
+              "signals": {
+                "vector": 0.012165,
+                "lexical": 0.0,
+                "applicability": 0.916667,
+                "confidence": 0.8,
+                "trust": 0.4,
+                "outcome": 1.0,
+                "recency": 0.999999
+              },
+              "citation": "experience:exp_strategy_e491ebf75c46661ad092a5bb@v1",
+              "detail_ref": "experience://exp_strategy_e491ebf75c46661ad092a5bb?version=1",
+              "provenance": {
+                "source": {
+                  "provider": "wavemind_work_agent",
+                  "source_type": "repeated_verified_outcome",
+                  "source_id": "work_1427b8ec7ec641208daee5d64288415a"
+                },
+                "trajectory_id": "work_1427b8ec7ec641208daee5d64288415a",
+                "content_sha256": "ab72f5f7ab1dcc4fa20020f21eae81771410b67d22825ba6dfd7f013cc7ca220"
+              },
+              "estimated_tokens": 26,
+              "canary": false
+            }
+          ],
+          "omitted_count": 0,
+          "generated_at": 1785259486.5208793,
+          "compiler_policy": {
+            "signal_weights": {
+              "vector": 0.38,
+              "lexical": 0.18,
+              "applicability": 0.12,
+              "confidence": 0.1,
+              "trust": 0.1,
+              "outcome": 0.07,
+              "recency": 0.05
+            },
+            "recency_half_life_days": 30.0,
+            "active_only": true,
+            "progressive_disclosure": true,
+            "reference_only": true
+          },
+          "citations": [
+            "experience:exp_strategy_e491ebf75c46661ad092a5bb@v1"
+          ]
+        },
+        "selected_experience_id": "exp_strategy_e491ebf75c46661ad092a5bb",
+        "trajectory_id": "work_6634937b12084f2d86cd304816f79ca3",
+        "learned_experience_id": null,
+        "repeated_error_codes": [],
+        "context_tokens": 37,
+        "latency_ms": 7.9502999997203005,
+        "tool_steps": 3,
+        "domain": "coding_repository",
+        "task_type": "compatible_schema_migration"
+      },
+      {
+        "request_id": "heldout-coding-schema-02",
+        "run_id": "work_5fa917b4a7f744c39696849658a8c498",
+        "success": true,
+        "plan_source": "experience",
+        "plan": [
+          "inspect_schema",
+          "migrate_schema",
+          "run_schema_tests"
+        ],
+        "executions": [
+          {
+            "name": "inspect_schema",
+            "success": true,
+            "output": {
+              "document": {
+                "fields": [
+                  "id",
+                  "name",
+                  "legacy_reference"
+                ],
+                "version": 1
+              }
+            },
+            "error_code": null,
+            "duration_ms": 1.438699999198434
+          },
+          {
+            "name": "migrate_schema",
+            "success": true,
+            "output": {
+              "fields": [
+                "id",
+                "name",
+                "legacy_reference",
+                "display_name"
+              ],
+              "version": 2
+            },
+            "error_code": null,
+            "duration_ms": 0.7257000015670201
+          },
+          {
+            "name": "run_schema_tests",
+            "success": true,
+            "output": {
+              "passed": true
+            },
+            "error_code": null,
+            "duration_ms": 1.5621999991708435
+          }
+        ],
+        "packet": {
+          "schema": "wavemind.experience_packet.v1",
+          "namespace": "experienced-work-agent",
+          "query": "Move the schema to its next version and preserve compatibility.",
+          "token_budget": 400,
+          "estimated_tokens": 37,
+          "items": [
+            {
+              "experience_id": "exp_strategy_e491ebf75c46661ad092a5bb",
+              "version": 1,
+              "kind": "successful_strategy",
+              "title": "Verified compatible_schema_migration strategy",
+              "excerpt": "",
+              "score": 0.366345,
+              "signals": {
+                "vector": 0.021481,
+                "lexical": 0.045455,
+                "applicability": 0.916667,
+                "confidence": 0.8,
+                "trust": 0.4,
+                "outcome": 1.0,
+                "recency": 0.999999
+              },
+              "citation": "experience:exp_strategy_e491ebf75c46661ad092a5bb@v1",
+              "detail_ref": "experience://exp_strategy_e491ebf75c46661ad092a5bb?version=1",
+              "provenance": {
+                "source": {
+                  "provider": "wavemind_work_agent",
+                  "source_type": "repeated_verified_outcome",
+                  "source_id": "work_1427b8ec7ec641208daee5d64288415a"
+                },
+                "trajectory_id": "work_1427b8ec7ec641208daee5d64288415a",
+                "content_sha256": "ab72f5f7ab1dcc4fa20020f21eae81771410b67d22825ba6dfd7f013cc7ca220"
+              },
+              "estimated_tokens": 26,
+              "canary": false
+            }
+          ],
+          "omitted_count": 0,
+          "generated_at": 1785259486.530664,
+          "compiler_policy": {
+            "signal_weights": {
+              "vector": 0.38,
+              "lexical": 0.18,
+              "applicability": 0.12,
+              "confidence": 0.1,
+              "trust": 0.1,
+              "outcome": 0.07,
+              "recency": 0.05
+            },
+            "recency_half_life_days": 30.0,
+            "active_only": true,
+            "progressive_disclosure": true,
+            "reference_only": true
+          },
+          "citations": [
+            "experience:exp_strategy_e491ebf75c46661ad092a5bb@v1"
+          ]
+        },
+        "selected_experience_id": "exp_strategy_e491ebf75c46661ad092a5bb",
+        "trajectory_id": "work_5fa917b4a7f744c39696849658a8c498",
+        "learned_experience_id": null,
+        "repeated_error_codes": [],
+        "context_tokens": 37,
+        "latency_ms": 7.780300000376883,
+        "tool_steps": 3,
+        "domain": "coding_repository",
+        "task_type": "compatible_schema_migration"
+      },
+      {
+        "request_id": "heldout-coding-schema-03",
+        "run_id": "work_d6f2492983e743a0ab9ac8f9ce277349",
+        "success": true,
+        "plan_source": "experience",
+        "plan": [
+          "inspect_schema",
+          "migrate_schema",
+          "run_schema_tests"
+        ],
+        "executions": [
+          {
+            "name": "inspect_schema",
+            "success": true,
+            "output": {
+              "document": {
+                "fields": [
+                  "id",
+                  "name",
+                  "legacy_reference"
+                ],
+                "version": 1
+              }
+            },
+            "error_code": null,
+            "duration_ms": 1.547599998957594
+          },
+          {
+            "name": "migrate_schema",
+            "success": true,
+            "output": {
+              "fields": [
+                "id",
+                "name",
+                "legacy_reference",
+                "display_name"
+              ],
+              "version": 2
+            },
+            "error_code": null,
+            "duration_ms": 0.9076999995158985
+          },
+          {
+            "name": "run_schema_tests",
+            "success": true,
+            "output": {
+              "passed": true
+            },
+            "error_code": null,
+            "duration_ms": 1.4615000000048894
+          }
+        ],
+        "packet": {
+          "schema": "wavemind.experience_packet.v1",
+          "namespace": "experienced-work-agent",
+          "query": "Apply a non-destructive schema upgrade to the repository.",
+          "token_budget": 400,
+          "estimated_tokens": 37,
+          "items": [
+            {
+              "experience_id": "exp_strategy_e491ebf75c46661ad092a5bb",
+              "version": 1,
+              "kind": "successful_strategy",
+              "title": "Verified compatible_schema_migration strategy",
+              "excerpt": "",
+              "score": 0.360127,
+              "signals": {
+                "vector": 0.002967,
+                "lexical": 0.05,
+                "applicability": 0.916667,
+                "confidence": 0.8,
+                "trust": 0.4,
+                "outcome": 1.0,
+                "recency": 0.999999
+              },
+              "citation": "experience:exp_strategy_e491ebf75c46661ad092a5bb@v1",
+              "detail_ref": "experience://exp_strategy_e491ebf75c46661ad092a5bb?version=1",
+              "provenance": {
+                "source": {
+                  "provider": "wavemind_work_agent",
+                  "source_type": "repeated_verified_outcome",
+                  "source_id": "work_1427b8ec7ec641208daee5d64288415a"
+                },
+                "trajectory_id": "work_1427b8ec7ec641208daee5d64288415a",
+                "content_sha256": "ab72f5f7ab1dcc4fa20020f21eae81771410b67d22825ba6dfd7f013cc7ca220"
+              },
+              "estimated_tokens": 26,
+              "canary": false
+            }
+          ],
+          "omitted_count": 0,
+          "generated_at": 1785259486.5403018,
+          "compiler_policy": {
+            "signal_weights": {
+              "vector": 0.38,
+              "lexical": 0.18,
+              "applicability": 0.12,
+              "confidence": 0.1,
+              "trust": 0.1,
+              "outcome": 0.07,
+              "recency": 0.05
+            },
+            "recency_half_life_days": 30.0,
+            "active_only": true,
+            "progressive_disclosure": true,
+            "reference_only": true
+          },
+          "citations": [
+            "experience:exp_strategy_e491ebf75c46661ad092a5bb@v1"
+          ]
+        },
+        "selected_experience_id": "exp_strategy_e491ebf75c46661ad092a5bb",
+        "trajectory_id": "work_d6f2492983e743a0ab9ac8f9ce277349",
+        "learned_experience_id": null,
+        "repeated_error_codes": [],
+        "context_tokens": 37,
+        "latency_ms": 8.309999999255524,
+        "tool_steps": 3,
+        "domain": "coding_repository",
+        "task_type": "compatible_schema_migration"
+      },
+      {
+        "request_id": "heldout-coding-schema-04",
+        "run_id": "work_12fcdb2b6ae64a6a874f90b63840b070",
+        "success": true,
+        "plan_source": "experience",
+        "plan": [
+          "inspect_schema",
+          "migrate_schema",
+          "run_schema_tests"
+        ],
+        "executions": [
+          {
+            "name": "inspect_schema",
+            "success": true,
+            "output": {
+              "document": {
+                "fields": [
+                  "id",
+                  "name",
+                  "legacy_reference"
+                ],
+                "version": 1
+              }
+            },
+            "error_code": null,
+            "duration_ms": 1.6782000002422137
+          },
+          {
+            "name": "migrate_schema",
+            "success": true,
+            "output": {
+              "fields": [
+                "id",
+                "name",
+                "legacy_reference",
+                "display_name"
+              ],
+              "version": 2
+            },
+            "error_code": null,
+            "duration_ms": 0.7893000001786277
+          },
+          {
+            "name": "run_schema_tests",
+            "success": true,
+            "output": {
+              "passed": true
+            },
+            "error_code": null,
+            "duration_ms": 1.2141999995947117
+          }
+        ],
+        "packet": {
+          "schema": "wavemind.experience_packet.v1",
+          "namespace": "experienced-work-agent",
+          "query": "Modernize stored fields without dropping legacy references.",
+          "token_budget": 400,
+          "estimated_tokens": 37,
+          "items": [
+            {
+              "experience_id": "exp_strategy_e491ebf75c46661ad092a5bb",
+              "version": 1,
+              "kind": "successful_strategy",
+              "title": "Verified compatible_schema_migration strategy",
+              "excerpt": "",
+              "score": 0.354268,
+              "signals": {
+                "vector": 0.01123,
+                "lexical": 0.0,
+                "applicability": 0.916667,
+                "confidence": 0.8,
+                "trust": 0.4,
+                "outcome": 1.0,
+                "recency": 0.999999
+              },
+              "citation": "experience:exp_strategy_e491ebf75c46661ad092a5bb@v1",
+              "detail_ref": "experience://exp_strategy_e491ebf75c46661ad092a5bb?version=1",
+              "provenance": {
+                "source": {
+                  "provider": "wavemind_work_agent",
+                  "source_type": "repeated_verified_outcome",
+                  "source_id": "work_1427b8ec7ec641208daee5d64288415a"
+                },
+                "trajectory_id": "work_1427b8ec7ec641208daee5d64288415a",
+                "content_sha256": "ab72f5f7ab1dcc4fa20020f21eae81771410b67d22825ba6dfd7f013cc7ca220"
+              },
+              "estimated_tokens": 26,
+              "canary": false
+            }
+          ],
+          "omitted_count": 0,
+          "generated_at": 1785259486.5512173,
+          "compiler_policy": {
+            "signal_weights": {
+              "vector": 0.38,
+              "lexical": 0.18,
+              "applicability": 0.12,
+              "confidence": 0.1,
+              "trust": 0.1,
+              "outcome": 0.07,
+              "recency": 0.05
+            },
+            "recency_half_life_days": 30.0,
+            "active_only": true,
+            "progressive_disclosure": true,
+            "reference_only": true
+          },
+          "citations": [
+            "experience:exp_strategy_e491ebf75c46661ad092a5bb@v1"
+          ]
+        },
+        "selected_experience_id": "exp_strategy_e491ebf75c46661ad092a5bb",
+        "trajectory_id": "work_12fcdb2b6ae64a6a874f90b63840b070",
+        "learned_experience_id": null,
+        "repeated_error_codes": [],
+        "context_tokens": 37,
+        "latency_ms": 8.212400000047637,
+        "tool_steps": 3,
+        "domain": "coding_repository",
+        "task_type": "compatible_schema_migration"
+      },
+      {
+        "request_id": "heldout-support-identity-00",
+        "run_id": "work_6cd4731525974663bdef6e1cc6bf61d0",
+        "success": true,
+        "plan_source": "experience",
+        "plan": [
+          "lookup_customer",
+          "verify_identity",
+          "update_customer"
+        ],
+        "executions": [
+          {
+            "name": "lookup_customer",
+            "success": true,
+            "output": {
+              "customer_id": 1
+            },
+            "error_code": null,
+            "duration_ms": 0.0018000009731622413
+          },
+          {
+            "name": "verify_identity",
+            "success": true,
+            "output": {
+              "verified": true
+            },
+            "error_code": null,
+            "duration_ms": 6.2315999985003145
+          },
+          {
+            "name": "update_customer",
+            "success": true,
+            "output": {
+              "updated": true
+            },
+            "error_code": null,
+            "duration_ms": 7.446900001014001
+          }
+        ],
+        "packet": {
+          "schema": "wavemind.experience_packet.v1",
+          "namespace": "experienced-work-agent",
+          "query": "Change the account email after validating the caller.",
+          "token_budget": 400,
+          "estimated_tokens": 36,
+          "items": [
+            {
+              "experience_id": "exp_strategy_f5ecdd51dae0f35d3ba3f359",
+              "version": 1,
+              "kind": "successful_strategy",
+              "title": "Verified verified_customer_update strategy",
+              "excerpt": "",
+              "score": 0.359474,
+              "signals": {
+                "vector": 0.0,
+                "lexical": 0.052632,
+                "applicability": 0.916667,
+                "confidence": 0.8,
+                "trust": 0.4,
+                "outcome": 1.0,
+                "recency": 0.999999
+              },
+              "citation": "experience:exp_strategy_f5ecdd51dae0f35d3ba3f359@v1",
+              "detail_ref": "experience://exp_strategy_f5ecdd51dae0f35d3ba3f359?version=1",
+              "provenance": {
+                "source": {
+                  "provider": "wavemind_work_agent",
+                  "source_type": "repeated_verified_outcome",
+                  "source_id": "work_3b043b51a55247f28599ffb0e5f354ef"
+                },
+                "trajectory_id": "work_3b043b51a55247f28599ffb0e5f354ef",
+                "content_sha256": "016ca233be55fa1b94ecf3c06d1b9bef623ceca949f0866aabdc821ee9fac8a5"
+              },
+              "estimated_tokens": 26,
+              "canary": false
+            }
+          ],
+          "omitted_count": 0,
+          "generated_at": 1785259486.5778277,
+          "compiler_policy": {
+            "signal_weights": {
+              "vector": 0.38,
+              "lexical": 0.18,
+              "applicability": 0.12,
+              "confidence": 0.1,
+              "trust": 0.1,
+              "outcome": 0.07,
+              "recency": 0.05
+            },
+            "recency_half_life_days": 30.0,
+            "active_only": true,
+            "progressive_disclosure": true,
+            "reference_only": true
+          },
+          "citations": [
+            "experience:exp_strategy_f5ecdd51dae0f35d3ba3f359@v1"
+          ]
+        },
+        "selected_experience_id": "exp_strategy_f5ecdd51dae0f35d3ba3f359",
+        "trajectory_id": "work_6cd4731525974663bdef6e1cc6bf61d0",
+        "learned_experience_id": null,
+        "repeated_error_codes": [],
+        "context_tokens": 36,
+        "latency_ms": 17.617000001337146,
+        "tool_steps": 3,
+        "domain": "support_crm",
+        "task_type": "verified_customer_update"
+      },
+      {
+        "request_id": "heldout-support-identity-01",
+        "run_id": "work_5ca6c15c0ea44e74afcf753de6581af5",
+        "success": true,
+        "plan_source": "experience",
+        "plan": [
+          "lookup_customer",
+          "verify_identity",
+          "update_customer"
+        ],
+        "executions": [
+          {
+            "name": "lookup_customer",
+            "success": true,
+            "output": {
+              "customer_id": 1
+            },
+            "error_code": null,
+            "duration_ms": 0.002200000380980782
+          },
+          {
+            "name": "verify_identity",
+            "success": true,
+            "output": {
+              "verified": true
+            },
+            "error_code": null,
+            "duration_ms": 5.994499999360414
+          },
+          {
+            "name": "update_customer",
+            "success": true,
+            "output": {
+              "updated": true
+            },
+            "error_code": null,
+            "duration_ms": 7.221300000310293
+          }
+        ],
+        "packet": {
+          "schema": "wavemind.experience_packet.v1",
+          "namespace": "experienced-work-agent",
+          "query": "Handle a contact detail correction with identity checks.",
+          "token_budget": 400,
+          "estimated_tokens": 36,
+          "items": [
+            {
+              "experience_id": "exp_strategy_f5ecdd51dae0f35d3ba3f359",
+              "version": 1,
+              "kind": "successful_strategy",
+              "title": "Verified verified_customer_update strategy",
+              "excerpt": "",
+              "score": 0.35,
+              "signals": {
+                "vector": 0.0,
+                "lexical": 0.0,
+                "applicability": 0.916667,
+                "confidence": 0.8,
+                "trust": 0.4,
+                "outcome": 1.0,
+                "recency": 0.999999
+              },
+              "citation": "experience:exp_strategy_f5ecdd51dae0f35d3ba3f359@v1",
+              "detail_ref": "experience://exp_strategy_f5ecdd51dae0f35d3ba3f359?version=1",
+              "provenance": {
+                "source": {
+                  "provider": "wavemind_work_agent",
+                  "source_type": "repeated_verified_outcome",
+                  "source_id": "work_3b043b51a55247f28599ffb0e5f354ef"
+                },
+                "trajectory_id": "work_3b043b51a55247f28599ffb0e5f354ef",
+                "content_sha256": "016ca233be55fa1b94ecf3c06d1b9bef623ceca949f0866aabdc821ee9fac8a5"
+              },
+              "estimated_tokens": 26,
+              "canary": false
+            }
+          ],
+          "omitted_count": 0,
+          "generated_at": 1785259486.6144774,
+          "compiler_policy": {
+            "signal_weights": {
+              "vector": 0.38,
+              "lexical": 0.18,
+              "applicability": 0.12,
+              "confidence": 0.1,
+              "trust": 0.1,
+              "outcome": 0.07,
+              "recency": 0.05
+            },
+            "recency_half_life_days": 30.0,
+            "active_only": true,
+            "progressive_disclosure": true,
+            "reference_only": true
+          },
+          "citations": [
+            "experience:exp_strategy_f5ecdd51dae0f35d3ba3f359@v1"
+          ]
+        },
+        "selected_experience_id": "exp_strategy_f5ecdd51dae0f35d3ba3f359",
+        "trajectory_id": "work_5ca6c15c0ea44e74afcf753de6581af5",
+        "learned_experience_id": null,
+        "repeated_error_codes": [],
+        "context_tokens": 36,
+        "latency_ms": 17.185000000608852,
+        "tool_steps": 3,
+        "domain": "support_crm",
+        "task_type": "verified_customer_update"
+      },
+      {
+        "request_id": "heldout-support-identity-02",
+        "run_id": "work_c9ee621fdec24bb4befaa06a6e6792ce",
+        "success": true,
+        "plan_source": "experience",
+        "plan": [
+          "lookup_customer",
+          "verify_identity",
+          "update_customer"
+        ],
+        "executions": [
+          {
+            "name": "lookup_customer",
+            "success": true,
+            "output": {
+              "customer_id": 1
+            },
+            "error_code": null,
+            "duration_ms": 0.0018999999156221747
+          },
+          {
+            "name": "verify_identity",
+            "success": true,
+            "output": {
+              "verified": true
+            },
+            "error_code": null,
+            "duration_ms": 5.892200000744197
+          },
+          {
+            "name": "update_customer",
+            "success": true,
+            "output": {
+              "updated": true
+            },
+            "error_code": null,
+            "duration_ms": 6.937899999684305
+          }
+        ],
+        "packet": {
+          "schema": "wavemind.experience_packet.v1",
+          "namespace": "experienced-work-agent",
+          "query": "Update customer information without bypassing verification.",
+          "token_budget": 400,
+          "estimated_tokens": 36,
+          "items": [
+            {
+              "experience_id": "exp_strategy_f5ecdd51dae0f35d3ba3f359",
+              "version": 1,
+              "kind": "successful_strategy",
+              "title": "Verified verified_customer_update strategy",
+              "excerpt": "",
+              "score": 0.350817,
+              "signals": {
+                "vector": 0.00215,
+                "lexical": 0.0,
+                "applicability": 0.916667,
+                "confidence": 0.8,
+                "trust": 0.4,
+                "outcome": 1.0,
+                "recency": 0.999999
+              },
+              "citation": "experience:exp_strategy_f5ecdd51dae0f35d3ba3f359@v1",
+              "detail_ref": "experience://exp_strategy_f5ecdd51dae0f35d3ba3f359?version=1",
+              "provenance": {
+                "source": {
+                  "provider": "wavemind_work_agent",
+                  "source_type": "repeated_verified_outcome",
+                  "source_id": "work_3b043b51a55247f28599ffb0e5f354ef"
+                },
+                "trajectory_id": "work_3b043b51a55247f28599ffb0e5f354ef",
+                "content_sha256": "016ca233be55fa1b94ecf3c06d1b9bef623ceca949f0866aabdc821ee9fac8a5"
+              },
+              "estimated_tokens": 26,
+              "canary": false
+            }
+          ],
+          "omitted_count": 0,
+          "generated_at": 1785259486.6497662,
+          "compiler_policy": {
+            "signal_weights": {
+              "vector": 0.38,
+              "lexical": 0.18,
+              "applicability": 0.12,
+              "confidence": 0.1,
+              "trust": 0.1,
+              "outcome": 0.07,
+              "recency": 0.05
+            },
+            "recency_half_life_days": 30.0,
+            "active_only": true,
+            "progressive_disclosure": true,
+            "reference_only": true
+          },
+          "citations": [
+            "experience:exp_strategy_f5ecdd51dae0f35d3ba3f359@v1"
+          ]
+        },
+        "selected_experience_id": "exp_strategy_f5ecdd51dae0f35d3ba3f359",
+        "trajectory_id": "work_c9ee621fdec24bb4befaa06a6e6792ce",
+        "learned_experience_id": null,
+        "repeated_error_codes": [],
+        "context_tokens": 36,
+        "latency_ms": 28.269999998883577,
+        "tool_steps": 3,
+        "domain": "support_crm",
+        "task_type": "verified_customer_update"
+      },
+      {
+        "request_id": "heldout-support-identity-03",
+        "run_id": "work_955b9b894b494d60b68115e57353a5af",
+        "success": true,
+        "plan_source": "experience",
+        "plan": [
+          "lookup_customer",
+          "verify_identity",
+          "update_customer"
+        ],
+        "executions": [
+          {
+            "name": "lookup_customer",
+            "success": true,
+            "output": {
+              "customer_id": 1
+            },
+            "error_code": null,
+            "duration_ms": 0.0017999991541728377
+          },
+          {
+            "name": "verify_identity",
+            "success": true,
+            "output": {
+              "verified": true
+            },
+            "error_code": null,
+            "duration_ms": 6.098900001234142
+          },
+          {
+            "name": "update_customer",
+            "success": true,
+            "output": {
+              "updated": true
+            },
+            "error_code": null,
+            "duration_ms": 8.111700000881683
+          }
+        ],
+        "packet": {
+          "schema": "wavemind.experience_packet.v1",
+          "namespace": "experienced-work-agent",
+          "query": "Process a caller-requested email change safely.",
+          "token_budget": 400,
+          "estimated_tokens": 36,
+          "items": [
+            {
+              "experience_id": "exp_strategy_f5ecdd51dae0f35d3ba3f359",
+              "version": 1,
+              "kind": "successful_strategy",
+              "title": "Verified verified_customer_update strategy",
+              "excerpt": "",
+              "score": 0.356018,
+              "signals": {
+                "vector": 0.015838,
+                "lexical": 0.0,
+                "applicability": 0.916667,
+                "confidence": 0.8,
+                "trust": 0.4,
+                "outcome": 1.0,
+                "recency": 0.999999
+              },
+              "citation": "experience:exp_strategy_f5ecdd51dae0f35d3ba3f359@v1",
+              "detail_ref": "experience://exp_strategy_f5ecdd51dae0f35d3ba3f359?version=1",
+              "provenance": {
+                "source": {
+                  "provider": "wavemind_work_agent",
+                  "source_type": "repeated_verified_outcome",
+                  "source_id": "work_3b043b51a55247f28599ffb0e5f354ef"
+                },
+                "trajectory_id": "work_3b043b51a55247f28599ffb0e5f354ef",
+                "content_sha256": "016ca233be55fa1b94ecf3c06d1b9bef623ceca949f0866aabdc821ee9fac8a5"
+              },
+              "estimated_tokens": 26,
+              "canary": false
+            }
+          ],
+          "omitted_count": 0,
+          "generated_at": 1785259486.6978095,
+          "compiler_policy": {
+            "signal_weights": {
+              "vector": 0.38,
+              "lexical": 0.18,
+              "applicability": 0.12,
+              "confidence": 0.1,
+              "trust": 0.1,
+              "outcome": 0.07,
+              "recency": 0.05
+            },
+            "recency_half_life_days": 30.0,
+            "active_only": true,
+            "progressive_disclosure": true,
+            "reference_only": true
+          },
+          "citations": [
+            "experience:exp_strategy_f5ecdd51dae0f35d3ba3f359@v1"
+          ]
+        },
+        "selected_experience_id": "exp_strategy_f5ecdd51dae0f35d3ba3f359",
+        "trajectory_id": "work_955b9b894b494d60b68115e57353a5af",
+        "learned_experience_id": null,
+        "repeated_error_codes": [],
+        "context_tokens": 36,
+        "latency_ms": 19.228799999837065,
+        "tool_steps": 3,
+        "domain": "support_crm",
+        "task_type": "verified_customer_update"
+      },
+      {
+        "request_id": "heldout-support-identity-04",
+        "run_id": "work_843eaefd957d4374b5124e185fc384b0",
+        "success": true,
+        "plan_source": "experience",
+        "plan": [
+          "lookup_customer",
+          "verify_identity",
+          "update_customer"
+        ],
+        "executions": [
+          {
+            "name": "lookup_customer",
+            "success": true,
+            "output": {
+              "customer_id": 1
+            },
+            "error_code": null,
+            "duration_ms": 0.0018999999156221747
+          },
+          {
+            "name": "verify_identity",
+            "success": true,
+            "output": {
+              "verified": true
+            },
+            "error_code": null,
+            "duration_ms": 7.516100000430015
+          },
+          {
+            "name": "update_customer",
+            "success": true,
+            "output": {
+              "updated": true
+            },
+            "error_code": null,
+            "duration_ms": 6.097200001022429
+          }
+        ],
+        "packet": {
+          "schema": "wavemind.experience_packet.v1",
+          "namespace": "experienced-work-agent",
+          "query": "Correct CRM contact data only for the validated account owner.",
+          "token_budget": 400,
+          "estimated_tokens": 36,
+          "items": [
+            {
+              "experience_id": "exp_strategy_f5ecdd51dae0f35d3ba3f359",
+              "version": 1,
+              "kind": "successful_strategy",
+              "title": "Verified verified_customer_update strategy",
+              "excerpt": "",
+              "score": 0.367143,
+              "signals": {
+                "vector": 0.0,
+                "lexical": 0.095238,
+                "applicability": 0.916667,
+                "confidence": 0.8,
+                "trust": 0.4,
+                "outcome": 1.0,
+                "recency": 0.999999
+              },
+              "citation": "experience:exp_strategy_f5ecdd51dae0f35d3ba3f359@v1",
+              "detail_ref": "experience://exp_strategy_f5ecdd51dae0f35d3ba3f359?version=1",
+              "provenance": {
+                "source": {
+                  "provider": "wavemind_work_agent",
+                  "source_type": "repeated_verified_outcome",
+                  "source_id": "work_3b043b51a55247f28599ffb0e5f354ef"
+                },
+                "trajectory_id": "work_3b043b51a55247f28599ffb0e5f354ef",
+                "content_sha256": "016ca233be55fa1b94ecf3c06d1b9bef623ceca949f0866aabdc821ee9fac8a5"
+              },
+              "estimated_tokens": 26,
+              "canary": false
+            }
+          ],
+          "omitted_count": 0,
+          "generated_at": 1785259486.7354906,
+          "compiler_policy": {
+            "signal_weights": {
+              "vector": 0.38,
+              "lexical": 0.18,
+              "applicability": 0.12,
+              "confidence": 0.1,
+              "trust": 0.1,
+              "outcome": 0.07,
+              "recency": 0.05
+            },
+            "recency_half_life_days": 30.0,
+            "active_only": true,
+            "progressive_disclosure": true,
+            "reference_only": true
+          },
+          "citations": [
+            "experience:exp_strategy_f5ecdd51dae0f35d3ba3f359@v1"
+          ]
+        },
+        "selected_experience_id": "exp_strategy_f5ecdd51dae0f35d3ba3f359",
+        "trajectory_id": "work_843eaefd957d4374b5124e185fc384b0",
+        "learned_experience_id": null,
+        "repeated_error_codes": [],
+        "context_tokens": 36,
+        "latency_ms": 17.85560000098485,
+        "tool_steps": 3,
+        "domain": "support_crm",
+        "task_type": "verified_customer_update"
+      },
+      {
+        "request_id": "heldout-support-duplicate-00",
+        "run_id": "work_d676ccaa09004ae4a9980b2459ce696b",
+        "success": true,
+        "plan_source": "experience",
+        "plan": [
+          "search_duplicates",
+          "merge_cases",
+          "notify_customer"
+        ],
+        "executions": [
+          {
+            "name": "search_duplicates",
+            "success": true,
+            "output": {
+              "case_ids": [
+                1,
+                2
+              ]
+            },
+            "error_code": null,
+            "duration_ms": 0.2421000008325791
+          },
+          {
+            "name": "merge_cases",
+            "success": true,
+            "output": {
+              "merged": 2,
+              "into": 1
+            },
+            "error_code": null,
+            "duration_ms": 7.568500001070788
+          },
+          {
+            "name": "notify_customer",
+            "success": true,
+            "output": {
+              "notified": true
+            },
+            "error_code": null,
+            "duration_ms": 0.14089999967836775
+          }
+        ],
+        "packet": {
+          "schema": "wavemind.experience_packet.v1",
+          "namespace": "experienced-work-agent",
+          "query": "Resolve two tickets for the same incident without losing the active case.",
+          "token_budget": 400,
+          "estimated_tokens": 36,
+          "items": [
+            {
+              "experience_id": "exp_strategy_03d20d207c0db95d891a4ce7",
+              "version": 1,
+              "kind": "successful_strategy",
+              "title": "Verified duplicate_case_resolution strategy",
+              "excerpt": "",
+              "score": 0.368691,
+              "signals": {
+                "vector": 0.006125,
+                "lexical": 0.090909,
+                "applicability": 0.916667,
+                "confidence": 0.8,
+                "trust": 0.4,
+                "outcome": 1.0,
+                "recency": 0.999999
+              },
+              "citation": "experience:exp_strategy_03d20d207c0db95d891a4ce7@v1",
+              "detail_ref": "experience://exp_strategy_03d20d207c0db95d891a4ce7?version=1",
+              "provenance": {
+                "source": {
+                  "provider": "wavemind_work_agent",
+                  "source_type": "repeated_verified_outcome",
+                  "source_id": "work_24dea7808da543ffb4260b26b11939a0"
+                },
+                "trajectory_id": "work_24dea7808da543ffb4260b26b11939a0",
+                "content_sha256": "4e6fd03276c485b0a8f9c9660ded31ece8e1e4ecd5f0a35c36c79d9f9acd96f5"
+              },
+              "estimated_tokens": 26,
+              "canary": false
+            }
+          ],
+          "omitted_count": 0,
+          "generated_at": 1785259486.7723446,
+          "compiler_policy": {
+            "signal_weights": {
+              "vector": 0.38,
+              "lexical": 0.18,
+              "applicability": 0.12,
+              "confidence": 0.1,
+              "trust": 0.1,
+              "outcome": 0.07,
+              "recency": 0.05
+            },
+            "recency_half_life_days": 30.0,
+            "active_only": true,
+            "progressive_disclosure": true,
+            "reference_only": true
+          },
+          "citations": [
+            "experience:exp_strategy_03d20d207c0db95d891a4ce7@v1"
+          ]
+        },
+        "selected_experience_id": "exp_strategy_03d20d207c0db95d891a4ce7",
+        "trajectory_id": "work_d676ccaa09004ae4a9980b2459ce696b",
+        "learned_experience_id": null,
+        "repeated_error_codes": [],
+        "context_tokens": 36,
+        "latency_ms": 12.316800000917283,
+        "tool_steps": 3,
+        "domain": "support_crm",
+        "task_type": "duplicate_case_resolution"
+      },
+      {
+        "request_id": "heldout-support-duplicate-01",
+        "run_id": "work_2e448b77fd504cba994589b5158f26da",
+        "success": true,
+        "plan_source": "experience",
+        "plan": [
+          "search_duplicates",
+          "merge_cases",
+          "notify_customer"
+        ],
+        "executions": [
+          {
+            "name": "search_duplicates",
+            "success": true,
+            "output": {
+              "case_ids": [
+                1,
+                2
+              ]
+            },
+            "error_code": null,
+            "duration_ms": 0.13919999946665484
+          },
+          {
+            "name": "merge_cases",
+            "success": true,
+            "output": {
+              "merged": 2,
+              "into": 1
+            },
+            "error_code": null,
+            "duration_ms": 5.753399998866371
+          },
+          {
+            "name": "notify_customer",
+            "success": true,
+            "output": {
+              "notified": true
+            },
+            "error_code": null,
+            "duration_ms": 0.12590000005729962
+          }
+        ],
+        "packet": {
+          "schema": "wavemind.experience_packet.v1",
+          "namespace": "experienced-work-agent",
+          "query": "Consolidate duplicate customer cases and send one update.",
+          "token_budget": 400,
+          "estimated_tokens": 36,
+          "items": [
+            {
+              "experience_id": "exp_strategy_03d20d207c0db95d891a4ce7",
+              "version": 1,
+              "kind": "successful_strategy",
+              "title": "Verified duplicate_case_resolution strategy",
+              "excerpt": "",
+              "score": 0.355649,
+              "signals": {
+                "vector": 0.014865,
+                "lexical": 0.0,
+                "applicability": 0.916667,
+                "confidence": 0.8,
+                "trust": 0.4,
+                "outcome": 1.0,
+                "recency": 0.999999
+              },
+              "citation": "experience:exp_strategy_03d20d207c0db95d891a4ce7@v1",
+              "detail_ref": "experience://exp_strategy_03d20d207c0db95d891a4ce7?version=1",
+              "provenance": {
+                "source": {
+                  "provider": "wavemind_work_agent",
+                  "source_type": "repeated_verified_outcome",
+                  "source_id": "work_24dea7808da543ffb4260b26b11939a0"
+                },
+                "trajectory_id": "work_24dea7808da543ffb4260b26b11939a0",
+                "content_sha256": "4e6fd03276c485b0a8f9c9660ded31ece8e1e4ecd5f0a35c36c79d9f9acd96f5"
+              },
+              "estimated_tokens": 26,
+              "canary": false
+            }
+          ],
+          "omitted_count": 0,
+          "generated_at": 1785259486.8843055,
+          "compiler_policy": {
+            "signal_weights": {
+              "vector": 0.38,
+              "lexical": 0.18,
+              "applicability": 0.12,
+              "confidence": 0.1,
+              "trust": 0.1,
+              "outcome": 0.07,
+              "recency": 0.05
+            },
+            "recency_half_life_days": 30.0,
+            "active_only": true,
+            "progressive_disclosure": true,
+            "reference_only": true
+          },
+          "citations": [
+            "experience:exp_strategy_03d20d207c0db95d891a4ce7@v1"
+          ]
+        },
+        "selected_experience_id": "exp_strategy_03d20d207c0db95d891a4ce7",
+        "trajectory_id": "work_2e448b77fd504cba994589b5158f26da",
+        "learned_experience_id": null,
+        "repeated_error_codes": [],
+        "context_tokens": 36,
+        "latency_ms": 9.966200001144898,
+        "tool_steps": 3,
+        "domain": "support_crm",
+        "task_type": "duplicate_case_resolution"
+      },
+      {
+        "request_id": "heldout-support-duplicate-02",
+        "run_id": "work_c31133e6dc314d3a8da68f6d28b61f02",
+        "success": true,
+        "plan_source": "experience",
+        "plan": [
+          "search_duplicates",
+          "merge_cases",
+          "notify_customer"
+        ],
+        "executions": [
+          {
+            "name": "search_duplicates",
+            "success": true,
+            "output": {
+              "case_ids": [
+                1,
+                2
+              ]
+            },
+            "error_code": null,
+            "duration_ms": 0.16060000052675605
+          },
+          {
+            "name": "merge_cases",
+            "success": true,
+            "output": {
+              "merged": 2,
+              "into": 1
+            },
+            "error_code": null,
+            "duration_ms": 7.732399999440531
+          },
+          {
+            "name": "notify_customer",
+            "success": true,
+            "output": {
+              "notified": true
+            },
+            "error_code": null,
+            "duration_ms": 0.14230000124371145
+          }
+        ],
+        "packet": {
+          "schema": "wavemind.experience_packet.v1",
+          "namespace": "experienced-work-agent",
+          "query": "Handle repeated support tickets as a single continuing case.",
+          "token_budget": 400,
+          "estimated_tokens": 36,
+          "items": [
+            {
+              "experience_id": "exp_strategy_03d20d207c0db95d891a4ce7",
+              "version": 1,
+              "kind": "successful_strategy",
+              "title": "Verified duplicate_case_resolution strategy",
+              "excerpt": "",
+              "score": 0.358128,
+              "signals": {
+                "vector": 0.02139,
+                "lexical": 0.0,
+                "applicability": 0.916667,
+                "confidence": 0.8,
+                "trust": 0.4,
+                "outcome": 1.0,
+                "recency": 0.999999
+              },
+              "citation": "experience:exp_strategy_03d20d207c0db95d891a4ce7@v1",
+              "detail_ref": "experience://exp_strategy_03d20d207c0db95d891a4ce7?version=1",
+              "provenance": {
+                "source": {
+                  "provider": "wavemind_work_agent",
+                  "source_type": "repeated_verified_outcome",
+                  "source_id": "work_24dea7808da543ffb4260b26b11939a0"
+                },
+                "trajectory_id": "work_24dea7808da543ffb4260b26b11939a0",
+                "content_sha256": "4e6fd03276c485b0a8f9c9660ded31ece8e1e4ecd5f0a35c36c79d9f9acd96f5"
+              },
+              "estimated_tokens": 26,
+              "canary": false
+            }
+          ],
+          "omitted_count": 0,
+          "generated_at": 1785259486.9125142,
+          "compiler_policy": {
+            "signal_weights": {
+              "vector": 0.38,
+              "lexical": 0.18,
+              "applicability": 0.12,
+              "confidence": 0.1,
+              "trust": 0.1,
+              "outcome": 0.07,
+              "recency": 0.05
+            },
+            "recency_half_life_days": 30.0,
+            "active_only": true,
+            "progressive_disclosure": true,
+            "reference_only": true
+          },
+          "citations": [
+            "experience:exp_strategy_03d20d207c0db95d891a4ce7@v1"
+          ]
+        },
+        "selected_experience_id": "exp_strategy_03d20d207c0db95d891a4ce7",
+        "trajectory_id": "work_c31133e6dc314d3a8da68f6d28b61f02",
+        "learned_experience_id": null,
+        "repeated_error_codes": [],
+        "context_tokens": 36,
+        "latency_ms": 11.927100000320934,
+        "tool_steps": 3,
+        "domain": "support_crm",
+        "task_type": "duplicate_case_resolution"
+      },
+      {
+        "request_id": "heldout-support-duplicate-03",
+        "run_id": "work_9c953eaebfee460ca89293845ef70682",
+        "success": true,
+        "plan_source": "experience",
+        "plan": [
+          "search_duplicates",
+          "merge_cases",
+          "notify_customer"
+        ],
+        "executions": [
+          {
+            "name": "search_duplicates",
+            "success": true,
+            "output": {
+              "case_ids": [
+                1,
+                2
+              ]
+            },
+            "error_code": null,
+            "duration_ms": 0.2488999998604413
+          },
+          {
+            "name": "merge_cases",
+            "success": true,
+            "output": {
+              "merged": 2,
+              "into": 1
+            },
+            "error_code": null,
+            "duration_ms": 6.267799999477575
+          },
+          {
+            "name": "notify_customer",
+            "success": true,
+            "output": {
+              "notified": true
+            },
+            "error_code": null,
+            "duration_ms": 0.15100000018719584
+          }
+        ],
+        "packet": {
+          "schema": "wavemind.experience_packet.v1",
+          "namespace": "experienced-work-agent",
+          "query": "Merge an accidental duplicate before communicating resolution.",
+          "token_budget": 400,
+          "estimated_tokens": 36,
+          "items": [
+            {
+              "experience_id": "exp_strategy_03d20d207c0db95d891a4ce7",
+              "version": 1,
+              "kind": "successful_strategy",
+              "title": "Verified duplicate_case_resolution strategy",
+              "excerpt": "",
+              "score": 0.35,
+              "signals": {
+                "vector": 0.0,
+                "lexical": 0.0,
+                "applicability": 0.916667,
+                "confidence": 0.8,
+                "trust": 0.4,
+                "outcome": 1.0,
+                "recency": 0.999999
+              },
+              "citation": "experience:exp_strategy_03d20d207c0db95d891a4ce7@v1",
+              "detail_ref": "experience://exp_strategy_03d20d207c0db95d891a4ce7?version=1",
+              "provenance": {
+                "source": {
+                  "provider": "wavemind_work_agent",
+                  "source_type": "repeated_verified_outcome",
+                  "source_id": "work_24dea7808da543ffb4260b26b11939a0"
+                },
+                "trajectory_id": "work_24dea7808da543ffb4260b26b11939a0",
+                "content_sha256": "4e6fd03276c485b0a8f9c9660ded31ece8e1e4ecd5f0a35c36c79d9f9acd96f5"
+              },
+              "estimated_tokens": 26,
+              "canary": false
+            }
+          ],
+          "omitted_count": 0,
+          "generated_at": 1785259486.9435418,
+          "compiler_policy": {
+            "signal_weights": {
+              "vector": 0.38,
+              "lexical": 0.18,
+              "applicability": 0.12,
+              "confidence": 0.1,
+              "trust": 0.1,
+              "outcome": 0.07,
+              "recency": 0.05
+            },
+            "recency_half_life_days": 30.0,
+            "active_only": true,
+            "progressive_disclosure": true,
+            "reference_only": true
+          },
+          "citations": [
+            "experience:exp_strategy_03d20d207c0db95d891a4ce7@v1"
+          ]
+        },
+        "selected_experience_id": "exp_strategy_03d20d207c0db95d891a4ce7",
+        "trajectory_id": "work_9c953eaebfee460ca89293845ef70682",
+        "learned_experience_id": null,
+        "repeated_error_codes": [],
+        "context_tokens": 36,
+        "latency_ms": 11.505800001032185,
+        "tool_steps": 3,
+        "domain": "support_crm",
+        "task_type": "duplicate_case_resolution"
+      },
+      {
+        "request_id": "heldout-support-duplicate-04",
+        "run_id": "work_53172c6808c64ad8ace733c371b3f5f8",
+        "success": true,
+        "plan_source": "experience",
+        "plan": [
+          "search_duplicates",
+          "merge_cases",
+          "notify_customer"
+        ],
+        "executions": [
+          {
+            "name": "search_duplicates",
+            "success": true,
+            "output": {
+              "case_ids": [
+                1,
+                2
+              ]
+            },
+            "error_code": null,
+            "duration_ms": 0.16369999866583385
+          },
+          {
+            "name": "merge_cases",
+            "success": true,
+            "output": {
+              "merged": 2,
+              "into": 1
+            },
+            "error_code": null,
+            "duration_ms": 7.597600000735838
+          },
+          {
+            "name": "notify_customer",
+            "success": true,
+            "output": {
+              "notified": true
+            },
+            "error_code": null,
+            "duration_ms": 0.14510000073642004
+          }
+        ],
+        "packet": {
+          "schema": "wavemind.experience_packet.v1",
+          "namespace": "experienced-work-agent",
+          "query": "Unify two open CRM cases and notify the customer.",
+          "token_budget": 400,
+          "estimated_tokens": 36,
+          "items": [
+            {
+              "experience_id": "exp_strategy_03d20d207c0db95d891a4ce7",
+              "version": 1,
+              "kind": "successful_strategy",
+              "title": "Verified duplicate_case_resolution strategy",
+              "excerpt": "",
+              "score": 0.362035,
+              "signals": {
+                "vector": 0.009114,
+                "lexical": 0.047619,
+                "applicability": 0.916667,
+                "confidence": 0.8,
+                "trust": 0.4,
+                "outcome": 1.0,
+                "recency": 0.999999
+              },
+              "citation": "experience:exp_strategy_03d20d207c0db95d891a4ce7@v1",
+              "detail_ref": "experience://exp_strategy_03d20d207c0db95d891a4ce7?version=1",
+              "provenance": {
+                "source": {
+                  "provider": "wavemind_work_agent",
+                  "source_type": "repeated_verified_outcome",
+                  "source_id": "work_24dea7808da543ffb4260b26b11939a0"
+                },
+                "trajectory_id": "work_24dea7808da543ffb4260b26b11939a0",
+                "content_sha256": "4e6fd03276c485b0a8f9c9660ded31ece8e1e4ecd5f0a35c36c79d9f9acd96f5"
+              },
+              "estimated_tokens": 26,
+              "canary": false
+            }
+          ],
+          "omitted_count": 0,
+          "generated_at": 1785259486.9726455,
+          "compiler_policy": {
+            "signal_weights": {
+              "vector": 0.38,
+              "lexical": 0.18,
+              "applicability": 0.12,
+              "confidence": 0.1,
+              "trust": 0.1,
+              "outcome": 0.07,
+              "recency": 0.05
+            },
+            "recency_half_life_days": 30.0,
+            "active_only": true,
+            "progressive_disclosure": true,
+            "reference_only": true
+          },
+          "citations": [
+            "experience:exp_strategy_03d20d207c0db95d891a4ce7@v1"
+          ]
+        },
+        "selected_experience_id": "exp_strategy_03d20d207c0db95d891a4ce7",
+        "trajectory_id": "work_53172c6808c64ad8ace733c371b3f5f8",
+        "learned_experience_id": null,
+        "repeated_error_codes": [],
+        "context_tokens": 36,
+        "latency_ms": 12.146999999458785,
+        "tool_steps": 3,
+        "domain": "support_crm",
+        "task_type": "duplicate_case_resolution"
+      },
+      {
+        "request_id": "heldout-enterprise-approval-00",
+        "run_id": "work_163c33c0ad2d4ce39d07adf4e625caa9",
+        "success": true,
+        "plan_source": "experience",
+        "plan": [
+          "inspect_policy",
+          "collect_approval",
+          "execute_request"
+        ],
+        "executions": [
+          {
+            "name": "inspect_policy",
+            "success": true,
+            "output": {
+              "inspected": true
+            },
+            "error_code": null,
+            "duration_ms": 0.0024000000848900527
+          },
+          {
+            "name": "collect_approval",
+            "success": true,
+            "output": {
+              "approved": true
+            },
+            "error_code": null,
+            "duration_ms": 6.059999999706633
+          },
+          {
+            "name": "execute_request",
+            "success": true,
+            "output": {
+              "executed": true
+            },
+            "error_code": null,
+            "duration_ms": 7.537800000136485
+          }
+        ],
+        "packet": {
+          "schema": "wavemind.experience_packet.v1",
+          "namespace": "experienced-work-agent",
+          "query": "Run the business request only after its required authorization.",
+          "token_budget": 400,
+          "estimated_tokens": 36,
+          "items": [
+            {
+              "experience_id": "exp_strategy_5acb6a904e9ecc18bae98c5a",
+              "version": 1,
+              "kind": "successful_strategy",
+              "title": "Verified approval_gated_execution strategy",
+              "excerpt": "",
+              "score": 0.358571,
+              "signals": {
+                "vector": 0.0,
+                "lexical": 0.047619,
+                "applicability": 0.916667,
+                "confidence": 0.8,
+                "trust": 0.4,
+                "outcome": 1.0,
+                "recency": 0.999999
+              },
+              "citation": "experience:exp_strategy_5acb6a904e9ecc18bae98c5a@v1",
+              "detail_ref": "experience://exp_strategy_5acb6a904e9ecc18bae98c5a?version=1",
+              "provenance": {
+                "source": {
+                  "provider": "wavemind_work_agent",
+                  "source_type": "repeated_verified_outcome",
+                  "source_id": "work_f49b6a4483c143848faf2d8d568bb284"
+                },
+                "trajectory_id": "work_f49b6a4483c143848faf2d8d568bb284",
+                "content_sha256": "a3c1836369f9476127721f2bfda690e984e7cd7f6bc40e9550a81ff6fd366ec5"
+              },
+              "estimated_tokens": 26,
+              "canary": false
+            }
+          ],
+          "omitted_count": 0,
+          "generated_at": 1785259487.0029678,
+          "compiler_policy": {
+            "signal_weights": {
+              "vector": 0.38,
+              "lexical": 0.18,
+              "applicability": 0.12,
+              "confidence": 0.1,
+              "trust": 0.1,
+              "outcome": 0.07,
+              "recency": 0.05
+            },
+            "recency_half_life_days": 30.0,
+            "active_only": true,
+            "progressive_disclosure": true,
+            "reference_only": true
+          },
+          "citations": [
+            "experience:exp_strategy_5acb6a904e9ecc18bae98c5a@v1"
+          ]
+        },
+        "selected_experience_id": "exp_strategy_5acb6a904e9ecc18bae98c5a",
+        "trajectory_id": "work_163c33c0ad2d4ce39d07adf4e625caa9",
+        "learned_experience_id": null,
+        "repeated_error_codes": [],
+        "context_tokens": 36,
+        "latency_ms": 17.563800000061747,
+        "tool_steps": 3,
+        "domain": "enterprise_workflow",
+        "task_type": "approval_gated_execution"
+      },
+      {
+        "request_id": "heldout-enterprise-approval-01",
+        "run_id": "work_6f9a0ebf10ef458090070295c5d920b4",
+        "success": true,
+        "plan_source": "experience",
+        "plan": [
+          "inspect_policy",
+          "collect_approval",
+          "execute_request"
+        ],
+        "executions": [
+          {
+            "name": "inspect_policy",
+            "success": true,
+            "output": {
+              "inspected": true
+            },
+            "error_code": null,
+            "duration_ms": 0.002200000380980782
+          },
+          {
+            "name": "collect_approval",
+            "success": true,
+            "output": {
+              "approved": true
+            },
+            "error_code": null,
+            "duration_ms": 6.356800000503426
+          },
+          {
+            "name": "execute_request",
+            "success": true,
+            "output": {
+              "executed": true
+            },
+            "error_code": null,
+            "duration_ms": 7.435499999701278
+          }
+        ],
+        "packet": {
+          "schema": "wavemind.experience_packet.v1",
+          "namespace": "experienced-work-agent",
+          "query": "Complete a controlled workflow without bypassing approval.",
+          "token_budget": 400,
+          "estimated_tokens": 36,
+          "items": [
+            {
+              "experience_id": "exp_strategy_5acb6a904e9ecc18bae98c5a",
+              "version": 1,
+              "kind": "successful_strategy",
+              "title": "Verified approval_gated_execution strategy",
+              "excerpt": "",
+              "score": 0.35,
+              "signals": {
+                "vector": 0.0,
+                "lexical": 0.0,
+                "applicability": 0.916667,
+                "confidence": 0.8,
+                "trust": 0.4,
+                "outcome": 1.0,
+                "recency": 0.999999
+              },
+              "citation": "experience:exp_strategy_5acb6a904e9ecc18bae98c5a@v1",
+              "detail_ref": "experience://exp_strategy_5acb6a904e9ecc18bae98c5a?version=1",
+              "provenance": {
+                "source": {
+                  "provider": "wavemind_work_agent",
+                  "source_type": "repeated_verified_outcome",
+                  "source_id": "work_f49b6a4483c143848faf2d8d568bb284"
+                },
+                "trajectory_id": "work_f49b6a4483c143848faf2d8d568bb284",
+                "content_sha256": "a3c1836369f9476127721f2bfda690e984e7cd7f6bc40e9550a81ff6fd366ec5"
+              },
+              "estimated_tokens": 26,
+              "canary": false
+            }
+          ],
+          "omitted_count": 0,
+          "generated_at": 1785259487.0385783,
+          "compiler_policy": {
+            "signal_weights": {
+              "vector": 0.38,
+              "lexical": 0.18,
+              "applicability": 0.12,
+              "confidence": 0.1,
+              "trust": 0.1,
+              "outcome": 0.07,
+              "recency": 0.05
+            },
+            "recency_half_life_days": 30.0,
+            "active_only": true,
+            "progressive_disclosure": true,
+            "reference_only": true
+          },
+          "citations": [
+            "experience:exp_strategy_5acb6a904e9ecc18bae98c5a@v1"
+          ]
+        },
+        "selected_experience_id": "exp_strategy_5acb6a904e9ecc18bae98c5a",
+        "trajectory_id": "work_6f9a0ebf10ef458090070295c5d920b4",
+        "learned_experience_id": null,
+        "repeated_error_codes": [],
+        "context_tokens": 36,
+        "latency_ms": 17.670100000032107,
+        "tool_steps": 3,
+        "domain": "enterprise_workflow",
+        "task_type": "approval_gated_execution"
+      },
+      {
+        "request_id": "heldout-enterprise-approval-02",
+        "run_id": "work_2f5d93933d724942843f9fcd86d1a330",
+        "success": true,
+        "plan_source": "experience",
+        "plan": [
+          "inspect_policy",
+          "collect_approval",
+          "execute_request"
+        ],
+        "executions": [
+          {
+            "name": "inspect_policy",
+            "success": true,
+            "output": {
+              "inspected": true
+            },
+            "error_code": null,
+            "duration_ms": 0.0020000006770715117
+          },
+          {
+            "name": "collect_approval",
+            "success": true,
+            "output": {
+              "approved": true
+            },
+            "error_code": null,
+            "duration_ms": 5.7720000004337635
+          },
+          {
+            "name": "execute_request",
+            "success": true,
+            "output": {
+              "executed": true
+            },
+            "error_code": null,
+            "duration_ms": 7.373399999778485
+          }
+        ],
+        "packet": {
+          "schema": "wavemind.experience_packet.v1",
+          "namespace": "experienced-work-agent",
+          "query": "Execute the pending request under the applicable policy gate.",
+          "token_budget": 400,
+          "estimated_tokens": 36,
+          "items": [
+            {
+              "experience_id": "exp_strategy_5acb6a904e9ecc18bae98c5a",
+              "version": 1,
+              "kind": "successful_strategy",
+              "title": "Verified approval_gated_execution strategy",
+              "excerpt": "",
+              "score": 0.359,
+              "signals": {
+                "vector": 0.0,
+                "lexical": 0.05,
+                "applicability": 0.916667,
+                "confidence": 0.8,
+                "trust": 0.4,
+                "outcome": 1.0,
+                "recency": 0.999999
+              },
+              "citation": "experience:exp_strategy_5acb6a904e9ecc18bae98c5a@v1",
+              "detail_ref": "experience://exp_strategy_5acb6a904e9ecc18bae98c5a?version=1",
+              "provenance": {
+                "source": {
+                  "provider": "wavemind_work_agent",
+                  "source_type": "repeated_verified_outcome",
+                  "source_id": "work_f49b6a4483c143848faf2d8d568bb284"
+                },
+                "trajectory_id": "work_f49b6a4483c143848faf2d8d568bb284",
+                "content_sha256": "a3c1836369f9476127721f2bfda690e984e7cd7f6bc40e9550a81ff6fd366ec5"
+              },
+              "estimated_tokens": 26,
+              "canary": false
+            }
+          ],
+          "omitted_count": 0,
+          "generated_at": 1785259487.0749514,
+          "compiler_policy": {
+            "signal_weights": {
+              "vector": 0.38,
+              "lexical": 0.18,
+              "applicability": 0.12,
+              "confidence": 0.1,
+              "trust": 0.1,
+              "outcome": 0.07,
+              "recency": 0.05
+            },
+            "recency_half_life_days": 30.0,
+            "active_only": true,
+            "progressive_disclosure": true,
+            "reference_only": true
+          },
+          "citations": [
+            "experience:exp_strategy_5acb6a904e9ecc18bae98c5a@v1"
+          ]
+        },
+        "selected_experience_id": "exp_strategy_5acb6a904e9ecc18bae98c5a",
+        "trajectory_id": "work_2f5d93933d724942843f9fcd86d1a330",
+        "learned_experience_id": null,
+        "repeated_error_codes": [],
+        "context_tokens": 36,
+        "latency_ms": 17.0667999991565,
+        "tool_steps": 3,
+        "domain": "enterprise_workflow",
+        "task_type": "approval_gated_execution"
+      },
+      {
+        "request_id": "heldout-enterprise-approval-03",
+        "run_id": "work_829feb72f78a4f5988372a43836a8618",
+        "success": true,
+        "plan_source": "experience",
+        "plan": [
+          "inspect_policy",
+          "collect_approval",
+          "execute_request"
+        ],
+        "executions": [
+          {
+            "name": "inspect_policy",
+            "success": true,
+            "output": {
+              "inspected": true
+            },
+            "error_code": null,
+            "duration_ms": 0.002300001142430119
+          },
+          {
+            "name": "collect_approval",
+            "success": true,
+            "output": {
+              "approved": true
+            },
+            "error_code": null,
+            "duration_ms": 5.995800000164309
+          },
+          {
+            "name": "execute_request",
+            "success": true,
+            "output": {
+              "executed": true
+            },
+            "error_code": null,
+            "duration_ms": 7.21499999963271
+          }
+        ],
+        "packet": {
+          "schema": "wavemind.experience_packet.v1",
+          "namespace": "experienced-work-agent",
+          "query": "Process a regulated action after confirming authorization.",
+          "token_budget": 400,
+          "estimated_tokens": 36,
+          "items": [
+            {
+              "experience_id": "exp_strategy_5acb6a904e9ecc18bae98c5a",
+              "version": 1,
+              "kind": "successful_strategy",
+              "title": "Verified approval_gated_execution strategy",
+              "excerpt": "",
+              "score": 0.35,
+              "signals": {
+                "vector": 0.0,
+                "lexical": 0.0,
+                "applicability": 0.916667,
+                "confidence": 0.8,
+                "trust": 0.4,
+                "outcome": 1.0,
+                "recency": 0.999999
+              },
+              "citation": "experience:exp_strategy_5acb6a904e9ecc18bae98c5a@v1",
+              "detail_ref": "experience://exp_strategy_5acb6a904e9ecc18bae98c5a?version=1",
+              "provenance": {
+                "source": {
+                  "provider": "wavemind_work_agent",
+                  "source_type": "repeated_verified_outcome",
+                  "source_id": "work_f49b6a4483c143848faf2d8d568bb284"
+                },
+                "trajectory_id": "work_f49b6a4483c143848faf2d8d568bb284",
+                "content_sha256": "a3c1836369f9476127721f2bfda690e984e7cd7f6bc40e9550a81ff6fd366ec5"
+              },
+              "estimated_tokens": 26,
+              "canary": false
+            }
+          ],
+          "omitted_count": 0,
+          "generated_at": 1785259487.1105986,
+          "compiler_policy": {
+            "signal_weights": {
+              "vector": 0.38,
+              "lexical": 0.18,
+              "applicability": 0.12,
+              "confidence": 0.1,
+              "trust": 0.1,
+              "outcome": 0.07,
+              "recency": 0.05
+            },
+            "recency_half_life_days": 30.0,
+            "active_only": true,
+            "progressive_disclosure": true,
+            "reference_only": true
+          },
+          "citations": [
+            "experience:exp_strategy_5acb6a904e9ecc18bae98c5a@v1"
+          ]
+        },
+        "selected_experience_id": "exp_strategy_5acb6a904e9ecc18bae98c5a",
+        "trajectory_id": "work_829feb72f78a4f5988372a43836a8618",
+        "learned_experience_id": null,
+        "repeated_error_codes": [],
+        "context_tokens": 36,
+        "latency_ms": 17.094400000132737,
+        "tool_steps": 3,
+        "domain": "enterprise_workflow",
+        "task_type": "approval_gated_execution"
+      },
+      {
+        "request_id": "heldout-enterprise-approval-04",
+        "run_id": "work_ce8b13a5582d4c428fce25b803b7f6d2",
+        "success": true,
+        "plan_source": "experience",
+        "plan": [
+          "inspect_policy",
+          "collect_approval",
+          "execute_request"
+        ],
+        "executions": [
+          {
+            "name": "inspect_policy",
+            "success": true,
+            "output": {
+              "inspected": true
+            },
+            "error_code": null,
+            "duration_ms": 0.002099999619531445
+          },
+          {
+            "name": "collect_approval",
+            "success": true,
+            "output": {
+              "approved": true
+            },
+            "error_code": null,
+            "duration_ms": 5.885599999601254
+          },
+          {
+            "name": "execute_request",
+            "success": true,
+            "output": {
+              "executed": true
+            },
+            "error_code": null,
+            "duration_ms": 7.087399999363697
+          }
+        ],
+        "packet": {
+          "schema": "wavemind.experience_packet.v1",
+          "namespace": "experienced-work-agent",
+          "query": "Finish the enterprise request in the approved order.",
+          "token_budget": 400,
+          "estimated_tokens": 36,
+          "items": [
+            {
+              "experience_id": "exp_strategy_5acb6a904e9ecc18bae98c5a",
+              "version": 1,
+              "kind": "successful_strategy",
+              "title": "Verified approval_gated_execution strategy",
+              "excerpt": "",
+              "score": 0.364496,
+              "signals": {
+                "vector": 0.013217,
+                "lexical": 0.052632,
+                "applicability": 0.916667,
+                "confidence": 0.8,
+                "trust": 0.4,
+                "outcome": 1.0,
+                "recency": 0.999999
+              },
+              "citation": "experience:exp_strategy_5acb6a904e9ecc18bae98c5a@v1",
+              "detail_ref": "experience://exp_strategy_5acb6a904e9ecc18bae98c5a?version=1",
+              "provenance": {
+                "source": {
+                  "provider": "wavemind_work_agent",
+                  "source_type": "repeated_verified_outcome",
+                  "source_id": "work_f49b6a4483c143848faf2d8d568bb284"
+                },
+                "trajectory_id": "work_f49b6a4483c143848faf2d8d568bb284",
+                "content_sha256": "a3c1836369f9476127721f2bfda690e984e7cd7f6bc40e9550a81ff6fd366ec5"
+              },
+              "estimated_tokens": 26,
+              "canary": false
+            }
+          ],
+          "omitted_count": 0,
+          "generated_at": 1785259487.1458812,
+          "compiler_policy": {
+            "signal_weights": {
+              "vector": 0.38,
+              "lexical": 0.18,
+              "applicability": 0.12,
+              "confidence": 0.1,
+              "trust": 0.1,
+              "outcome": 0.07,
+              "recency": 0.05
+            },
+            "recency_half_life_days": 30.0,
+            "active_only": true,
+            "progressive_disclosure": true,
+            "reference_only": true
+          },
+          "citations": [
+            "experience:exp_strategy_5acb6a904e9ecc18bae98c5a@v1"
+          ]
+        },
+        "selected_experience_id": "exp_strategy_5acb6a904e9ecc18bae98c5a",
+        "trajectory_id": "work_ce8b13a5582d4c428fce25b803b7f6d2",
+        "learned_experience_id": null,
+        "repeated_error_codes": [],
+        "context_tokens": 36,
+        "latency_ms": 16.837500001201988,
+        "tool_steps": 3,
+        "domain": "enterprise_workflow",
+        "task_type": "approval_gated_execution"
+      },
+      {
+        "request_id": "heldout-enterprise-idempotency-00",
+        "run_id": "work_e175f73d25ab4231ad073d0b28fe6a74",
+        "success": true,
+        "plan_source": "experience",
+        "plan": [
+          "inspect_status",
+          "apply_once",
+          "reconcile_ledger"
+        ],
+        "executions": [
+          {
+            "name": "inspect_status",
+            "success": true,
+            "output": {
+              "inspected": true
+            },
+            "error_code": null,
+            "duration_ms": 0.0018999999156221747
+          },
+          {
+            "name": "apply_once",
+            "success": true,
+            "output": {
+              "applied": true
+            },
+            "error_code": null,
+            "duration_ms": 7.878099999288679
+          },
+          {
+            "name": "reconcile_ledger",
+            "success": true,
+            "output": {
+              "count": 1
+            },
+            "error_code": null,
+            "duration_ms": 0.12259999857633375
+          }
+        ],
+        "packet": {
+          "schema": "wavemind.experience_packet.v1",
+          "namespace": "experienced-work-agent",
+          "query": "Retry the invoice workflow without duplicating the ledger action.",
+          "token_budget": 400,
+          "estimated_tokens": 35,
+          "items": [
+            {
+              "experience_id": "exp_strategy_8a1248c2dfd1048607b6e158",
+              "version": 1,
+              "kind": "successful_strategy",
+              "title": "Verified idempotent_operation strategy",
+              "excerpt": "",
+              "score": 0.359,
+              "signals": {
+                "vector": 0.0,
+                "lexical": 0.05,
+                "applicability": 0.916667,
+                "confidence": 0.8,
+                "trust": 0.4,
+                "outcome": 1.0,
+                "recency": 0.999999
+              },
+              "citation": "experience:exp_strategy_8a1248c2dfd1048607b6e158@v1",
+              "detail_ref": "experience://exp_strategy_8a1248c2dfd1048607b6e158?version=1",
+              "provenance": {
+                "source": {
+                  "provider": "wavemind_work_agent",
+                  "source_type": "repeated_verified_outcome",
+                  "source_id": "work_8d13e0ac50934bb2a598c0a03b6a1338"
+                },
+                "trajectory_id": "work_8d13e0ac50934bb2a598c0a03b6a1338",
+                "content_sha256": "76854edb1f92ab74baa8d21582959e9a157e1d4d5600d66aa93e1f2cc2dbf30b"
+              },
+              "estimated_tokens": 25,
+              "canary": false
+            }
+          ],
+          "omitted_count": 0,
+          "generated_at": 1785259487.1737196,
+          "compiler_policy": {
+            "signal_weights": {
+              "vector": 0.38,
+              "lexical": 0.18,
+              "applicability": 0.12,
+              "confidence": 0.1,
+              "trust": 0.1,
+              "outcome": 0.07,
+              "recency": 0.05
+            },
+            "recency_half_life_days": 30.0,
+            "active_only": true,
+            "progressive_disclosure": true,
+            "reference_only": true
+          },
+          "citations": [
+            "experience:exp_strategy_8a1248c2dfd1048607b6e158@v1"
+          ]
+        },
+        "selected_experience_id": "exp_strategy_8a1248c2dfd1048607b6e158",
+        "trajectory_id": "work_e175f73d25ab4231ad073d0b28fe6a74",
+        "learned_experience_id": null,
+        "repeated_error_codes": [],
+        "context_tokens": 35,
+        "latency_ms": 11.831900001197937,
+        "tool_steps": 3,
+        "domain": "enterprise_workflow",
+        "task_type": "idempotent_operation"
+      },
+      {
+        "request_id": "heldout-enterprise-idempotency-01",
+        "run_id": "work_9aba7bdeedca496da359b6335d351978",
+        "success": true,
+        "plan_source": "experience",
+        "plan": [
+          "inspect_status",
+          "apply_once",
+          "reconcile_ledger"
+        ],
+        "executions": [
+          {
+            "name": "inspect_status",
+            "success": true,
+            "output": {
+              "inspected": true
+            },
+            "error_code": null,
+            "duration_ms": 0.0018999999156221747
+          },
+          {
+            "name": "apply_once",
+            "success": true,
+            "output": {
+              "applied": true
+            },
+            "error_code": null,
+            "duration_ms": 7.641199999852688
+          },
+          {
+            "name": "reconcile_ledger",
+            "success": true,
+            "output": {
+              "count": 1
+            },
+            "error_code": null,
+            "duration_ms": 0.11360000098648015
+          }
+        ],
+        "packet": {
+          "schema": "wavemind.experience_packet.v1",
+          "namespace": "experienced-work-agent",
+          "query": "Resume a business operation while guaranteeing one application.",
+          "token_budget": 400,
+          "estimated_tokens": 35,
+          "items": [
+            {
+              "experience_id": "exp_strategy_8a1248c2dfd1048607b6e158",
+              "version": 1,
+              "kind": "successful_strategy",
+              "title": "Verified idempotent_operation strategy",
+              "excerpt": "",
+              "score": 0.422382,
+              "signals": {
+                "vector": 0.19048,
+                "lexical": 0.0,
+                "applicability": 0.916667,
+                "confidence": 0.8,
+                "trust": 0.4,
+                "outcome": 1.0,
+                "recency": 0.999999
+              },
+              "citation": "experience:exp_strategy_8a1248c2dfd1048607b6e158@v1",
+              "detail_ref": "experience://exp_strategy_8a1248c2dfd1048607b6e158?version=1",
+              "provenance": {
+                "source": {
+                  "provider": "wavemind_work_agent",
+                  "source_type": "repeated_verified_outcome",
+                  "source_id": "work_8d13e0ac50934bb2a598c0a03b6a1338"
+                },
+                "trajectory_id": "work_8d13e0ac50934bb2a598c0a03b6a1338",
+                "content_sha256": "76854edb1f92ab74baa8d21582959e9a157e1d4d5600d66aa93e1f2cc2dbf30b"
+              },
+              "estimated_tokens": 25,
+              "canary": false
+            }
+          ],
+          "omitted_count": 0,
+          "generated_at": 1785259487.1964862,
+          "compiler_policy": {
+            "signal_weights": {
+              "vector": 0.38,
+              "lexical": 0.18,
+              "applicability": 0.12,
+              "confidence": 0.1,
+              "trust": 0.1,
+              "outcome": 0.07,
+              "recency": 0.05
+            },
+            "recency_half_life_days": 30.0,
+            "active_only": true,
+            "progressive_disclosure": true,
+            "reference_only": true
+          },
+          "citations": [
+            "experience:exp_strategy_8a1248c2dfd1048607b6e158@v1"
+          ]
+        },
+        "selected_experience_id": "exp_strategy_8a1248c2dfd1048607b6e158",
+        "trajectory_id": "work_9aba7bdeedca496da359b6335d351978",
+        "learned_experience_id": null,
+        "repeated_error_codes": [],
+        "context_tokens": 35,
+        "latency_ms": 11.593400000492693,
+        "tool_steps": 3,
+        "domain": "enterprise_workflow",
+        "task_type": "idempotent_operation"
+      },
+      {
+        "request_id": "heldout-enterprise-idempotency-02",
+        "run_id": "work_6cc72c56fb77462793a9be52c6488181",
+        "success": true,
+        "plan_source": "experience",
+        "plan": [
+          "inspect_status",
+          "apply_once",
+          "reconcile_ledger"
+        ],
+        "executions": [
+          {
+            "name": "inspect_status",
+            "success": true,
+            "output": {
+              "inspected": true
+            },
+            "error_code": null,
+            "duration_ms": 0.0020000006770715117
+          },
+          {
+            "name": "apply_once",
+            "success": true,
+            "output": {
+              "applied": true
+            },
+            "error_code": null,
+            "duration_ms": 7.648400000107358
+          },
+          {
+            "name": "reconcile_ledger",
+            "success": true,
+            "output": {
+              "count": 1
+            },
+            "error_code": null,
+            "duration_ms": 0.12030000107188243
+          }
+        ],
+        "packet": {
+          "schema": "wavemind.experience_packet.v1",
+          "namespace": "experienced-work-agent",
+          "query": "Safely repeat a workflow request with idempotent execution.",
+          "token_budget": 400,
+          "estimated_tokens": 35,
+          "items": [
+            {
+              "experience_id": "exp_strategy_8a1248c2dfd1048607b6e158",
+              "version": 1,
+              "kind": "successful_strategy",
+              "title": "Verified idempotent_operation strategy",
+              "excerpt": "",
+              "score": 0.353094,
+              "signals": {
+                "vector": 0.008142,
+                "lexical": 0.0,
+                "applicability": 0.916667,
+                "confidence": 0.8,
+                "trust": 0.4,
+                "outcome": 1.0,
+                "recency": 0.999999
+              },
+              "citation": "experience:exp_strategy_8a1248c2dfd1048607b6e158@v1",
+              "detail_ref": "experience://exp_strategy_8a1248c2dfd1048607b6e158?version=1",
+              "provenance": {
+                "source": {
+                  "provider": "wavemind_work_agent",
+                  "source_type": "repeated_verified_outcome",
+                  "source_id": "work_8d13e0ac50934bb2a598c0a03b6a1338"
+                },
+                "trajectory_id": "work_8d13e0ac50934bb2a598c0a03b6a1338",
+                "content_sha256": "76854edb1f92ab74baa8d21582959e9a157e1d4d5600d66aa93e1f2cc2dbf30b"
+              },
+              "estimated_tokens": 25,
+              "canary": false
+            }
+          ],
+          "omitted_count": 0,
+          "generated_at": 1785259487.219118,
+          "compiler_policy": {
+            "signal_weights": {
+              "vector": 0.38,
+              "lexical": 0.18,
+              "applicability": 0.12,
+              "confidence": 0.1,
+              "trust": 0.1,
+              "outcome": 0.07,
+              "recency": 0.05
+            },
+            "recency_half_life_days": 30.0,
+            "active_only": true,
+            "progressive_disclosure": true,
+            "reference_only": true
+          },
+          "citations": [
+            "experience:exp_strategy_8a1248c2dfd1048607b6e158@v1"
+          ]
+        },
+        "selected_experience_id": "exp_strategy_8a1248c2dfd1048607b6e158",
+        "trajectory_id": "work_6cc72c56fb77462793a9be52c6488181",
+        "learned_experience_id": null,
+        "repeated_error_codes": [],
+        "context_tokens": 35,
+        "latency_ms": 11.628300000666059,
+        "tool_steps": 3,
+        "domain": "enterprise_workflow",
+        "task_type": "idempotent_operation"
+      },
+      {
+        "request_id": "heldout-enterprise-idempotency-03",
+        "run_id": "work_da3f5a74168b422486cf29b9a640019b",
+        "success": true,
+        "plan_source": "experience",
+        "plan": [
+          "inspect_status",
+          "apply_once",
+          "reconcile_ledger"
+        ],
+        "executions": [
+          {
+            "name": "inspect_status",
+            "success": true,
+            "output": {
+              "inspected": true
+            },
+            "error_code": null,
+            "duration_ms": 0.002200000380980782
+          },
+          {
+            "name": "apply_once",
+            "success": true,
+            "output": {
+              "applied": true
+            },
+            "error_code": null,
+            "duration_ms": 6.076599998777965
+          },
+          {
+            "name": "reconcile_ledger",
+            "success": true,
+            "output": {
+              "count": 1
+            },
+            "error_code": null,
+            "duration_ms": 0.10680000013962854
+          }
+        ],
+        "packet": {
+          "schema": "wavemind.experience_packet.v1",
+          "namespace": "experienced-work-agent",
+          "query": "Recover an interrupted operation without a duplicate side effect.",
+          "token_budget": 400,
+          "estimated_tokens": 35,
+          "items": [
+            {
+              "experience_id": "exp_strategy_8a1248c2dfd1048607b6e158",
+              "version": 1,
+              "kind": "successful_strategy",
+              "title": "Verified idempotent_operation strategy",
+              "excerpt": "",
+              "score": 0.352633,
+              "signals": {
+                "vector": 0.006929,
+                "lexical": 0.0,
+                "applicability": 0.916667,
+                "confidence": 0.8,
+                "trust": 0.4,
+                "outcome": 1.0,
+                "recency": 0.999999
+              },
+              "citation": "experience:exp_strategy_8a1248c2dfd1048607b6e158@v1",
+              "detail_ref": "experience://exp_strategy_8a1248c2dfd1048607b6e158?version=1",
+              "provenance": {
+                "source": {
+                  "provider": "wavemind_work_agent",
+                  "source_type": "repeated_verified_outcome",
+                  "source_id": "work_8d13e0ac50934bb2a598c0a03b6a1338"
+                },
+                "trajectory_id": "work_8d13e0ac50934bb2a598c0a03b6a1338",
+                "content_sha256": "76854edb1f92ab74baa8d21582959e9a157e1d4d5600d66aa93e1f2cc2dbf30b"
+              },
+              "estimated_tokens": 25,
+              "canary": false
+            }
+          ],
+          "omitted_count": 0,
+          "generated_at": 1785259487.2467945,
+          "compiler_policy": {
+            "signal_weights": {
+              "vector": 0.38,
+              "lexical": 0.18,
+              "applicability": 0.12,
+              "confidence": 0.1,
+              "trust": 0.1,
+              "outcome": 0.07,
+              "recency": 0.05
+            },
+            "recency_half_life_days": 30.0,
+            "active_only": true,
+            "progressive_disclosure": true,
+            "reference_only": true
+          },
+          "citations": [
+            "experience:exp_strategy_8a1248c2dfd1048607b6e158@v1"
+          ]
+        },
+        "selected_experience_id": "exp_strategy_8a1248c2dfd1048607b6e158",
+        "trajectory_id": "work_da3f5a74168b422486cf29b9a640019b",
+        "learned_experience_id": null,
+        "repeated_error_codes": [],
+        "context_tokens": 35,
+        "latency_ms": 10.215599999355618,
+        "tool_steps": 3,
+        "domain": "enterprise_workflow",
+        "task_type": "idempotent_operation"
+      },
+      {
+        "request_id": "heldout-enterprise-idempotency-04",
+        "run_id": "work_c9a4c90c0ec5497396cd83d1324ce65b",
+        "success": true,
+        "plan_source": "experience",
+        "plan": [
+          "inspect_status",
+          "apply_once",
+          "reconcile_ledger"
+        ],
+        "executions": [
+          {
+            "name": "inspect_status",
+            "success": true,
+            "output": {
+              "inspected": true
+            },
+            "error_code": null,
+            "duration_ms": 0.002099999619531445
+          },
+          {
+            "name": "apply_once",
+            "success": true,
+            "output": {
+              "applied": true
+            },
+            "error_code": null,
+            "duration_ms": 6.227500000022701
+          },
+          {
+            "name": "reconcile_ledger",
+            "success": true,
+            "output": {
+              "count": 1
+            },
+            "error_code": null,
+            "duration_ms": 0.14449999980570283
+          }
+        ],
+        "packet": {
+          "schema": "wavemind.experience_packet.v1",
+          "namespace": "experienced-work-agent",
+          "query": "Apply the pending enterprise action once and reconcile its state.",
+          "token_budget": 400,
+          "estimated_tokens": 35,
+          "items": [
+            {
+              "experience_id": "exp_strategy_8a1248c2dfd1048607b6e158",
+              "version": 1,
+              "kind": "successful_strategy",
+              "title": "Verified idempotent_operation strategy",
+              "excerpt": "",
+              "score": 0.358619,
+              "signals": {
+                "vector": 0.001149,
+                "lexical": 0.045455,
+                "applicability": 0.916667,
+                "confidence": 0.8,
+                "trust": 0.4,
+                "outcome": 1.0,
+                "recency": 0.999999
+              },
+              "citation": "experience:exp_strategy_8a1248c2dfd1048607b6e158@v1",
+              "detail_ref": "experience://exp_strategy_8a1248c2dfd1048607b6e158?version=1",
+              "provenance": {
+                "source": {
+                  "provider": "wavemind_work_agent",
+                  "source_type": "repeated_verified_outcome",
+                  "source_id": "work_8d13e0ac50934bb2a598c0a03b6a1338"
+                },
+                "trajectory_id": "work_8d13e0ac50934bb2a598c0a03b6a1338",
+                "content_sha256": "76854edb1f92ab74baa8d21582959e9a157e1d4d5600d66aa93e1f2cc2dbf30b"
+              },
+              "estimated_tokens": 25,
+              "canary": false
+            }
+          ],
+          "omitted_count": 0,
+          "generated_at": 1785259487.269692,
+          "compiler_policy": {
+            "signal_weights": {
+              "vector": 0.38,
+              "lexical": 0.18,
+              "applicability": 0.12,
+              "confidence": 0.1,
+              "trust": 0.1,
+              "outcome": 0.07,
+              "recency": 0.05
+            },
+            "recency_half_life_days": 30.0,
+            "active_only": true,
+            "progressive_disclosure": true,
+            "reference_only": true
+          },
+          "citations": [
+            "experience:exp_strategy_8a1248c2dfd1048607b6e158@v1"
+          ]
+        },
+        "selected_experience_id": "exp_strategy_8a1248c2dfd1048607b6e158",
+        "trajectory_id": "work_c9a4c90c0ec5497396cd83d1324ce65b",
+        "learned_experience_id": null,
+        "repeated_error_codes": [],
+        "context_tokens": 35,
+        "latency_ms": 10.206199998719967,
+        "tool_steps": 3,
+        "domain": "enterprise_workflow",
+        "task_type": "idempotent_operation"
+      }
+    ]
+  }
+}

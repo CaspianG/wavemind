@@ -1,7 +1,7 @@
 # WaveMind Benchmark Leaderboard
 
 Generated from `benchmarks/benchmark_matrix_results.json`.
-Last refresh: `2026-07-28T07:47:34Z` from `590bc8df80e0adf3125f5d33bee0b4f086fe17ab`.
+Last refresh: `2026-07-28T17:24:48Z` from `3fd809796157`.
 
 This is a compact reader-facing view of checked-in benchmark results. It is not a universal vector-database leaderboard: each row uses the primary quality metric for that benchmark, and latency is shown separately so quality wins are not confused with speed wins.
 
@@ -9,6 +9,7 @@ This is a compact reader-facing view of checked-in benchmark results. It is not 
 |---|---|---|---|---|---|
 | Agent user-memory retrieval | agent-memory | precision@1 | WaveMind: 0.82 / 2.249 ms | Chroma: 0.82 / 0.933 ms | Quality tie; WaveMind slower |
 | Agent coherence and token savings | agent-memory | task success | WaveMind: 0.917 / 1.43 ms | Chroma static: 0.417 / 2.833 ms | WaveMind leads on quality |
+| Experienced Work Agent | agent-experience | task success | WaveMind Experience: 1 / - | Cold work agent: 0 / - | WaveMind leads on quality |
 | Adaptive agent-memory advantage | agent-memory | task success | WaveMind + Memory OS: 1 / - | Chroma static: 0.222 / - | WaveMind leads on quality |
 | Dynamic memory policy | agent-memory | precision@1 | WaveMind: 1 / 3.918 ms | Chroma static: 0.571 / 1.662 ms | WaveMind leads on quality |
 | Field memory graph dynamics | agent-memory | precision@1 | WaveMind graph: 1 / 0.332 ms | - | WaveMind-only check |
@@ -36,7 +37,7 @@ This is a compact reader-facing view of checked-in benchmark results. It is not 
 
 | area | current source | claim status | next action |
 |---|---|---|---|
-| Artifact freshness | local matrix refresh at `2026-07-28T07:47:34Z` | source `590bc8df80e0adf3125f5d33bee0b4f086fe17ab`; audit gate enforced by `validate_benchmark_artifacts.py` | Keep weekly refresh green before public claims. |
+| Artifact freshness | local matrix refresh at `2026-07-28T17:24:48Z` | source `3fd809796157`; audit gate enforced by `validate_benchmark_artifacts.py` | Keep weekly refresh green before public claims. |
 | Serverless telemetry | loopback API pool; `loopback-api-capacity-estimate`; 4 measured replicas | observed SLO `True`; loopback evidence, not a managed-serverless claim | Run `.github/workflows/serverless-observed-telemetry.yml` against deployed API nodes. |
 | External HTTP cluster load | kubernetes-kind-non-loopback-ci; `kubernetes-pod-dns-physical-node-drill`; 4 nodes | SLO `True`; non-loopback Kubernetes pod-DNS evidence | Run `.github/workflows/external-http-cluster-load.yml` with a remote node manifest. |
 | External HTTP active-active loopback | local-loopback; `loopback-api-regions`; 3 regions | SLO `True`; external URL contract over local API regions | Run `.github/workflows/external-http-active-active.yml` with remote regions for production evidence. |

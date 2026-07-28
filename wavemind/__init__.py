@@ -59,6 +59,10 @@ from .experience_compiler import (
     ExperiencePacket,
     ExperiencePacketItem,
 )
+from .experience_quality_admission import (
+    evaluate_experience_quality_admission,
+    render_experience_quality_admission_markdown,
+)
 from .experience_portability import (
     PORTABLE_EXPERIENCE_SCHEMA,
     PortableImportReport,
@@ -325,6 +329,13 @@ from .storage import (
     create_memory_store,
     restore_recovery_journal,
 )
+from .work_agent import (
+    ExperiencedWorkAgent,
+    ToolExecution,
+    WorkAgentRun,
+    WorkRequest,
+    WorkRuntime,
+)
 
 __version__ = "2.8.0"
 
@@ -359,11 +370,13 @@ __all__ = [
     "ExperienceRecord",
     "ExperienceSource",
     "ExperienceStatus",
+    "ExperiencedWorkAgent",
     "ExperienceCompiler",
     "ExperienceCompilerPolicy",
     "ExperienceDetail",
     "ExperiencePacket",
     "ExperiencePacketItem",
+    "evaluate_experience_quality_admission",
     "PORTABLE_EXPERIENCE_SCHEMA",
     "PortableImportReport",
     "FirewallAction",
@@ -508,6 +521,7 @@ __all__ = [
     "ServerlessObservedTelemetry",
     "ServerlessWorkloadTarget",
     "TextEncoder",
+    "ToolExecution",
     "ToolTrajectory",
     "TrajectoryProvenance",
     "TrajectoryStep",
@@ -517,6 +531,9 @@ __all__ = [
     "WaveMindClusterSpec",
     "WaveMind",
     "WaveMindServerlessSpec",
+    "WorkAgentRun",
+    "WorkRequest",
+    "WorkRuntime",
     "WriteQuorumError",
     "__version__",
     "asset3d_payload",
@@ -588,6 +605,7 @@ __all__ = [
     "render_production_evidence_env_markdown",
     "render_multimodal_admission_markdown",
     "render_external_multimodal_evidence_markdown",
+    "render_experience_quality_admission_markdown",
     "run_control_plane_consensus_profile",
     "run_external_multimodal_evidence",
     "run_memory_os_canary",
