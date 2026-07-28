@@ -1,6 +1,6 @@
 # WaveMind Cost Efficiency Leaderboard
 
-Generated: `2026-07-27T10:53:35Z`.
+Generated: `2026-07-28T22:43:41Z`.
 
 Measured rows come from checked-in load artifacts. Planned rows are capacity and cost contracts only; they do not unlock production latency or recall claims until the matching benchmark result exists.
 
@@ -17,9 +17,9 @@ Measured rows come from checked-in load artifacts. Planned rows are capacity and
 
 | rank | profile | target class | engine | memories | recall | p99 ms | SLO | cost / 1M queries | monthly cost | source |
 |---:|---|---|---|---:|---:|---:|---|---:|---:|---|
-| 1 | sub_100k-wavemind-numpy-streaming-production_streaming_load_smoke_results | sub_100k | WaveMind numpy-streaming | 10,000 | 1 | 0.515 | pass | $0.694 | $182.5 | `benchmarks/production_streaming_load_smoke_results.json` |
-| 2 | sub_100k-qdrant-sharded-service-streaming-production_streaming_load_qdrant_sharded_smoke_results | sub_100k | Qdrant sharded service streaming | 5,000 | 1 | 3.619 | pass | $0.694 | $182.5 | `benchmarks/production_streaming_load_qdrant_sharded_smoke_results.json` |
-| 3 | sub_100k-wavemind-pgvector-streaming-production_streaming_load_pgvector_smoke_results | sub_100k | WaveMind pgvector streaming | 1,000 | 1 | 7.624 | pass | $0.694 | $182.5 | `benchmarks/production_streaming_load_pgvector_smoke_results.json` |
+| 1 | sub_100k-wavemind-numpy-streaming-production_streaming_load_smoke_results | sub_100k | WaveMind numpy-streaming | 10,000 | 1 | 0.459 | pass | $0.694 | $182.5 | `benchmarks/production_streaming_load_smoke_results.json` |
+| 2 | sub_100k-wavemind-pgvector-streaming-production_streaming_load_pgvector_smoke_results | sub_100k | WaveMind pgvector streaming | 1,000 | 1 | 7.624 | pass | $0.694 | $182.5 | `benchmarks/production_streaming_load_pgvector_smoke_results.json` |
+| 3 | sub_100k-qdrant-sharded-service-streaming-production_streaming_load_qdrant_sharded_smoke_results | sub_100k | Qdrant sharded service streaming | 5,000 | 1 | 16.02 | pass | $1.389 | $365 | `benchmarks/production_streaming_load_qdrant_sharded_smoke_results.json` |
 | 4 | sub_100k-qdrant-service-streaming-production_streaming_load_qdrant_smoke_results | sub_100k | Qdrant service streaming | 1,000 | 1 | 17.9 | pass | $1.389 | $365 | `benchmarks/production_streaming_load_qdrant_smoke_results.json` |
 | 5 | 100k-qdrant-service-production_load_qdrant_100k_tuned_results | 100k | Qdrant service | 100,000 | 1 | 21.26 | pass | $1.389 | $365.02 | `benchmarks/production_load_qdrant_100k_tuned_results.json` |
 | 6 | 1m-qdrant-service-streaming-production_streaming_load_qdrant_1m_tuned_results | 1m | Qdrant service streaming | 1,000,000 | 1 | 26.37 | pass | $2.083 | $547.74 | `benchmarks/production_streaming_load_qdrant_1m_tuned_results.json` |

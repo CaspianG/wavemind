@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.structured_memory_report.v1",
   "generated_at": "2026-07-27T13:29:25Z",
-  "source_ref": "f3a23b2fc832",
+  "source_ref": "4b6d7dd3e938",
   "source_file": "benchmarks/scale_readiness_results.json",
   "claim_boundary": "Structured-memory rows come from the checked-in scale-readiness artifact. They prove typed payload routing, provenance, persistence, temporal recall, and graph traversal on the deterministic fixture; they do not claim full production multimodal model quality.",
   "summary": {

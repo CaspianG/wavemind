@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-28T17:57:37Z",
-  "source_ref": "d011eb848e03",
+  "generated_at": "2026-07-28T22:43:41Z",
+  "source_ref": "4b6d7dd3e938",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -394,7 +394,9 @@
       "competitors": [
         "Static vector",
         "Chroma static",
-        "Qdrant static"
+        "Qdrant static",
+        "Mem0 OSS",
+        "Hindsight OSS"
       ],
       "metrics": [
         "evidence_recall@k",
@@ -607,10 +609,42 @@
           "context_budget_saved": 0.0,
           "avg_latency_ms": 5.144030955652732,
           "p95_latency_ms": 8.500199997797608
+        },
+        "WaveMind current public protocol": {
+          "evidence_recall_at_k": 0.5481334945555055,
+          "precision_at_1": 0.3333333333333333,
+          "mrr_at_k": 0.4317568706794807,
+          "avg_latency_ms": 4.875596408735047,
+          "p95_latency_ms": 7.667400001082569,
+          "ingest_avg_ms": 0.6096779836792259
+        },
+        "WaveMind + Memory OS current public protocol": {
+          "evidence_recall_at_k": 0.5481334945555055,
+          "precision_at_1": 0.3323216995447648,
+          "mrr_at_k": 0.43127634462991066,
+          "avg_latency_ms": 5.990862569551375,
+          "p95_latency_ms": 8.670399998663925,
+          "ingest_avg_ms": 0.4916660149609251
+        },
+        "Mem0 OSS": {
+          "evidence_recall_at_k": 0.49956983571111835,
+          "precision_at_1": 0.26251896813353565,
+          "mrr_at_k": 0.3693812173326589,
+          "avg_latency_ms": 270.2393642892866,
+          "p95_latency_ms": 293.0782999974326,
+          "ingest_avg_ms": 217.91034950697062
+        },
+        "Hindsight OSS": {
+          "evidence_recall_at_k": 0.31630746541097154,
+          "precision_at_1": 0.051593323216995446,
+          "mrr_at_k": 0.14781655707300623,
+          "avg_latency_ms": 320.6054920081255,
+          "p95_latency_ms": 463.139699997555,
+          "ingest_avg_ms": 62.32779838490293
         }
       },
-      "target": "Keep direct Memory OS execution within one percentage point of WaveMind Core quality, expose its maintenance cost, and improve LoCoMo evidence recall without hiding regressions.",
-      "next_step": "The current direct Memory OS run is admitted but slightly below Core on recall; tune feedback-free policies before claiming LoCoMo uplift."
+      "target": "Keep WaveMind ahead of real Mem0 and Hindsight runs on LoCoMo retrieval quality while exposing query latency and non-equivalent ingest scopes.",
+      "next_step": "Repeat the real-system protocol on LongMemEval-S and add pinned answer-quality readers without presenting retrieval evidence as final answer quality."
     },
     {
       "id": "longmemeval_evidence_retrieval",

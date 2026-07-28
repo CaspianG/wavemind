@@ -32,6 +32,10 @@ def _load(path: Path) -> dict[str, Any]:
     return payload
 
 
+def _public_dataset_reference(value: Any) -> str:
+    return str(value or "").replace("\\", "/").rsplit("/", 1)[-1]
+
+
 def _require_equal(
     artifacts: list[tuple[Path, dict[str, Any]]],
     *,
@@ -63,6 +67,9 @@ def merge_locomo_artifacts(paths: Iterable[str | Path]) -> dict[str, Any]:
         artifacts,
         section="scenario",
         keys=SCENARIO_KEYS,
+    )
+    scenario["dataset"] = _public_dataset_reference(
+        artifacts[0][1].get("scenario", {}).get("dataset")
     )
     source_shas = {str(payload.get("source_sha") or "") for _, payload in artifacts}
     if len(source_shas) != 1:

@@ -44,6 +44,7 @@ def _artifact(
     payload = {
         "source_sha": source_sha,
         "scenario": {
+            "dataset": r"C:\private\benchmark-data\locomo10.json",
             "dataset_sha256": DATASET_SHA,
             "conversations": 10,
             "memories": 5882,
@@ -81,6 +82,8 @@ def test_report_merges_complete_same_protocol_artifacts(tmp_path):
     assert payload["schema"] == "wavemind.public_memory_competitors.v1"
     assert len(payload["results"]) == 6
     assert payload["protocol"]["external_inference"] is False
+    assert payload["scenario"]["dataset"] == "locomo10.json"
+    assert "C:\\private" not in json.dumps(payload)
     assert "5,882 memories" in markdown
     assert "Ingest scope" in markdown
     assert "not final answer quality" in markdown
