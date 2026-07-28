@@ -515,6 +515,14 @@ class SQLiteMemoryStore:
         return len(ids)
 
     @_serialized_sqlite
+    def list_expired(self) -> list[MemoryRecord]:
+        rows = self.conn.execute(
+            "SELECT * FROM memories WHERE expires_at IS NOT NULL AND expires_at <= ?",
+            (time.time(),),
+        ).fetchall()
+        return [self._row_to_record(row) for row in rows]
+
+    @_serialized_sqlite
     def touch(self, id: int, priority_delta: float = 0.05) -> None:
         self.conn.execute(
             """
@@ -1071,6 +1079,16 @@ class PostgresMemoryStore:
             (time.time(),),
         ).fetchall()
         return len(rows)
+
+    def list_expired(self) -> list[MemoryRecord]:
+        rows = self.conn.execute(
+            f"""
+            SELECT * FROM {self.memories_table}
+            WHERE expires_at IS NOT NULL AND expires_at <= %s
+            """,
+            (time.time(),),
+        ).fetchall()
+        return [self._row_to_record(row) for row in rows]
 
     def touch(self, id: int, priority_delta: float = 0.05) -> None:
         self.conn.execute(

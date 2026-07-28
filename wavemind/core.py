@@ -1025,9 +1025,17 @@ class WaveMind:
         return health
 
     def purge_expired(self) -> int:
-        expired_records = [
-            record for record in self.store.list(include_expired=True) if record.is_expired
-        ]
+        expired_records: list[MemoryRecord] = []
+        if self.recovery_journal_path is not None:
+            list_expired = getattr(self.store, "list_expired", None)
+            if callable(list_expired):
+                expired_records = list_expired()
+            else:
+                expired_records = [
+                    record
+                    for record in self.store.list(include_expired=True)
+                    if record.is_expired
+                ]
         purged = self.store.purge_expired()
         if purged:
             self.load()

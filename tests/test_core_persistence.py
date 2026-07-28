@@ -233,6 +233,21 @@ def test_namespace_tags_threshold_ttl_and_forget(tmp_path):
     mind.close()
 
 
+def test_purge_expired_avoids_full_store_scan_without_recovery_journal(tmp_path):
+    mind = make_mind(tmp_path / "purge-no-journal.sqlite3")
+    try:
+        original_list = mind.store.list
+
+        def reject_full_scan(*args, **kwargs):
+            raise AssertionError("purge must not materialize the full store")
+
+        mind.store.list = reject_full_scan
+        assert mind.purge_expired() == 0
+        mind.store.list = original_list
+    finally:
+        mind.close()
+
+
 def test_feedback_batch_updates_state_and_rejects_bad_items(tmp_path):
     db_path = tmp_path / "feedback-batch.sqlite3"
     mind = make_mind(db_path, audit_queries=True)
