@@ -27,6 +27,11 @@ from benchmarks.long_memory_evidence_benchmark import (
     run_wavemind_memory_os,
     repository_commit,
 )
+from benchmarks.public_memory_competitors import (
+    MEM0_EMBEDDING_MODEL,
+    run_hindsight_evidence,
+    run_mem0_evidence,
+)
 
 
 SOURCE_URL = "https://github.com/snap-research/locomo"
@@ -249,6 +254,12 @@ def run_benchmark(
     top_k: int = 5,
     limit_samples: int | None = None,
     limit_queries: int | None = None,
+    hindsight_url: str | None = None,
+    hindsight_api_key: str | None = None,
+    hindsight_keep_banks: bool = False,
+    hindsight_version: str | None = None,
+    hindsight_embedding_profile: str | None = None,
+    mem0_embedding_model: str = MEM0_EMBEDDING_MODEL,
 ) -> dict[str, Any]:
     dataset = load_locomo_dataset(
         dataset_path,
@@ -267,6 +278,22 @@ def run_benchmark(
         "chroma-static": run_chroma_static,
         "qdrant": run_qdrant_static,
         "qdrant-static": run_qdrant_static,
+        "mem0": lambda dataset, encoder, top_k: run_mem0_evidence(
+            dataset,
+            encoder,
+            top_k,
+            embedding_model=mem0_embedding_model,
+        ),
+        "hindsight": lambda dataset, encoder, top_k: run_hindsight_evidence(
+            dataset,
+            encoder,
+            top_k,
+            base_url=hindsight_url,
+            api_key=hindsight_api_key,
+            cleanup_banks=not hindsight_keep_banks,
+            system_version=hindsight_version,
+            embedding_profile=hindsight_embedding_profile,
+        ),
     }
 
     results = []
@@ -304,7 +331,24 @@ def run_benchmark(
                 "char_ngram_weight",
                 None,
             ),
-            "note": "All engines receive embeddings from the same WaveMind encoder.",
+            "note": (
+                "WaveMind, static vector, Chroma, and Qdrant receive the same "
+                "WaveMind encoder. Real memory systems use their pinned native "
+                "embedding stack; their result rows record that profile."
+            ),
+        },
+        "comparison_protocol": {
+            "same_memories": True,
+            "same_queries": True,
+            "same_top_k": True,
+            "evidence_mapping": "source provenance only; no text matching",
+            "mem0_inference": False,
+            "hindsight_extraction_mode": "chunks",
+            "reader": None,
+            "claim_boundary": (
+                "This is retrieval evidence. Native embedding effects are not "
+                "attributed to memory architecture."
+            ),
         },
         "field": BENCHMARK_FIELD,
         "results": results,
@@ -331,7 +375,7 @@ def main() -> int:
     parser.add_argument(
         "--engines",
         nargs="+",
-        choices=["wavemind", "memory-os", "wavemind-memory-os", "static", "static-vector", "chroma", "chroma-static", "qdrant", "qdrant-static"],
+        choices=["wavemind", "memory-os", "wavemind-memory-os", "static", "static-vector", "chroma", "chroma-static", "qdrant", "qdrant-static", "mem0", "hindsight"],
         default=["wavemind", "static"],
     )
     parser.add_argument(
@@ -342,6 +386,15 @@ def main() -> int:
     parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument("--limit-samples", type=int, default=None)
     parser.add_argument("--limit-queries", type=int, default=None)
+    parser.add_argument("--hindsight-url", default=None)
+    parser.add_argument("--hindsight-api-key", default=None)
+    parser.add_argument("--hindsight-keep-banks", action="store_true")
+    parser.add_argument("--hindsight-version", default=None)
+    parser.add_argument("--hindsight-embedding-profile", default=None)
+    parser.add_argument(
+        "--mem0-embedding-model",
+        default=MEM0_EMBEDDING_MODEL,
+    )
     parser.add_argument("--output", type=Path, default=Path("benchmarks/locomo_evidence_results.json"))
     args = parser.parse_args()
 
@@ -352,6 +405,12 @@ def main() -> int:
         top_k=args.top_k,
         limit_samples=args.limit_samples,
         limit_queries=args.limit_queries,
+        hindsight_url=args.hindsight_url,
+        hindsight_api_key=args.hindsight_api_key,
+        hindsight_keep_banks=args.hindsight_keep_banks,
+        hindsight_version=args.hindsight_version,
+        hindsight_embedding_profile=args.hindsight_embedding_profile,
+        mem0_embedding_model=args.mem0_embedding_model,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
