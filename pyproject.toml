@@ -90,6 +90,11 @@ bench = [
 langchain = [
   "langchain-classic>=1.0",
 ]
+providers = [
+  "anthropic>=0.120,<1",
+  "langgraph>=1.2,<2",
+  "openai-agents>=0.19,<1",
+]
 production = [
   "annoy>=1.17",
   "faiss-cpu>=1.8",

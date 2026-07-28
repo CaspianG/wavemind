@@ -1324,6 +1324,166 @@ class SQLiteExperienceStore:
             steps=tuple(_trajectory_step_from_row(item) for item in step_rows),
         )
 
+    def get_trajectory_by_source(
+        self,
+        *,
+        namespace: str,
+        source_sha256: str,
+    ) -> ToolTrajectory | None:
+        with self._lock:
+            row = self.conn.execute(
+                """
+                SELECT id FROM experience_trajectories
+                WHERE namespace = ? AND source_sha256 = ?
+                """,
+                (namespace, source_sha256),
+            ).fetchone()
+        return self.get_trajectory(str(row["id"])) if row is not None else None
+
+    def list_for_trajectory(self, trajectory_id: str) -> list[ExperienceRecord]:
+        with self._lock:
+            rows = self.conn.execute(
+                """
+                SELECT * FROM experience_records
+                WHERE trajectory_id = ?
+                ORDER BY created_at, id
+                """,
+                (trajectory_id,),
+            ).fetchall()
+        return [_experience_from_row(row) for row in rows]
+
+    def list_trajectories(
+        self,
+        *,
+        namespace: str | None = None,
+        limit: int = 10_000,
+    ) -> list[ToolTrajectory]:
+        if not 1 <= int(limit) <= 100_000:
+            raise ValueError("limit must be between 1 and 100000")
+        query = "SELECT id FROM experience_trajectories"
+        values: list[Any] = []
+        if namespace is not None:
+            query += " WHERE namespace = ?"
+            values.append(namespace)
+        query += " ORDER BY created_at, id LIMIT ?"
+        values.append(int(limit))
+        with self._lock:
+            rows = self.conn.execute(query, values).fetchall()
+        return [
+            trajectory
+            for row in rows
+            if (trajectory := self.get_trajectory(str(row["id"]))) is not None
+        ]
+
+    def restore_trajectory(self, trajectory: ToolTrajectory) -> bool:
+        with self._lock, self.conn:
+            existing = self.conn.execute(
+                "SELECT source_sha256 FROM experience_trajectories WHERE id = ?",
+                (trajectory.id,),
+            ).fetchone()
+            if existing is not None:
+                if str(existing["source_sha256"]) != trajectory.source_sha256:
+                    raise ValueError(
+                        f"trajectory id {trajectory.id!r} already exists with "
+                        "different data"
+                    )
+                restored = self.get_trajectory(trajectory.id)
+                if restored != trajectory:
+                    raise ValueError(
+                        f"trajectory id {trajectory.id!r} failed exact replay validation"
+                    )
+                return False
+            digest_row = self.conn.execute(
+                """
+                SELECT id FROM experience_trajectories
+                WHERE namespace = ? AND source_sha256 = ?
+                """,
+                (trajectory.namespace, trajectory.source_sha256),
+            ).fetchone()
+            if digest_row is not None:
+                raise ValueError(
+                    "trajectory source already exists under a different id: "
+                    f"{digest_row['id']}"
+                )
+            self.conn.execute(
+                """
+                INSERT INTO experience_trajectories (
+                    id, namespace, provider, source_sha256, started_at, ended_at,
+                    metadata_json, raw_event_count, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    trajectory.id,
+                    trajectory.namespace,
+                    trajectory.provider,
+                    trajectory.source_sha256,
+                    trajectory.started_at,
+                    trajectory.ended_at,
+                    _json_dumps(trajectory.metadata),
+                    int(trajectory.raw_event_count),
+                    _now(),
+                ),
+            )
+            for step in trajectory.steps:
+                self.conn.execute(
+                    """
+                    INSERT INTO experience_trajectory_steps (
+                        trajectory_id, step_id, sequence, kind, name, input_json,
+                        output_json, success, started_at, finished_at, parent_id,
+                        metadata_json
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        trajectory.id,
+                        step.id,
+                        int(step.sequence),
+                        step.kind.value,
+                        step.name,
+                        _json_dumps(step.input),
+                        _json_dumps(step.output),
+                        None if step.success is None else int(step.success),
+                        step.started_at,
+                        step.finished_at,
+                        step.parent_id,
+                        _json_dumps(step.metadata),
+                    ),
+                )
+            self._audit(
+                "trajectory_restored",
+                trajectory_id=trajectory.id,
+                metadata={"source_sha256": trajectory.source_sha256},
+            )
+        return True
+
+    def candidate_validations(
+        self,
+        *,
+        experience_id: str | None = None,
+    ) -> list[dict[str, Any]]:
+        query = """
+            SELECT experience_id, evidence_id, successful, score,
+                   created_at, metadata_json
+            FROM experience_candidate_validations
+        """
+        values: list[Any] = []
+        if experience_id is not None:
+            query += " WHERE experience_id = ?"
+            values.append(experience_id)
+        query += " ORDER BY experience_id, created_at, id"
+        with self._lock:
+            rows = self.conn.execute(query, values).fetchall()
+        return [
+            {
+                "experience_id": str(row["experience_id"]),
+                "evidence_id": str(row["evidence_id"]),
+                "successful": bool(row["successful"]),
+                "score": row["score"],
+                "created_at": float(row["created_at"]),
+                "metadata": _json_loads(row["metadata_json"], {}),
+            }
+            for row in rows
+        ]
+
     def audit_events(
         self,
         *,
