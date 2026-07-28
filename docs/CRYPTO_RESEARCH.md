@@ -1159,3 +1159,19 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
     threshold may be changed after the forward journal begins.
 44. Keep market research reports separate from the main README so memory
     benchmark evidence is never confused with trading performance.
+45. Done, negative: added an independent-day cross-sectional relative-strength
+    benchmark. The 2024-selected k-NN policy transfers at only `0.461` spread
+    hit with `-19.9` bps mean net spread on 514 final days. Random-projection
+    WaveField reaches `0.436`; a correlation-topology field reaches `0.440`.
+46. Done, partial but rejected: mapped direction, large-move risk, and
+    cross-asset dispersion under a four-way temporal split. Direction remains
+    at `0.506` raw / `0.499` balanced. The base-universe topology-field/tree
+    hybrid reaches `0.831` raw accuracy on high dispersion, but the majority
+    baseline is `0.854`; balanced accuracy is `0.652`, AUC `0.738`, and the
+    worst year is only `0.567`.
+47. Done, negative replication: froze the transfer protocol in commit
+    `aad6305`, normalized each new universe from pre-2024 unlabeled features,
+    and opened two asset-disjoint replications. High-dispersion performance is
+    `0.535` raw / `0.554` balanced / `0.629` AUC on holdout3 and `0.677` /
+    `0.611` / `0.678` on holdout4. Neither passes. The current field contains a
+    partial risk-regime signal, not a universal direction or 70% market edge.

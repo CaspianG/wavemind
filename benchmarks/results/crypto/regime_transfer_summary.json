@@ -1,0 +1,68 @@
+{
+  "schema": "wavemind.crypto.regime-transfer-summary.v1",
+  "protocol": "benchmarks/protocols/binance_regime_transfer_v1.json",
+  "frozen_commit": "aad6305",
+  "source": "official checksum-verified Binance USD-M data, 2022-01-01 through 2026-06-30",
+  "horizon": "24h",
+  "independent_final_days_per_universe": 514,
+  "direction": {
+    "selected_model": "logistic",
+    "base_accuracy": 0.5058365758754864,
+    "base_balanced_accuracy": 0.4988481721068249,
+    "base_roc_auc": 0.514
+  },
+  "cross_sectional_relative_strength": {
+    "selected_model": "knn",
+    "base_spread_hit_rate": 0.461,
+    "base_spread_wilson_low_95": 0.418,
+    "base_mean_net_spread_bps": -19.9,
+    "admitted_70": false
+  },
+  "high_cross_asset_dispersion": {
+    "selected_model": "topological_tree_hybrid",
+    "base": {
+      "accuracy": 0.830739299610895,
+      "majority_accuracy": 0.8540856031128405,
+      "balanced_accuracy": 0.6521640091116173,
+      "roc_auc": 0.738466211085801,
+      "worst_supported_year_balanced_accuracy": 0.5674556213017752,
+      "admitted": false
+    },
+    "holdout3": {
+      "symbols": [
+        "AAVEUSDT",
+        "ALGOUSDT",
+        "FILUSDT",
+        "MANAUSDT",
+        "SANDUSDT",
+        "UNIUSDT",
+        "XTZUSDT",
+        "ZECUSDT"
+      ],
+      "accuracy": 0.5350194552529183,
+      "balanced_accuracy": 0.5538389870633696,
+      "roc_auc": 0.6288393689001573,
+      "worst_supported_year_balanced_accuracy": 0.5498689384010484,
+      "admitted": false
+    },
+    "holdout4": {
+      "symbols": [
+        "COMPUSDT",
+        "DASHUSDT",
+        "GRTUSDT",
+        "HBARUSDT",
+        "RUNEUSDT",
+        "THETAUSDT",
+        "VETUSDT",
+        "XMRUSDT"
+      ],
+      "accuracy": 0.6770428015564203,
+      "balanced_accuracy": 0.6109554933084345,
+      "roc_auc": 0.6775404606286959,
+      "worst_supported_year_balanced_accuracy": 0.6016672115070284,
+      "admitted": false
+    },
+    "cross_asset_admitted": false
+  },
+  "conclusion": "The field contains partial dispersion-regime information but no direction, relative-strength, or cross-asset 70% result survives the frozen gates."
+}

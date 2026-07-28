@@ -298,6 +298,10 @@ def run_market_regime_benchmark(
                 "selected_model": selected_model,
                 "final": holdout_results,
                 "selected_final": selected_holdout,
+                "raw_accuracy_uplift_vs_majority": (
+                    float(selected_holdout["accuracy"])
+                    - float(holdout_results["majority"]["accuracy"])
+                ),
                 "admitted": regime_admitted(selected_holdout),
             }
         tasks[task] = {
@@ -306,6 +310,10 @@ def run_market_regime_benchmark(
             "validation": validation_results,
             "final": final_results,
             "selected_final": selected_final,
+            "raw_accuracy_uplift_vs_majority": (
+                float(selected_final["accuracy"])
+                - float(final_results["majority"]["accuracy"])
+            ),
             "admitted": regime_admitted(selected_final),
             "asset_holdout": holdout_result,
         }
@@ -712,16 +720,18 @@ def render_markdown(payload: Mapping[str, Any]) -> str:
         "- model selection: 2024-H2;",
         "- final holdout: 2025-2026;",
         "",
-        "| task | selected model | accuracy | balanced accuracy | AUC | "
-        "worst year balanced | admitted |",
-        "|---|---|---:|---:|---:|---:|:---:|",
+        "| task | selected model | accuracy | majority | balanced accuracy | "
+        "AUC | worst year balanced | admitted |",
+        "|---|---|---:|---:|---:|---:|---:|:---:|",
     ]
     for task in TASK_ORDER:
         result = payload["tasks"][task]
         final = result["selected_final"]
+        majority = result["final"]["majority"]
         lines.append(
             f"| {task} | {result['selected_model']} | "
             f"{_percent(final['accuracy'])} | "
+            f"{_percent(majority['accuracy'])} | "
             f"{_percent(final['balanced_accuracy'])} | "
             f"{final['roc_auc']:.3f} | "
             f"{_optional_percent(final['worst_supported_year_balanced_accuracy'])} | "
@@ -736,9 +746,9 @@ def render_markdown(payload: Mapping[str, Any]) -> str:
                 "",
                 "## Asset-Disjoint Holdout",
                 "",
-                "| task | frozen model | accuracy | balanced accuracy | "
-                "AUC | admitted |",
-                "|---|---|---:|---:|---:|:---:|",
+                "| task | frozen model | accuracy | majority | "
+                "balanced accuracy | AUC | admitted |",
+                "|---|---|---:|---:|---:|---:|:---:|",
             ]
         )
         for task in TASK_ORDER:
@@ -746,9 +756,11 @@ def render_markdown(payload: Mapping[str, Any]) -> str:
             if holdout is None:
                 continue
             final = holdout["selected_final"]
+            majority = holdout["final"]["majority"]
             lines.append(
                 f"| {task} | {holdout['selected_model']} | "
                 f"{_percent(final['accuracy'])} | "
+                f"{_percent(majority['accuracy'])} | "
                 f"{_percent(final['balanced_accuracy'])} | "
                 f"{final['roc_auc']:.3f} | "
                 f"{'yes' if holdout['admitted'] else 'no'} |"

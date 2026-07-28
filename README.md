@@ -322,6 +322,26 @@ these scores as probability.
 
 ## Honest Interpretation
 
+### Predictability map
+
+Direction is not the only market hypothesis, so the branch now tests three
+separate targets on independent UTC days. The new protocol was committed before
+two asset-disjoint universes were opened.
+
+| target | final universe | accuracy | balanced / Wilson | verdict |
+|---|---|---:|---:|---|
+| market direction | base 8 | 50.6% | 49.9% balanced | rejected |
+| relative-strength spread | base 8 | 46.1% | 41.8% Wilson | rejected |
+| high cross-asset dispersion | base 8 | 83.1% | 65.2% balanced | rejected |
+| high cross-asset dispersion | holdout3 | 53.5% | 55.4% balanced | rejected |
+| high cross-asset dispersion | holdout4 | 67.7% | 61.1% balanced | rejected |
+
+The 83.1% base row is not a hidden universal win: an always-negative majority
+rule scores 85.4% because high dispersion is rare in that period. WaveField
+does recover minority-regime information (AUC `0.738`), but the result does not
+survive both frozen asset holdouts. See the
+[compact transfer report](benchmarks/results/crypto/regime_transfer_summary.md).
+
 The guarded state-field is a real improvement over the previous WaveMind direction model on both the development universe and untouched holdout assets. It also improves target error over momentum.
 
 It is not yet a predictive breakthrough:
