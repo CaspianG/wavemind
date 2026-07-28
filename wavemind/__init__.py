@@ -59,6 +59,10 @@ from .experience_compiler import (
     ExperiencePacket,
     ExperiencePacketItem,
 )
+from .experience_quality_admission import (
+    evaluate_experience_quality_admission,
+    render_experience_quality_admission_markdown,
+)
 from .experience_portability import (
     PORTABLE_EXPERIENCE_SCHEMA,
     PortableImportReport,
@@ -372,6 +376,7 @@ __all__ = [
     "ExperienceDetail",
     "ExperiencePacket",
     "ExperiencePacketItem",
+    "evaluate_experience_quality_admission",
     "PORTABLE_EXPERIENCE_SCHEMA",
     "PortableImportReport",
     "FirewallAction",
@@ -600,6 +605,7 @@ __all__ = [
     "render_production_evidence_env_markdown",
     "render_multimodal_admission_markdown",
     "render_external_multimodal_evidence_markdown",
+    "render_experience_quality_admission_markdown",
     "run_control_plane_consensus_profile",
     "run_external_multimodal_evidence",
     "run_memory_os_canary",

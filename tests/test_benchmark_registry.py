@@ -27,6 +27,20 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert entries["agent_coherence_quality"]["current"]["WaveMind"]["stale_error_rate"] == 0.0
     assert entries["agent_coherence_quality"]["current"]["Static vector"]["stale_error_rate"] > 0.0
     assert "Chroma static" in entries["agent_coherence_quality"]["competitors"]
+    experienced = entries["experienced_work_agent"]
+    assert experienced["status"] == "implemented"
+    assert (
+        experienced["current"]["WaveMind Experience"]["task_success_rate"]
+        == 1.0
+    )
+    assert (
+        experienced["current"]["WaveMind Experience"]["repeated_error_rate"]
+        == 0.0
+    )
+    assert (
+        experienced["current"]["WaveMind Experience"]["median_context_tokens"]
+        < experienced["current"]["WaveMind Core"]["median_context_tokens"]
+    )
     assert entries["dynamic_memory_policy"]["status"] == "implemented"
     assert entries["field_memory_dynamics"]["status"] == "implemented"
     assert entries["memory_os_policy_bundle"]["status"] == "implemented"

@@ -40,6 +40,17 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "benchmarks/agent_impact_leaderboard.py" in workflow
     assert "benchmarks/agent_impact_results.json" in workflow
     assert "benchmarks/AGENT_IMPACT.md" in workflow
+    assert "benchmarks/experienced_work_agent_benchmark.py" in workflow
+    assert "python -m wavemind experience-quality-admission" in workflow
+    assert "benchmarks/experience_quality_admission_results.json" in workflow
+    assert "benchmarks/EXPERIENCE_QUALITY_ADMISSION.md" in workflow
+    assert '--expected-source-sha "${GITHUB_SHA}"' in workflow
+    assert workflow.index("experienced_work_agent_benchmark.py") < workflow.index(
+        "experience-quality-admission"
+    )
+    assert workflow.index("experience-quality-admission") < workflow.index(
+        "benchmarks/benchmark_registry.py"
+    )
     assert "benchmarks/structured_memory_report.py" in workflow
     assert "benchmarks/structured_memory_results.json" in workflow
     assert "benchmarks/STRUCTURED_MEMORY.md" in workflow

@@ -51,6 +51,10 @@ from .agent_memory_admission import (
     evaluate_agent_memory_advantage_admission,
     render_agent_memory_advantage_admission_markdown,
 )
+from .experience_quality_admission import (
+    evaluate_experience_quality_admission,
+    render_experience_quality_admission_markdown,
+)
 from .multimodal_admission import (
     evaluate_multimodal_admission,
     render_multimodal_admission_markdown,
@@ -922,6 +926,37 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path("benchmarks/AGENT_MEMORY_ADVANTAGE_ADMISSION.md"),
     )
     agent_memory_admission.add_argument("--json", action="store_true")
+
+    experience_quality_admission = sub.add_parser(
+        "experience-quality-admission",
+        help="Gate Experienced Work Agent claims against frozen held-out evidence",
+    )
+    experience_quality_admission.add_argument(
+        "--root",
+        type=Path,
+        default=Path.cwd(),
+        help="Repository/artifact root. Defaults to the current working directory.",
+    )
+    experience_quality_admission.add_argument("--expected-source-sha")
+    experience_quality_admission.add_argument(
+        "--write-artifacts",
+        action="store_true",
+    )
+    experience_quality_admission.add_argument(
+        "--fail-on-blocked",
+        action="store_true",
+    )
+    experience_quality_admission.add_argument(
+        "--output",
+        type=Path,
+        default=Path("benchmarks/experience_quality_admission_results.json"),
+    )
+    experience_quality_admission.add_argument(
+        "--markdown-output",
+        type=Path,
+        default=Path("benchmarks/EXPERIENCE_QUALITY_ADMISSION.md"),
+    )
+    experience_quality_admission.add_argument("--json", action="store_true")
 
     multimodal_external = sub.add_parser(
         "multimodal-external-evidence",
@@ -2276,6 +2311,24 @@ def print_agent_memory_advantage_admission(
             print(f"- {issue}")
 
 
+def print_experience_quality_admission(
+    payload: dict[str, object],
+) -> None:
+    summary = payload["summary"]
+    print(f"status: {payload['status']}")
+    print(f"admitted: {str(payload['admitted']).lower()}")
+    print(f"source_sha: {payload['source_sha']}")
+    print(
+        "checks: "
+        f"{summary['checks_passed']}/{summary['checks_total']} passed"
+    )
+    issues = payload.get("issues") or []
+    if issues:
+        print("issues:")
+        for issue in issues:
+            print(f"- {issue}")
+
+
 def print_external_multimodal_evidence(payload: dict[str, object]) -> None:
     metrics = payload.get("metrics", {})
     print(f"status: {payload['status']}")
@@ -3373,6 +3426,33 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(payload, ensure_ascii=False, indent=2))
         else:
             print_agent_memory_advantage_admission(payload)
+            if args.write_artifacts:
+                print(f"json_report: {args.output}")
+                print(f"markdown_report: {args.markdown_output}")
+        if args.fail_on_blocked and not payload["admitted"]:
+            return 2
+        return 0 if payload["status"] in {"admitted", "blocked"} else 1
+
+    if args.command == "experience-quality-admission":
+        payload = evaluate_experience_quality_admission(
+            args.root,
+            expected_source_sha=args.expected_source_sha,
+        )
+        if args.write_artifacts:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            args.markdown_output.parent.mkdir(parents=True, exist_ok=True)
+            args.markdown_output.write_text(
+                render_experience_quality_admission_markdown(payload),
+                encoding="utf-8",
+            )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print_experience_quality_admission(payload)
             if args.write_artifacts:
                 print(f"json_report: {args.output}")
                 print(f"markdown_report: {args.markdown_output}")
