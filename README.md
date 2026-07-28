@@ -524,10 +524,12 @@ loopback, and production evidence.
 | Direct Memory OS public runs | LoCoMo 1977 queries; LongMemEval-S 470 queries; LongMemEval-V2 Small 451 questions |
 | Strict production evidence | 5/8 requirements |
 | LongMemEval evidence retrieval | WaveMind recall@5 `0.782` |
+| Real LoCoMo memory systems | WaveMind recall@5 `0.548`; Mem0 OSS `0.500`; Hindsight OSS `0.316` |
 | Large-N profiles | 10M Qdrant, 10M sharded Qdrant, 10M pgvector, 50M FAISS |
 
 These results do not claim universal vector-database leadership or completed
 remote 100M/multi-region proof. See the full [Benchmark Guide](docs/BENCHMARKS.md),
+[real public memory-system report](benchmarks/PUBLIC_MEMORY_COMPETITORS.md),
 [living dashboard](https://caspiang.github.io/wavemind/), and
 [Benchmark Brief](docs/BENCHMARK_BRIEF.md) for methods, commands, limitations,
 and machine-readable artifacts.

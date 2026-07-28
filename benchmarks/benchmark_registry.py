@@ -745,6 +745,11 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
         root / "benchmarks" / "locomo_memory_os_results.json"
     )
     locomo_sentence_payload = _load_json(root / "benchmarks" / "locomo_sentence_evidence_results.json")
+    locomo_public_competitor_payload = _load_json(
+        root
+        / "benchmarks"
+        / "locomo_public_memory_competitors_results.json"
+    )
     longmemeval_payload = _load_json(root / "benchmarks" / "longmemeval_evidence_results.json")
     longmemeval_memory_os_payload = _load_json(
         root / "benchmarks" / "longmemeval_memory_os_results.json"
@@ -849,6 +854,9 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     locomo_results = _engine_results(locomo_payload)
     locomo_memory_os_results = _engine_results(locomo_memory_os_payload)
     locomo_sentence_results = _engine_results(locomo_sentence_payload)
+    locomo_public_competitor_results = _engine_results(
+        locomo_public_competitor_payload
+    )
     longmemeval_results = _engine_results(longmemeval_payload)
     longmemeval_memory_os_results = _engine_results(longmemeval_memory_os_payload)
     longmemeval_50_results = _engine_results(longmemeval_50_payload)
@@ -1217,7 +1225,13 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "status": "implemented",
             "source": "benchmarks/long_memory_evidence_benchmark.py",
             "dataset": "Synthetic long-memory evidence scenario with profile, preference, correction, TTL, namespace, and filler history",
-            "competitors": ["Static vector", "Chroma static", "Qdrant static"],
+            "competitors": [
+                "Static vector",
+                "Chroma static",
+                "Qdrant static",
+                "Mem0 OSS",
+                "Hindsight OSS",
+            ],
             "metrics": [
                 "evidence_recall@k",
                 "precision@1",
@@ -1447,16 +1461,62 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 "WaveMind + Memory OS direct": _agent_memory_os_summary(
                     locomo_memory_os_results.get("WaveMind + Memory OS")
                 ),
+                "WaveMind current public protocol": _metric_summary(
+                    locomo_public_competitor_results.get("WaveMind"),
+                    (
+                        "evidence_recall_at_k",
+                        "precision_at_1",
+                        "mrr_at_k",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                        "ingest_avg_ms",
+                    ),
+                ),
+                "WaveMind + Memory OS current public protocol": _metric_summary(
+                    locomo_public_competitor_results.get(
+                        "WaveMind + Memory OS"
+                    ),
+                    (
+                        "evidence_recall_at_k",
+                        "precision_at_1",
+                        "mrr_at_k",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                        "ingest_avg_ms",
+                    ),
+                ),
+                "Mem0 OSS": _metric_summary(
+                    locomo_public_competitor_results.get("Mem0 OSS"),
+                    (
+                        "evidence_recall_at_k",
+                        "precision_at_1",
+                        "mrr_at_k",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                        "ingest_avg_ms",
+                    ),
+                ),
+                "Hindsight OSS": _metric_summary(
+                    locomo_public_competitor_results.get("Hindsight OSS"),
+                    (
+                        "evidence_recall_at_k",
+                        "precision_at_1",
+                        "mrr_at_k",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                        "ingest_avg_ms",
+                    ),
+                ),
             },
             "target": (
-                "Keep direct Memory OS execution within one percentage point "
-                "of WaveMind Core quality, expose its maintenance cost, and "
-                "improve LoCoMo evidence recall without hiding regressions."
+                "Keep WaveMind ahead of real Mem0 and Hindsight runs on "
+                "LoCoMo retrieval quality while exposing query latency and "
+                "non-equivalent ingest scopes."
             ),
             "next_step": (
-                "The current direct Memory OS run is admitted but slightly "
-                "below Core on recall; tune feedback-free policies before "
-                "claiming LoCoMo uplift."
+                "Repeat the real-system protocol on LongMemEval-S and add "
+                "pinned answer-quality readers without presenting retrieval "
+                "evidence as final answer quality."
             ),
         },
         {

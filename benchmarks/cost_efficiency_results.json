@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.cost_efficiency_leaderboard.v1",
-  "generated_at": "2026-07-27T10:53:35Z",
-  "source_ref": "807faf0fdd6d2cc58903d1a5237148110c3cfc5c",
+  "generated_at": "2026-07-28T22:43:41Z",
+  "source_ref": "4b6d7dd3e938",
   "claim_boundary": "Measured rows come from checked-in load artifacts. Planned rows are capacity and cost contracts only; they do not unlock production latency or recall claims until the matching benchmark result exists.",
   "summary": {
     "measured_row_count": 22,
@@ -492,8 +492,8 @@
         "vector_dim": 128,
         "target_class": "sub_100k",
         "recall_at_k": 1.0,
-        "p99_latency_ms": 0.5151830000045265,
-        "avg_latency_ms": 0.10145341999873381,
+        "p99_latency_ms": 0.45850499999744443,
+        "avg_latency_ms": 0.09846961999869563,
         "target_qps": null,
         "slo_status": "pass",
         "cost_status": "valid_slo",
@@ -504,32 +504,8 @@
         "claim_status": "measured_slo_pass",
         "slo_pass": true,
         "valid_cost": true,
-        "frontier_score": 27951.232862640027,
+        "frontier_score": 31406.418686994166,
         "rank": 1
-      },
-      {
-        "profile": "sub_100k-qdrant-sharded-service-streaming-production_streaming_load_qdrant_sharded_smoke_results",
-        "evidence_level": "measured",
-        "source_file": "benchmarks/production_streaming_load_qdrant_sharded_smoke_results.json",
-        "engine": "Qdrant sharded service streaming",
-        "memory_count": 5000,
-        "vector_dim": 64,
-        "target_class": "sub_100k",
-        "recall_at_k": 1.0,
-        "p99_latency_ms": 3.6189049999961753,
-        "avg_latency_ms": 3.0897803500039345,
-        "target_qps": null,
-        "slo_status": "pass",
-        "cost_status": "valid_slo",
-        "compute_cost_per_1m_queries_usd": 0.6944444444444444,
-        "monthly_total_cost_at_target_qps_usd": 182.50107288360596,
-        "monthly_total_cost_per_1m_memories_usd": 36500.21457672119,
-        "estimated_storage_gb": 0.010728836059570312,
-        "claim_status": "measured_slo_pass",
-        "slo_pass": true,
-        "valid_cost": true,
-        "frontier_score": 1989.552088271897,
-        "rank": 2
       },
       {
         "profile": "sub_100k-wavemind-pgvector-streaming-production_streaming_load_pgvector_smoke_results",
@@ -553,6 +529,30 @@
         "slo_pass": true,
         "valid_cost": true,
         "frontier_score": 188.88218572508836,
+        "rank": 2
+      },
+      {
+        "profile": "sub_100k-qdrant-sharded-service-streaming-production_streaming_load_qdrant_sharded_smoke_results",
+        "evidence_level": "measured",
+        "source_file": "benchmarks/production_streaming_load_qdrant_sharded_smoke_results.json",
+        "engine": "Qdrant sharded service streaming",
+        "memory_count": 5000,
+        "vector_dim": 64,
+        "target_class": "sub_100k",
+        "recall_at_k": 1.0,
+        "p99_latency_ms": 16.01940009277314,
+        "avg_latency_ms": 9.103320009307936,
+        "target_qps": null,
+        "slo_status": "pass",
+        "cost_status": "valid_slo",
+        "compute_cost_per_1m_queries_usd": 1.3888888888888888,
+        "monthly_total_cost_at_target_qps_usd": 365.00107288360596,
+        "monthly_total_cost_per_1m_memories_usd": 73000.21457672119,
+        "estimated_storage_gb": 0.010728836059570312,
+        "claim_status": "measured_slo_pass",
+        "slo_pass": true,
+        "valid_cost": true,
+        "frontier_score": 224.72751658310065,
         "rank": 3
       },
       {
@@ -605,6 +605,7 @@
         "output_artifact": "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
         "blockers": [
           "missing_env:WAVEMIND_QDRANT_URLS",
+          "missing_module:qdrant_client",
           "insufficient_local_disk_for_index_and_transient_batches"
         ],
         "slo_pass": false,
@@ -636,6 +637,7 @@
         "output_artifact": "benchmarks/production_streaming_load_qdrant_sharded_10m_results.json",
         "blockers": [
           "missing_env:WAVEMIND_QDRANT_URLS",
+          "missing_module:qdrant_client",
           "insufficient_local_disk_for_index_and_transient_batches"
         ],
         "slo_pass": false,
@@ -695,6 +697,7 @@
         "output_artifact": "benchmarks/production_streaming_load_qdrant_10m_results.json",
         "blockers": [
           "missing_env:WAVEMIND_QDRANT_URL",
+          "missing_module:qdrant_client",
           "insufficient_local_disk_for_index_and_transient_batches"
         ],
         "slo_pass": false,
@@ -746,8 +749,8 @@
       "vector_dim": 128,
       "target_class": "sub_100k",
       "recall_at_k": 1.0,
-      "p99_latency_ms": 0.5151830000045265,
-      "avg_latency_ms": 0.10145341999873381,
+      "p99_latency_ms": 0.45850499999744443,
+      "avg_latency_ms": 0.09846961999869563,
       "target_qps": null,
       "slo_status": "pass",
       "cost_status": "valid_slo",
@@ -758,32 +761,8 @@
       "claim_status": "measured_slo_pass",
       "slo_pass": true,
       "valid_cost": true,
-      "frontier_score": 27951.232862640027,
+      "frontier_score": 31406.418686994166,
       "rank": 1
-    },
-    {
-      "profile": "sub_100k-qdrant-sharded-service-streaming-production_streaming_load_qdrant_sharded_smoke_results",
-      "evidence_level": "measured",
-      "source_file": "benchmarks/production_streaming_load_qdrant_sharded_smoke_results.json",
-      "engine": "Qdrant sharded service streaming",
-      "memory_count": 5000,
-      "vector_dim": 64,
-      "target_class": "sub_100k",
-      "recall_at_k": 1.0,
-      "p99_latency_ms": 3.6189049999961753,
-      "avg_latency_ms": 3.0897803500039345,
-      "target_qps": null,
-      "slo_status": "pass",
-      "cost_status": "valid_slo",
-      "compute_cost_per_1m_queries_usd": 0.6944444444444444,
-      "monthly_total_cost_at_target_qps_usd": 182.50107288360596,
-      "monthly_total_cost_per_1m_memories_usd": 36500.21457672119,
-      "estimated_storage_gb": 0.010728836059570312,
-      "claim_status": "measured_slo_pass",
-      "slo_pass": true,
-      "valid_cost": true,
-      "frontier_score": 1989.552088271897,
-      "rank": 2
     },
     {
       "profile": "sub_100k-wavemind-pgvector-streaming-production_streaming_load_pgvector_smoke_results",
@@ -807,6 +786,30 @@
       "slo_pass": true,
       "valid_cost": true,
       "frontier_score": 188.88218572508836,
+      "rank": 2
+    },
+    {
+      "profile": "sub_100k-qdrant-sharded-service-streaming-production_streaming_load_qdrant_sharded_smoke_results",
+      "evidence_level": "measured",
+      "source_file": "benchmarks/production_streaming_load_qdrant_sharded_smoke_results.json",
+      "engine": "Qdrant sharded service streaming",
+      "memory_count": 5000,
+      "vector_dim": 64,
+      "target_class": "sub_100k",
+      "recall_at_k": 1.0,
+      "p99_latency_ms": 16.01940009277314,
+      "avg_latency_ms": 9.103320009307936,
+      "target_qps": null,
+      "slo_status": "pass",
+      "cost_status": "valid_slo",
+      "compute_cost_per_1m_queries_usd": 1.3888888888888888,
+      "monthly_total_cost_at_target_qps_usd": 365.00107288360596,
+      "monthly_total_cost_per_1m_memories_usd": 73000.21457672119,
+      "estimated_storage_gb": 0.010728836059570312,
+      "claim_status": "measured_slo_pass",
+      "slo_pass": true,
+      "valid_cost": true,
+      "frontier_score": 224.72751658310065,
       "rank": 3
     },
     {
@@ -1289,6 +1292,7 @@
       "output_artifact": "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
       "blockers": [
         "missing_env:WAVEMIND_QDRANT_URLS",
+        "missing_module:qdrant_client",
         "insufficient_local_disk_for_index_and_transient_batches"
       ],
       "slo_pass": false,
@@ -1318,6 +1322,7 @@
       "output_artifact": "benchmarks/production_streaming_load_qdrant_sharded_10m_results.json",
       "blockers": [
         "missing_env:WAVEMIND_QDRANT_URLS",
+        "missing_module:qdrant_client",
         "insufficient_local_disk_for_index_and_transient_batches"
       ],
       "slo_pass": false,
@@ -1407,6 +1412,7 @@
       "output_artifact": "benchmarks/production_streaming_load_qdrant_10m_results.json",
       "blockers": [
         "missing_env:WAVEMIND_QDRANT_URL",
+        "missing_module:qdrant_client",
         "insufficient_local_disk_for_index_and_transient_batches"
       ],
       "slo_pass": false,

@@ -107,6 +107,9 @@ class EvidenceMetrics:
     predictive_prefetch_warmed: int = 0
     worker_errors: int = 0
     maintenance_interval_queries: int = 0
+    ingest_total_ms: float = 0.0
+    ingest_avg_ms: float = 0.0
+    ingest_scope: str = ""
 
 
 class CachedTextEncoder:
@@ -295,6 +298,7 @@ def run_wavemind(dataset: EvidenceDataset, encoder, top_k: int) -> EvidenceMetri
             **BENCHMARK_FIELD,
         )
         try:
+            ingest_started = time.perf_counter()
             memory.remember_batch(
                 {
                     "text": item.text,
@@ -309,6 +313,7 @@ def run_wavemind(dataset: EvidenceDataset, encoder, top_k: int) -> EvidenceMetri
                 }
                 for item in dataset.memories
             )
+            ingest_total_ms = (time.perf_counter() - ingest_started) * 1000.0
             rankings: dict[str, list[str]] = {}
             texts: dict[str, list[str]] = {}
             latencies: list[float] = []
@@ -320,7 +325,17 @@ def run_wavemind(dataset: EvidenceDataset, encoder, top_k: int) -> EvidenceMetri
                 texts[query.id] = [result.text for result in results]
         finally:
             memory.close()
-    return _to_metrics(dataset, rankings, texts, latencies, top_k, "WaveMind")
+    return _to_metrics(
+        dataset,
+        rankings,
+        texts,
+        latencies,
+        top_k,
+        "WaveMind",
+        ingest_total_ms=ingest_total_ms,
+        ingest_avg_ms=ingest_total_ms / max(1, len(dataset.memories)),
+        ingest_scope="index_and_persistence_from_precomputed_embeddings",
+    )
 
 
 def run_wavemind_memory_os(
@@ -357,6 +372,7 @@ def run_wavemind_memory_os(
         )
         cache = HotMemoryCache(capacity=max(128, len(dataset.queries) * 2), ttl_seconds=300.0)
         try:
+            ingest_started = time.perf_counter()
             memory.remember_batch(
                 {
                     "text": item.text,
@@ -371,6 +387,7 @@ def run_wavemind_memory_os(
                 }
                 for item in dataset.memories
             )
+            ingest_total_ms = (time.perf_counter() - ingest_started) * 1000.0
             rankings: dict[str, list[str]] = {}
             texts: dict[str, list[str]] = {}
             retrieval_latencies: list[float] = []
@@ -476,10 +493,14 @@ def run_wavemind_memory_os(
             for report in worker_reports
         ),
         maintenance_interval_queries=maintenance_interval,
+        ingest_total_ms=ingest_total_ms,
+        ingest_avg_ms=ingest_total_ms / max(1, len(dataset.memories)),
+        ingest_scope="index_and_persistence_from_precomputed_embeddings",
     )
 
 
 def run_static_vector(dataset: EvidenceDataset, encoder, top_k: int) -> EvidenceMetrics:
+    ingest_started = time.perf_counter()
     memory_vectors = encoder.encode_vectors(item.text for item in dataset.memories)
     vectors = {
         item.id: vector
@@ -489,6 +510,7 @@ def run_static_vector(dataset: EvidenceDataset, encoder, top_k: int) -> Evidence
     ids_by_namespace: dict[str, list[str]] = {}
     for item in dataset.memories:
         ids_by_namespace.setdefault(item.namespace, []).append(item.id)
+    ingest_total_ms = (time.perf_counter() - ingest_started) * 1000.0
     rankings: dict[str, list[str]] = {}
     texts: dict[str, list[str]] = {}
     latencies: list[float] = []
@@ -504,7 +526,17 @@ def run_static_vector(dataset: EvidenceDataset, encoder, top_k: int) -> Evidence
         latencies.append((time.perf_counter() - started) * 1000.0)
         rankings[query.id] = selected
         texts[query.id] = [text_by_id[item_id] for item_id in selected]
-    return _to_metrics(dataset, rankings, texts, latencies, top_k, "Static vector")
+    return _to_metrics(
+        dataset,
+        rankings,
+        texts,
+        latencies,
+        top_k,
+        "Static vector",
+        ingest_total_ms=ingest_total_ms,
+        ingest_avg_ms=ingest_total_ms / max(1, len(dataset.memories)),
+        ingest_scope="in_memory_index_from_precomputed_embeddings",
+    )
 
 
 def run_chroma_static(dataset: EvidenceDataset, encoder, top_k: int) -> EvidenceMetrics:
@@ -513,6 +545,7 @@ def run_chroma_static(dataset: EvidenceDataset, encoder, top_k: int) -> Evidence
         from chromadb.config import Settings
     except ImportError as exc:
         raise RuntimeError('Install Chroma for this benchmark: pip install -e ".[bench]"') from exc
+    ingest_started = time.perf_counter()
     client = chromadb.Client(Settings(anonymized_telemetry=False))
     collection = client.create_collection(name=f"wavemind_long_memory_{time.time_ns()}", metadata={"hnsw:space": "cosine"}, embedding_function=None)
     batch_size = 1000
@@ -525,6 +558,7 @@ def run_chroma_static(dataset: EvidenceDataset, encoder, top_k: int) -> Evidence
             embeddings=[vector.tolist() for vector in vectors],
             metadatas=[{"namespace": item.namespace} for item in batch],
         )
+    ingest_total_ms = (time.perf_counter() - ingest_started) * 1000.0
     rankings: dict[str, list[str]] = {}
     texts: dict[str, list[str]] = {}
     latencies: list[float] = []
@@ -540,7 +574,17 @@ def run_chroma_static(dataset: EvidenceDataset, encoder, top_k: int) -> Evidence
         latencies.append((time.perf_counter() - started) * 1000.0)
         rankings[query.id] = list(result.get("ids", [[]])[0])
         texts[query.id] = list(result.get("documents", [[]])[0])
-    return _to_metrics(dataset, rankings, texts, latencies, top_k, "Chroma static")
+    return _to_metrics(
+        dataset,
+        rankings,
+        texts,
+        latencies,
+        top_k,
+        "Chroma static",
+        ingest_total_ms=ingest_total_ms,
+        ingest_avg_ms=ingest_total_ms / max(1, len(dataset.memories)),
+        ingest_scope="local_index_write_from_precomputed_embeddings",
+    )
 
 
 def run_qdrant_static(dataset: EvidenceDataset, encoder, top_k: int) -> EvidenceMetrics:
@@ -549,6 +593,7 @@ def run_qdrant_static(dataset: EvidenceDataset, encoder, top_k: int) -> Evidence
         from qdrant_client.models import Distance, FieldCondition, Filter, MatchValue, PointStruct, VectorParams
     except ImportError as exc:
         raise RuntimeError('Install Qdrant client for this benchmark: pip install -e ".[bench]"') from exc
+    ingest_started = time.perf_counter()
     client = QdrantClient(":memory:")
     collection_name = f"wavemind_long_memory_{time.time_ns()}"
     client.recreate_collection(collection_name=collection_name, vectors_config=VectorParams(size=int(encoder.vector_dim), distance=Distance.COSINE))
@@ -566,6 +611,7 @@ def run_qdrant_static(dataset: EvidenceDataset, encoder, top_k: int) -> Evidence
     batch_size = 1000
     for offset in range(0, len(points), batch_size):
         client.upsert(collection_name=collection_name, points=points[offset : offset + batch_size])
+    ingest_total_ms = (time.perf_counter() - ingest_started) * 1000.0
     rankings: dict[str, list[str]] = {}
     texts: dict[str, list[str]] = {}
     latencies: list[float] = []
@@ -602,7 +648,17 @@ def run_qdrant_static(dataset: EvidenceDataset, encoder, top_k: int) -> Evidence
         ids = [str(getattr(hit, "payload", {}).get("evidence_id") or numeric_to_id.get(int(hit.id), "")) for hit in hits]
         rankings[query.id] = ids
         texts[query.id] = [text_by_id[item_id] for item_id in ids if item_id in text_by_id]
-    return _to_metrics(dataset, rankings, texts, latencies, top_k, "Qdrant static")
+    return _to_metrics(
+        dataset,
+        rankings,
+        texts,
+        latencies,
+        top_k,
+        "Qdrant static",
+        ingest_total_ms=ingest_total_ms,
+        ingest_avg_ms=ingest_total_ms / max(1, len(dataset.memories)),
+        ingest_scope="local_index_write_from_precomputed_embeddings",
+    )
 
 
 def load_dataset(kind: str, memory_count: int) -> EvidenceDataset:

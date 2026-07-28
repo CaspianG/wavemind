@@ -12,6 +12,7 @@ WaveMind tracks benchmarks in two layers:
 Machine-readable benchmark matrix: `benchmarks/benchmark_matrix_results.json`.
 Full generated benchmark report: [`benchmarks/BENCHMARK_REPORT.md`](../benchmarks/BENCHMARK_REPORT.md).
 Compact benchmark leaderboard: [`benchmarks/BENCHMARK_LEADERBOARD.md`](../benchmarks/BENCHMARK_LEADERBOARD.md).
+Real public memory-system comparison: [`benchmarks/PUBLIC_MEMORY_COMPETITORS.md`](../benchmarks/PUBLIC_MEMORY_COMPETITORS.md).
 Agent-impact leaderboard: [`benchmarks/AGENT_IMPACT.md`](../benchmarks/AGENT_IMPACT.md).
 Structured memory report: [`benchmarks/STRUCTURED_MEMORY.md`](../benchmarks/STRUCTURED_MEMORY.md).
 Memory OS intelligence report: [`benchmarks/MEMORY_OS_INTELLIGENCE.md`](../benchmarks/MEMORY_OS_INTELLIGENCE.md).
@@ -315,7 +316,7 @@ Current read:
 
 | area | result | honest interpretation |
 |---|---|---|
-| Public agent-memory evidence | On official LoCoMo `locomo10.json`, WaveMind reaches `evidence_recall@5 0.386` with hash embeddings and `0.547` with sentence-transformers. Fair namespace-filtered Chroma reaches `0.257` / `0.407`; Qdrant reaches `0.263` / `0.409`. | WaveMind retrieves more labeled evidence. Chroma is still the fastest static vector-store baseline. Qdrant local payload filtering is much slower than service-mode Qdrant should be. |
+| Public agent-memory evidence | On official LoCoMo `locomo10.json`, the shared 5,882-memory / 1,977-query protocol gives WaveMind recall@5 `0.548`, Mem0 OSS `0.500`, Chroma `0.408`, Qdrant `0.409`, and Hindsight OSS `0.316`. | WaveMind retrieves the most labeled evidence in this local retrieval-only run. Chroma is the fastest static baseline. Native embedding stacks mean this is a system comparison, not an architecture-only attribution. |
 | Public retrieval sanity check | On BEIR SciFact, WaveMind reaches `nDCG@10 0.354`, `Recall@10 0.482`; Qdrant matches that quality; Chroma reaches `0.350` / `0.467` with identical hash embeddings. | Same-embedding retrieval quality is close. Chroma is fastest at `1.79 ms`; Qdrant local is `17.71 ms`; WaveMind exact path is `117.02 ms`. |
 | Public multilingual retrieval | On NoMIRACL Russian, sampled at 200 queries / 5000 compact candidate passages, WaveMind reaches `nDCG@10 0.434`, `Recall@10 0.516`, matching Qdrant and staying within `0.002` nDCG of Chroma on identical hash embeddings. | Russian same-embedding quality is at parity. Chroma is faster at `2.60 ms`; WaveMind is `10.22 ms`; Qdrant local is `18.86 ms`. |
 | Static agent recall | WaveMind `precision@1` equals Chroma at `0.82`; WaveMind `precision@3` is `0.90` vs Chroma `0.88`. | Competitive quality, but Chroma is faster on the static vector-store path. |
@@ -651,6 +652,34 @@ machine-readable result: `benchmarks/locomo_sentence_evidence_results.json`.
 | Static vector | 0.409 | 0.219 | 0.305 | 1.25 ms | 2.05 ms |
 | Chroma static | 0.407 | 0.218 | 0.304 | 4.97 ms | 6.30 ms |
 | Qdrant static | 0.409 | 0.219 | 0.305 | 124.34 ms | 149.72 ms |
+
+Checked-in real public memory-system comparison:
+
+The same official dataset, 5,882 memory turns, 1,977 evidence queries, and
+top-k 5 are also run through real Mem0 OSS `2.0.14` and Hindsight OSS `0.8.5`
+adapters. Returned evidence is mapped only through source provenance; the
+runner does not award matches by comparing result text with the answer.
+Full report:
+[`benchmarks/PUBLIC_MEMORY_COMPETITORS.md`](../benchmarks/PUBLIC_MEMORY_COMPETITORS.md).
+Machine-readable result:
+`benchmarks/locomo_public_memory_competitors_results.json`.
+
+| engine | evidence recall@5 | precision@1 | MRR@5 | avg latency | p95 latency |
+|---|---:|---:|---:|---:|---:|
+| WaveMind | 0.548 | 0.333 | 0.432 | 4.88 ms | 7.67 ms |
+| WaveMind + Memory OS | 0.548 | 0.332 | 0.431 | 5.99 ms | 8.67 ms |
+| Chroma static | 0.408 | 0.219 | 0.305 | 4.12 ms | 4.86 ms |
+| Qdrant static | 0.409 | 0.219 | 0.305 | 103.27 ms | 111.45 ms |
+| Mem0 OSS | 0.500 | 0.263 | 0.369 | 270.24 ms | 293.08 ms |
+| Hindsight OSS | 0.316 | 0.052 | 0.148 | 320.61 ms | 463.14 ms |
+
+WaveMind, Chroma, and Qdrant receive the same precomputed sentence-transformers
+vectors before their measured ingest phase. Mem0 and Hindsight use their pinned
+native embedding and persistence stacks, so their end-to-end ingest timings
+have a broader scope and are not directly comparable to the internal rows.
+This table is local retrieval evidence, not final-answer quality, hosted
+throughput, or proof that the memory architecture alone caused every quality
+difference.
 
 Read this as retrieval-only evidence quality, not full QA quality. It uses the
 same embeddings for every engine inside each table. The sentence-transformers

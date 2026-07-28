@@ -1,6 +1,6 @@
 # WaveMind Cluster Autoscale Report
 
-Generated: `2026-07-27T10:52:52Z`.
+Generated: `2026-07-27T13:29:25Z`.
 
 Cluster autoscale evidence is extracted from the checked-in scale-readiness artifact. It proves deterministic shard placement, failure-domain availability, autoscale planning, rebalance planning, operator reconciliation, quorum safety, active-active convergence, field-state CRDT behavior, and the 100M capacity envelope on these fixtures. It is not a real 100M vector-query latency benchmark, managed Kubernetes production run, or independent multi-region SLO.
 
