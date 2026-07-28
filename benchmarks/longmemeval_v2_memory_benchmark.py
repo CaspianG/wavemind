@@ -293,6 +293,9 @@ class OllamaReader:
         self.supports_images = bool(supports_images or vision_model)
         self.timeout_seconds = float(timeout_seconds)
         self.seed = int(seed)
+        self._opener = urllib.request.build_opener(
+            urllib.request.ProxyHandler({})
+        )
 
     def _generate(
         self,
@@ -330,7 +333,7 @@ class OllamaReader:
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        with urllib.request.urlopen(
+        with self._opener.open(
             request,
             timeout=self.timeout_seconds,
         ) as response:
