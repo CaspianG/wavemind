@@ -19,6 +19,7 @@ benchmarks only when the deployment requires them.
 | Area | Guide |
 |---|---|
 | LangChain, LangGraph, LlamaIndex, CrewAI, AutoGen, and custom loops | [Framework Integrations](INTEGRATIONS.md) |
+| Connect any MCP-compatible agent | [MCP Integration](MCP.md) |
 | Hash, sentence-transformer, FAISS, pgvector, Qdrant, Annoy, and quantized indexes | [Embeddings And Index Backends](INDEX_BACKENDS.md) |
 | Structured payloads, multimodal contracts, storage, backup, and HTTP API | [Multimodal, Storage, And API](MULTIMODAL_AND_STORAGE.md) |
 | Metrics, traces, dashboards, and alerts | [Observability](OBSERVABILITY.md) |

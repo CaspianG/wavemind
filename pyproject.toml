@@ -35,7 +35,7 @@ classifiers = [
 requires-python = ">=3.10"
 dependencies = [
   "numpy>=1.24",
-  "fastapi>=0.110",
+  "fastapi>=0.140,<0.141",
   "uvicorn[standard]>=0.27",
   "pydantic>=2",
   "pypdf>=4",
@@ -68,6 +68,9 @@ postgres = [
 ]
 redis = [
   "redis>=5.0",
+]
+mcp = [
+  "mcp>=1.28,<2",
 ]
 s3 = [
   "boto3>=1.34",
@@ -104,11 +107,13 @@ dev = [
   "httpx>=0.27",
   "httpx2>=2",
   "langchain-classic>=1.0",
+  "mcp>=1.28,<2",
   "ruff==0.15.22",
 ]
 
 [project.scripts]
 wavemind = "wavemind.cli:main"
+wavemind-mcp = "wavemind.mcp_server:main"
 
 [project.urls]
 Homepage = "https://github.com/CaspianG/wavemind"

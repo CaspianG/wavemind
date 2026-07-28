@@ -35,7 +35,7 @@ still matters now?**
 | Adaptive recall | Hotness, decay, priority, TTL, feedback, and correction handling around vector candidates. |
 | Durable state | SQLite by default; PostgreSQL, Redis coordination, and service-backed vector indexes for production paths. |
 | Explicit control | Namespaces, provenance, audit events, backup/restore, inspection, and deliberate deletion. |
-| Small integration surface | Python API, CLI, FastAPI HTTP service, LangChain memory, and framework adapters. |
+| Small integration surface | Python API, CLI, FastAPI, MCP, LangChain memory, and framework adapters. |
 | Evidence-first releases | Public JSON artifacts, admission gates, reproducible commands, and locked claims when proof is missing. |
 
 WaveMind complements FAISS, Qdrant, pgvector, Chroma, and other candidate
@@ -195,6 +195,36 @@ The same feedback loop is available from the CLI:
 wavemind --db ./state/wavemind.sqlite3 feedback --id 1 --namespace user:42 --strength 0.5 --reason "used in answer"
 wavemind --db ./state/wavemind.sqlite3 feedback-batch --file feedback.json
 ```
+
+## MCP Server
+
+Give any MCP-compatible agent durable WaveMind tools:
+
+```sh
+python -m pip install "wavemind[mcp]"
+wavemind-mcp --db ./state/agent-memory.sqlite3
+```
+
+Example client configuration:
+
+```json
+{
+  "mcpServers": {
+    "wavemind": {
+      "command": "wavemind-mcp",
+      "args": ["--db", "./state/agent-memory.sqlite3"]
+    }
+  }
+}
+```
+
+The server exposes `remember`, `recall`, `feedback`, `forget`,
+`inspect_memory`, `explain_memory`, and `manage_namespace`. It uses local
+`stdio` by default, persists to SQLite across restarts, isolates every
+operation by namespace, and supports idempotent writes and provenance.
+
+See [MCP Integration](docs/MCP.md) for the tool contract, safety model,
+streamable HTTP loopback mode, and tested behavior.
 
 ## Where Data Lives
 
