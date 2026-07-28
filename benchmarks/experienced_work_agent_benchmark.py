@@ -37,6 +37,7 @@ DATASET_REVISION = "experienced-work-agent-v1-frozen-20260728"
 NAMESPACE = "experienced-work-agent"
 TRAIN_PER_SCENARIO = 10
 HELD_OUT_PER_SCENARIO = 5
+LATENCY_REPETITIONS = 3
 
 
 @dataclass(frozen=True)
@@ -620,28 +621,26 @@ def _train(
     return error_codes, runs
 
 
-def _run_experience(
+def _run_experience_case(
     agent: ExperiencedWorkAgent,
-    held_out: Sequence[tuple[Scenario, WorkRequest]],
+    scenario: Scenario,
+    request: WorkRequest,
     known_errors: set[str],
-) -> list[dict[str, Any]]:
-    rows = []
-    for scenario, request in held_out:
-        runtime = scenario.runtime()
-        try:
-            run = agent.run(
-                request,
-                runtime,
-                learn=False,
-                known_error_codes=tuple(known_errors),
-            )
-        finally:
-            runtime.close()
-        row = run.as_dict()
-        row["domain"] = scenario.domain
-        row["task_type"] = scenario.task_type
-        rows.append(row)
-    return rows
+) -> dict[str, Any]:
+    runtime = scenario.runtime()
+    try:
+        run = agent.run(
+            request,
+            runtime,
+            learn=False,
+            known_error_codes=tuple(known_errors),
+        )
+    finally:
+        runtime.close()
+    row = run.as_dict()
+    row["domain"] = scenario.domain
+    row["task_type"] = scenario.task_type
+    return row
 
 
 def _run_plan(
@@ -731,37 +730,89 @@ def _estimate_tokens(text: str) -> int:
     return max(1, int(len(text.split()) * 1.25 + 0.999))
 
 
-def _run_core(
+def _run_core_case(
     core: WaveMind,
+    scenario: Scenario,
+    request: WorkRequest,
+    known_errors: set[str],
+) -> dict[str, Any]:
+    started = time.perf_counter()
+    results = core.query(
+        request.objective,
+        namespace=NAMESPACE,
+        top_k=3,
+        min_score=0.0,
+    )
+    plan = ()
+    if results:
+        raw_plan = results[0].metadata.get("tool_plan")
+        if isinstance(raw_plan, list):
+            plan = tuple(str(name) for name in raw_plan)
+    return _run_plan(
+        scenario=scenario,
+        request=request,
+        plan=plan,
+        plan_source="wavemind_core",
+        context_tokens=sum(_estimate_tokens(item.text) for item in results),
+        known_errors=known_errors,
+        retrieval_started=started,
+    )
+
+
+def _median_latency_row(samples: Sequence[dict[str, Any]]) -> dict[str, Any]:
+    if not samples:
+        raise ValueError("latency samples must not be empty")
+    latencies = [float(row["latency_ms"]) for row in samples]
+    row = dict(samples[0])
+    row["latency_ms"] = statistics.median(latencies)
+    row["latency_samples_ms"] = latencies
+    return row
+
+
+def _run_paired(
+    *,
+    core: WaveMind,
+    agent: ExperiencedWorkAgent,
     held_out: Sequence[tuple[Scenario, WorkRequest]],
     known_errors: set[str],
-) -> list[dict[str, Any]]:
-    rows = []
-    for scenario, request in held_out:
-        started = time.perf_counter()
-        results = core.query(
-            request.objective,
-            namespace=NAMESPACE,
-            top_k=3,
-            min_score=0.0,
-        )
-        plan = ()
-        if results:
-            raw_plan = results[0].metadata.get("tool_plan")
-            if isinstance(raw_plan, list):
-                plan = tuple(str(name) for name in raw_plan)
-        rows.append(
-            _run_plan(
-                scenario=scenario,
-                request=request,
-                plan=plan,
-                plan_source="wavemind_core",
-                context_tokens=sum(_estimate_tokens(item.text) for item in results),
-                known_errors=known_errors,
-                retrieval_started=started,
-            )
-        )
-    return rows
+    repetitions: int = LATENCY_REPETITIONS,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    if repetitions < 1:
+        raise ValueError("repetitions must be >= 1")
+    core_rows: list[dict[str, Any]] = []
+    experience_rows: list[dict[str, Any]] = []
+    for case_index, (scenario, request) in enumerate(held_out):
+        core_samples: list[dict[str, Any]] = []
+        experience_samples: list[dict[str, Any]] = []
+        for repetition in range(repetitions):
+            core_first = (case_index + repetition) % 2 == 0
+            if core_first:
+                core_samples.append(
+                    _run_core_case(core, scenario, request, known_errors)
+                )
+                experience_samples.append(
+                    _run_experience_case(
+                        agent,
+                        scenario,
+                        request,
+                        known_errors,
+                    )
+                )
+            else:
+                experience_samples.append(
+                    _run_experience_case(
+                        agent,
+                        scenario,
+                        request,
+                        known_errors,
+                    )
+                )
+                core_samples.append(
+                    _run_core_case(core, scenario, request, known_errors)
+                )
+        core_rows.append(_median_latency_row(core_samples))
+        experience_rows.append(_median_latency_row(experience_samples))
+    return core_rows, experience_rows
 
 
 def _p95(values: Sequence[float]) -> float:
@@ -826,8 +877,12 @@ def run_benchmark(workdir: Path) -> dict[str, Any]:
         known_errors, training_runs = _train(agent, training)
         core = _core_from_experience(store, workdir / "core.db")
         cold_rows = _run_cold(held_out, known_errors)
-        core_rows = _run_core(core, held_out, known_errors)
-        experience_rows = _run_experience(agent, held_out, known_errors)
+        core_rows, experience_rows = _run_paired(
+            core=core,
+            agent=agent,
+            held_out=held_out,
+            known_errors=known_errors,
+        )
         results = [
             _metrics("Cold work agent", cold_rows),
             _metrics("WaveMind Core", core_rows),
@@ -935,6 +990,8 @@ def run_benchmark(workdir: Path) -> dict[str, Any]:
                 "no_paid_api": True,
                 "experience_promotion_gates": True,
                 "core_top_k": 3,
+                "paired_latency_samples": True,
+                "latency_repetitions_per_case": LATENCY_REPETITIONS,
             },
             "training": {
                 "successful": sum(bool(row["success"]) for row in training_runs),

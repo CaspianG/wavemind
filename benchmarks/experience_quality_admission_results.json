@@ -2,8 +2,8 @@
   "schema": "wavemind.experience_quality_admission.v1",
   "status": "admitted",
   "admitted": true,
-  "evaluated_at": "2026-07-28T17:24:48Z",
-  "source_sha": "3fd809796157f2c2092b4d5f4ab194fedcc270f8",
+  "evaluated_at": "2026-07-28T17:57:37Z",
+  "source_sha": "d011eb848e031e1383a8437da3ca8d8f86dcb74e",
   "artifact": "benchmarks/experienced_work_agent_results.json",
   "checks": [
     {
@@ -21,8 +21,8 @@
       "id": "source-sha",
       "passed": true,
       "status": "pass",
-      "evidence": "3fd809796157f2c2092b4d5f4ab194fedcc270f8",
-      "target": "3fd809796157f2c2092b4d5f4ab194fedcc270f8",
+      "evidence": "d011eb848e031e1383a8437da3ca8d8f86dcb74e",
+      "target": "d011eb848e031e1383a8437da3ca8d8f86dcb74e",
       "issue": ""
     },
     {
@@ -49,9 +49,11 @@
         "same_tool_implementations": true,
         "no_paid_api": true,
         "experience_promotion_gates": true,
-        "core_top_k": 3
+        "core_top_k": 3,
+        "paired_latency_samples": true,
+        "latency_repetitions_per_case": 3
       },
-      "target": "same tasks, runtimes, tools, and gated experience promotion",
+      "target": "same tasks, runtimes, tools, gated experience promotion, and at least three paired latency samples per case",
       "issue": ""
     },
     {
@@ -114,7 +116,7 @@
       "id": "p95-latency",
       "passed": true,
       "status": "pass",
-      "evidence": -0.4802689904278913,
+      "evidence": -0.42198785835167174,
       "target": "<= 0.20 relative regression",
       "issue": ""
     },

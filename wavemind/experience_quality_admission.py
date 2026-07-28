@@ -96,11 +96,16 @@ def evaluate_experience_quality_admission(
                         "same_tool_implementations",
                         "no_paid_api",
                         "experience_promotion_gates",
+                        "paired_latency_samples",
                     )
                 )
-                and _as_int(protocol.get("core_top_k")) == 3,
+                and _as_int(protocol.get("core_top_k")) == 3
+                and _as_int(protocol.get("latency_repetitions_per_case")) >= 3,
                 protocol,
-                "same tasks, runtimes, tools, and gated experience promotion",
+                (
+                    "same tasks, runtimes, tools, gated experience promotion, "
+                    "and at least three paired latency samples per case"
+                ),
                 "benchmark protocol is not comparable across engines",
             ),
             _check(
