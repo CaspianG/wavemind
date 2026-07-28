@@ -43,6 +43,8 @@ def _payload() -> dict:
             "no_paid_api": True,
             "experience_promotion_gates": True,
             "core_top_k": 3,
+            "paired_latency_samples": True,
+            "latency_repetitions_per_case": 3,
         },
         "training": {
             "successful": 48,

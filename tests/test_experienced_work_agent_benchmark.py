@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from benchmarks.experienced_work_agent_benchmark import (
     DATASET_REVISION,
+    LATENCY_REPETITIONS,
+    _median_latency_row,
     build_split,
     run_benchmark,
     split_fingerprint,
@@ -32,5 +34,28 @@ def test_experienced_work_agent_meets_held_out_product_gates(tmp_path) -> None:
     assert payload["schema"] == "wavemind.experienced_work_agent_benchmark.v1"
     assert payload["status"] == "pass"
     assert all(check["passed"] for check in payload["checks"])
+    assert payload["protocol"]["paired_latency_samples"] is True
+    assert (
+        payload["protocol"]["latency_repetitions_per_case"]
+        == LATENCY_REPETITIONS
+    )
+    assert all(
+        len(row["latency_samples_ms"]) == LATENCY_REPETITIONS
+        for engine in ("core", "experience")
+        for row in payload["held_out_results"][engine]
+    )
     assert payload["training"]["active_strategies"] == 6
     assert payload["dataset"]["metadata_leakage"] is False
+
+
+def test_latency_row_uses_median_to_reject_single_runner_outlier() -> None:
+    row = _median_latency_row(
+        [
+            {"request_id": "case", "latency_ms": 10.0},
+            {"request_id": "case", "latency_ms": 1000.0},
+            {"request_id": "case", "latency_ms": 11.0},
+        ]
+    )
+
+    assert row["latency_ms"] == 11.0
+    assert row["latency_samples_ms"] == [10.0, 1000.0, 11.0]
