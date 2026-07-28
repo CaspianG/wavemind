@@ -39,6 +39,7 @@ class TrustClass(str, Enum):
 
 class ExperienceStatus(str, Enum):
     SHADOW = "shadow"
+    CANARY = "canary"
     ACTIVE = "active"
     QUARANTINED = "quarantined"
     REJECTED = "rejected"
@@ -585,6 +586,17 @@ class ExperienceAuditEvent:
     id: int | None = None
 
 
+@dataclass(frozen=True)
+class CandidateValidationSummary:
+    experience_id: str
+    validation_count: int
+    successful_count: int
+    failed_count: int
+    success_rate: float
+    average_score: float | None
+    evidence_ids: tuple[str, ...]
+
+
 class SQLiteExperienceStore:
     def __init__(self, path: str | Path | None = None):
         self.path = str(path or ":memory:")
@@ -687,6 +699,22 @@ class SQLiteExperienceStore:
                 """
             )
             self.conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS experience_candidate_validations (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    experience_id TEXT NOT NULL,
+                    evidence_id TEXT NOT NULL,
+                    successful INTEGER NOT NULL,
+                    score REAL,
+                    created_at REAL NOT NULL,
+                    metadata_json TEXT NOT NULL,
+                    UNIQUE(experience_id, evidence_id),
+                    FOREIGN KEY(experience_id)
+                        REFERENCES experience_records(id) ON DELETE CASCADE
+                )
+                """
+            )
+            self.conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_experience_lookup "
                 "ON experience_records(namespace, status, kind, trust)"
             )
@@ -701,6 +729,10 @@ class SQLiteExperienceStore:
             self.conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_experience_audit_time "
                 "ON experience_audit_events(created_at)"
+            )
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_experience_validation "
+                "ON experience_candidate_validations(experience_id, created_at)"
             )
 
     def put(
@@ -850,6 +882,208 @@ class SQLiteExperienceStore:
                 metadata={"replacement_id": promoted.id, "reason": reason},
             )
         return promoted
+
+    def transition_status(
+        self,
+        experience_id: str,
+        status: ExperienceStatus | str,
+        *,
+        reason: str,
+        actor: str = "experience_compiler",
+    ) -> ExperienceRecord:
+        target = _coerce_enum(status, ExperienceStatus, "experience status")
+        reason = _require_text(reason, "transition reason", max_length=4096)
+        actor = _require_text(actor, "transition actor", max_length=256)
+        allowed = {
+            ExperienceStatus.SHADOW: {
+                ExperienceStatus.CANARY,
+                ExperienceStatus.QUARANTINED,
+                ExperienceStatus.REJECTED,
+                ExperienceStatus.EXPIRED,
+            },
+            ExperienceStatus.CANARY: {
+                ExperienceStatus.ACTIVE,
+                ExperienceStatus.QUARANTINED,
+                ExperienceStatus.REJECTED,
+                ExperienceStatus.EXPIRED,
+            },
+            ExperienceStatus.ACTIVE: {
+                ExperienceStatus.QUARANTINED,
+                ExperienceStatus.REJECTED,
+                ExperienceStatus.EXPIRED,
+            },
+            ExperienceStatus.QUARANTINED: {
+                ExperienceStatus.SHADOW,
+                ExperienceStatus.REJECTED,
+                ExperienceStatus.EXPIRED,
+            },
+        }
+        with self._lock, self.conn:
+            row = self.conn.execute(
+                "SELECT * FROM experience_records WHERE id = ?", (experience_id,)
+            ).fetchone()
+            if row is None:
+                raise KeyError(experience_id)
+            current = _experience_from_row(row)
+            if target == current.status:
+                return current
+            if target not in allowed.get(current.status, set()):
+                raise ValueError(
+                    f"invalid experience transition: {current.status.value} -> "
+                    f"{target.value}"
+                )
+            now = _now()
+            self.conn.execute(
+                """
+                UPDATE experience_records
+                SET status = ?, updated_at = ?
+                WHERE id = ?
+                """,
+                (target.value, now, experience_id),
+            )
+            self._audit(
+                "status_transition",
+                experience_id=experience_id,
+                metadata={
+                    "from": current.status.value,
+                    "to": target.value,
+                    "reason": reason,
+                    "actor": actor,
+                },
+            )
+        return replace(current, status=target, updated_at=now)
+
+    def add_candidate_validation(
+        self,
+        experience_id: str,
+        *,
+        evidence_id: str,
+        successful: bool,
+        score: float | None = None,
+        metadata: Mapping[str, Any] | None = None,
+    ) -> CandidateValidationSummary:
+        evidence_id = _require_text(
+            evidence_id, "validation evidence id", max_length=512
+        )
+        if score is not None and not 0.0 <= float(score) <= 1.0:
+            raise ValueError("validation score must be in [0, 1]")
+        with self._lock, self.conn:
+            exists = self.conn.execute(
+                "SELECT id FROM experience_records WHERE id = ?", (experience_id,)
+            ).fetchone()
+            if exists is None:
+                raise KeyError(experience_id)
+            try:
+                self.conn.execute(
+                    """
+                    INSERT INTO experience_candidate_validations (
+                        experience_id, evidence_id, successful, score,
+                        created_at, metadata_json
+                    ) VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        experience_id,
+                        evidence_id,
+                        int(bool(successful)),
+                        score,
+                        _now(),
+                        _json_dumps(dict(metadata or {})),
+                    ),
+                )
+            except sqlite3.IntegrityError:
+                row = self.conn.execute(
+                    """
+                    SELECT successful, score, metadata_json
+                    FROM experience_candidate_validations
+                    WHERE experience_id = ? AND evidence_id = ?
+                    """,
+                    (experience_id, evidence_id),
+                ).fetchone()
+                if (
+                    bool(row["successful"]) != bool(successful)
+                    or row["score"] != score
+                    or _json_loads(row["metadata_json"], {}) != dict(metadata or {})
+                ):
+                    raise ValueError(
+                        "validation evidence id already exists with different data"
+                    ) from None
+            else:
+                self._audit(
+                    "candidate_validated",
+                    experience_id=experience_id,
+                    metadata={
+                        "evidence_id": evidence_id,
+                        "successful": bool(successful),
+                        "score": score,
+                    },
+                )
+        return self.candidate_validation_summary(experience_id)
+
+    def candidate_validation_summary(
+        self, experience_id: str
+    ) -> CandidateValidationSummary:
+        with self._lock:
+            rows = self.conn.execute(
+                """
+                SELECT evidence_id, successful, score
+                FROM experience_candidate_validations
+                WHERE experience_id = ?
+                ORDER BY created_at, id
+                """,
+                (experience_id,),
+            ).fetchall()
+        successful = sum(int(bool(row["successful"])) for row in rows)
+        scores = [float(row["score"]) for row in rows if row["score"] is not None]
+        count = len(rows)
+        return CandidateValidationSummary(
+            experience_id=experience_id,
+            validation_count=count,
+            successful_count=successful,
+            failed_count=count - successful,
+            success_rate=successful / count if count else 0.0,
+            average_score=sum(scores) / len(scores) if scores else None,
+            evidence_ids=tuple(str(row["evidence_id"]) for row in rows),
+        )
+
+    def delete(
+        self,
+        experience_id: str,
+        *,
+        reason: str,
+        actor: str,
+    ) -> bool:
+        reason = _require_text(reason, "delete reason", max_length=4096)
+        actor = _require_text(actor, "delete actor", max_length=256)
+        with self._lock, self.conn:
+            row = self.conn.execute(
+                """
+                SELECT namespace, kind, trust, content_sha256
+                FROM experience_records WHERE id = ?
+                """,
+                (experience_id,),
+            ).fetchone()
+            if row is None:
+                return False
+            self.conn.execute(
+                "DELETE FROM experience_candidate_validations WHERE experience_id = ?",
+                (experience_id,),
+            )
+            self.conn.execute(
+                "DELETE FROM experience_records WHERE id = ?", (experience_id,)
+            )
+            self._audit(
+                "deleted",
+                experience_id=experience_id,
+                metadata={
+                    "reason": reason,
+                    "actor": actor,
+                    "namespace": row["namespace"],
+                    "kind": row["kind"],
+                    "trust": row["trust"],
+                    "content_sha256": row["content_sha256"],
+                },
+            )
+        return True
 
     def rollback(self, experience_id: str, *, reason: str) -> ExperienceRecord:
         reason = _require_text(reason, "rollback reason", max_length=4096)

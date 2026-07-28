@@ -31,6 +31,7 @@ from .encoders import (
 )
 from .field_graph import MemoryFieldGraph
 from .experience import (
+    CandidateValidationSummary,
     ExperienceApplicability,
     ExperienceAuditEvent,
     ExperienceIngestReport,
@@ -49,6 +50,29 @@ from .experience import (
     ingest_jsonl_trajectories,
     iter_jsonl_trajectories,
     parse_tool_trajectory,
+)
+from .experience_compiler import (
+    CandidateReview,
+    ExperienceCompiler,
+    ExperienceCompilerPolicy,
+    ExperienceDetail,
+    ExperiencePacket,
+    ExperiencePacketItem,
+)
+from .memory_firewall import (
+    FirewallAction,
+    FirewallContext,
+    FirewallDecision,
+    FirewallVerdict,
+    MemoryFirewall,
+    MemoryFirewallDenied,
+    MemoryFirewallPolicy,
+)
+from .memory_safety import (
+    MemoryRedTeamCase,
+    MemoryRedTeamResult,
+    default_memory_red_team_cases,
+    run_memory_safety_suite,
 )
 from .advisor import (
     MemoryArchitectureAdvice,
@@ -313,6 +337,8 @@ __all__ = [
     "ControlPlaneConsensus",
     "ControlPlaneLogEntry",
     "AuditEvent",
+    "CandidateReview",
+    "CandidateValidationSummary",
     "ExperienceApplicability",
     "ExperienceAuditEvent",
     "ExperienceIngestReport",
@@ -321,6 +347,15 @@ __all__ = [
     "ExperienceRecord",
     "ExperienceSource",
     "ExperienceStatus",
+    "ExperienceCompiler",
+    "ExperienceCompilerPolicy",
+    "ExperienceDetail",
+    "ExperiencePacket",
+    "ExperiencePacketItem",
+    "FirewallAction",
+    "FirewallContext",
+    "FirewallDecision",
+    "FirewallVerdict",
     "ActiveActivePairSyncReport",
     "ActiveActiveSyncJobReport",
     "ActiveActiveSyncWorker",
@@ -348,6 +383,11 @@ __all__ = [
     "MemoryArchitectureAdvice",
     "MemoryArchitectureRecommendation",
     "MemoryFieldGraph",
+    "MemoryFirewall",
+    "MemoryFirewallDenied",
+    "MemoryFirewallPolicy",
+    "MemoryRedTeamCase",
+    "MemoryRedTeamResult",
     "MemoryOSHotQuery",
     "MemoryOSExecutionPlan",
     "MemoryOSExecutionStep",
@@ -492,6 +532,7 @@ __all__ = [
     "cross_modal_vector_from_metadata",
     "custom_resource_definition",
     "default_cross_modal_contract_fixtures",
+    "default_memory_red_team_cases",
     "event_payload",
     "experience_from_trajectory",
     "estimate_production_cost",
@@ -530,6 +571,7 @@ __all__ = [
     "run_external_multimodal_evidence",
     "run_memory_os_canary",
     "run_memory_os_policy_evolution",
+    "run_memory_safety_suite",
     "production_scale_profile_names",
     "scale_status_meets_or_exceeds",
     "serverless_sample_bundle",
