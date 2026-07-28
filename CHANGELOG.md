@@ -8,6 +8,20 @@ authoritative release sources.
 
 No unreleased changes.
 
+## [2.8.0] - 2026-07-28
+
+- Added a durable MCP memory server with remember, recall, feedback, forget,
+  inspection, provenance, explanation, and namespace-management operations.
+- Added direct Memory OS execution evidence for full LoCoMo, LongMemEval-S,
+  and LongMemEval-V2 Small, plus a strict 13/13 agent-memory advantage gate.
+- Added paired controlled evidence showing higher task success, zero stale
+  errors, and lower p95 retrieval latency for Memory OS on the declared local
+  protocol, while retaining explicit public-benchmark limitations.
+- Preserved the admitted six-hour Production Memory OS soak and the admitted
+  1,000-asset multimodal lifecycle and retrieval evidence.
+
+Release: [WaveMind v2.8.0](https://github.com/CaspianG/wavemind/releases/tag/v2.8.0)
+
 ## [2.7.0] - 2026-07-27
 
 - Hardened multimodal admission so descriptor, metadata, and precomputed-vector
@@ -37,6 +51,7 @@ Release: [WaveMind v2.6.3](https://github.com/CaspianG/wavemind/releases/tag/v2.
 
 | Version | Published | Notes |
 |---|---|---|
+| [v2.8.0](https://github.com/CaspianG/wavemind/releases/tag/v2.8.0) | 2026-07-28 | Adaptive multimodal agent memory and MCP |
 | [v2.7.0](https://github.com/CaspianG/wavemind/releases/tag/v2.7.0) | 2026-07-27 | Multimodal lifecycle and public presentation |
 | [v2.6.3](https://github.com/CaspianG/wavemind/releases/tag/v2.6.3) | 2026-07-27 | Production Memory OS release |
 | [v2.6.2](https://github.com/CaspianG/wavemind/releases/tag/v2.6.2) | 2026-07-17 | Full release notes and artifacts |
@@ -47,5 +62,6 @@ Release: [WaveMind v2.6.3](https://github.com/CaspianG/wavemind/releases/tag/v2.
 See the complete [release archive](https://github.com/CaspianG/wavemind/releases)
 for earlier versions and attached evidence bundles.
 
+[2.8.0]: https://github.com/CaspianG/wavemind/compare/v2.7.0...v2.8.0
 [2.7.0]: https://github.com/CaspianG/wavemind/compare/v2.6.3...v2.7.0
 [2.6.3]: https://github.com/CaspianG/wavemind/compare/v2.6.2...v2.6.3
