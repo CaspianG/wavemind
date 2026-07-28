@@ -91,6 +91,7 @@ def test_locomo_cli_writes_public_benchmark_json(tmp_path):
             str(locomo_path),
             "--engines",
             "wavemind",
+            "memory-os",
             "static",
             "--top-k",
             "3",
@@ -108,9 +109,16 @@ def test_locomo_cli_writes_public_benchmark_json(tmp_path):
     payload = json.loads(output.read_text(encoding="utf-8"))
 
     assert payload["scenario"]["name"] == "locomo_evidence_retrieval"
+    assert payload["schema"] == "wavemind.locomo_memory_os.v1"
+    assert len(payload["source_sha"]) == 40
+    assert len(payload["scenario"]["dataset_sha256"]) == 64
     assert payload["scenario"]["dataset"] == str(locomo_path)
     assert payload["scenario"]["conversations"] == 1
     assert payload["scenario"]["memories"] == 4
     assert payload["scenario"]["queries"] == 2
     assert payload["results"][0]["engine"] == "WaveMind"
     assert "evidence_recall_at_k" in payload["results"][0]
+    assert payload["results"][1]["engine"] == "WaveMind + Memory OS"
+    assert payload["results"][1]["execution_mode"] == "memory_os_direct_sequential"
+    assert payload["results"][1]["worker_runs"] == 1
+    assert payload["results"][1]["memory_os_policy_mode"] == "feedback_free_safe"

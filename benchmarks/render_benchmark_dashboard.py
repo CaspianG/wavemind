@@ -209,6 +209,52 @@ def _agent_impact_panel(status: dict[str, Any]) -> str:
     )
 
 
+def _agent_memory_admission_panel(status: dict[str, Any]) -> str:
+    admission = (
+        status.get("agent_memory_admission", {})
+        if isinstance(status, dict)
+        else {}
+    )
+    if not isinstance(admission, dict) or not admission:
+        return ""
+    summary = admission.get("summary") if isinstance(admission.get("summary"), dict) else {}
+    rows = [
+        ("Status", admission.get("status", "missing")),
+        ("Admitted", str(admission.get("admitted", False)).lower()),
+        (
+            "Checks",
+            f"{summary.get('checks_passed', 0)}/{summary.get('checks_total', 0)}",
+        ),
+        (
+            "Direct public benchmarks",
+            (
+                f"{summary.get('public_benchmarks_passed', 0)}/"
+                f"{summary.get('public_benchmarks_total', 0)}"
+            ),
+        ),
+        ("Evidence source SHA", admission.get("source_sha", "missing")),
+    ]
+    table = ['<table class="compact"><tbody>']
+    for label, value in rows:
+        table.append(
+            "<tr>"
+            f"<th>{html.escape(str(label))}</th>"
+            f"<td>{html.escape(str(value))}</td>"
+            "</tr>"
+        )
+    table.append("</tbody></table>")
+    return (
+        '<section class="panel">'
+        "<h2>Agent Memory Admission</h2>"
+        "<p>Controlled adaptive-memory advantage plus direct full LoCoMo, "
+        "LongMemEval-S, and LongMemEval-V2 Small execution.</p>"
+        f"{''.join(table)}"
+        '<p><a href="../benchmarks/AGENT_MEMORY_ADVANTAGE_ADMISSION.md">'
+        "Read the agent-memory admission report</a></p>"
+        "</section>"
+    )
+
+
 def _structured_memory_panel(status: dict[str, Any]) -> str:
     structured = status.get("structured_memory", {}) if isinstance(status, dict) else {}
     if not isinstance(structured, dict) or not structured:
@@ -624,6 +670,8 @@ def render_dashboard(root: Path = PROJECT_ROOT) -> str:
   {_publication_contract_panel(status)}
 
   {_agent_impact_panel(status)}
+
+  {_agent_memory_admission_panel(status)}
 
   {_structured_memory_panel(status)}
 

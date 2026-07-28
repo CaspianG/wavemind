@@ -563,10 +563,20 @@ policy matters more than raw vector-database scale:
   adaptive prewarm, predictive prefetch, priority learning, forgetting,
   consolidation, Redis coordination, agent context savings, canary admission,
   and strict production-admission limits.
-- `benchmarks/memory_os_ab_benchmark.py` is the only current Memory OS uplift
-  source. It compares WaveMind baseline with WaveMind plus Memory OS on the same
-  sequential/adaptive memories and query stream. LoCoMo and LongMemEval remain
-  supplemental until their runners execute Memory OS policies directly.
+- `benchmarks/agent_memory_advantage_benchmark.py` now provides the strict
+  controlled Memory OS uplift proof: seven same-protocol trials, 10,000 paired
+  bootstrap samples, real Chroma/Qdrant baselines, positive lift in two dynamic
+  categories, task success `0.389 -> 1.000`, stale errors `0.611 -> 0.000`,
+  context savings `0.502`, and p95 latency within the admission budget.
+- LoCoMo, LongMemEval-S, and LongMemEval-V2 Small now execute Memory OS policies
+  directly rather than reusing proxy results. LoCoMo is a small honest
+  regression within the one-point gate, LongMemEval-S matches Core retrieval
+  quality, and LongMemEval-V2 Small improves local-reader task success from
+  `0.0754` to `0.0909` over all 451 questions including 29 image questions.
+- `wavemind agent-memory-advantage-admission` joins those four artifacts into a
+  strict `13/13` release gate. It rejects missing exact-SHA evidence, incomplete
+  public runs, worker errors, stale-error regressions, insufficient context
+  savings, or excessive p95 latency.
 - `benchmarks/cluster_autoscale_report.py` now extracts cluster autoscale
   evidence into a dedicated public report with dashboard/status coverage for
   shard placement, node/zone loss availability, autoscale targets, rebalance
@@ -590,8 +600,14 @@ policy matters more than raw vector-database scale:
   restore-from-latest support, remote download verification, object-store
   disaster-recovery drills, and object-store retention are available as the
   first durability layer.
-- Public retrieval evidence exists for LoCoMo, LongMemEval, and BEIR/SciFact,
-  but full answer-quality evaluation is still the next proof step.
+- Public direct Memory OS evidence now exists for full LoCoMo and
+  LongMemEval-S, and full answer-quality evidence exists for LongMemEval-V2
+  Small with the pinned local multimodal reader. Absolute V2 answer quality is
+  still low, so stronger-reader evaluation remains a proof-quality priority.
+- A production MCP server exposes remember, recall, feedback, forget,
+  inspection, provenance/explanation, and namespace management with durable
+  idempotency, namespace isolation, TTL, destructive-operation confirmation,
+  stdio transport, and guarded loopback HTTP transport.
 
 The short-term engineering target is simple: keep WaveMind's dynamic-memory
 advantage while moving candidate search and filtering to production-grade
@@ -719,7 +735,10 @@ different things and should not be mixed together.
 
 Near-term benchmark priorities:
 
-- Finish LoCoMo and LongMemEval answer generation, not retrieval only.
+- Improve the complete LoCoMo direct Memory OS result beyond Core rather than
+  treating the admission-tolerated regression as uplift.
+- Repeat LongMemEval-V2 Small with a stronger pinned local reader to improve
+  absolute answer quality while keeping the same 451-question protocol.
 - Compare against static vector retrieval, Chroma, Qdrant, Mem0-style memory,
   Zep-style memory, and LangGraph persistent memory patterns where possible.
 - Add service-mode Qdrant, pgvector, and persisted-FAISS baselines for fair
@@ -834,7 +853,9 @@ Enterprise requirements:
   from a real sized PostgreSQL service.
 - Harden the new Postgres source-of-truth backend with migration tooling,
   service-mode benchmarks, and operational docs.
-- LoCoMo and LongMemEval answer-quality runs with a local or configured LLM.
+- LoCoMo answer-quality evaluation with a pinned local reader; LongMemEval-V2
+  Small is now complete and should be extended with a stronger reader rather
+  than replaced by another smoke.
 - Service-mode Qdrant streaming now has a real smoke, a real two-node sharded
   smoke, a tuned 1M passing run, and single-service plus sharded 10M preflight
   contracts; the next step is producing

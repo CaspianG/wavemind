@@ -14,6 +14,13 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 IMPACT_ARTIFACTS = (
     {
+        "path": "benchmarks/agent_memory_advantage_results.json",
+        "benchmark": "Adaptive agent-memory advantage",
+        "category": "agent_behavior",
+        "primary_metric": "task_success_rate",
+        "primary_label": "task success",
+    },
+    {
         "path": "benchmarks/agent_coherence_results.json",
         "benchmark": "Agent coherence and token savings",
         "category": "agent_behavior",
@@ -125,7 +132,8 @@ def render_agent_impact_markdown(payload: dict[str, Any]) -> str:
             "- Primary lift compares the best WaveMind variant with the best non-WaveMind baseline inside the same artifact.",
             "- Stale safety is `1 - stale_error_rate` when the benchmark reports stale errors, otherwise `stale_suppression` or `suppression_rate`.",
             "- Context saved measures prompt/context reduction where the artifact reports `context_budget_saved`.",
-            "- Answer-quality rows use the checked-in local Ollama LongMemEval smoke artifact, not a full independent LLM benchmark.",
+            "- The adaptive advantage row uses seven identical-protocol trials and a 95% paired bootstrap interval; unavailable external competitors remain explicitly skipped.",
+            "- The legacy LongMemEval answer-quality row is a 50-query local Ollama smoke. Full LongMemEval-V2 Small evidence is tracked separately in the admission artifact.",
             "",
         ]
     )

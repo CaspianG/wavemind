@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import sys
@@ -13,20 +14,31 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from benchmarks.long_memory_evidence_benchmark import (
+    BENCHMARK_FIELD,
     EvidenceDataset,
     EvidenceQuery,
     LongMemory,
     cache_encoder_for_dataset,
+    create_benchmark_encoder,
     run_chroma_static,
     run_qdrant_static,
     run_static_vector,
     run_wavemind,
+    run_wavemind_memory_os,
+    repository_commit,
 )
-from wavemind.encoders import create_text_encoder
 
 
 SOURCE_URL = "https://github.com/snap-research/locomo"
 SESSION_RE = re.compile(r"^session_(\d+)$")
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        while block := handle.read(1024 * 1024):
+            digest.update(block)
+    return digest.hexdigest()
 
 
 def _read_json(path: Path) -> Any:
@@ -243,10 +255,12 @@ def run_benchmark(
         limit_samples=limit_samples,
         limit_queries=limit_queries,
     )
-    base_encoder = create_text_encoder(kind=encoder_kind, vector_dim=384)
+    base_encoder = create_benchmark_encoder(encoder_kind, vector_dim=384)
     encoder = cache_encoder_for_dataset(dataset, base_encoder)
     runners = {
         "wavemind": run_wavemind,
+        "memory-os": run_wavemind_memory_os,
+        "wavemind-memory-os": run_wavemind_memory_os,
         "static": run_static_vector,
         "static-vector": run_static_vector,
         "chroma": run_chroma_static,
@@ -264,10 +278,13 @@ def run_benchmark(
 
     conversations = len({memory.namespace for memory in dataset.memories})
     return {
+        "schema": "wavemind.locomo_memory_os.v1",
+        "source_sha": repository_commit(),
         "scenario": {
             "name": "locomo_evidence_retrieval",
             "dataset": str(dataset_path),
             "source_url": SOURCE_URL,
+            "dataset_sha256": _sha256(Path(dataset_path)),
             "conversations": conversations,
             "memories": len(dataset.memories),
             "queries": len(dataset.queries),
@@ -282,8 +299,14 @@ def run_benchmark(
             "class": type(base_encoder).__name__,
             "cached": True,
             "vector_dim": getattr(encoder, "vector_dim", None),
+            "char_ngram_weight": getattr(
+                base_encoder,
+                "char_ngram_weight",
+                None,
+            ),
             "note": "All engines receive embeddings from the same WaveMind encoder.",
         },
+        "field": BENCHMARK_FIELD,
         "results": results,
     }
 
@@ -308,10 +331,14 @@ def main() -> int:
     parser.add_argument(
         "--engines",
         nargs="+",
-        choices=["wavemind", "static", "static-vector", "chroma", "chroma-static", "qdrant", "qdrant-static"],
+        choices=["wavemind", "memory-os", "wavemind-memory-os", "static", "static-vector", "chroma", "chroma-static", "qdrant", "qdrant-static"],
         default=["wavemind", "static"],
     )
-    parser.add_argument("--encoder", choices=["hash", "sentence"], default="hash")
+    parser.add_argument(
+        "--encoder",
+        choices=["hash", "hash-token", "sentence"],
+        default="hash",
+    )
     parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument("--limit-samples", type=int, default=None)
     parser.add_argument("--limit-queries", type=int, default=None)

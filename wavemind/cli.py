@@ -47,6 +47,10 @@ from .memory_os_admission import (
     evaluate_memory_os_admission,
     render_memory_os_admission_markdown,
 )
+from .agent_memory_admission import (
+    evaluate_agent_memory_advantage_admission,
+    render_agent_memory_advantage_admission_markdown,
+)
 from .multimodal_admission import (
     evaluate_multimodal_admission,
     render_multimodal_admission_markdown,
@@ -886,6 +890,38 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path("benchmarks/MULTIMODAL_ADMISSION.md"),
     )
     multimodal_admission.add_argument("--json", action="store_true")
+
+    agent_memory_admission = sub.add_parser(
+        "agent-memory-advantage-admission",
+        help=(
+            "Gate dynamic agent-memory claims against paired advantage and "
+            "direct public benchmark evidence"
+        ),
+    )
+    agent_memory_admission.add_argument(
+        "--root",
+        type=Path,
+        default=Path.cwd(),
+        help="Repository/artifact root. Defaults to the current working directory.",
+    )
+    agent_memory_admission.add_argument("--expected-source-sha")
+    agent_memory_admission.add_argument("--write-artifacts", action="store_true")
+    agent_memory_admission.add_argument(
+        "--fail-on-blocked",
+        action="store_true",
+        help="Exit non-zero unless agent-memory advantage is admitted.",
+    )
+    agent_memory_admission.add_argument(
+        "--output",
+        type=Path,
+        default=Path("benchmarks/agent_memory_advantage_admission_results.json"),
+    )
+    agent_memory_admission.add_argument(
+        "--markdown-output",
+        type=Path,
+        default=Path("benchmarks/AGENT_MEMORY_ADVANTAGE_ADMISSION.md"),
+    )
+    agent_memory_admission.add_argument("--json", action="store_true")
 
     multimodal_external = sub.add_parser(
         "multimodal-external-evidence",
@@ -2217,6 +2253,29 @@ def print_multimodal_admission(payload: dict[str, object]) -> None:
             print(f"- {action}")
 
 
+def print_agent_memory_advantage_admission(
+    payload: dict[str, object],
+) -> None:
+    summary = payload["summary"]
+    print(f"status: {payload['status']}")
+    print(f"admitted: {str(payload['admitted']).lower()}")
+    print(f"source_sha: {payload['source_sha']}")
+    print(
+        "checks: "
+        f"{summary['checks_passed']}/{summary['checks_total']} passed"
+    )
+    print(
+        "direct_public_benchmarks: "
+        f"{summary['public_benchmarks_passed']}/"
+        f"{summary['public_benchmarks_total']} passed"
+    )
+    issues = payload.get("issues") or []
+    if issues:
+        print("issues:")
+        for issue in issues:
+            print(f"- {issue}")
+
+
 def print_external_multimodal_evidence(payload: dict[str, object]) -> None:
     metrics = payload.get("metrics", {})
     print(f"status: {payload['status']}")
@@ -3293,6 +3352,33 @@ def main(argv: list[str] | None = None) -> int:
         if args.fail_on_blocked and not payload["admitted"]:
             return 2
         return 0 if payload["status"] in {"admitted", "plan_only", "blocked"} else 1
+
+    if args.command == "agent-memory-advantage-admission":
+        payload = evaluate_agent_memory_advantage_admission(
+            args.root,
+            expected_source_sha=args.expected_source_sha,
+        )
+        if args.write_artifacts:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            args.markdown_output.parent.mkdir(parents=True, exist_ok=True)
+            args.markdown_output.write_text(
+                render_agent_memory_advantage_admission_markdown(payload),
+                encoding="utf-8",
+            )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print_agent_memory_advantage_admission(payload)
+            if args.write_artifacts:
+                print(f"json_report: {args.output}")
+                print(f"markdown_report: {args.markdown_output}")
+        if args.fail_on_blocked and not payload["admitted"]:
+            return 2
+        return 0 if payload["status"] in {"admitted", "blocked"} else 1
 
     if args.command == "multimodal-external-evidence":
         payload = run_external_multimodal_evidence(

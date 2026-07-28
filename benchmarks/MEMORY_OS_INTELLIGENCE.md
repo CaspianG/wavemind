@@ -1,6 +1,6 @@
 # WaveMind Memory OS Intelligence Report
 
-Generated: `2026-07-27T10:52:52Z`.
+Generated: `2026-07-27T13:29:25Z`.
 
 Memory OS intelligence rows come from checked-in deterministic scale, agent-coherence, direct adaptive A/B, staging canary, admission, and policy-bundle artifacts. They prove worker behavior, policy generation, cache prewarm, predictive prefetch, priority learning, adaptive forgetting, consolidation, and rollout safety. Production admission is backed by the checked six-hour multi-worker shared Redis and distributed lock artifact for the exact tested release and topology; automatic promotion remains disabled.
 
@@ -56,8 +56,8 @@ Memory OS intelligence rows come from checked-in deterministic scale, agent-cohe
 | canary_predictive_warmed | `pass` | `15` | `>= 10` |
 | quality_gate_pass | `pass` | `pass` | `== pass` |
 | quality_task_uplift | `pass` | `0.125` | `>= 0.05` |
-| quality_p95_delta | `pass` | `-0.01` | `<= 5.0` |
-| quality_p95_ratio | `pass` | `-0.018` | `<= 0.2` |
+| quality_p95_delta | `pass` | `-0.106` | `<= 5.0` |
+| quality_p95_ratio | `pass` | `-0.032` | `<= 0.2` |
 | admission_is_admitted | `pass` | `1` | `is True` |
 | admission_has_no_blockers | `pass` | `0` | `== 0` |
 | policy_bundle_production_ready | `pass` | `production_ready` | `== production_ready` |
@@ -77,7 +77,7 @@ Memory OS intelligence rows come from checked-in deterministic scale, agent-cohe
 | Rollout safety | shared cache `True`, distributed lock `True`, required env `WAVEMIND_MEMORY_OS_LOCK_REDIS_URL, WAVEMIND_REDIS_URL`. |
 | Policy bundle | status `production_ready`, staging `True`, production locked `False`. |
 | Agent effect | task success `0.917`, stale error `0`, context saved `0.931`. |
-| Direct Memory OS A/B | task-success uplift `0.125`, stale-suppression uplift `0.125`, p95 delta `-0.01` ms. |
+| Direct Memory OS A/B | task-success uplift `0.125`, stale-suppression uplift `0.125`, p95 delta `-0.106` ms. |
 
 ## Production Boundary
 

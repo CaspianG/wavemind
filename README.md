@@ -35,7 +35,7 @@ still matters now?**
 | Adaptive recall | Hotness, decay, priority, TTL, feedback, and correction handling around vector candidates. |
 | Durable state | SQLite by default; PostgreSQL, Redis coordination, and service-backed vector indexes for production paths. |
 | Explicit control | Namespaces, provenance, audit events, backup/restore, inspection, and deliberate deletion. |
-| Small integration surface | Python API, CLI, FastAPI HTTP service, LangChain memory, and framework adapters. |
+| Small integration surface | Python API, CLI, FastAPI, MCP, LangChain memory, and framework adapters. |
 | Evidence-first releases | Public JSON artifacts, admission gates, reproducible commands, and locked claims when proof is missing. |
 
 WaveMind complements FAISS, Qdrant, pgvector, Chroma, and other candidate
@@ -47,7 +47,9 @@ claim that one vector database should replace every other system.
 | Proof | Current checked result | Source |
 |---|---|---|
 | Production Memory OS | `admitted`, 13/13 requirements | [`memory_os_admission_results.json`](benchmarks/memory_os_admission_results.json) |
+| Adaptive agent-memory advantage | `admitted`, 13/13 checks; task success `38.9%` -> `100%`, stale errors `61.1%` -> `0%` | [`agent_memory_advantage_admission_results.json`](benchmarks/agent_memory_advantage_admission_results.json) |
 | Remote Redis/worker soak | 6 hours, 500/500 cycles, 2,500 attempts, zero failures or state corruption | [`memory_os_remote_worker_soak_results.json`](benchmarks/memory_os_remote_worker_soak_results.json) |
+| LongMemEval-V2 Small | 451/451 questions, all 29 image questions; task success `7.54%` -> `9.09%` with Memory OS | [`longmemeval_v2_small_memory_os_results.json`](benchmarks/longmemeval_v2_small_memory_os_results.json) |
 | Core production readiness | `pass`, 39/39 criteria | [`production_readiness_results.json`](benchmarks/production_readiness_results.json) |
 | Public package | PyPI and GitHub release `v2.7.0` | [PyPI](https://pypi.org/project/wavemind/) / [release](https://github.com/CaspianG/wavemind/releases/latest) |
 
@@ -195,6 +197,36 @@ The same feedback loop is available from the CLI:
 wavemind --db ./state/wavemind.sqlite3 feedback --id 1 --namespace user:42 --strength 0.5 --reason "used in answer"
 wavemind --db ./state/wavemind.sqlite3 feedback-batch --file feedback.json
 ```
+
+## MCP Server
+
+Give any MCP-compatible agent durable WaveMind tools:
+
+```sh
+python -m pip install "wavemind[mcp]"
+wavemind-mcp --db ./state/agent-memory.sqlite3
+```
+
+Example client configuration:
+
+```json
+{
+  "mcpServers": {
+    "wavemind": {
+      "command": "wavemind-mcp",
+      "args": ["--db", "./state/agent-memory.sqlite3"]
+    }
+  }
+}
+```
+
+The server exposes `remember`, `recall`, `feedback`, `forget`,
+`inspect_memory`, `explain_memory`, and `manage_namespace`. It uses local
+`stdio` by default, persists to SQLite across restarts, isolates every
+operation by namespace, and supports idempotent writes and provenance.
+
+See [MCP Integration](docs/MCP.md) for the tool contract, safety model,
+streamable HTTP loopback mode, and tested behavior.
 
 ## Where Data Lives
 
@@ -485,8 +517,10 @@ loopback, and production evidence.
 | Evidence | Current checked result |
 |---|---|
 | Memory OS admission | `admitted`, 13/13 requirements |
+| Agent-memory advantage admission | `admitted`, 13/13 checks; 7 repeated trials and 95% paired intervals |
 | Memory OS remote soak | 6 hours, 500 cycles, 2500 attempts, zero corruption |
 | Real multimodal admission | `admitted`; 1000 assets, 200 queries, precision@1 `0.925`, retrieval p99 `48.64 ms` |
+| Direct Memory OS public runs | LoCoMo 1977 queries; LongMemEval-S 470 queries; LongMemEval-V2 Small 451 questions |
 | Strict production evidence | 5/8 requirements |
 | LongMemEval evidence retrieval | WaveMind recall@5 `0.782` |
 | Large-N profiles | 10M Qdrant, 10M sharded Qdrant, 10M pgvector, 50M FAISS |
@@ -523,6 +557,14 @@ If you already use Chroma for local memory, see the practical migration guide:
 - Dynamic memory policy adds latency compared with static nearest-neighbor
   retrieval. The value is stale suppression, reinforcement, TTL, scoped recall,
   and consolidation rather than winning every pure ANN latency test.
+- Direct feedback-free Memory OS is not a universal quality boost. On LoCoMo it
+  is slightly below Core (`precision@1 0.2382` vs `0.2387`); on LongMemEval-S it
+  matches Core, while the controlled sequential benchmark and LongMemEval-V2
+  Small show positive task-quality lift.
+- LongMemEval-V2 Small proves complete local execution, image-question support,
+  and a measured relative lift, but absolute answer success remains low
+  (`9.09%`) with the lightweight `qwen2.5vl:3b` reader. It is evidence for the
+  memory protocol, not a claim of state-of-the-art answer generation.
 - `MemoryFieldGraph` is a discrete graph over stored memories, not a continuous
   physics field.
 - Production Memory OS is admitted for its documented remote Redis/worker
@@ -550,9 +592,10 @@ Near-term priorities:
 - Extend the admitted real local multimodal suite with independently maintained
   public datasets while preserving its per-modality quality, latency, leakage,
   persistence, and lifecycle gates.
-- Run Memory OS directly inside LoCoMo, LongMemEval, and LongMemEval-V2
-  evaluations and prove agent-quality lift against reproducible local
-  baselines.
+- Tune feedback-free Memory OS on LoCoMo, where the complete direct run is
+  currently within the admission tolerance but does not beat Core.
+- Improve absolute LongMemEval-V2 answer quality with a stronger reproducible
+  local reader while preserving the admitted 451-question protocol.
 - Improve dynamic re-ranking latency, context efficiency, and cost without
   weakening stale suppression, provenance, or recall quality.
 - Expand production operations with stronger index-health metrics, alerting

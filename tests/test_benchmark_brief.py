@@ -5,6 +5,9 @@ def test_public_benchmark_brief_links_checked_in_artifacts_and_commands():
     brief = Path("docs/BENCHMARK_BRIEF.md").read_text(encoding="utf-8")
     artifacts = [
         "benchmarks/agent_coherence_results.json",
+        "benchmarks/agent_memory_advantage_results.json",
+        "benchmarks/agent_memory_advantage_admission_results.json",
+        "benchmarks/AGENT_MEMORY_ADVANTAGE_ADMISSION.md",
         "benchmarks/agent_impact_results.json",
         "benchmarks/AGENT_IMPACT.md",
         "benchmarks/structured_memory_results.json",
@@ -15,7 +18,11 @@ def test_public_benchmark_brief_links_checked_in_artifacts_and_commands():
         "benchmarks/CLUSTER_AUTOSCALE.md",
         "benchmarks/dynamic_memory_results.json",
         "benchmarks/locomo_sentence_evidence_results.json",
+        "benchmarks/locomo_memory_os_results.json",
         "benchmarks/longmemeval_evidence_results.json",
+        "benchmarks/longmemeval_memory_os_results.json",
+        "benchmarks/longmemeval_v2_small_memory_os_results.json",
+        "benchmarks/longmemeval_v2_small_per_query.jsonl",
         "benchmarks/longmemeval_answer_qwen25_1_5b_50_results.json",
         "benchmarks/open_retrieval_scifact_results.json",
         "benchmarks/nomiracl_russian_results.json",
@@ -36,6 +43,7 @@ def test_public_benchmark_brief_links_checked_in_artifacts_and_commands():
     ]
     commands = [
         "python benchmarks/agent_coherence_benchmark.py",
+        "python benchmarks/agent_memory_advantage_benchmark.py",
         "python benchmarks/agent_impact_leaderboard.py",
         "python benchmarks/structured_memory_report.py",
         "python benchmarks/memory_os_intelligence_report.py",
@@ -61,16 +69,16 @@ def test_public_benchmark_brief_links_checked_in_artifacts_and_commands():
 
     assert "does not claim WaveMind is a faster static vector database" in brief
     assert "Agent impact leaderboard" in brief
-    assert "6/6` primary wins" in brief
+    assert "7/7` primary wins" in brief
     assert "Structured memory report" in brief
     assert "7` modalities" in brief
     assert "Memory OS intelligence report" in brief
-    assert "35/35` gate checks" in brief
-    assert "Production Memory OS automation is still plan-only" in brief
+    assert "39/39` gate checks" in brief
+    assert "admitted six-hour/two-worker production topology" in brief
     assert "Cluster autoscale report" in brief
     assert "53/53` gate checks" in brief
     assert "deterministic 100M capacity envelope" in brief
-    assert "official LoCoMo, LongMemEval, MTEB, MIRACL, RAGBench, or VectorDBBench" in brief
+    assert "independently verified LoCoMo, LongMemEval, MTEB, MIRACL, RAGBench" in brief
     assert "Hacker News" in brief
     assert "Reddit" in brief
     assert "X Thread" in brief

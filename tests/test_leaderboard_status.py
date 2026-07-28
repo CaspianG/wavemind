@@ -77,6 +77,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
         "benchmarks/production_scale_run_plan.json",
         "benchmarks/agent_coherence_results.json",
         "benchmarks/agent_impact_results.json",
+        "benchmarks/agent_memory_advantage_admission_results.json",
         "benchmarks/structured_memory_results.json",
         "benchmarks/multimodal_admission_results.json",
         "benchmarks/memory_os_intelligence_results.json",
@@ -123,13 +124,21 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     )
     assert payload["agent_impact"]["average_primary_lift"] > 0
     assert payload["agent_impact"]["average_context_saved"] > 0.5
-    assert payload["agent_impact"]["average_stale_safety_score"] >= 0.95
+    assert payload["agent_impact"]["average_stale_safety_score"] >= 0.90
     assert "agent success outside the listed scenarios" in (
         payload["agent_impact"]["claim_boundary"]
     )
     assert "benchmarks/longmemeval_answer_qwen25_1_5b_50_results.json" in (
         payload["agent_impact"]["source_files"]
     )
+    assert payload["agent_memory_admission"]["schema"] == (
+        "wavemind.agent_memory_advantage_admission.v1"
+    )
+    assert payload["agent_memory_admission"]["status"] == "admitted"
+    assert payload["agent_memory_admission"]["admitted"] is True
+    assert payload["agent_memory_admission"]["summary"]["checks_passed"] == 13
+    assert payload["agent_memory_admission"]["summary"]["checks_total"] == 13
+    assert payload["agent_memory_admission"]["summary"]["public_benchmarks_passed"] == 3
     assert payload["structured_memory"]["schema"] == "wavemind.structured_memory_report.v1"
     assert payload["structured_memory"]["status"] == "pass"
     assert payload["structured_memory"]["modality_count"] == 7

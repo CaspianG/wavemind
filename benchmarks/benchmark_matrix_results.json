@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-27T21:23:27Z",
-  "source_ref": "1db5ce3110ed",
+  "generated_at": "2026-07-28T07:47:34Z",
+  "source_ref": "590bc8df80e0adf3125f5d33bee0b4f086fe17ab",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -117,6 +117,77 @@
       },
       "target": "Show that dynamic memory improves agent behavior, not only retrieval: higher task success, fewer stale errors, longer coherent runs, compact context, and observable Memory OS learning signals.",
       "next_step": "Move this scenario from deterministic task scoring to LLM answer-quality scoring on LoCoMo/LongMemEval-style tasks."
+    },
+    {
+      "id": "agent_memory_advantage",
+      "name": "Adaptive agent-memory advantage",
+      "category": "agent-memory",
+      "status": "implemented",
+      "source": "benchmarks/agent_memory_advantage_benchmark.py",
+      "dataset": "Sequential correction, preference, state-transition, and workflow-gotcha cases with identical memories, queries, embeddings, token budgets, and top-k across engines.",
+      "competitors": [
+        "WaveMind Core",
+        "full context",
+        "Chroma static",
+        "Qdrant static"
+      ],
+      "metrics": [
+        "task_success_rate",
+        "stale_error_rate",
+        "context_budget_saved",
+        "p95_latency_ms",
+        "combined_score",
+        "paired_ci95"
+      ],
+      "current": {
+        "WaveMind Core": {
+          "task_success_rate": 0.3888888888888889,
+          "stale_error_rate": 0.6111111111111112,
+          "context_budget_saved": 0.5015105740181269,
+          "p50_latency_ms": 1.366899989079684,
+          "p95_latency_ms": 1.7206999764312059,
+          "p99_latency_ms": 3.9490000053774565,
+          "combined_score": 0.4057821416582746
+        },
+        "WaveMind + Memory OS": {
+          "task_success_rate": 1.0,
+          "stale_error_rate": 0.0,
+          "context_budget_saved": 0.5015105740181269,
+          "p50_latency_ms": 0.0015999830793589354,
+          "p95_latency_ms": 1.6068000113591552,
+          "p99_latency_ms": 1.8156000005546957,
+          "combined_score": 0.925226586102719
+        },
+        "Full context": {
+          "task_success_rate": 0.0,
+          "stale_error_rate": 1.0,
+          "context_budget_saved": 0.0,
+          "p50_latency_ms": 0.0,
+          "p95_latency_ms": 0.0,
+          "p99_latency_ms": 0.0,
+          "combined_score": 0.0
+        },
+        "Chroma static": {
+          "task_success_rate": 0.2222222222222222,
+          "stale_error_rate": 0.7777777777777778,
+          "context_budget_saved": 0.5015105740181269,
+          "p50_latency_ms": 1.0152999893762171,
+          "p95_latency_ms": 3.120000008493662,
+          "p99_latency_ms": 3.120000008493662,
+          "combined_score": 0.2641154749916079
+        },
+        "Qdrant static": {
+          "task_success_rate": 0.2222222222222222,
+          "stale_error_rate": 0.7777777777777778,
+          "context_budget_saved": 0.5015105740181269,
+          "p50_latency_ms": 1.3237999810371548,
+          "p95_latency_ms": 1.7652999958954751,
+          "p99_latency_ms": 1.7652999958954751,
+          "combined_score": 0.2641154749916079
+        }
+      },
+      "target": "Keep the 13/13 admission green: positive paired lift in at least two dynamic categories, positive combined lift over the strongest local baseline, stale errors <= 2%, context savings >= 30%, and p95 regression within 5 ms and 20%.",
+      "next_step": "Extend the same sequential protocol with more independently authored tasks while preserving the exact-source admission."
     },
     {
       "id": "dynamic_memory_policy",
@@ -482,10 +553,20 @@
           "context_budget_saved": 0.0,
           "avg_latency_ms": 124.33854309557003,
           "p95_latency_ms": 149.71969999896828
+        },
+        "WaveMind Core direct": {
+          "context_budget_saved": 0.0,
+          "avg_latency_ms": 4.606165503505966,
+          "p95_latency_ms": 7.609799999045208
+        },
+        "WaveMind + Memory OS direct": {
+          "context_budget_saved": 0.0,
+          "avg_latency_ms": 5.144030955652732,
+          "p95_latency_ms": 8.500199997797608
         }
       },
-      "target": "Improve LoCoMo evidence_recall@5 with semantic embeddings and keep retrieval latency below 20 ms for WaveMind.",
-      "next_step": "Add LoCoMo answer generation with a local LLM and measure answer accuracy/faithfulness."
+      "target": "Keep direct Memory OS execution within one percentage point of WaveMind Core quality, expose its maintenance cost, and improve LoCoMo evidence recall without hiding regressions.",
+      "next_step": "The current direct Memory OS run is admitted but slightly below Core on recall; tune feedback-free policies before claiming LoCoMo uplift."
     },
     {
       "id": "longmemeval_evidence_retrieval",
@@ -539,10 +620,20 @@
           "context_budget_saved": 0.8898452819128235,
           "avg_latency_ms": 398.48050340422446,
           "p95_latency_ms": 432.8767000006337
+        },
+        "WaveMind Core direct": {
+          "context_budget_saved": 0.9912646918550664,
+          "avg_latency_ms": 8.260301276087821,
+          "p95_latency_ms": 12.633399979677051
+        },
+        "WaveMind + Memory OS direct": {
+          "context_budget_saved": 0.9912646918550664,
+          "avg_latency_ms": 8.887677233507658,
+          "p95_latency_ms": 12.447099987184629
         }
       },
-      "target": "Keep full LongMemEval-S evidence recall above static vector-store baselines while staying below 20 ms retrieval latency.",
-      "next_step": "Run turn-level evidence mode and sentence-transformers, then add LLM answer accuracy/abstention evaluation."
+      "target": "Keep the full 470-query direct Memory OS run at Core quality with zero worker errors and publish retrieval plus maintenance latency separately.",
+      "next_step": "The direct run now matches Core retrieval quality; improve maintenance amortization before enabling more aggressive adaptive policies on this dataset."
     },
     {
       "id": "longmemeval_evidence_50_smoke",
@@ -3188,21 +3279,46 @@
       "id": "longmemeval_v2",
       "name": "LongMemEval-V2",
       "category": "web-agent-memory",
-      "status": "planned",
+      "status": "implemented",
       "source_url": "https://arxiv.org/abs/2605.12493",
-      "dataset": "Web-agent histories with state recall, dynamic state tracking, workflow knowledge, gotchas, and premise awareness.",
+      "dataset": "Official LongMemEval-V2 Small: 451 web-agent questions, including all 29 image questions, scored by the pinned local qwen2.5vl:3b reader.",
       "competitors": [
         "AgentRunbook-R",
         "Chroma RAG",
         "Qdrant RAG"
       ],
       "metrics": [
-        "evidence_recall@k",
-        "answer_accuracy",
-        "latency"
+        "task_success_rate",
+        "category_success",
+        "retrieval_p50_ms",
+        "retrieval_p95_ms",
+        "retrieval_p99_ms",
+        "worker_errors"
       ],
-      "target": "Become a compact evidence retriever for agent trajectories, with explicit wins on dynamic state tracking and gotcha recall.",
-      "next_step": "Prototype trajectory-to-memory segmentation and compare compact WaveMind evidence against plain chunk retrieval."
+      "target": "Improve task success over WaveMind Core on the full Small tier without worker errors or more than one percentage point of quality regression.",
+      "next_step": "Raise absolute answer quality with a stronger local reader while keeping the checked retrieval and Memory OS execution protocol unchanged.",
+      "source": "benchmarks/longmemeval_v2_memory_benchmark.py",
+      "current": {
+        "WaveMind Core": {
+          "task_success_rate": 0.07538802660753881,
+          "p50_latency_ms": 6.923999986611307,
+          "p95_latency_ms": 12.6528000109829,
+          "p99_latency_ms": 19.537300016963854,
+          "scored_queries": 451,
+          "errors": 0
+        },
+        "WaveMind + Memory OS": {
+          "task_success_rate": 0.09090909090909091,
+          "p50_latency_ms": 7.414499996230006,
+          "p95_latency_ms": 13.880899990908802,
+          "p99_latency_ms": 32.95570000773296,
+          "end_to_end_p95_ms": 24.506200017640367,
+          "worker_runs": 15,
+          "worker_errors": 0,
+          "scored_queries": 451,
+          "errors": 0
+        }
+      }
     },
     {
       "id": "lmeb",

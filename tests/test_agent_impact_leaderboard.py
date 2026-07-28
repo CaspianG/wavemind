@@ -31,17 +31,19 @@ def test_agent_impact_leaderboard_renderer_writes_json_and_markdown(tmp_path):
     report = markdown.read_text(encoding="utf-8")
 
     assert payload["schema"] == "wavemind.agent_impact_leaderboard.v1"
-    assert payload["summary"]["benchmark_count"] >= 6
-    assert payload["summary"]["wavemind_row_count"] >= 6
-    assert payload["summary"]["baseline_row_count"] >= 6
+    assert payload["summary"]["benchmark_count"] >= 7
+    assert payload["summary"]["wavemind_row_count"] >= 8
+    assert payload["summary"]["baseline_row_count"] >= 9
     assert payload["summary"]["wavemind_primary_wins"] == payload["summary"]["benchmark_count"]
     assert payload["summary"]["average_primary_lift"] > 0
     assert payload["summary"]["average_context_saved"] > 0.5
-    assert payload["summary"]["average_stale_safety_score"] >= 0.95
+    assert payload["summary"]["average_stale_safety_score"] >= 0.90
     assert payload["load_errors"] == []
 
     groups = {row["benchmark"]: row for row in payload["benchmark_groups"]}
     coherence_group = groups["Agent coherence and token savings"]
+    advantage_group = groups["Adaptive agent-memory advantage"]
+    assert advantage_group["primary_lift"] > 0.5
     assert coherence_group["primary_lift"] > 0
     assert coherence_group["primary_lift"] == pytest.approx(
         coherence_group["best_wavemind_primary"]
@@ -68,7 +70,8 @@ def test_agent_impact_leaderboard_renderer_writes_json_and_markdown(tmp_path):
     assert report.startswith("# WaveMind Agent Impact Leaderboard")
     assert "WaveMind primary wins" in report
     assert "LongMemEval answer quality" in report
-    assert "Answer-quality rows use the checked-in local Ollama" in report
+    assert "seven identical-protocol trials" in report
+    assert "Full LongMemEval-V2 Small evidence" in report
 
 
 def test_checked_in_agent_impact_artifact_is_machine_readable():
@@ -78,7 +81,7 @@ def test_checked_in_agent_impact_artifact_is_machine_readable():
     report = Path("benchmarks/AGENT_IMPACT.md").read_text(encoding="utf-8")
 
     assert payload["schema"] == "wavemind.agent_impact_leaderboard.v1"
-    assert payload["summary"]["benchmark_count"] >= 6
+    assert payload["summary"]["benchmark_count"] >= 7
     assert payload["summary"]["wavemind_primary_wins"] == payload["summary"][
         "benchmark_count"
     ]

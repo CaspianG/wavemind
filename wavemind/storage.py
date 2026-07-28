@@ -369,6 +369,46 @@ class SQLiteMemoryStore:
         return record.id
 
     @_serialized_sqlite
+    def insert_many(self, records: Iterable[MemoryRecord]) -> list[int]:
+        records = list(records)
+        if not records:
+            return []
+        now = time.time()
+        ids: list[int] = []
+        with self.conn:
+            for record in records:
+                record.created_at = record.created_at or now
+                record.updated_at = now
+                cur = self.conn.execute(
+                    """
+                    INSERT INTO memories (
+                        namespace, text, vector, vector_dim, pattern, pattern_shape,
+                        tags, metadata, created_at, updated_at, expires_at, priority,
+                        access_count
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        record.namespace,
+                        record.text,
+                        _array_to_blob(record.vector),
+                        int(record.vector.shape[0]),
+                        _array_to_blob(record.pattern),
+                        json.dumps(list(record.pattern.shape)),
+                        json.dumps(list(record.tags), ensure_ascii=False),
+                        json.dumps(record.metadata, ensure_ascii=False),
+                        record.created_at,
+                        record.updated_at,
+                        record.expires_at,
+                        float(record.priority),
+                        int(record.access_count),
+                    ),
+                )
+                ids.append(int(cur.lastrowid))
+        for record, memory_id in zip(records, ids):
+            record.id = memory_id
+        return ids
+
+    @_serialized_sqlite
     def insert_recovered(self, record: MemoryRecord) -> int:
         if record.id is None:
             raise ValueError("Recovered records require an explicit id")
@@ -475,6 +515,14 @@ class SQLiteMemoryStore:
         return len(ids)
 
     @_serialized_sqlite
+    def list_expired(self) -> list[MemoryRecord]:
+        rows = self.conn.execute(
+            "SELECT * FROM memories WHERE expires_at IS NOT NULL AND expires_at <= ?",
+            (time.time(),),
+        ).fetchall()
+        return [self._row_to_record(row) for row in rows]
+
+    @_serialized_sqlite
     def touch(self, id: int, priority_delta: float = 0.05) -> None:
         self.conn.execute(
             """
@@ -539,6 +587,34 @@ class SQLiteMemoryStore:
         )
         self.conn.commit()
         return int(cur.lastrowid)
+
+    @_serialized_sqlite
+    def log_audit_events(self, events: Iterable[AuditEvent]) -> None:
+        events = list(events)
+        if not events:
+            return
+        with self.conn:
+            self.conn.executemany(
+                """
+                INSERT INTO audit_events (
+                    created_at, action, namespace, memory_id, metadata
+                ) VALUES (?, ?, ?, ?, ?)
+                """,
+                [
+                    (
+                        float(event.created_at),
+                        event.action,
+                        event.namespace,
+                        (
+                            int(event.memory_id)
+                            if event.memory_id is not None
+                            else None
+                        ),
+                        json.dumps(event.metadata, ensure_ascii=False),
+                    )
+                    for event in events
+                ],
+            )
 
     @_serialized_sqlite
     def apply_feedback_batch(self, updates: Iterable[dict[str, Any]]) -> None:
@@ -876,6 +952,56 @@ class PostgresMemoryStore:
         record.id = int(_row_get(row, "id"))
         return record.id
 
+    def insert_many(self, records: Iterable[MemoryRecord]) -> list[int]:
+        records = list(records)
+        if not records:
+            return []
+        now = time.time()
+        ids: list[int] = []
+
+        def insert_rows() -> None:
+            for record in records:
+                record.created_at = record.created_at or now
+                record.updated_at = now
+                row = self.conn.execute(
+                    f"""
+                    INSERT INTO {self.memories_table} (
+                        namespace, text, vector, vector_dim, pattern, pattern_shape,
+                        tags, metadata, created_at, updated_at, expires_at, priority,
+                        access_count
+                    ) VALUES (
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    )
+                    RETURNING id
+                    """,
+                    (
+                        record.namespace,
+                        record.text,
+                        _array_to_blob(record.vector),
+                        int(record.vector.shape[0]),
+                        _array_to_blob(record.pattern),
+                        json.dumps(list(record.pattern.shape)),
+                        json.dumps(list(record.tags), ensure_ascii=False),
+                        json.dumps(record.metadata, ensure_ascii=False),
+                        record.created_at,
+                        record.updated_at,
+                        record.expires_at,
+                        float(record.priority),
+                        int(record.access_count),
+                    ),
+                ).fetchone()
+                ids.append(int(_row_get(row, "id")))
+
+        transaction = getattr(self.conn, "transaction", None)
+        if callable(transaction):
+            with transaction():
+                insert_rows()
+        else:
+            insert_rows()
+        for record, memory_id in zip(records, ids):
+            record.id = memory_id
+        return ids
+
     def get(self, id: int) -> MemoryRecord | None:
         row = self.conn.execute(
             f"SELECT * FROM {self.memories_table} WHERE id = %s",
@@ -954,6 +1080,16 @@ class PostgresMemoryStore:
         ).fetchall()
         return len(rows)
 
+    def list_expired(self) -> list[MemoryRecord]:
+        rows = self.conn.execute(
+            f"""
+            SELECT * FROM {self.memories_table}
+            WHERE expires_at IS NOT NULL AND expires_at <= %s
+            """,
+            (time.time(),),
+        ).fetchall()
+        return [self._row_to_record(row) for row in rows]
+
     def touch(self, id: int, priority_delta: float = 0.05) -> None:
         self.conn.execute(
             f"""
@@ -1014,6 +1150,39 @@ class PostgresMemoryStore:
             ),
         ).fetchone()
         return int(_row_get(row, "id"))
+
+    def log_audit_events(self, events: Iterable[AuditEvent]) -> None:
+        events = list(events)
+        if not events:
+            return
+
+        def insert_events() -> None:
+            for event in events:
+                self.conn.execute(
+                    f"""
+                    INSERT INTO {self.audit_table} (
+                        created_at, action, namespace, memory_id, metadata
+                    ) VALUES (%s, %s, %s, %s, %s)
+                    """,
+                    (
+                        float(event.created_at),
+                        event.action,
+                        event.namespace,
+                        (
+                            int(event.memory_id)
+                            if event.memory_id is not None
+                            else None
+                        ),
+                        json.dumps(event.metadata, ensure_ascii=False),
+                    ),
+                )
+
+        transaction = getattr(self.conn, "transaction", None)
+        if callable(transaction):
+            with transaction():
+                insert_events()
+        else:
+            insert_events()
 
     def apply_feedback_batch(self, updates: Iterable[dict[str, Any]]) -> None:
         rows = list(updates)

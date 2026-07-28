@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.memory_os_intelligence_report.v1",
-  "generated_at": "2026-07-27T10:52:52Z",
-  "source_ref": "807faf0fdd6d",
+  "generated_at": "2026-07-27T13:29:25Z",
+  "source_ref": "590bc8df80e0",
   "source_files": [
     "benchmarks/scale_readiness_results.json",
     "benchmarks/memory_os_agent_quality_results.json",
@@ -26,7 +26,7 @@
     "positive_feedback_priority_delta": 0.3999999999999999,
     "negative_feedback_priority_delta": -0.30000000000000004,
     "priority_predictions": 2,
-    "priority_boost_total": 0.19999998581409556,
+    "priority_boost_total": 0.19999996409151977,
     "forgetting_demotions": 4,
     "forgetting_decay_total": 0.4,
     "policy_status": "architecture_required",
@@ -95,8 +95,8 @@
     "quality_check_count": 7,
     "memory_os_task_success_uplift": 0.125,
     "memory_os_stale_suppression_uplift": 0.125,
-    "memory_os_p95_latency_delta_ms": -0.010475999999925989,
-    "memory_os_p95_latency_regression_ratio": -0.01803656898866327
+    "memory_os_p95_latency_delta_ms": -0.1064000025507994,
+    "memory_os_p95_latency_regression_ratio": -0.031692134284560386
   },
   "checks": [
     {
@@ -318,14 +318,14 @@
     },
     {
       "name": "quality_p95_delta",
-      "value": -0.010475999999925989,
+      "value": -0.1064000025507994,
       "target": 5.0,
       "op": "<=",
       "pass": true
     },
     {
       "name": "quality_p95_ratio",
-      "value": -0.01803656898866327,
+      "value": -0.031692134284560386,
       "target": 0.2,
       "op": "<=",
       "pass": true
@@ -400,7 +400,7 @@
           "to_query": "risk limits",
           "count": 1,
           "probability": 1.0,
-          "last_seen": 1785149547.4111986
+          "last_seen": 1785158922.6611845
         }
       ],
       "transition_prefetch_hit": true,
@@ -411,7 +411,7 @@
       "positive_feedback_priority_delta": 0.3999999999999999,
       "negative_feedback_priority_delta": -0.30000000000000004,
       "priority_predictions": 2,
-      "priority_boost_total": 0.19999998581409556,
+      "priority_boost_total": 0.19999996409151977,
       "forgetting_demotions": 4,
       "forgetting_decay_total": 0.4,
       "architecture_advice_status": "architecture_required",
@@ -547,7 +547,7 @@
         "Architecture advisor: [action_required] Run a sustained production load profile - Run the external HTTP cluster load workflow against real API nodes before publishing the SLO.",
         "Architecture advisor: [watch] Validate multimodal and structured payload retrieval - Use typed payload helpers and run structured retrieval checks before exposing multimodal claims."
       ],
-      "run_ms": 13.10643700000469
+      "run_ms": 51.61739999311976
     },
     "redis_memory_os": {
       "engine": "WaveMind Redis hot cache",
@@ -574,7 +574,7 @@
           "to_query": "risk limits",
           "count": 1,
           "probability": 1.0,
-          "last_seen": 1785149547.2564452
+          "last_seen": 1785158922.3265183
         }
       ],
       "memory_os_transition_prefetch_hit": true,
@@ -583,7 +583,7 @@
       "memory_os_positive_feedback_priority_delta": 0.3999999999999999,
       "memory_os_negative_feedback_priority_delta": -0.30000000000000004,
       "memory_os_priority_predictions": 2,
-      "memory_os_priority_boost_total": 0.19999998439131084,
+      "memory_os_priority_boost_total": 0.1999999612807203,
       "memory_os_forgetting_demotions": 4,
       "memory_os_forgetting_decay_total": 0.4,
       "memory_os_architecture_advice_status": "architecture_required",
@@ -597,7 +597,7 @@
         "multimodal-payloads"
       ],
       "memory_os_cross_worker_hit": true,
-      "memory_os_run_ms": 14.475173999997537,
+      "memory_os_run_ms": 52.05440000281669,
       "namespace_invalidation_removed": true,
       "redis_keys": 8,
       "writer_hits": 0,
@@ -605,8 +605,8 @@
       "reader_hits": 1,
       "os_hits": 0,
       "os_reader_hits": 2,
-      "avg_lookup_ms": 0.03125599999975748,
-      "p99_lookup_ms": 0.035362000005534355
+      "avg_lookup_ms": 0.053949996072333306,
+      "p99_lookup_ms": 0.060699996538460255
     },
     "agent_memory_os": {
       "worker_ok": true,
@@ -646,7 +646,7 @@
             "namespace": "agent-a",
             "query": "budget recall",
             "frequency": 2,
-            "last_seen": 1785149511.3599913
+            "last_seen": 1783973104.5681689
           }
         ],
         "expired_purged": 5,
@@ -654,7 +654,7 @@
         "concepts_created": 0,
         "concept_ids": [],
         "priority_predictions": 5,
-        "priority_boost_total": 0.49999908290419753,
+        "priority_boost_total": 0.49999684816212575,
         "priority_boosted_ids": [
           10,
           94,
@@ -698,7 +698,7 @@
               "to_query": "risk limits",
               "count": 1,
               "probability": 1.0,
-              "last_seen": 1785149511.3583753
+              "last_seen": 1783973104.5614846
             }
           ],
           "ok": true
@@ -708,7 +708,7 @@
           "expired_memories": 5,
           "total_memories": 402,
           "audit_events": 407,
-          "field_energy": 271694.90625,
+          "field_energy": 271683.71875,
           "clusters": 1,
           "field_shape": "64x64x3",
           "index": "numpy-exact",
@@ -746,7 +746,7 @@
           "expired_memories": 0,
           "total_memories": 397,
           "audit_events": 419,
-          "field_energy": 414158.9375,
+          "field_energy": 414318.15625,
           "clusters": 1,
           "field_shape": "64x64x3",
           "index": "numpy-exact",
@@ -865,7 +865,6 @@
           "duplicate": false,
           "completed": false,
           "reason": null,
-          "in_doubt": false,
           "ok": true
         },
         "actions": [
@@ -1139,12 +1138,12 @@
       "memory_os_stale_error_rate": 0.0,
       "baseline_stale_error_rate": 0.125,
       "stale_suppression_uplift": 0.125,
-      "memory_os_p95_latency_ms": 0.5703439999962256,
-      "baseline_p95_latency_ms": 0.5808199999961516,
-      "p95_latency_delta_ms": -0.010475999999925989,
-      "p95_latency_regression_ratio": -0.01803656898866327,
-      "cold_p95_latency_delta_ms": 0.004947999997284569,
-      "cold_p95_latency_regression_ratio": 0.008283750250711739
+      "memory_os_p95_latency_ms": 3.2509000011486933,
+      "baseline_p95_latency_ms": 3.3573000036994927,
+      "p95_latency_delta_ms": -0.1064000025507994,
+      "p95_latency_regression_ratio": -0.031692134284560386,
+      "cold_p95_latency_delta_ms": 0.02510000194888562,
+      "cold_p95_latency_regression_ratio": 0.007497237661467624
     }
   }
 }

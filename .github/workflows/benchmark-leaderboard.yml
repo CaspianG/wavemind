@@ -331,6 +331,11 @@ jobs:
             --output benchmarks/multimodal_admission_results.json \
             --markdown-output benchmarks/MULTIMODAL_ADMISSION.md \
             --json
+          AGENT_MEMORY_SOURCE_SHA="$(python -c 'import json; print(json.load(open("benchmarks/agent_memory_advantage_results.json", encoding="utf-8"))["source_sha"])')"
+          python -m wavemind agent-memory-advantage-admission \
+            --expected-source-sha "$AGENT_MEMORY_SOURCE_SHA" \
+            --fail-on-blocked \
+            --json
           python -m wavemind \
             --db .tmp-memory-os-canary.sqlite3 \
             memory-os-canary \
@@ -468,6 +473,7 @@ jobs:
           cp benchmarks/ACTIVE_ACTIVE_ADMISSION.md site/benchmarks/ACTIVE_ACTIVE_ADMISSION.md
           cp benchmarks/SERVERLESS_ADMISSION.md site/benchmarks/SERVERLESS_ADMISSION.md
           cp benchmarks/MULTIMODAL_ADMISSION.md site/benchmarks/MULTIMODAL_ADMISSION.md
+          cp benchmarks/AGENT_MEMORY_ADVANTAGE_ADMISSION.md site/benchmarks/AGENT_MEMORY_ADVANTAGE_ADMISSION.md
           cp benchmarks/AGENT_IMPACT.md site/benchmarks/AGENT_IMPACT.md
           cp benchmarks/STRUCTURED_MEMORY.md site/benchmarks/STRUCTURED_MEMORY.md
           cp benchmarks/MEMORY_OS_INTELLIGENCE.md site/benchmarks/MEMORY_OS_INTELLIGENCE.md
