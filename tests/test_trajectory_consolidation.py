@@ -164,3 +164,78 @@ def test_trajectory_delta_consolidation_respects_namespace_and_input_tag(
         assert memory.stats(namespace="tenant:b")["total_memories"] == 1
     finally:
         memory.close()
+
+
+def test_trajectory_experience_consolidates_ordered_states(tmp_path):
+    memory = WaveMind(
+        db_path=tmp_path / "trajectory-experience.sqlite3",
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+        score_threshold=0.0,
+    )
+    try:
+        source_ids = memory.remember_batch(
+            (
+                {
+                    "text": _state_text(
+                        goal="Disable selected products",
+                        index=0,
+                        action="Click Actions",
+                        thought="Open bulk actions",
+                        labels=("Actions", "Change Status"),
+                    ),
+                    "namespace": "tenant:a",
+                    "tags": ("trajectory-state",),
+                    "metadata": {
+                        "trajectory_id": "run-1",
+                        "state_index": 0,
+                        "outcome": "success",
+                    },
+                },
+                {
+                    "text": _state_text(
+                        goal="Disable selected products",
+                        index=1,
+                        action="Choose Change Status",
+                        thought="Select the disabled status",
+                        labels=("Change Status", "Disable"),
+                    ),
+                    "namespace": "tenant:a",
+                    "tags": ("trajectory-state",),
+                    "metadata": {
+                        "trajectory_id": "run-1",
+                        "state_index": 1,
+                        "outcome": "success",
+                    },
+                },
+            )
+        )
+
+        worker = TrajectoryDeltaConsolidator(memory)
+        first = worker.run_trajectory_once(namespace="tenant:a")
+        second = worker.run_trajectory_once(namespace="tenant:a")
+
+        assert first.ok is True
+        assert first.created == 1
+        assert first.trajectories == 1
+        assert first.provenance_coverage == 1.0
+        assert second.created == 0
+        assert second.skipped_existing == 1
+        rows = memory.query(
+            "disable products change status",
+            namespace="tenant:a",
+            top_k=1,
+            tags=("trajectory-experience",),
+            min_score=0.0,
+        )
+        assert len(rows) == 1
+        assert "Step 0: Action: Click Actions" in rows[0].text
+        assert "Step 1: Action: Choose Change Status" in rows[0].text
+        assert "Disable" in rows[0].text
+        assert rows[0].metadata["source_memory_ids"] == source_ids
+        assert rows[0].metadata["trajectory_state_count"] == 2
+        assert "trajectory-state" not in rows[0].tags
+    finally:
+        memory.close()
