@@ -15,6 +15,9 @@ from .encoders import (
     FieldProjector,
     HashingTextEncoder,
     TextVectorEncoder,
+    encode_document_batch,
+    encode_document_text,
+    encode_query_text,
     is_stopword_token,
     normalize_token,
 )
@@ -231,7 +234,7 @@ class WaveMind:
                 "wavemind.vector_dim": self.encoder.vector_dim,
             },
         ):
-            vector = self.encoder.encode_vector(text)
+            vector = encode_document_text(self.encoder, text)
             pattern = self.projector.to_pattern(vector)
         expires_at = time.time() + ttl_seconds if ttl_seconds is not None else None
         record = MemoryRecord(
@@ -292,7 +295,7 @@ class WaveMind:
             },
         ):
             vectors = np.asarray(
-                self.encoder.encode_vectors(texts),
+                encode_document_batch(self.encoder, texts),
                 dtype=np.float32,
             )
             expected_shape = (len(normalized), self.encoder.vector_dim)
@@ -447,7 +450,7 @@ class WaveMind:
                     "wavemind.allowed_ids": len(allowed_ids),
                 },
             ):
-                query_vector = self.encoder.encode_vector(text)
+                query_vector = encode_query_text(self.encoder, text)
         else:
             query_vector = np.asarray(query_vector, dtype=np.float32)
 
@@ -1298,7 +1301,7 @@ class WaveMind:
         namespaces = [namespace] if namespace is not None else sorted(self._namespace_ids)
         if not namespaces:
             return
-        query_vector = self.encoder.encode_vector(seed_text)
+        query_vector = encode_query_text(self.encoder, seed_text)
         self._ensure_graph()
         for item_namespace in namespaces:
             allowed_ids = self._allowed_ids(namespace=item_namespace, tags=None)

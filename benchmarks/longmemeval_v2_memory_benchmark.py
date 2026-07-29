@@ -30,6 +30,8 @@ from wavemind import WaveMind
 from wavemind.encoders import (
     DEFAULT_TOKEN_STOPWORDS,
     HashingTextEncoder,
+    OllamaTextEncoder,
+    TextVectorEncoder,
     is_stopword_token,
     normalize_token,
 )
@@ -946,10 +948,39 @@ def _evaluate_contexts(
     )
 
 
+def _encoder_metadata(encoder: TextVectorEncoder) -> dict[str, Any]:
+    metadata: dict[str, Any] = {
+        "kind": "custom",
+        "class": type(encoder).__name__,
+        "vector_dim": int(encoder.vector_dim),
+    }
+    if isinstance(encoder, HashingTextEncoder):
+        metadata.update(
+            {
+                "kind": "hash-token",
+                "char_ngram_weight": encoder.char_ngram_weight,
+            }
+        )
+    elif isinstance(encoder, OllamaTextEncoder):
+        metadata.update(
+            {
+                "kind": "ollama",
+                "model": encoder.model_name,
+                "base_url": encoder.base_url,
+                "batch_size": encoder.batch_size,
+                "query_instruction": encoder.query_instruction,
+                "normalized": True,
+                "query_document_asymmetric": True,
+            }
+        )
+    return metadata
+
+
 def run_benchmark(
     data_root: str | Path,
     *,
     reader: Reader | None = None,
+    encoder: TextVectorEncoder | None = None,
     top_k: int = 5,
     limit_questions: int | None = None,
     question_sample_size: int | None = None,
@@ -965,10 +996,11 @@ def run_benchmark(
         question_sample_size=question_sample_size,
         question_sample_seed=question_sample_seed,
     )
-    encoder = HashingTextEncoder(
-        vector_dim=384,
-        char_ngram_weight=0.0,
-    )
+    if encoder is None:
+        encoder = HashingTextEncoder(
+            vector_dim=384,
+            char_ngram_weight=0.0,
+        )
     temp_parent = None
     if work_dir is not None:
         temp_parent_path = Path(work_dir)
@@ -1142,12 +1174,7 @@ def run_benchmark(
                 ),
             },
             "dataset_checksums": dataset.source_files,
-            "embedding": {
-                "kind": "hash-token",
-                "class": type(encoder).__name__,
-                "vector_dim": int(encoder.vector_dim),
-                "char_ngram_weight": encoder.char_ngram_weight,
-            },
+            "embedding": _encoder_metadata(encoder),
             "retrieval": {
                 "vector_weight": 0.60,
                 "lexical_weight": 1.0,
@@ -1239,6 +1266,13 @@ def main() -> int:
     parser.add_argument("--ollama-image-context-items", type=int, default=1)
     parser.add_argument("--ollama-image-context-chars", type=int, default=4000)
     parser.add_argument("--ollama-enable-thinking", action="store_true")
+    parser.add_argument("--ollama-embedding-model")
+    parser.add_argument(
+        "--ollama-embedding-base-url",
+        default=os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434"),
+    )
+    parser.add_argument("--ollama-embedding-vector-dim", type=int, default=1024)
+    parser.add_argument("--ollama-embedding-batch-size", type=int, default=32)
     parser.add_argument("--resume-result", type=Path)
     parser.add_argument("--resume-per-query", type=Path)
     parser.add_argument(
@@ -1258,6 +1292,14 @@ def main() -> int:
         )
     if bool(args.resume_result) != bool(args.resume_per_query):
         parser.error("--resume-result and --resume-per-query must be supplied together")
+    encoder: TextVectorEncoder | None = None
+    if args.ollama_embedding_model:
+        encoder = OllamaTextEncoder(
+            model_name=args.ollama_embedding_model,
+            base_url=args.ollama_embedding_base_url,
+            vector_dim=args.ollama_embedding_vector_dim,
+            batch_size=args.ollama_embedding_batch_size,
+        )
     resume_rows: list[dict[str, Any]] | None = None
     resume_metadata: dict[str, Any] | None = None
     if args.resume_result:
@@ -1266,6 +1308,7 @@ def main() -> int:
         )
         resume_rows = _read_jsonl(args.resume_per_query)
         expected_reader = resume_payload.get("reader") or {}
+        expected_embedding = resume_payload.get("embedding") or {}
         expected_scenario = resume_payload.get("scenario") or {}
         if resume_payload.get("schema") != "wavemind.longmemeval_v2_small.v1":
             parser.error("resume result has an unsupported schema")
@@ -1279,6 +1322,12 @@ def main() -> int:
             args.ollama_enable_thinking
         ):
             parser.error("resume reader thinking mode does not match this run")
+        current_embedding = _encoder_metadata(
+            encoder
+            or HashingTextEncoder(vector_dim=384, char_ngram_weight=0.0)
+        )
+        if expected_embedding != current_embedding:
+            parser.error("resume embedding configuration does not match this run")
         resume_metadata = {
             "used": True,
             "source_sha": resume_payload.get("source_sha"),
@@ -1338,6 +1387,7 @@ def main() -> int:
     payload, rows = run_benchmark(
         args.data_root,
         reader=reader,
+        encoder=encoder,
         top_k=args.top_k,
         limit_questions=args.limit_questions,
         question_sample_size=args.question_sample_size,

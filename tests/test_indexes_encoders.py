@@ -9,6 +9,7 @@ import pytest
 from wavemind.encoders import (
     FieldProjector,
     HashingTextEncoder,
+    OllamaTextEncoder,
     SentenceTransformerTextEncoder,
     create_text_encoder,
 )
@@ -90,6 +91,97 @@ def test_sentence_transformer_encoder_requires_dependency_when_no_model(monkeypa
     monkeypatch.setattr(builtins, "__import__", fake_import)
     with pytest.raises(ImportError):
         SentenceTransformerTextEncoder()
+
+
+class _FakeOllamaResponse:
+    def __init__(self, payload):
+        self._payload = payload
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, traceback):
+        return False
+
+    def read(self):
+        return json.dumps(self._payload).encode("utf-8")
+
+
+class _FakeOllamaOpener:
+    def __init__(self, *, vector_dim=3):
+        self.vector_dim = vector_dim
+        self.requests = []
+
+    def open(self, request, timeout):
+        payload = json.loads(request.data.decode("utf-8"))
+        self.requests.append(
+            {
+                "url": request.full_url,
+                "timeout": timeout,
+                "payload": payload,
+            }
+        )
+        embeddings = [
+            [3.0, 4.0, *([0.0] * (self.vector_dim - 2))]
+            for _ in payload["input"]
+        ]
+        return _FakeOllamaResponse({"embeddings": embeddings})
+
+
+def test_ollama_encoder_uses_asymmetric_query_instruction_and_batches_documents():
+    encoder = OllamaTextEncoder(
+        model_name="test-embedding",
+        base_url="http://127.0.0.1:11435/",
+        vector_dim=3,
+        batch_size=2,
+        timeout_seconds=12.5,
+        query_instruction="retrieve memory",
+    )
+    opener = _FakeOllamaOpener()
+    encoder._opener = opener
+
+    query = encoder.encode_query_vector("what is the budget?")
+    documents = encoder.encode_document_vectors(["first", "second", "third"])
+
+    assert np.allclose(query, [0.6, 0.8, 0.0])
+    assert documents.shape == (3, 3)
+    assert np.allclose(np.linalg.norm(documents, axis=1), 1.0)
+    assert len(opener.requests) == 3
+    assert opener.requests[0]["url"] == "http://127.0.0.1:11435/api/embed"
+    assert opener.requests[0]["timeout"] == 12.5
+    assert opener.requests[0]["payload"] == {
+        "model": "test-embedding",
+        "input": ["Instruct: retrieve memory\nQuery: what is the budget?"],
+        "truncate": True,
+    }
+    assert opener.requests[1]["payload"]["input"] == ["first", "second"]
+    assert opener.requests[2]["payload"]["input"] == ["third"]
+
+
+def test_ollama_encoder_rejects_wrong_embedding_shape():
+    class WrongShapeOpener:
+        def open(self, request, timeout):
+            return _FakeOllamaResponse({"embeddings": [[1.0, 0.0]]})
+
+    encoder = OllamaTextEncoder(vector_dim=3)
+    encoder._opener = WrongShapeOpener()
+
+    with pytest.raises(RuntimeError, match="response shape"):
+        encoder.encode_document_vector("document")
+
+
+def test_encoder_factory_creates_explicit_ollama_backend():
+    encoder = create_text_encoder(
+        "ollama",
+        vector_dim=3,
+        model_name="test-embedding",
+        base_url="http://127.0.0.1:11435/",
+    )
+
+    assert isinstance(encoder, OllamaTextEncoder)
+    assert encoder.model_name == "test-embedding"
+    assert encoder.base_url == "http://127.0.0.1:11435"
+    assert encoder.vector_dim == 3
 
 
 def test_field_projector_compresses_vectors_to_2d_pattern():

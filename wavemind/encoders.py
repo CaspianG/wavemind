@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import re
+import urllib.error
+import urllib.request
 from dataclasses import dataclass
 from collections.abc import Iterable
 from typing import Protocol
@@ -153,6 +156,33 @@ class TextVectorEncoder(Protocol):
     def encode_vectors(self, texts: Iterable[str]) -> np.ndarray:
         ...
 
+    def encode_query_vector(self, text: str) -> np.ndarray:
+        ...
+
+    def encode_document_vector(self, text: str) -> np.ndarray:
+        ...
+
+    def encode_document_vectors(self, texts: Iterable[str]) -> np.ndarray:
+        ...
+
+
+def encode_query_text(encoder: TextVectorEncoder, text: str) -> np.ndarray:
+    method = getattr(encoder, "encode_query_vector", None)
+    return method(text) if callable(method) else encoder.encode_vector(text)
+
+
+def encode_document_text(encoder: TextVectorEncoder, text: str) -> np.ndarray:
+    method = getattr(encoder, "encode_document_vector", None)
+    return method(text) if callable(method) else encoder.encode_vector(text)
+
+
+def encode_document_batch(
+    encoder: TextVectorEncoder,
+    texts: Iterable[str],
+) -> np.ndarray:
+    method = getattr(encoder, "encode_document_vectors", None)
+    return method(texts) if callable(method) else encoder.encode_vectors(texts)
+
 
 def _l2_normalize(vector: np.ndarray) -> np.ndarray:
     vector = np.asarray(vector, dtype=np.float32)
@@ -202,6 +232,15 @@ class HashingTextEncoder:
         if not vectors:
             return np.zeros((0, self.vector_dim), dtype=np.float32)
         return np.stack(vectors).astype(np.float32)
+
+    def encode_query_vector(self, text: str) -> np.ndarray:
+        return self.encode_vector(text)
+
+    def encode_document_vector(self, text: str) -> np.ndarray:
+        return self.encode_vector(text)
+
+    def encode_document_vectors(self, texts: Iterable[str]) -> np.ndarray:
+        return self.encode_vectors(texts)
 
     def _add_feature(self, vector: np.ndarray, feature: str, weight: float) -> None:
         digest = hashlib.blake2b(feature.encode("utf-8"), digest_size=16).digest()
@@ -254,6 +293,121 @@ class SentenceTransformerTextEncoder:
         norms = np.where(norms <= 1e-12, 1.0, norms)
         return (vectors / norms).astype(np.float32)
 
+    def encode_query_vector(self, text: str) -> np.ndarray:
+        return self.encode_vector(text)
+
+    def encode_document_vector(self, text: str) -> np.ndarray:
+        return self.encode_vector(text)
+
+    def encode_document_vectors(self, texts: Iterable[str]) -> np.ndarray:
+        return self.encode_vectors(texts)
+
+
+class OllamaTextEncoder:
+    """Explicit local Ollama embedding encoder with asymmetric query prompts."""
+
+    def __init__(
+        self,
+        model_name: str = "qwen3-embedding:0.6b",
+        *,
+        base_url: str = "http://127.0.0.1:11434",
+        vector_dim: int = 1024,
+        batch_size: int = 32,
+        timeout_seconds: float = 180.0,
+        query_instruction: str = (
+            "Given a question about past agent trajectories, retrieve relevant "
+            "memory entries that help answer it."
+        ),
+    ) -> None:
+        if not model_name.strip():
+            raise ValueError("model_name must not be empty")
+        if vector_dim <= 0:
+            raise ValueError("vector_dim must be positive")
+        if batch_size <= 0:
+            raise ValueError("batch_size must be positive")
+        if timeout_seconds <= 0:
+            raise ValueError("timeout_seconds must be positive")
+        self.model_name = model_name.strip()
+        self.base_url = base_url.rstrip("/")
+        self.vector_dim = int(vector_dim)
+        self.batch_size = int(batch_size)
+        self.timeout_seconds = float(timeout_seconds)
+        self.query_instruction = query_instruction.strip()
+        self.cache_key = (
+            f"{self.base_url}|{self.model_name}|{self.vector_dim}|"
+            f"{self.query_instruction}"
+        )
+        self._opener = urllib.request.build_opener(
+            urllib.request.ProxyHandler({})
+        )
+
+    def encode_vector(self, text: str) -> np.ndarray:
+        return self.encode_query_vector(text)
+
+    def encode_vectors(self, texts: Iterable[str]) -> np.ndarray:
+        return self.encode_document_vectors(texts)
+
+    def encode_query_vector(self, text: str) -> np.ndarray:
+        prefix = (
+            f"Instruct: {self.query_instruction}\nQuery: "
+            if self.query_instruction
+            else ""
+        )
+        return self._embed([f"{prefix}{text}"])[0]
+
+    def encode_document_vector(self, text: str) -> np.ndarray:
+        return self._embed([text])[0]
+
+    def encode_document_vectors(self, texts: Iterable[str]) -> np.ndarray:
+        batch = list(texts)
+        if not batch:
+            return np.zeros((0, self.vector_dim), dtype=np.float32)
+        vectors = [
+            self._embed(batch[offset : offset + self.batch_size])
+            for offset in range(0, len(batch), self.batch_size)
+        ]
+        return np.concatenate(vectors, axis=0).astype(np.float32)
+
+    def _embed(self, texts: list[str]) -> np.ndarray:
+        payload = json.dumps(
+            {
+                "model": self.model_name,
+                "input": texts,
+                "truncate": True,
+            }
+        ).encode("utf-8")
+        request = urllib.request.Request(
+            f"{self.base_url}/api/embed",
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with self._opener.open(
+                request,
+                timeout=self.timeout_seconds,
+            ) as response:
+                body = json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="replace")
+            raise RuntimeError(
+                f"Ollama HTTP {exc.code} for embedding model "
+                f"{self.model_name}: {detail}"
+            ) from exc
+        except (OSError, urllib.error.URLError) as exc:
+            raise RuntimeError(
+                f"Ollama embedding request failed for {self.model_name}: {exc}"
+            ) from exc
+        embeddings = np.asarray(body.get("embeddings"), dtype=np.float32)
+        expected_shape = (len(texts), self.vector_dim)
+        if embeddings.shape != expected_shape:
+            raise RuntimeError(
+                "Ollama embedding response shape "
+                f"{embeddings.shape}, expected {expected_shape}"
+            )
+        norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
+        norms = np.where(norms <= 1e-12, 1.0, norms)
+        return (embeddings / norms).astype(np.float32)
 
 class FieldProjector:
     def __init__(
@@ -301,12 +455,20 @@ def create_text_encoder(
     kind: str = "hash",
     vector_dim: int = 384,
     model_name: str = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+    base_url: str = "http://127.0.0.1:11434",
 ) -> TextVectorEncoder:
     kind = (kind or "hash").lower()
     if kind == "hash":
         return HashingTextEncoder(vector_dim=vector_dim)
     if kind in {"sentence", "sentence-transformers", "transformer"}:
         return SentenceTransformerTextEncoder(model_name=model_name)
+    if kind == "ollama":
+        return OllamaTextEncoder(
+            model_name=model_name,
+            base_url=base_url,
+            vector_dim=vector_dim,
+        )
     raise ValueError(
-        f"Unknown encoder kind: {kind}. Choose an explicit encoder: hash or sentence."
+        "Unknown encoder kind: "
+        f"{kind}. Choose an explicit encoder: hash, sentence, or ollama."
     )

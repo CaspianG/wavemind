@@ -25,6 +25,7 @@ from .consensus import (
 from .encoders import (
     FieldProjector,
     HashingTextEncoder,
+    OllamaTextEncoder,
     SentenceTransformerTextEncoder,
     TextEncoder,
     create_text_encoder,
@@ -355,6 +356,7 @@ __all__ = [
     "FieldStateWatermarkHealthReport",
     "FaissVectorIndex",
     "HashingTextEncoder",
+    "OllamaTextEncoder",
     "ClusterAutoscalePlan",
     "ClusterNode",
     "ClusterPlan",

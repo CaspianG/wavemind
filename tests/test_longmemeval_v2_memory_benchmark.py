@@ -7,6 +7,7 @@ from pathlib import Path
 from benchmarks.longmemeval_v2_memory_benchmark import (
     OllamaReader,
     V2Question,
+    _encoder_metadata,
     _stratified_question_sample,
     load_longmemeval_v2_small,
     _retrieval_query,
@@ -14,6 +15,7 @@ from benchmarks.longmemeval_v2_memory_benchmark import (
     run_benchmark,
     score_response,
 )
+from wavemind.encoders import HashingTextEncoder, OllamaTextEncoder
 
 
 class FixtureReader:
@@ -31,6 +33,36 @@ class FixtureReader:
 
     def judge(self, *, evaluator, question, response):
         return question.answer.lower() in response.lower()
+
+
+def test_encoder_metadata_records_reproducible_ollama_configuration():
+    encoder = OllamaTextEncoder(
+        model_name="qwen3-embedding:0.6b",
+        base_url="http://127.0.0.1:11435/",
+        vector_dim=1024,
+        batch_size=16,
+        query_instruction="retrieve relevant trajectory states",
+    )
+
+    assert _encoder_metadata(encoder) == {
+        "kind": "ollama",
+        "class": "OllamaTextEncoder",
+        "vector_dim": 1024,
+        "model": "qwen3-embedding:0.6b",
+        "base_url": "http://127.0.0.1:11435",
+        "batch_size": 16,
+        "query_instruction": "retrieve relevant trajectory states",
+        "normalized": True,
+        "query_document_asymmetric": True,
+    }
+    assert _encoder_metadata(
+        HashingTextEncoder(vector_dim=384, char_ngram_weight=0.0)
+    ) == {
+        "kind": "hash-token",
+        "class": "HashingTextEncoder",
+        "vector_dim": 384,
+        "char_ngram_weight": 0.0,
+    }
 
 
 def test_stratified_question_sample_is_reproducible_and_covers_strata():

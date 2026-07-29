@@ -17,7 +17,7 @@ import numpy as np
 
 from .advisor import MemoryArchitectureAdvice, advise_memory_architecture
 from .core import QueryResult
-from .encoders import is_stopword_token, normalize_token
+from .encoders import encode_query_text, is_stopword_token, normalize_token
 from .object_store import ObjectStoreArchive, ObjectStoreUploadReport, S3SnapshotStore
 from .replication import NamespaceDeltaSyncReport, ReplicatedWaveMind, sync_namespace_delta
 from .sharding import HTTPNamespaceShardClient
@@ -388,6 +388,9 @@ def query_vector_cache_key(encoder: Any) -> str:
     model_name = getattr(encoder, "model_name", None)
     if model_name:
         parts.append(f"model={model_name}")
+    cache_key = getattr(encoder, "cache_key", None)
+    if cache_key:
+        parts.append(f"config={cache_key}")
     return "|".join(parts)
 
 
@@ -546,7 +549,7 @@ def _cached_query_vector(
     query_vector = vector_cache.get(encoder_key, text)
     if query_vector is not None:
         return query_vector
-    query_vector = memory.encoder.encode_vector(text)
+    query_vector = encode_query_text(memory.encoder, text)
     vector_cache.put(encoder_key, text, query_vector)
     return np.asarray(query_vector, dtype=np.float32)
 
