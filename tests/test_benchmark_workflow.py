@@ -455,6 +455,11 @@ def test_serverless_observed_telemetry_workflow_runs_non_admissible_remote_node_
 def test_full_check_blocks_stale_public_benchmark_artifacts():
     workflow = Path(".github/workflows/full-check.yml").read_text(encoding="utf-8")
 
+    assert "Enforce developer experience admission" in workflow
+    assert "benchmarks/developer_experience_admission.py" in workflow
+    assert "--fail-on-blocked" in workflow
+    assert "/tmp/developer_experience_admission_results.json" in workflow
+    assert "/tmp/DEVELOPER_EXPERIENCE_ADMISSION.md" in workflow
     assert "benchmark-artifact-gate:" in workflow
     assert "local-http-cluster-smoke:" in workflow
     assert "local-http-active-active-smoke:" in workflow

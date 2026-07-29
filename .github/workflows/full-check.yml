@@ -125,12 +125,21 @@ jobs:
             --memories 200 \
             --output benchmarks/dynamic_memory_ci_results.json
 
+      - name: Enforce developer experience admission
+        run: |
+          python benchmarks/developer_experience_admission.py \
+            --fail-on-blocked \
+            --output /tmp/developer_experience_admission_results.json \
+            --markdown-output /tmp/DEVELOPER_EXPERIENCE_ADMISSION.md
+
       - uses: actions/upload-artifact@v7
         with:
           name: benchmark-results
           path: |
             benchmarks/agent_memory_ci_results.json
             benchmarks/dynamic_memory_ci_results.json
+            /tmp/developer_experience_admission_results.json
+            /tmp/DEVELOPER_EXPERIENCE_ADMISSION.md
 
   benchmark-artifact-gate:
     runs-on: ubuntu-latest
