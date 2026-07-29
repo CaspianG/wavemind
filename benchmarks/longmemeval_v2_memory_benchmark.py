@@ -721,7 +721,14 @@ def _query_memory(
     *,
     top_k: int,
     use_memory_os: bool,
+    semantic_reranker: TextVectorEncoder | None = None,
+    semantic_rerank_k: int = 20,
+    semantic_rerank_weight: float = 0.70,
 ) -> tuple[dict[str, list[str]], dict[str, Any]]:
+    if semantic_rerank_k < top_k:
+        raise ValueError("semantic_rerank_k must be at least top_k")
+    if not 0.0 <= semantic_rerank_weight <= 1.0:
+        raise ValueError("semantic_rerank_weight must be between 0 and 1")
     cache = HotMemoryCache(
         capacity=max(1_024, len(dataset.questions) * 2),
         ttl_seconds=600.0,
@@ -738,7 +745,8 @@ def _query_memory(
         for question in dataset.questions
     )
     memory.audit_queries = bool(use_memory_os)
-    candidate_top_k = max(top_k, min(50, top_k * 10))
+    query_top_k = semantic_rerank_k if semantic_reranker is not None else top_k
+    candidate_top_k = max(query_top_k, min(50, query_top_k * 10))
     for question in dataset.questions:
         namespace = f"longmemeval-v2-small:{question.domain}"
         retrieval_query = _retrieval_query(question.question)
@@ -752,7 +760,7 @@ def _query_memory(
                 cache,
                 retrieval_query,
                 namespace=namespace,
-                top_k=top_k,
+                top_k=query_top_k,
                 metadata_filters=metadata_filters,
                 candidate_top_k=candidate_top_k,
                 diversity_metadata_key="trajectory_id",
@@ -762,18 +770,49 @@ def _query_memory(
             results = memory.query(
                 retrieval_query,
                 namespace=namespace,
-                top_k=top_k,
+                top_k=query_top_k,
                 metadata_filters=metadata_filters,
                 candidate_top_k=candidate_top_k,
                 diversity_metadata_key="trajectory_id",
                 max_results_per_diversity_group=1,
             )
-        retrieval_ms = (time.perf_counter() - started) * 1_000.0
-        latencies.append(retrieval_ms)
-        contexts[question.id] = [
+        snippets = [
             _query_snippet(result.text, retrieval_query)
             for result in results
         ]
+        if semantic_reranker is not None and results:
+            query_vector = np.asarray(
+                encode_query_text(semantic_reranker, retrieval_query),
+                dtype=np.float32,
+            )
+            document_vectors = np.asarray(
+                encode_document_batch(semantic_reranker, snippets),
+                dtype=np.float32,
+            )
+            semantic_scores = document_vectors @ query_vector
+            semantic_order = np.argsort(-semantic_scores, kind="stable")
+            semantic_ranks = {
+                int(result_index): rank
+                for rank, result_index in enumerate(semantic_order, start=1)
+            }
+            base_weight = 1.0 - semantic_rerank_weight
+            ordered = sorted(
+                range(len(results)),
+                key=lambda index: (
+                    -(
+                        base_weight / (60.0 + index + 1)
+                        + semantic_rerank_weight
+                        / (60.0 + semantic_ranks[index])
+                    ),
+                    index,
+                ),
+            )[:top_k]
+            snippets = [snippets[index] for index in ordered]
+        else:
+            snippets = snippets[:top_k]
+        retrieval_ms = (time.perf_counter() - started) * 1_000.0
+        latencies.append(retrieval_ms)
+        contexts[question.id] = snippets
         current_maintenance = 0.0
         if use_memory_os:
             seen[namespace] += 1
@@ -816,6 +855,13 @@ def _query_memory(
         ),
         "maintenance_interval_queries": 32 if use_memory_os else 0,
         "candidate_top_k": candidate_top_k,
+        "semantic_reranker_enabled": semantic_reranker is not None,
+        "semantic_rerank_k": (
+            semantic_rerank_k if semantic_reranker is not None else 0
+        ),
+        "semantic_rerank_weight": (
+            semantic_rerank_weight if semantic_reranker is not None else 0.0
+        ),
         "diversity_metadata_key": "trajectory_id",
         "max_results_per_diversity_group": 1,
         "memory_os_policy_mode": (
@@ -1129,8 +1175,13 @@ class PersistentCachedTextEncoder:
                     normalized = np.asarray(vector, dtype=np.float32)
                     vectors[index] = normalized
                     self._put("document", text, normalized, commit=False)
+        if any(vector is None for vector in vectors):
+            raise RuntimeError("persistent embedding cache left an incomplete batch")
         return np.stack(
-            [vector for vector in vectors if vector is not None]
+            [
+                np.asarray(vector, dtype=np.float32)
+                for vector in vectors
+            ]
         ).astype(np.float32)
 
     def stats(self) -> dict[str, Any]:
@@ -1239,6 +1290,9 @@ def run_benchmark(
     *,
     reader: Reader | None = None,
     encoder: TextVectorEncoder | None = None,
+    semantic_reranker: TextVectorEncoder | None = None,
+    semantic_rerank_k: int = 20,
+    semantic_rerank_weight: float = 0.70,
     top_k: int = 5,
     limit_questions: int | None = None,
     question_sample_size: int | None = None,
@@ -1316,6 +1370,9 @@ def run_benchmark(
                 dataset,
                 top_k=top_k,
                 use_memory_os=False,
+                semantic_reranker=semantic_reranker,
+                semantic_rerank_k=semantic_rerank_k,
+                semantic_rerank_weight=semantic_rerank_weight,
             )
         finally:
             core_memory.close()
@@ -1327,6 +1384,9 @@ def run_benchmark(
                 dataset,
                 top_k=top_k,
                 use_memory_os=True,
+                semantic_reranker=semantic_reranker,
+                semantic_rerank_k=semantic_rerank_k,
+                semantic_rerank_weight=semantic_rerank_weight,
             )
         finally:
             os_memory.close()
@@ -1444,6 +1504,32 @@ def run_benchmark(
                 if isinstance(encoder, PersistentCachedTextEncoder)
                 else {"enabled": False}
             ),
+            "semantic_reranker": {
+                "enabled": semantic_reranker is not None,
+                "embedding": (
+                    _encoder_metadata(semantic_reranker)
+                    if semantic_reranker is not None
+                    else None
+                ),
+                "candidate_window": (
+                    semantic_rerank_k
+                    if semantic_reranker is not None
+                    else 0
+                ),
+                "rrf_weight": (
+                    semantic_rerank_weight
+                    if semantic_reranker is not None
+                    else 0.0
+                ),
+                "cache": (
+                    semantic_reranker.stats()
+                    if isinstance(
+                        semantic_reranker,
+                        PersistentCachedTextEncoder,
+                    )
+                    else {"enabled": False}
+                ),
+            },
             "retrieval": {
                 "vector_weight": 0.60,
                 "lexical_weight": 1.0,
@@ -1552,6 +1638,21 @@ def main() -> int:
         type=Path,
         help="Persistent SQLite embedding cache for restart-safe benchmark runs.",
     )
+    parser.add_argument("--semantic-rerank-model")
+    parser.add_argument(
+        "--semantic-rerank-base-url",
+        default=os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434"),
+    )
+    parser.add_argument("--semantic-rerank-vector-dim", type=int, default=1024)
+    parser.add_argument("--semantic-rerank-batch-size", type=int, default=8)
+    parser.add_argument(
+        "--semantic-rerank-timeout-seconds",
+        type=float,
+        default=600.0,
+    )
+    parser.add_argument("--semantic-rerank-cache", type=Path)
+    parser.add_argument("--semantic-rerank-k", type=int, default=20)
+    parser.add_argument("--semantic-rerank-weight", type=float, default=0.70)
     parser.add_argument("--resume-result", type=Path)
     parser.add_argument("--resume-per-query", type=Path)
     parser.add_argument(
@@ -1584,6 +1685,24 @@ def main() -> int:
         if encoder is None:
             parser.error("--embedding-cache requires an explicit embedding model")
         encoder = PersistentCachedTextEncoder(encoder, args.embedding_cache)
+    semantic_reranker: TextVectorEncoder | None = None
+    if args.semantic_rerank_model:
+        semantic_reranker = OllamaTextEncoder(
+            model_name=args.semantic_rerank_model,
+            base_url=args.semantic_rerank_base_url,
+            vector_dim=args.semantic_rerank_vector_dim,
+            batch_size=args.semantic_rerank_batch_size,
+            timeout_seconds=args.semantic_rerank_timeout_seconds,
+        )
+    if args.semantic_rerank_cache:
+        if semantic_reranker is None:
+            parser.error(
+                "--semantic-rerank-cache requires --semantic-rerank-model"
+            )
+        semantic_reranker = PersistentCachedTextEncoder(
+            semantic_reranker,
+            args.semantic_rerank_cache,
+        )
     resume_rows: list[dict[str, Any]] | None = None
     resume_metadata: dict[str, Any] | None = None
     if args.resume_result:
@@ -1593,6 +1712,7 @@ def main() -> int:
         resume_rows = _read_jsonl(args.resume_per_query)
         expected_reader = resume_payload.get("reader") or {}
         expected_embedding = resume_payload.get("embedding") or {}
+        expected_reranker = resume_payload.get("semantic_reranker") or {}
         expected_scenario = resume_payload.get("scenario") or {}
         if resume_payload.get("schema") != "wavemind.longmemeval_v2_small.v1":
             parser.error("resume result has an unsupported schema")
@@ -1612,6 +1732,35 @@ def main() -> int:
         )
         if expected_embedding != current_embedding:
             parser.error("resume embedding configuration does not match this run")
+        current_reranker = {
+            "enabled": semantic_reranker is not None,
+            "embedding": (
+                _encoder_metadata(semantic_reranker)
+                if semantic_reranker is not None
+                else None
+            ),
+            "candidate_window": (
+                args.semantic_rerank_k
+                if semantic_reranker is not None
+                else 0
+            ),
+            "rrf_weight": (
+                args.semantic_rerank_weight
+                if semantic_reranker is not None
+                else 0.0
+            ),
+        }
+        expected_reranker_config = {
+            key: expected_reranker.get(key)
+            for key in (
+                "enabled",
+                "embedding",
+                "candidate_window",
+                "rrf_weight",
+            )
+        }
+        if expected_reranker_config != current_reranker:
+            parser.error("resume semantic reranker does not match this run")
         resume_metadata = {
             "used": True,
             "source_sha": resume_payload.get("source_sha"),
@@ -1673,6 +1822,9 @@ def main() -> int:
             args.data_root,
             reader=reader,
             encoder=encoder,
+            semantic_reranker=semantic_reranker,
+            semantic_rerank_k=args.semantic_rerank_k,
+            semantic_rerank_weight=args.semantic_rerank_weight,
             top_k=args.top_k,
             limit_questions=args.limit_questions,
             question_sample_size=args.question_sample_size,
@@ -1685,6 +1837,8 @@ def main() -> int:
     finally:
         if isinstance(encoder, PersistentCachedTextEncoder):
             encoder.close()
+        if isinstance(semantic_reranker, PersistentCachedTextEncoder):
+            semantic_reranker.close()
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2) + "\n",

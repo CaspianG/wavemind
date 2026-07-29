@@ -419,6 +419,52 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
     assert work_dir.is_dir()
 
 
+def test_v2_runner_applies_explicit_semantic_top_window_reranker(tmp_path):
+    class FixtureSemanticEncoder:
+        vector_dim = 3
+
+        def encode_vector(self, text):
+            return np.asarray([1.0, 0.0, 0.0], dtype=np.float32)
+
+        def encode_vectors(self, texts):
+            return np.asarray(
+                [
+                    [1.0, float("Place order" in text), 0.0]
+                    for text in texts
+                ],
+                dtype=np.float32,
+            )
+
+    _write_fixture(tmp_path)
+    payload, _ = run_benchmark(
+        tmp_path,
+        semantic_reranker=FixtureSemanticEncoder(),
+        semantic_rerank_k=5,
+        semantic_rerank_weight=0.7,
+        top_k=3,
+        work_dir=tmp_path / "work",
+    )
+    results = {row["engine"]: row for row in payload["results"]}
+
+    assert payload["semantic_reranker"] == {
+        "enabled": True,
+        "embedding": {
+            "kind": "custom",
+            "class": "FixtureSemanticEncoder",
+            "vector_dim": 3,
+        },
+        "candidate_window": 5,
+        "rrf_weight": 0.7,
+        "cache": {"enabled": False},
+    }
+    assert results["WaveMind"]["semantic_reranker_enabled"] is True
+    assert results["WaveMind"]["semantic_rerank_k"] == 5
+    assert results["WaveMind"]["semantic_rerank_weight"] == 0.7
+    assert results["WaveMind"]["retrieval_answer_recoverability"][
+        "expected_answer_recoverable_rate"
+    ] == 1.0
+
+
 def test_v2_runner_resumes_only_matching_non_error_contexts(tmp_path):
     _write_fixture(tmp_path)
     first_reader = FixtureReader()
