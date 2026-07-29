@@ -26,6 +26,7 @@ include benchmarks/*.py
 include benchmarks/*.json
 include benchmarks/*.html
 include benchmarks/*.md
+recursive-include benchmarks/protocols *.json
 include examples/*.py
 recursive-include examples/observability *
 recursive-include examples/production-index-profile *

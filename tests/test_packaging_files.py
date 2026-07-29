@@ -154,6 +154,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "include docs/assets/benchmark-summary.svg" in manifest
     assert "include benchmarks/*.json" in manifest
     assert "include benchmarks/*.html" in manifest
+    assert "recursive-include benchmarks/protocols *.json" in manifest
     assert "include docs/assets/wavemind-demo.gif" in manifest
     assert "include examples/*.py" in manifest
     assert "recursive-include examples/observability *" in manifest

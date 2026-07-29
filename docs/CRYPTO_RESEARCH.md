@@ -350,6 +350,48 @@ Reproducible outputs:
 - `benchmarks/results/crypto/capitulation_field_replication_24h.json`
 - `benchmarks/results/crypto/capitulation_field_replication_24h.md`
 
+### Independent 16-asset transfer and dynamic-memory protocol
+
+Two later protocols use official Binance archives whose files are verified
+against the provider checksums and fingerprinted in the result JSON.
+
+| frozen protocol | assets | signals | accuracy | Wilson low 95% | episodes | episode accuracy | strict gate |
+|---|---:|---:|---:|---:|---:|---:|:---:|
+| decelerating-capitulation rule | 16 | 55 | 0.764 | 0.637 | 16 | 0.750 | no |
+| fixed-2023 ExtraTrees + WaveField veto | 8 | 41 | 0.707 | 0.555 | 23 | 0.739 | no |
+
+The simple causal rule clears 70% across the aggregate sample, four supported
+half-year folds, and market episodes. It misses its predeclared support gate:
+60 signals were required, only three assets have at least five events, and the
+signal-level Wilson bound remains below `0.65`. The fixed-2023 WaveField veto
+also clears 70% in aggregate, but degrades from `1.000` in 2024-H1 to `0.333`
+on three signals in 2026-H1. Neither result is admitted.
+
+This temporal failure motivated
+`benchmarks/crypto_dynamic_field_transfer_benchmark.py`. Before each half-year
+fold, it rebuilds both the ExtraTrees event head and the positive-versus-negative
+WaveField from training-asset outcomes that have already matured. A development
+transfer from 13 majors to 16 disjoint assets produced `0.791` on 172 signals
+with Wilson low `0.724`; the reverse transfer produced `0.759` on 174 signals.
+One deterministic asset hash fold still fell to `0.630`, so these are selection
+results rather than final evidence.
+
+The final protocol is frozen in
+`benchmarks/protocols/binance_dynamic_field_transfer_v1.json`: 20 new assets,
+five half-year folds, at least 150 signals, all five folds supported, at least
+16 supported assets, and at least 30 market episodes. Its result remains
+pending until the checksum-verified holdout is complete and read once.
+
+Reproducible outputs:
+
+- `benchmarks/protocols/binance_decelerating_capitulation_transfer_v3.json`
+- `benchmarks/results/crypto/binance_decelerating_capitulation_transfer_v3.json`
+- `benchmarks/results/crypto/binance_decelerating_capitulation_transfer_v3.md`
+- `benchmarks/protocols/binance_asset_normalized_field_transfer_v1.json`
+- `benchmarks/results/crypto/binance_asset_normalized_field_transfer_v1.json`
+- `benchmarks/results/crypto/binance_asset_normalized_field_transfer_v1.md`
+- `benchmarks/protocols/binance_dynamic_field_transfer_v1.json`
+
 ### Cross-exchange and market-episode audit
 
 Asset-level accuracy can still be overstated when many coins fire during the
