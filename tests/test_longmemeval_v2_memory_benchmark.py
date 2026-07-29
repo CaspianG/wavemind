@@ -299,6 +299,16 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
     assert memory_os["maintenance_p95_ms"] > 0.0
     assert memory_os["maintenance_total_ms"] > 0.0
     assert memory_os["maintenance_amortized_ms_per_query"] > 0.0
+    assert memory_os["retrieval_answer_recoverability"] == {
+        "expected_answer_recoverable_rate": 1.0,
+        "eligible_queries": 1,
+        "category_rates": {"procedure": 1.0},
+        "claim_boundary": (
+            "Diagnostic label-presence check for deterministic phrase questions. "
+            "It is not the official LongMemEval-V2 answer-quality score and is "
+            "never used for admission."
+        ),
+    }
     assert memory_os["task_success_rate"] == 1.0
     assert memory_os["reused_answers"] == 2
     assert memory_os["generated_answers"] == 0

@@ -836,6 +836,76 @@ def _query_memory(
     }
 
 
+def _retrieval_answer_recoverability(
+    dataset: V2Dataset,
+    contexts: dict[str, list[str]],
+) -> dict[str, Any]:
+    rows: list[dict[str, Any]] = []
+    for question in dataset.questions:
+        evaluator, options = _eval_options(question.eval_function)
+        if evaluator not in {
+            "norm_phrase_set_match",
+            "norm_phrase_set_match_ordered",
+        }:
+            continue
+        separators = options.get("separators", ",;")
+        answer_parts = [
+            _normalize_phrase(part)
+            for part in re.split(
+                "|".join(re.escape(value) for value in separators),
+                question.answer,
+            )
+            if _normalize_phrase(part)
+        ]
+        normalized_context = _normalize_phrase(
+            "\n".join(contexts.get(question.id, ()))
+        )
+        offset = 0
+        recoverable = bool(answer_parts)
+        for part in answer_parts:
+            match = re.search(
+                rf"\b{re.escape(part)}\b",
+                normalized_context[offset:],
+            )
+            if match is None:
+                recoverable = False
+                break
+            if evaluator == "norm_phrase_set_match_ordered":
+                offset += match.end()
+        rows.append(
+            {
+                "question_id": question.id,
+                "category": question.question_type,
+                "recoverable": recoverable,
+            }
+        )
+    category_rates = {
+        category: statistics.mean(
+            1.0 if row["recoverable"] else 0.0
+            for row in rows
+            if row["category"] == category
+        )
+        for category in sorted({row["category"] for row in rows})
+    }
+    return {
+        "expected_answer_recoverable_rate": (
+            statistics.mean(
+                1.0 if row["recoverable"] else 0.0
+                for row in rows
+            )
+            if rows
+            else None
+        ),
+        "eligible_queries": len(rows),
+        "category_rates": category_rates,
+        "claim_boundary": (
+            "Diagnostic label-presence check for deterministic phrase questions. "
+            "It is not the official LongMemEval-V2 answer-quality score and is "
+            "never used for admission."
+        ),
+    }
+
+
 def _evaluate_contexts(
     dataset: V2Dataset,
     contexts: dict[str, list[str]],
@@ -1072,6 +1142,12 @@ def run_benchmark(
             )
         finally:
             os_memory.close()
+    core_metrics["retrieval_answer_recoverability"] = (
+        _retrieval_answer_recoverability(dataset, core_contexts)
+    )
+    os_metrics["retrieval_answer_recoverability"] = (
+        _retrieval_answer_recoverability(dataset, os_contexts)
+    )
     prior_core: dict[str, list[dict[str, Any]]] = {}
     prior_os: dict[str, list[dict[str, Any]]] = {}
     for row in resume_rows or []:
