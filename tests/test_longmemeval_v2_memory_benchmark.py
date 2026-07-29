@@ -413,7 +413,26 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
     assert payload["retrieval"]["lexical_idf_normalization"] is False
     assert payload["retrieval"]["diversity_metadata_key"] == "trajectory_id"
     assert payload["retrieval"]["candidate_top_k"] == 30
-    assert memory_os["execution_mode"] == "memory_os_direct_feedback_free"
+    assert payload["retrieval"]["memory_os_view"] == {
+        "kind": "extractive_trajectory_delta",
+        "input_tag": "trajectory-state",
+        "output_tag": "trajectory-delta",
+        "max_summary_chars": 2_800,
+        "source_states_preserved": True,
+        "answer_labels_used": False,
+    }
+    assert (
+        memory_os["execution_mode"]
+        == "memory_os_direct_feedback_free_trajectory_delta"
+    )
+    assert memory_os["retrieval_view"] == "trajectory_delta"
+    assert memory_os["retrieval_tags"] == ["trajectory-delta"]
+    assert memory_os["trajectory_consolidation"]["created"] > 0
+    assert (
+        memory_os["trajectory_consolidation"]["provenance_coverage"]
+        == 1.0
+    )
+    assert memory_os["trajectory_consolidation_ms"] > 0.0
     assert memory_os["worker_runs"] == 2
     assert memory_os["worker_errors"] == 0
     assert memory_os["maintenance_interval_queries"] == 32
@@ -436,9 +455,9 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
         ),
     }
     assert memory_os["task_success_rate"] == 1.0
-    assert memory_os["reused_answers"] == 2
-    assert memory_os["generated_answers"] == 0
-    assert reader.answer_calls == 2
+    assert memory_os["reused_answers"] == 0
+    assert memory_os["generated_answers"] == 2
+    assert reader.answer_calls == 4
     assert len(rows) == 4
     assert checkpoint_rows == rows
     assert all(row["context_sha256"] for row in rows)

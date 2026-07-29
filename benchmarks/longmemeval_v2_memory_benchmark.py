@@ -42,6 +42,7 @@ from wavemind.encoders import (
     normalize_token,
 )
 from wavemind.jobs import HotMemoryCache, MemoryOSWorker, query_with_cache
+from wavemind.trajectory_consolidation import TrajectoryDeltaConsolidator
 
 
 DATASET_REPO = "xiaowu0162/longmemeval-v2"
@@ -724,6 +725,7 @@ def _query_memory(
     semantic_reranker: TextVectorEncoder | None = None,
     semantic_rerank_k: int = 20,
     semantic_rerank_weight: float = 0.70,
+    tags: tuple[str, ...] | None = None,
 ) -> tuple[dict[str, list[str]], dict[str, Any]]:
     if semantic_rerank_k < top_k:
         raise ValueError("semantic_rerank_k must be at least top_k")
@@ -761,6 +763,7 @@ def _query_memory(
                 retrieval_query,
                 namespace=namespace,
                 top_k=query_top_k,
+                tags=tags,
                 metadata_filters=metadata_filters,
                 candidate_top_k=candidate_top_k,
                 diversity_metadata_key="trajectory_id",
@@ -771,6 +774,7 @@ def _query_memory(
                 retrieval_query,
                 namespace=namespace,
                 top_k=query_top_k,
+                tags=tags,
                 metadata_filters=metadata_filters,
                 candidate_top_k=candidate_top_k,
                 diversity_metadata_key="trajectory_id",
@@ -843,10 +847,14 @@ def _query_memory(
     stats = cache.stats()
     return contexts, {
         "execution_mode": (
-            "memory_os_direct_feedback_free"
+            "memory_os_direct_feedback_free_trajectory_delta"
             if use_memory_os
             else "wavemind_core"
         ),
+        "retrieval_view": (
+            "trajectory_delta" if tags else "raw_trajectory_state"
+        ),
+        "retrieval_tags": list(tags or ()),
         "worker_runs": len(worker_reports),
         "worker_errors": sum(
             int(dict(row.get("prewarm") or {}).get("errors") or 0)
@@ -1399,6 +1407,22 @@ def run_benchmark(
 
         os_memory = open_memory(os_path)
         try:
+            consolidation_started = time.perf_counter()
+            consolidation = TrajectoryDeltaConsolidator(
+                os_memory
+            ).run_once(
+                input_tag="trajectory-state",
+                output_tag="trajectory-delta",
+                max_summary_chars=2_800,
+            )
+            consolidation_ms = (
+                time.perf_counter() - consolidation_started
+            ) * 1_000.0
+            if not consolidation.ok:
+                raise RuntimeError(
+                    "trajectory consolidation failed: "
+                    + "; ".join(consolidation.errors)
+                )
             os_contexts, os_metrics = _query_memory(
                 os_memory,
                 dataset,
@@ -1407,7 +1431,12 @@ def run_benchmark(
                 semantic_reranker=semantic_reranker,
                 semantic_rerank_k=semantic_rerank_k,
                 semantic_rerank_weight=semantic_rerank_weight,
+                tags=("trajectory-delta",),
             )
+            os_metrics["trajectory_consolidation"] = (
+                consolidation.as_dict()
+            )
+            os_metrics["trajectory_consolidation_ms"] = consolidation_ms
         finally:
             os_memory.close()
     core_metrics["retrieval_answer_recoverability"] = (
@@ -1563,6 +1592,14 @@ def run_benchmark(
                 "query_instruction_normalization": True,
                 "snippet_max_chars": 2_800,
                 "snippet_neighbor_lines": 2,
+                "memory_os_view": {
+                    "kind": "extractive_trajectory_delta",
+                    "input_tag": "trajectory-state",
+                    "output_tag": "trajectory-delta",
+                    "max_summary_chars": 2_800,
+                    "source_states_preserved": True,
+                    "answer_labels_used": False,
+                },
             },
             "field": {"width": 32, "height": 32, "layers": 2},
             "reader": {

@@ -344,6 +344,10 @@ from .work_agent import (
     WorkRequest,
     WorkRuntime,
 )
+from .trajectory_consolidation import (
+    TrajectoryConsolidationReport,
+    TrajectoryDeltaConsolidator,
+)
 
 __version__ = "2.8.0"
 
@@ -532,6 +536,8 @@ __all__ = [
     "TextEncoder",
     "ToolExecution",
     "ToolTrajectory",
+    "TrajectoryConsolidationReport",
+    "TrajectoryDeltaConsolidator",
     "TrajectoryProvenance",
     "TrajectoryStep",
     "TrajectoryStepKind",
