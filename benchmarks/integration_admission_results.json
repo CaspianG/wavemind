@@ -2,8 +2,8 @@
   "schema": "wavemind.integration_admission.v1",
   "status": "admitted",
   "admitted": true,
-  "evaluated_at": "2026-07-29T02:19:37Z",
-  "source_sha": "4042f2b5f74830c642c545ddd9fc81f1d7cb1244",
+  "evaluated_at": "2026-07-29T02:44:05Z",
+  "source_sha": "a82e42e745fe911c49916cacadfba7d6441f0e1b",
   "suite": {
     "revision": "trusted-agent-integrations-v1-20260730",
     "fingerprint_sha256": "3b55e8d83bdcc3019a66ad9228a2a5a679b6ad84383746be648443f57785a82f"
@@ -29,7 +29,7 @@
       "verdict_fingerprint": "3ebc2c690934ff6755e258c9693a158c0dca3014ae1d7be46ebff61a0c759da1",
       "case_count": 11,
       "passed": 11,
-      "total_seconds": 9.150060500003747
+      "total_seconds": 9.235106699998141
     },
     {
       "run": 2,
@@ -37,7 +37,7 @@
       "verdict_fingerprint": "3ebc2c690934ff6755e258c9693a158c0dca3014ae1d7be46ebff61a0c759da1",
       "case_count": 11,
       "passed": 11,
-      "total_seconds": 7.699845700000878
+      "total_seconds": 7.942712199997914
     },
     {
       "run": 3,
@@ -45,7 +45,7 @@
       "verdict_fingerprint": "3ebc2c690934ff6755e258c9693a158c0dca3014ae1d7be46ebff61a0c759da1",
       "case_count": 11,
       "passed": 11,
-      "total_seconds": 7.703608499999973
+      "total_seconds": 8.535004099998332
     }
   ],
   "checks": [
@@ -53,8 +53,8 @@
       "id": "source-sha",
       "passed": true,
       "status": "pass",
-      "evidence": "4042f2b5f74830c642c545ddd9fc81f1d7cb1244",
-      "target": "4042f2b5f74830c642c545ddd9fc81f1d7cb1244",
+      "evidence": "a82e42e745fe911c49916cacadfba7d6441f0e1b",
+      "target": "a82e42e745fe911c49916cacadfba7d6441f0e1b",
       "issue": ""
     },
     {
@@ -205,7 +205,7 @@
           "verdict_fingerprint": "3ebc2c690934ff6755e258c9693a158c0dca3014ae1d7be46ebff61a0c759da1",
           "case_count": 11,
           "passed": 11,
-          "total_seconds": 9.150060500003747
+          "total_seconds": 9.235106699998141
         },
         {
           "run": 2,
@@ -213,7 +213,7 @@
           "verdict_fingerprint": "3ebc2c690934ff6755e258c9693a158c0dca3014ae1d7be46ebff61a0c759da1",
           "case_count": 11,
           "passed": 11,
-          "total_seconds": 7.699845700000878
+          "total_seconds": 7.942712199997914
         },
         {
           "run": 3,
@@ -221,7 +221,7 @@
           "verdict_fingerprint": "3ebc2c690934ff6755e258c9693a158c0dca3014ae1d7be46ebff61a0c759da1",
           "case_count": 11,
           "passed": 11,
-          "total_seconds": 7.703608499999973
+          "total_seconds": 8.535004099998332
         }
       ],
       "target": "three or more identical consecutive verdicts",
@@ -246,7 +246,7 @@
     "case_count": 11,
     "provider_parity": 1.0,
     "portable_parity": 1.0,
-    "total_seconds": 24.553514700004598,
+    "total_seconds": 25.712822999994387,
     "blocker_count": 0
   },
   "issues": [],
