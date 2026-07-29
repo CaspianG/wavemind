@@ -4,8 +4,14 @@ import types
 from fastapi.testclient import TestClient
 import numpy as np
 
-from wavemind import HashingTextEncoder, ReplicatedWaveMind, WaveMind, __version__
-from wavemind.api import create_app
+from wavemind import (
+    HashingTextEncoder,
+    OllamaTextEncoder,
+    ReplicatedWaveMind,
+    WaveMind,
+    __version__,
+)
+from wavemind.api import build_default_mind, create_app
 
 
 class ConsolidationEncoder:
@@ -39,6 +45,26 @@ class CountingEncoder:
     def _unit(self, values: list[float]) -> np.ndarray:
         vector = np.asarray(values, dtype=np.float32)
         return vector / (float(np.linalg.norm(vector)) + 1e-9)
+
+
+def test_default_api_mind_supports_explicit_local_ollama_encoder(
+    tmp_path,
+    monkeypatch,
+):
+    monkeypatch.setenv("WAVEMIND_DB", str(tmp_path / "ollama-api.sqlite3"))
+    monkeypatch.setenv("WAVEMIND_ENCODER", "ollama")
+    monkeypatch.setenv("WAVEMIND_MODEL", "test-embedding")
+    monkeypatch.setenv("WAVEMIND_VECTOR_DIM", "7")
+    monkeypatch.setenv("WAVEMIND_ENCODER_BASE_URL", "http://127.0.0.1:11435/")
+
+    memory = build_default_mind()
+    try:
+        assert isinstance(memory.encoder, OllamaTextEncoder)
+        assert memory.encoder.model_name == "test-embedding"
+        assert memory.encoder.vector_dim == 7
+        assert memory.encoder.base_url == "http://127.0.0.1:11435"
+    finally:
+        memory.close()
 
 
 def test_fastapi_remember_query_forget_and_stats(tmp_path):

@@ -184,6 +184,13 @@ def test_encoder_factory_creates_explicit_ollama_backend():
     assert encoder.vector_dim == 3
 
 
+def test_encoder_factory_uses_ollama_model_default_for_ollama_kind():
+    encoder = create_text_encoder("ollama", vector_dim=1024)
+
+    assert isinstance(encoder, OllamaTextEncoder)
+    assert encoder.model_name == "qwen3-embedding:0.6b"
+
+
 def test_field_projector_compresses_vectors_to_2d_pattern():
     projector = FieldProjector(width=16, height=8, vector_dim=64, seed=123)
     pattern = projector.to_pattern(np.ones(64, dtype=np.float32))

@@ -187,15 +187,27 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--encoder",
         default=os.environ.get("WAVEMIND_ENCODER", "hash"),
-        choices=["hash", "sentence"],
+        choices=["hash", "sentence", "ollama"],
     )
     parser.add_argument(
         "--model",
-        default=os.environ.get(
-            "WAVEMIND_MODEL",
-            "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+        default=os.environ.get("WAVEMIND_MODEL"),
+        help="Explicit sentence-transformers or Ollama model name.",
+    )
+    parser.add_argument(
+        "--vector-dim",
+        type=int,
+        default=(
+            int(os.environ["WAVEMIND_VECTOR_DIM"])
+            if "WAVEMIND_VECTOR_DIM" in os.environ
+            else None
         ),
-        help="sentence-transformers model name when --encoder sentence is used",
+        help="Encoder vector dimension (defaults to 1024 for Ollama, 384 otherwise).",
+    )
+    parser.add_argument(
+        "--encoder-base-url",
+        default=os.environ.get("WAVEMIND_ENCODER_BASE_URL", "http://127.0.0.1:11434"),
+        help="Ollama embedding service base URL.",
     )
     parser.add_argument(
         "--score-threshold",
@@ -1810,8 +1822,20 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _configured_encoder(args):
+    vector_dim = args.vector_dim
+    if vector_dim is None:
+        vector_dim = 1024 if args.encoder == "ollama" else 384
+    return create_text_encoder(
+        kind=args.encoder,
+        vector_dim=vector_dim,
+        model_name=args.model,
+        base_url=args.encoder_base_url,
+    )
+
+
 def make_mind(args) -> WaveMind:
-    encoder = create_text_encoder(kind=args.encoder, vector_dim=384, model_name=args.model)
+    encoder = _configured_encoder(args)
     db_path = Path(args.db) if args.db else Path.cwd() / "wavemind.sqlite3"
     return WaveMind(
         db_path=db_path,
@@ -1833,7 +1857,7 @@ def make_mind(args) -> WaveMind:
 
 
 def make_replicated_mind(args) -> ReplicatedWaveMind:
-    encoder = create_text_encoder(kind=args.encoder, vector_dim=384, model_name=args.model)
+    encoder = _configured_encoder(args)
     return ReplicatedWaveMind(
         root_path=args.root,
         nodes=[_parse_cluster_node(value) for value in args.node],
@@ -1922,11 +1946,7 @@ def replicated_restore_kwargs(args) -> dict[str, object]:
         "width": args.width,
         "height": args.height,
         "layers": args.layers,
-        "encoder": create_text_encoder(
-            kind=args.encoder,
-            vector_dim=384,
-            model_name=args.model,
-        ),
+        "encoder": _configured_encoder(args),
         "index_kind": args.index,
         "score_threshold": args.score_threshold,
         "graph_weight": args.graph_weight,

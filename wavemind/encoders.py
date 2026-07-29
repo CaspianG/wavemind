@@ -128,6 +128,10 @@ DEFAULT_TOKEN_STOPWORDS = frozenset(
         "это",
     }
 )
+DEFAULT_SENTENCE_TRANSFORMER_MODEL = (
+    "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
+)
+DEFAULT_OLLAMA_EMBEDDING_MODEL = "qwen3-embedding:0.6b"
 
 
 def normalize_token(token: str) -> str:
@@ -252,7 +256,7 @@ class HashingTextEncoder:
 class SentenceTransformerTextEncoder:
     def __init__(
         self,
-        model_name: str = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+        model_name: str = DEFAULT_SENTENCE_TRANSFORMER_MODEL,
         model=None,
     ):
         if model is None:
@@ -308,7 +312,7 @@ class OllamaTextEncoder:
 
     def __init__(
         self,
-        model_name: str = "qwen3-embedding:0.6b",
+        model_name: str = DEFAULT_OLLAMA_EMBEDDING_MODEL,
         *,
         base_url: str = "http://127.0.0.1:11434",
         vector_dim: int = 1024,
@@ -454,17 +458,19 @@ TextEncoder = HashingTextEncoder
 def create_text_encoder(
     kind: str = "hash",
     vector_dim: int = 384,
-    model_name: str = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+    model_name: str | None = None,
     base_url: str = "http://127.0.0.1:11434",
 ) -> TextVectorEncoder:
     kind = (kind or "hash").lower()
     if kind == "hash":
         return HashingTextEncoder(vector_dim=vector_dim)
     if kind in {"sentence", "sentence-transformers", "transformer"}:
-        return SentenceTransformerTextEncoder(model_name=model_name)
+        return SentenceTransformerTextEncoder(
+            model_name=model_name or DEFAULT_SENTENCE_TRANSFORMER_MODEL
+        )
     if kind == "ollama":
         return OllamaTextEncoder(
-            model_name=model_name,
+            model_name=model_name or DEFAULT_OLLAMA_EMBEDDING_MODEL,
             base_url=base_url,
             vector_dim=vector_dim,
         )

@@ -6,7 +6,7 @@ import types
 from pathlib import Path
 
 import wavemind.cli as cli
-from wavemind import HashingTextEncoder, ReplicatedWaveMind
+from wavemind import HashingTextEncoder, OllamaTextEncoder, ReplicatedWaveMind
 
 
 def run_cli(*args, cwd=None):
@@ -22,6 +22,33 @@ def run_cli(*args, cwd=None):
         capture_output=True,
         check=True,
     )
+
+
+def test_cli_builds_explicit_local_ollama_encoder(tmp_path):
+    args = cli.build_parser().parse_args(
+        [
+            "--db",
+            str(tmp_path / "ollama.sqlite3"),
+            "--encoder",
+            "ollama",
+            "--model",
+            "test-embedding",
+            "--vector-dim",
+            "7",
+            "--encoder-base-url",
+            "http://127.0.0.1:11435/",
+            "stats",
+        ]
+    )
+
+    memory = cli.make_mind(args)
+    try:
+        assert isinstance(memory.encoder, OllamaTextEncoder)
+        assert memory.encoder.model_name == "test-embedding"
+        assert memory.encoder.vector_dim == 7
+        assert memory.encoder.base_url == "http://127.0.0.1:11435"
+    finally:
+        memory.close()
 
 
 def test_module_cli_remember_query_stats_and_backup(tmp_path):

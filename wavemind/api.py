@@ -1243,12 +1243,16 @@ def build_default_mind() -> WaveMind:
     index_kind = os.environ.get("WAVEMIND_INDEX", "numpy")
     encoder_kind = os.environ.get("WAVEMIND_ENCODER", "hash").lower()
     score_threshold = float(os.environ.get("WAVEMIND_SCORE_THRESHOLD", "0.0"))
+    default_vector_dim = 1024 if encoder_kind == "ollama" else 384
     encoder = create_text_encoder(
         kind=encoder_kind,
-        vector_dim=int(os.environ.get("WAVEMIND_VECTOR_DIM", "384")),
-        model_name=os.environ.get(
-            "WAVEMIND_MODEL",
-            "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+        vector_dim=int(
+            os.environ.get("WAVEMIND_VECTOR_DIM", str(default_vector_dim))
+        ),
+        model_name=os.environ.get("WAVEMIND_MODEL"),
+        base_url=os.environ.get(
+            "WAVEMIND_ENCODER_BASE_URL",
+            "http://127.0.0.1:11434",
         ),
     )
     return WaveMind(
