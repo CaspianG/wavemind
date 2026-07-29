@@ -177,6 +177,45 @@ jobs:
             --output /tmp/memory_safety_admission_results.json \
             --markdown-output /tmp/MEMORY_SAFETY_ADMISSION.md
 
+  integration-admission:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: sdk/typescript/package-lock.json
+
+      - name: Install integration dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,providers]"
+          npm ci --prefix sdk/typescript
+
+      - name: Enforce exact-SHA integration admission
+        run: |
+          python -m wavemind integration-admission \
+            --expected-source-sha "$GITHUB_SHA" \
+            --consecutive-runs 3 \
+            --write-artifacts \
+            --fail-on-blocked \
+            --output /tmp/integration_admission_results.json \
+            --markdown-output /tmp/INTEGRATION_ADMISSION.md
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: integration-admission-results
+          path: |
+            /tmp/integration_admission_results.json
+            /tmp/INTEGRATION_ADMISSION.md
+
   redis-api-load:
     runs-on: ubuntu-latest
 
@@ -554,6 +593,7 @@ jobs:
       - smoke
       - benchmarks
       - benchmark-artifact-gate
+      - integration-admission
       - redis-api-load
       - local-http-cluster-smoke
       - local-http-active-active-smoke

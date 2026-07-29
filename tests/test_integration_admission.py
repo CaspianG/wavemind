@@ -159,3 +159,19 @@ def test_required_ci_runs_exact_sha_integration_admission():
     assert '--expected-source-sha "${GITHUB_SHA}"' in workflow
     assert "--fail-on-blocked" in workflow
     assert "integration-admission-${{ github.sha }}" in workflow
+
+
+def test_checked_integration_admission_artifact_is_admitted():
+    payload = json.loads(
+        Path("benchmarks/integration_admission_results.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    assert payload["schema"] == INTEGRATION_ADMISSION_SCHEMA
+    assert payload["status"] == "admitted"
+    assert payload["summary"]["checks_passed"] == 10
+    assert payload["summary"]["case_count"] == 11
+    assert payload["summary"]["provider_parity"] == 1.0
+    assert payload["summary"]["portable_parity"] == 1.0
+    assert payload["skipped"] == []

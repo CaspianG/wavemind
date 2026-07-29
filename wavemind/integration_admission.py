@@ -55,7 +55,7 @@ from .memory_firewall import FirewallContext, MemoryFirewall, MemoryFirewallPoli
 INTEGRATION_ADMISSION_SCHEMA = "wavemind.integration_admission.v1"
 INTEGRATION_SUITE_REVISION = "trusted-agent-integrations-v1-20260730"
 INTEGRATION_SUITE_FINGERPRINT = (
-    "50c95fc0d9b9c3051806f798f06cda748afcde19dd30b09b445423bc68137823"
+    "3b55e8d83bdcc3019a66ad9228a2a5a679b6ad84383746be648443f57785a82f"
 )
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _GIT_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -78,6 +78,14 @@ _REQUIRED_MODULES = (
     "langgraph.graph",
     "mcp.server.fastmcp",
 )
+_SUITE_CONTRACT = {
+    "minimum_consecutive_runs": 3,
+    "provider_surface_count": 5,
+    "provider_semantic_parity": 1.0,
+    "portable_bundle_parity": 1.0,
+    "typescript_concurrent_explanations": 16,
+    "skipped_mandatory_cases": 0,
+}
 
 
 def evaluate_integration_admission(
@@ -87,7 +95,7 @@ def evaluate_integration_admission(
     consecutive_runs: int = 3,
     project_root: str | Path = PROJECT_ROOT,
 ) -> dict[str, Any]:
-    if consecutive_runs < 3:
+    if consecutive_runs < _SUITE_CONTRACT["minimum_consecutive_runs"]:
         raise ValueError("integration admission requires at least three runs")
     root = Path(project_root).resolve()
     actual_source_sha = source_sha or _git_sha(root)
@@ -175,15 +183,18 @@ def evaluate_integration_admission(
         ),
         _check(
             "provider-semantic-parity",
-            float(provider_parity.get("parity", 0.0)) == 1.0
-            and int(provider_parity.get("surface_count", 0)) >= 5,
+            float(provider_parity.get("parity", 0.0))
+            == _SUITE_CONTRACT["provider_semantic_parity"]
+            and int(provider_parity.get("surface_count", 0))
+            >= _SUITE_CONTRACT["provider_surface_count"],
             provider_parity,
             "1.00 citation parity across at least five provider surfaces",
             "provider surfaces returned different experience semantics",
         ),
         _check(
             "portable-bundle-parity",
-            float(portable_parity.get("parity", 0.0)) == 1.0
+            float(portable_parity.get("parity", 0.0))
+            == _SUITE_CONTRACT["portable_bundle_parity"]
             and bool(portable_parity.get("idempotent")),
             portable_parity,
             "1.00 semantic parity and idempotent replay",
@@ -196,7 +207,8 @@ def evaluate_integration_admission(
             and bool(typescript.get("safe_retry"))
             and bool(typescript.get("mutation_not_retried"))
             and bool(typescript.get("cancellation"))
-            and int(typescript.get("concurrent_explanations", 0)) >= 16,
+            and int(typescript.get("concurrent_explanations", 0))
+            >= _SUITE_CONTRACT["typescript_concurrent_explanations"],
             typescript,
             "packed install plus live lifecycle, safe retry, cancellation, and concurrency",
             "the packed TypeScript SDK failed one or more runtime guarantees",
@@ -214,7 +226,8 @@ def evaluate_integration_admission(
         ),
         _check(
             "no-skipped-cases",
-            all(not run["skipped"] for run in runs),
+            sum(len(run["skipped"]) for run in runs)
+            == _SUITE_CONTRACT["skipped_mandatory_cases"],
             [run["skipped"] for run in runs],
             "zero skipped mandatory cases",
             "one or more mandatory integration cases were skipped",
@@ -567,12 +580,16 @@ def _provider_cases(root: Path) -> list[dict[str, Any]]:
         def semantic_parity() -> dict[str, Any]:
             expected = ["experience:exp_integration@v1"]
             matches = sum(value == expected for value in citations.values())
-            parity = matches / 5.0
+            required_surfaces = _SUITE_CONTRACT["provider_surface_count"]
+            parity = matches / required_surfaces
             return {
                 "parity": parity,
                 "surface_count": len(citations),
                 "citations": dict(sorted(citations.items())),
-                "_passed": len(citations) == 5 and parity == 1.0,
+                "_passed": (
+                    len(citations) == required_surfaces
+                    and parity == _SUITE_CONTRACT["provider_semantic_parity"]
+                ),
             }
 
         cases.append(
@@ -999,6 +1016,7 @@ def _suite_fingerprint() -> str:
             "revision": INTEGRATION_SUITE_REVISION,
             "required_cases": _REQUIRED_CASES,
             "required_modules": _REQUIRED_MODULES,
+            "contract": _SUITE_CONTRACT,
         },
         sort_keys=True,
         separators=(",", ":"),

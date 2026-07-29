@@ -42,6 +42,7 @@ benchmarks only when the deployment requires them.
 | Current methods, artifacts, and interpretation rules | [Benchmark Guide](BENCHMARKS.md) |
 | Short public methodology | [Benchmark Brief](BENCHMARK_BRIEF.md) |
 | Adaptive agent-memory admission | [Current Admission Report](../benchmarks/AGENT_MEMORY_ADVANTAGE_ADMISSION.md) |
+| Provider and SDK integration admission | [Integration Admission](../benchmarks/INTEGRATION_ADMISSION.md) |
 | Live checked-in status | [Living Benchmark Dashboard](https://caspiang.github.io/wavemind/) |
 | Release history | [Changelog](../CHANGELOG.md) |
 
