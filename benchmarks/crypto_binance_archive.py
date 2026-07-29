@@ -165,11 +165,7 @@ def download_archive_bundle(
     with ThreadPoolExecutor(max_workers=workers) as executor:
         futures = {
             executor.submit(
-                (
-                    _download_optional_checked
-                    if kind in {"book_depth", "metrics"}
-                    else _download_checked
-                ),
+                _download_method(kind),
                 url=url,
                 destination=root / relative,
             ): (kind, url)
@@ -438,6 +434,10 @@ def _download_optional_checked(*, url: str, destination: Path) -> Path | None:
         if "Archive request failed (404)" in str(exc):
             return None
         raise
+
+
+def _download_method(kind: str):
+    return _download_checked if kind == "klines" else _download_optional_checked
 
 
 def _read_url(url: str, *, attempts: int = 8) -> bytes:

@@ -235,6 +235,17 @@ def test_optional_daily_archive_records_404_as_missing(monkeypatch, tmp_path):
     )
 
 
+def test_only_canonical_klines_are_a_required_archive_source():
+    from benchmarks import crypto_binance_archive as archive
+
+    assert archive._download_method("klines") is archive._download_checked
+    for source in ("intraday", "premium", "funding", "metrics", "book_depth"):
+        assert (
+            archive._download_method(source)
+            is archive._download_optional_checked
+        )
+
+
 def test_bundle_gzip_round_trip(tmp_path):
     from benchmarks.crypto_binance_archive import ArchiveBundle, FuturesBar, load_bundle, save_bundle
 
