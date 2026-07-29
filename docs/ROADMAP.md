@@ -149,6 +149,11 @@ policy matters more than raw vector-database scale:
   Packet; `wavemind doctor` verifies Python, SQLite, state writes, encoder and
   compiler behavior while reporting optional Node, Docker-engine, and MCP
   capabilities separately.
+- `wavemind memory-safety-admission` now freezes 375 attacks and 25 benign
+  controls, including structural attacks without prompt-injection keywords.
+  It requires zero attack escapes, zero tenant leakage, zero untrusted
+  promotion, 100% benign acceptance, exact SQLite rollback/provenance parity,
+  and three identical verdict fingerprints on one source SHA.
 - `benchmarks/memory_os_intelligence_report.py` now turns checked-in Memory OS
   worker evidence into `benchmarks/memory_os_intelligence_results.json` and
   `benchmarks/MEMORY_OS_INTELLIGENCE.md`. It exposes hot-query prewarm,

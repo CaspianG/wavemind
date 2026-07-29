@@ -169,6 +169,13 @@ jobs:
             --write-artifacts \
             --output /tmp/production_evidence_dispatch_results.json \
             --markdown-output /tmp/PRODUCTION_EVIDENCE_DISPATCH.md
+          python -m wavemind memory-safety-admission \
+            --expected-source-sha "$GITHUB_SHA" \
+            --consecutive-runs 3 \
+            --write-artifacts \
+            --fail-on-blocked \
+            --output /tmp/memory_safety_admission_results.json \
+            --markdown-output /tmp/MEMORY_SAFETY_ADMISSION.md
 
   redis-api-load:
     runs-on: ubuntu-latest

@@ -481,6 +481,11 @@ def test_full_check_blocks_stale_public_benchmark_artifacts():
     assert "benchmarks/benchmark_artifact_audit_ci.json" in workflow
     assert "benchmarks/production_readiness_gate.py" in workflow
     assert "wavemind production-evidence-dispatch" in workflow
+    assert "wavemind memory-safety-admission" in workflow
+    assert '--expected-source-sha "$GITHUB_SHA"' in workflow
+    assert "--consecutive-runs 3" in workflow
+    assert "/tmp/memory_safety_admission_results.json" in workflow
+    assert "/tmp/MEMORY_SAFETY_ADMISSION.md" in workflow
 
 
 def test_release_blocks_stale_public_benchmark_artifacts():
