@@ -12,6 +12,7 @@ from benchmarks.longmemeval_v2_memory_benchmark import (
     PersistentCachedTextEncoder,
     V2Question,
     _encoder_metadata,
+    _resume_reranker_config,
     _stratified_question_sample,
     load_longmemeval_v2_small,
     _retrieval_query,
@@ -66,6 +67,30 @@ def test_encoder_metadata_records_reproducible_ollama_configuration():
         "class": "HashingTextEncoder",
         "vector_dim": 384,
         "char_ngram_weight": 0.0,
+    }
+
+
+def test_legacy_resume_without_reranker_is_strictly_normalized_as_disabled():
+    assert _resume_reranker_config({}) == {
+        "enabled": False,
+        "embedding": None,
+        "candidate_window": 0,
+        "rrf_weight": 0.0,
+    }
+    assert _resume_reranker_config(
+        {
+            "semantic_reranker": {
+                "enabled": True,
+                "embedding": {"kind": "fixture"},
+                "candidate_window": 20,
+                "rrf_weight": 0.7,
+            }
+        }
+    ) == {
+        "enabled": True,
+        "embedding": {"kind": "fixture"},
+        "candidate_window": 20,
+        "rrf_weight": 0.7,
     }
 
 

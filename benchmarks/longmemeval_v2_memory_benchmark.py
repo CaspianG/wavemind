@@ -1285,6 +1285,25 @@ def _encoder_metadata(encoder: TextVectorEncoder) -> dict[str, Any]:
     return metadata
 
 
+def _resume_reranker_config(payload: dict[str, Any]) -> dict[str, Any]:
+    raw = payload.get("semantic_reranker")
+    if raw is None:
+        return {
+            "enabled": False,
+            "embedding": None,
+            "candidate_window": 0,
+            "rrf_weight": 0.0,
+        }
+    if not isinstance(raw, dict):
+        raise ValueError("resume semantic reranker configuration must be an object")
+    return {
+        "enabled": bool(raw.get("enabled")),
+        "embedding": raw.get("embedding"),
+        "candidate_window": int(raw.get("candidate_window") or 0),
+        "rrf_weight": float(raw.get("rrf_weight") or 0.0),
+    }
+
+
 def run_benchmark(
     data_root: str | Path,
     *,
@@ -1714,7 +1733,6 @@ def main() -> int:
         resume_rows = _read_jsonl(args.resume_per_query)
         expected_reader = resume_payload.get("reader") or {}
         expected_embedding = resume_payload.get("embedding") or {}
-        expected_reranker = resume_payload.get("semantic_reranker") or {}
         expected_scenario = resume_payload.get("scenario") or {}
         if resume_payload.get("schema") != "wavemind.longmemeval_v2_small.v1":
             parser.error("resume result has an unsupported schema")
@@ -1752,15 +1770,12 @@ def main() -> int:
                 else 0.0
             ),
         }
-        expected_reranker_config = {
-            key: expected_reranker.get(key)
-            for key in (
-                "enabled",
-                "embedding",
-                "candidate_window",
-                "rrf_weight",
+        try:
+            expected_reranker_config = _resume_reranker_config(
+                resume_payload
             )
-        }
+        except (TypeError, ValueError) as exc:
+            parser.error(str(exc))
         if expected_reranker_config != current_reranker:
             parser.error("resume semantic reranker does not match this run")
         resume_metadata = {
