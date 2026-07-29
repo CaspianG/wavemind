@@ -14,6 +14,8 @@ def test_public_benchmark_brief_links_checked_in_artifacts_and_commands():
         "benchmarks/EXPERIENCE_QUALITY_ADMISSION.md",
         "benchmarks/developer_experience_admission_results.json",
         "benchmarks/DEVELOPER_EXPERIENCE_ADMISSION.md",
+        "benchmarks/memory_safety_admission_results.json",
+        "benchmarks/MEMORY_SAFETY_ADMISSION.md",
         "benchmarks/agent_impact_results.json",
         "benchmarks/AGENT_IMPACT.md",
         "benchmarks/structured_memory_results.json",
@@ -53,6 +55,7 @@ def test_public_benchmark_brief_links_checked_in_artifacts_and_commands():
         "python benchmarks/experienced_work_agent_benchmark.py",
         "wavemind experience-quality-admission",
         "python benchmarks/developer_experience_admission.py --fail-on-blocked",
+        "wavemind memory-safety-admission",
         "python benchmarks/agent_impact_leaderboard.py",
         "python benchmarks/structured_memory_report.py",
         "python benchmarks/memory_os_intelligence_report.py",
@@ -82,6 +85,8 @@ def test_public_benchmark_brief_links_checked_in_artifacts_and_commands():
     assert "Experienced Work Agent" in brief
     assert "Developer experience admission" in brief
     assert "first cited Experience Packet" in brief
+    assert "Memory safety admission" in brief
+    assert "375 attacks and 25 benign controls" in brief
     assert "Structured memory report" in brief
     assert "7` modalities" in brief
     assert "Memory OS intelligence report" in brief

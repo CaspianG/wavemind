@@ -8,6 +8,8 @@ authoritative release sources.
 
 - Added `wavemind init` starter projects for Python, TypeScript, MCP, and
   Docker, plus `wavemind doctor` runtime and Experience Packet diagnostics.
+- Added a strict `memory-safety-admission` gate with 375 attacks, structural
+  taint cases, benign controls, tenant isolation, and rollback/provenance proof.
 - Hardened LongMemEval-V2 with official per-question haystacks, isolated A/B
   stores, crash-safe checkpoints, and a blocked public gate when uplift or
   latency evidence is insufficient.
