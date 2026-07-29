@@ -10,6 +10,11 @@ authoritative release sources.
   Docker, plus `wavemind doctor` runtime and Experience Packet diagnostics.
 - Added a strict `memory-safety-admission` gate with 375 attacks, structural
   taint cases, benign controls, tenant isolation, and rollback/provenance proof.
+- Completed the TypeScript HTTP memory lifecycle with feedback, explanation,
+  forgetting, cancellation, concurrency, and mutation-safe retry behavior.
+- Added strict cross-provider integration admission for Python, OpenAI Agents,
+  Anthropic, MCP, LangGraph, HTTP, portable bundles, Mem0 imports, and a clean
+  packed TypeScript SDK install against a live API.
 - Hardened LongMemEval-V2 with official per-question haystacks, isolated A/B
   stores, crash-safe checkpoints, and a blocked public gate when uplift or
   latency evidence is insufficient.

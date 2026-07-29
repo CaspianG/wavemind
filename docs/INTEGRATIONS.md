@@ -75,6 +75,52 @@ Run the dedicated offline LlamaIndex-style retriever example:
 python examples/llamaindex_retriever.py
 ```
 
+## TypeScript HTTP SDK
+
+The dependency-free TypeScript client covers the complete memory lifecycle:
+remember, query, feedback, explain, and forget, plus Experience Packet,
+trajectory, and portable-bundle APIs.
+
+```ts
+import { WaveMindClient } from "@wavemind/http";
+
+const memory = new WaveMindClient({
+  baseUrl: "http://127.0.0.1:8000",
+  maxRetries: 2,
+});
+
+const stored = await memory.remember({
+  text: "The deployment uses a canary.",
+  namespace: "agent",
+  metadata: { provenance: { source: "release-runbook" } },
+});
+const hits = await memory.query({
+  text: "deployment strategy",
+  namespace: "agent",
+});
+await memory.feedback({ id: stored.id, namespace: "agent", useful: true });
+const explanation = await memory.explainMemory(stored.id, "agent");
+await memory.forget({ id: stored.id, namespace: "agent" });
+```
+
+Safe reads retry transient `408`, `429`, and `5xx` responses. Mutations are
+never retried automatically, which prevents the client from duplicating
+`remember`, `feedback`, `forget`, trajectory-ingest, or bundle-import writes.
+Every operation accepts an `AbortSignal`.
+
+The strict cross-provider contract can be reproduced with:
+
+```sh
+pip install -e ".[dev,providers]"
+npm ci --prefix sdk/typescript
+wavemind integration-admission --fail-on-blocked
+```
+
+The gate installs a locally packed SDK into a clean project and runs it against
+a live WaveMind API. It also requires identical Experience Packet citations
+across Python, OpenAI Agents, MCP, LangGraph, and HTTP, exact portable-bundle
+parity, the official Anthropic memory contract, and three identical verdicts.
+
 ## OpenClaw Integration
 
 [OpenClaw memory](https://docs.openclaw.ai/concepts/memory) is file-centered:

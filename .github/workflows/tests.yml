@@ -79,10 +79,33 @@ jobs:
         with:
           python-version: "3.11"
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: sdk/typescript/package-lock.json
+
       - name: Install official provider SDKs
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev,providers]"
+          npm ci --prefix sdk/typescript
 
       - name: Run official provider contract tests
         run: pytest -q tests/test_official_provider_contracts.py
+
+      - name: Run strict integration admission
+        run: |
+          python -m wavemind integration-admission \
+            --expected-source-sha "${GITHUB_SHA}" \
+            --write-artifacts \
+            --fail-on-blocked \
+            --output integration_admission_results.json \
+            --markdown-output INTEGRATION_ADMISSION.md
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: integration-admission-${{ github.sha }}
+          path: |
+            integration_admission_results.json
+            INTEGRATION_ADMISSION.md
