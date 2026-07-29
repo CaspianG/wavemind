@@ -240,6 +240,7 @@ def test_postgres_store_contract(fake_psycopg):
     assert audit_id == 1
     assert store.audit_count(namespace="pg") == 1
     assert store.list_audit_events(namespace="pg")[0].metadata == {"ok": True}
+    assert store.list_audit_events(namespace="pg", memory_id=id)[0].memory_id == id
 
     assert store.purge_expired() == 1
     assert store.get(expired_id) is None

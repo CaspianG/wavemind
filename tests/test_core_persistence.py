@@ -354,6 +354,9 @@ def test_audit_events_track_mutations_without_query_audit_by_default(tmp_path):
     assert actions == ["forget", "remember"]
     assert events[0].memory_id == memory_id
     assert events[1].metadata["tags"] == ["ops"]
+    filtered = mind.audit_events(namespace="audit", memory_id=memory_id, limit=1)
+    assert len(filtered) == 1
+    assert filtered[0].memory_id == memory_id
     assert mind.stats(namespace="audit")["audit_events"] == 2
     mind.close()
 

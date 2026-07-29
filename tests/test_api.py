@@ -491,6 +491,75 @@ def test_fastapi_feedback_updates_memory_and_invalidates_cache(tmp_path, monkeyp
         mind.close()
 
 
+def test_fastapi_explain_memory_is_namespace_scoped_and_exact(tmp_path):
+    mind = WaveMind(
+        db_path=tmp_path / "api-explain.sqlite3",
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+    )
+    try:
+        with TestClient(create_app(mind=mind)) as client:
+            remembered = client.post(
+                "/remember",
+                json={
+                    "text": "Andrey prefers concise risk summaries",
+                    "namespace": "tenant:explain",
+                    "tags": ["profile"],
+                    "metadata": {
+                        "provenance": {
+                            "source": "chat",
+                            "message_id": "message-17",
+                        }
+                    },
+                },
+            )
+            memory_id = remembered.json()["id"]
+            unrelated_id = client.post(
+                "/remember",
+                json={
+                    "text": "Unrelated tenant event",
+                    "namespace": "tenant:explain",
+                },
+            ).json()["id"]
+            for _ in range(3):
+                response = client.post(
+                    "/feedback",
+                    json={
+                        "id": unrelated_id,
+                        "namespace": "tenant:explain",
+                    },
+                )
+                assert response.status_code == 200
+
+            explanation = client.get(
+                f"/memories/{memory_id}/explain",
+                params={"namespace": "tenant:explain", "audit_limit": 1},
+            )
+            assert explanation.status_code == 200
+            payload = explanation.json()
+            assert payload["schema"] == "wavemind.memory_explanation.v1"
+            assert payload["id"] == memory_id
+            assert payload["tags"] == ["profile"]
+            assert payload["provenance"] == {
+                "source": "chat",
+                "message_id": "message-17",
+            }
+            assert [event["memory_id"] for event in payload["audit_events"]] == [
+                memory_id
+            ]
+            assert payload["audit_events"][0]["action"] == "remember"
+
+            mismatch = client.get(
+                f"/memories/{memory_id}/explain",
+                params={"namespace": "tenant:other"},
+            )
+            assert mismatch.status_code == 404
+    finally:
+        mind.close()
+
+
 def test_fastapi_feedback_batch_updates_once_and_invalidates_cache(tmp_path, monkeypatch):
     monkeypatch.setenv("WAVEMIND_CACHE_CAPACITY", "8")
     monkeypatch.delenv("WAVEMIND_REDIS_URL", raising=False)

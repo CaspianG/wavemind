@@ -358,9 +358,9 @@ def build_mcp_server(
                 event
                 for event in memory.store.list_audit_events(
                     namespace=selected_namespace,
+                    memory_id=int(memory_id),
                     limit=int(audit_limit),
                 )
-                if event.memory_id == int(memory_id)
             ]
         internal = record.metadata.get(_INTERNAL_METADATA_KEY, {})
         return {

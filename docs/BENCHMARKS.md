@@ -26,6 +26,8 @@ Developer experience admission: [`benchmarks/DEVELOPER_EXPERIENCE_ADMISSION.md`]
 from [`benchmarks/developer_experience_admission_results.json`](../benchmarks/developer_experience_admission_results.json).
 Memory safety admission: [`benchmarks/MEMORY_SAFETY_ADMISSION.md`](../benchmarks/MEMORY_SAFETY_ADMISSION.md)
 from [`benchmarks/memory_safety_admission_results.json`](../benchmarks/memory_safety_admission_results.json).
+Provider integration admission: [`benchmarks/INTEGRATION_ADMISSION.md`](../benchmarks/INTEGRATION_ADMISSION.md)
+from [`benchmarks/integration_admission_results.json`](../benchmarks/integration_admission_results.json).
 Living HTML dashboard: [`docs/benchmark-dashboard.html`](benchmark-dashboard.html).
 Machine-readable dashboard status: [`docs/data/leaderboard-status.json`](data/leaderboard-status.json).
 The weekly workflow also publishes the refreshed dashboard to GitHub Pages at

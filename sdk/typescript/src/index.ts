@@ -2,6 +2,13 @@ export interface WaveMindClientOptions {
   baseUrl: string;
   apiKey?: string;
   fetch?: typeof globalThis.fetch;
+  maxRetries?: number;
+  retryBaseDelayMs?: number;
+  retryStatuses?: readonly number[];
+}
+
+export interface RequestOptions {
+  signal?: AbortSignal;
 }
 
 export interface RememberInput {
@@ -31,6 +38,59 @@ export interface QueryResult {
   namespace: string;
   tags: string[];
   metadata: Record<string, unknown>;
+}
+
+export interface FeedbackInput {
+  id: number;
+  namespace?: string;
+  useful?: boolean;
+  strength?: number;
+  query?: string;
+  reason?: string;
+}
+
+export interface FeedbackResponse {
+  ok: boolean;
+  id: number;
+  namespace: string;
+  priority: number;
+  access_count: number;
+  cache_invalidated: number;
+}
+
+export interface ForgetInput {
+  id?: number;
+  text?: string;
+  namespace?: string;
+}
+
+export interface ForgetResponse {
+  deleted: number;
+}
+
+export interface AuditEvent {
+  id: number;
+  created_at: number;
+  action: string;
+  namespace: string | null;
+  memory_id: number | null;
+  metadata: Record<string, unknown>;
+}
+
+export interface MemoryExplanation {
+  schema: "wavemind.memory_explanation.v1";
+  id: number;
+  namespace: string;
+  text: string;
+  tags: string[];
+  metadata: Record<string, unknown>;
+  provenance: Record<string, unknown>;
+  created_at: number;
+  updated_at: number;
+  expires_at: number | null;
+  priority: number;
+  access_count: number;
+  audit_events: AuditEvent[];
 }
 
 export interface ExperiencePacketInput {
@@ -98,6 +158,9 @@ export class WaveMindClient {
   readonly baseUrl: string;
   readonly apiKey?: string;
   private readonly fetchImpl: typeof globalThis.fetch;
+  private readonly maxRetries: number;
+  private readonly retryBaseDelayMs: number;
+  private readonly retryStatuses: ReadonlySet<number>;
 
   constructor(options: WaveMindClientOptions) {
     const baseUrl = options.baseUrl.trim().replace(/\/+$/, "");
@@ -112,54 +175,117 @@ export class WaveMindClient {
     if (!this.fetchImpl) {
       throw new Error("A fetch implementation is required");
     }
+    this.maxRetries = requireNonNegativeInteger(
+      options.maxRetries ?? 2,
+      "maxRetries",
+    );
+    this.retryBaseDelayMs = requireNonNegativeInteger(
+      options.retryBaseDelayMs ?? 100,
+      "retryBaseDelayMs",
+    );
+    this.retryStatuses = new Set(
+      options.retryStatuses ?? [408, 429, 500, 502, 503, 504],
+    );
   }
 
-  remember(input: RememberInput): Promise<{ id: number }> {
-    return this.request("POST", "/remember", input);
+  remember(
+    input: RememberInput,
+    options?: RequestOptions,
+  ): Promise<{ id: number }> {
+    return this.request("POST", "/remember", input, options);
   }
 
-  query(input: QueryInput): Promise<{ results: QueryResult[] }> {
-    return this.request("POST", "/query", input);
+  query(
+    input: QueryInput,
+    options?: RequestOptions,
+  ): Promise<{ results: QueryResult[] }> {
+    return this.request("POST", "/query", input, options, true);
+  }
+
+  feedback(
+    input: FeedbackInput,
+    options?: RequestOptions,
+  ): Promise<FeedbackResponse> {
+    return this.request("POST", "/feedback", input, options);
+  }
+
+  forget(
+    input: ForgetInput,
+    options?: RequestOptions,
+  ): Promise<ForgetResponse> {
+    if (input.id === undefined && input.text === undefined) {
+      throw new Error("forget requires id or text");
+    }
+    return this.request("DELETE", "/forget", input, options);
+  }
+
+  explainMemory(
+    memoryId: number,
+    namespace = "default",
+    auditLimit = 20,
+    options?: RequestOptions,
+  ): Promise<MemoryExplanation> {
+    if (!Number.isInteger(auditLimit) || auditLimit < 1 || auditLimit > 100) {
+      throw new Error("auditLimit must be an integer between 1 and 100");
+    }
+    const path =
+      `/memories/${encodeURIComponent(String(memoryId))}/explain` +
+      `?namespace=${encodeURIComponent(namespace)}` +
+      `&audit_limit=${auditLimit}`;
+    return this.request("GET", path, undefined, options, true);
   }
 
   compileExperiencePacket(
     input: ExperiencePacketInput,
+    options?: RequestOptions,
   ): Promise<ExperiencePacket> {
-    return this.request("POST", "/experience/packet", input);
+    return this.request("POST", "/experience/packet", input, options, true);
   }
 
   getExperience(
     experienceId: string,
     namespace = "default",
+    options?: RequestOptions,
   ): Promise<Record<string, unknown>> {
     const path =
       `/experience/${encodeURIComponent(experienceId)}` +
       `?namespace=${encodeURIComponent(namespace)}`;
-    return this.request("GET", path);
+    return this.request("GET", path, undefined, options, true);
   }
 
   ingestTrajectory(
     input: TrajectoryInput,
+    options?: RequestOptions,
   ): Promise<Record<string, unknown>> {
-    return this.request("POST", "/experience/trajectories", input);
+    return this.request("POST", "/experience/trajectories", input, options);
   }
 
   exportExperienceBundle(
     namespace?: string,
+    options?: RequestOptions,
   ): Promise<Record<string, unknown>> {
-    return this.request("POST", "/experience/export", { namespace });
+    return this.request(
+      "POST",
+      "/experience/export",
+      { namespace },
+      options,
+      true,
+    );
   }
 
   importExperienceBundle(
     bundle: Record<string, unknown>,
+    options?: RequestOptions,
   ): Promise<Record<string, unknown>> {
-    return this.request("POST", "/experience/import", { bundle });
+    return this.request("POST", "/experience/import", { bundle }, options);
   }
 
   private async request<T>(
     method: string,
     path: string,
     body?: unknown,
+    options?: RequestOptions,
+    retryable = false,
   ): Promise<T> {
     const headers: Record<string, string> = {
       accept: "application/json",
@@ -170,18 +296,81 @@ export class WaveMindClient {
     if (this.apiKey) {
       headers.authorization = `Bearer ${this.apiKey}`;
     }
-    const init: RequestInit = { method, headers };
-    if (body !== undefined) {
-      init.body = JSON.stringify(body);
+    let attempt = 0;
+    while (true) {
+      const init: RequestInit = { method, headers };
+      if (body !== undefined) {
+        init.body = JSON.stringify(body);
+      }
+      if (options?.signal !== undefined) {
+        init.signal = options.signal;
+      }
+      try {
+        const response = await this.fetchImpl(
+          `${this.baseUrl}${path}`,
+          init,
+        );
+        const contentType = response.headers.get("content-type") ?? "";
+        const payload = contentType.includes("application/json")
+          ? await response.json()
+          : await response.text();
+        if (response.ok) {
+          return payload as T;
+        }
+        if (
+          retryable &&
+          attempt < this.maxRetries &&
+          this.retryStatuses.has(response.status)
+        ) {
+          await this.waitBeforeRetry(attempt, options?.signal);
+          attempt += 1;
+          continue;
+        }
+        throw new WaveMindHTTPError(response.status, payload);
+      } catch (error) {
+        if (
+          !retryable ||
+          attempt >= this.maxRetries ||
+          error instanceof WaveMindHTTPError ||
+          options?.signal?.aborted
+        ) {
+          throw error;
+        }
+        await this.waitBeforeRetry(attempt, options?.signal);
+        attempt += 1;
+      }
     }
-    const response = await this.fetchImpl(`${this.baseUrl}${path}`, init);
-    const contentType = response.headers.get("content-type") ?? "";
-    const payload = contentType.includes("application/json")
-      ? await response.json()
-      : await response.text();
-    if (!response.ok) {
-      throw new WaveMindHTTPError(response.status, payload);
-    }
-    return payload as T;
   }
+
+  private waitBeforeRetry(
+    attempt: number,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    const delay = this.retryBaseDelayMs * 2 ** attempt;
+    if (delay === 0) {
+      return Promise.resolve();
+    }
+    return new Promise((resolve, reject) => {
+      const onAbort = () => {
+        clearTimeout(timer);
+        reject(signal?.reason ?? new DOMException("Aborted", "AbortError"));
+      };
+      const timer = setTimeout(() => {
+        signal?.removeEventListener("abort", onAbort);
+        resolve();
+      }, delay);
+      if (signal?.aborted) {
+        onAbort();
+        return;
+      }
+      signal?.addEventListener("abort", onAbort, { once: true });
+    });
+  }
+}
+
+function requireNonNegativeInteger(value: number, name: string): number {
+  if (!Number.isInteger(value) || value < 0) {
+    throw new Error(`${name} must be a non-negative integer`);
+  }
+  return value;
 }

@@ -59,6 +59,10 @@ from .memory_safety_admission import (
     evaluate_memory_safety_admission,
     render_memory_safety_admission_markdown,
 )
+from .integration_admission import (
+    evaluate_integration_admission,
+    render_integration_admission_markdown,
+)
 from .multimodal_admission import (
     evaluate_multimodal_admission,
     render_multimodal_admission_markdown,
@@ -1008,6 +1012,36 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path("benchmarks/MEMORY_SAFETY_ADMISSION.md"),
     )
     memory_safety_admission.add_argument("--json", action="store_true")
+
+    integration_admission = sub.add_parser(
+        "integration-admission",
+        help="Run strict provider, portability, HTTP, MCP, and TypeScript contracts",
+    )
+    integration_admission.add_argument("--expected-source-sha")
+    integration_admission.add_argument(
+        "--consecutive-runs",
+        type=int,
+        default=3,
+    )
+    integration_admission.add_argument(
+        "--write-artifacts",
+        action="store_true",
+    )
+    integration_admission.add_argument(
+        "--fail-on-blocked",
+        action="store_true",
+    )
+    integration_admission.add_argument(
+        "--output",
+        type=Path,
+        default=Path("benchmarks/integration_admission_results.json"),
+    )
+    integration_admission.add_argument(
+        "--markdown-output",
+        type=Path,
+        default=Path("benchmarks/INTEGRATION_ADMISSION.md"),
+    )
+    integration_admission.add_argument("--json", action="store_true")
 
     multimodal_external = sub.add_parser(
         "multimodal-external-evidence",
@@ -2401,6 +2435,25 @@ def print_memory_safety_admission(payload: dict[str, object]) -> None:
             print(f"- {issue}")
 
 
+def print_integration_admission(payload: dict[str, object]) -> None:
+    summary = payload["summary"]
+    print(f"status: {payload['status']}")
+    print(f"admitted: {str(payload['admitted']).lower()}")
+    print(f"source_sha: {payload['source_sha']}")
+    print(
+        "checks: "
+        f"{summary['checks_passed']}/{summary['checks_total']} passed"
+    )
+    print(f"mandatory_cases: {summary['case_count']}")
+    print(f"provider_parity: {summary['provider_parity']}")
+    print(f"portable_parity: {summary['portable_parity']}")
+    issues = payload.get("issues") or []
+    if issues:
+        print("issues:")
+        for issue in issues:
+            print(f"- {issue}")
+
+
 def print_external_multimodal_evidence(payload: dict[str, object]) -> None:
     metrics = payload.get("metrics", {})
     print(f"status: {payload['status']}")
@@ -3582,6 +3635,33 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(payload, ensure_ascii=False, indent=2))
         else:
             print_memory_safety_admission(payload)
+            if args.write_artifacts:
+                print(f"json_report: {args.output}")
+                print(f"markdown_report: {args.markdown_output}")
+        if args.fail_on_blocked and not payload["admitted"]:
+            return 2
+        return 0 if payload["status"] in {"admitted", "blocked"} else 1
+
+    if args.command == "integration-admission":
+        payload = evaluate_integration_admission(
+            expected_source_sha=args.expected_source_sha,
+            consecutive_runs=args.consecutive_runs,
+        )
+        if args.write_artifacts:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            args.markdown_output.parent.mkdir(parents=True, exist_ok=True)
+            args.markdown_output.write_text(
+                render_integration_admission_markdown(payload),
+                encoding="utf-8",
+            )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print_integration_admission(payload)
             if args.write_artifacts:
                 print(f"json_report: {args.output}")
                 print(f"markdown_report: {args.markdown_output}")

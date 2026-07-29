@@ -154,6 +154,12 @@ policy matters more than raw vector-database scale:
   It requires zero attack escapes, zero tenant leakage, zero untrusted
   promotion, 100% benign acceptance, exact SQLite rollback/provenance parity,
   and three identical verdict fingerprints on one source SHA.
+- `wavemind integration-admission` now executes the mandatory Python, OpenAI
+  Agents, Anthropic, MCP, LangGraph, HTTP, portability, Mem0-import, and packed
+  TypeScript SDK contracts. It requires citation parity across five provider
+  surfaces, exact bundle replay, a live clean-package memory lifecycle, safe
+  retry/cancellation/concurrency behavior, exact source SHA, and three
+  identical verdict fingerprints with no skipped mandatory cases.
 - `benchmarks/memory_os_intelligence_report.py` now turns checked-in Memory OS
   worker evidence into `benchmarks/memory_os_intelligence_results.json` and
   `benchmarks/MEMORY_OS_INTELLIGENCE.md`. It exposes hot-query prewarm,

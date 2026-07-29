@@ -1,0 +1,410 @@
+{
+  "schema": "wavemind.integration_admission.v1",
+  "status": "admitted",
+  "admitted": true,
+  "evaluated_at": "2026-07-29T02:44:05Z",
+  "source_sha": "a82e42e745fe911c49916cacadfba7d6441f0e1b",
+  "suite": {
+    "revision": "trusted-agent-integrations-v1-20260730",
+    "fingerprint_sha256": "3b55e8d83bdcc3019a66ad9228a2a5a679b6ad84383746be648443f57785a82f"
+  },
+  "environment": {
+    "python": "3.13.3",
+    "implementation": "CPython",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "node": "v22.16.0",
+    "npm": "10.9.2",
+    "provider_modules": {
+      "agents.memory": true,
+      "anthropic.types.beta": true,
+      "langgraph.graph": true,
+      "mcp.server.fastmcp": true
+    },
+    "fingerprint_sha256": "cc107a959245438e280425b51acc45c48e5e2b6246d8575a50b6f85137ea762b"
+  },
+  "consecutive_runs": [
+    {
+      "run": 1,
+      "status": "admitted",
+      "verdict_fingerprint": "3ebc2c690934ff6755e258c9693a158c0dca3014ae1d7be46ebff61a0c759da1",
+      "case_count": 11,
+      "passed": 11,
+      "total_seconds": 9.235106699998141
+    },
+    {
+      "run": 2,
+      "status": "admitted",
+      "verdict_fingerprint": "3ebc2c690934ff6755e258c9693a158c0dca3014ae1d7be46ebff61a0c759da1",
+      "case_count": 11,
+      "passed": 11,
+      "total_seconds": 7.942712199997914
+    },
+    {
+      "run": 3,
+      "status": "admitted",
+      "verdict_fingerprint": "3ebc2c690934ff6755e258c9693a158c0dca3014ae1d7be46ebff61a0c759da1",
+      "case_count": 11,
+      "passed": 11,
+      "total_seconds": 8.535004099998332
+    }
+  ],
+  "checks": [
+    {
+      "id": "source-sha",
+      "passed": true,
+      "status": "pass",
+      "evidence": "a82e42e745fe911c49916cacadfba7d6441f0e1b",
+      "target": "a82e42e745fe911c49916cacadfba7d6441f0e1b",
+      "issue": ""
+    },
+    {
+      "id": "frozen-suite",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "revision": "trusted-agent-integrations-v1-20260730",
+        "fingerprint_sha256": "3b55e8d83bdcc3019a66ad9228a2a5a679b6ad84383746be648443f57785a82f",
+        "case_count": 11
+      },
+      "target": {
+        "revision": "trusted-agent-integrations-v1-20260730",
+        "fingerprint_sha256": "3b55e8d83bdcc3019a66ad9228a2a5a679b6ad84383746be648443f57785a82f",
+        "case_count": 11
+      },
+      "issue": ""
+    },
+    {
+      "id": "required-cases",
+      "passed": true,
+      "status": "pass",
+      "evidence": [
+        "anthropic-memory-contract",
+        "http-experience-contract",
+        "http-memory-contract",
+        "langgraph-contract",
+        "mcp-contract",
+        "mem0-import-idempotency",
+        "openai-agents-contract",
+        "portable-bundle-parity",
+        "provider-semantic-parity",
+        "python-compiler-contract",
+        "typescript-packed-live-contract"
+      ],
+      "target": [
+        "anthropic-memory-contract",
+        "http-experience-contract",
+        "http-memory-contract",
+        "langgraph-contract",
+        "mcp-contract",
+        "mem0-import-idempotency",
+        "openai-agents-contract",
+        "portable-bundle-parity",
+        "provider-semantic-parity",
+        "python-compiler-contract",
+        "typescript-packed-live-contract"
+      ],
+      "issue": ""
+    },
+    {
+      "id": "official-provider-sdks",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "agents.memory": true,
+        "anthropic.types.beta": true,
+        "langgraph.graph": true,
+        "mcp.server.fastmcp": true
+      },
+      "target": "OpenAI Agents, Anthropic, MCP, and LangGraph SDKs installed",
+      "issue": ""
+    },
+    {
+      "id": "all-contracts",
+      "passed": true,
+      "status": "pass",
+      "evidence": [
+        {
+          "run": 1,
+          "failed": []
+        },
+        {
+          "run": 2,
+          "failed": []
+        },
+        {
+          "run": 3,
+          "failed": []
+        }
+      ],
+      "target": "every mandatory case passes in every run",
+      "issue": ""
+    },
+    {
+      "id": "provider-semantic-parity",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "parity": 1.0,
+        "surface_count": 5,
+        "citations": {
+          "http": [
+            "experience:exp_integration@v1"
+          ],
+          "langgraph": [
+            "experience:exp_integration@v1"
+          ],
+          "mcp": [
+            "experience:exp_integration@v1"
+          ],
+          "openai": [
+            "experience:exp_integration@v1"
+          ],
+          "python": [
+            "experience:exp_integration@v1"
+          ]
+        }
+      },
+      "target": "1.00 citation parity across at least five provider surfaces",
+      "issue": ""
+    },
+    {
+      "id": "portable-bundle-parity",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "parity": 1.0,
+        "idempotent": true,
+        "records": 1
+      },
+      "target": "1.00 semantic parity and idempotent replay",
+      "issue": ""
+    },
+    {
+      "id": "typescript-public-package",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "packed_install": true,
+        "live_memory_lifecycle": true,
+        "safe_retry": true,
+        "mutation_not_retried": true,
+        "cancellation": true,
+        "concurrent_explanations": 16
+      },
+      "target": "packed install plus live lifecycle, safe retry, cancellation, and concurrency",
+      "issue": ""
+    },
+    {
+      "id": "deterministic-verdict",
+      "passed": true,
+      "status": "pass",
+      "evidence": [
+        {
+          "run": 1,
+          "status": "admitted",
+          "verdict_fingerprint": "3ebc2c690934ff6755e258c9693a158c0dca3014ae1d7be46ebff61a0c759da1",
+          "case_count": 11,
+          "passed": 11,
+          "total_seconds": 9.235106699998141
+        },
+        {
+          "run": 2,
+          "status": "admitted",
+          "verdict_fingerprint": "3ebc2c690934ff6755e258c9693a158c0dca3014ae1d7be46ebff61a0c759da1",
+          "case_count": 11,
+          "passed": 11,
+          "total_seconds": 7.942712199997914
+        },
+        {
+          "run": 3,
+          "status": "admitted",
+          "verdict_fingerprint": "3ebc2c690934ff6755e258c9693a158c0dca3014ae1d7be46ebff61a0c759da1",
+          "case_count": 11,
+          "passed": 11,
+          "total_seconds": 8.535004099998332
+        }
+      ],
+      "target": "three or more identical consecutive verdicts",
+      "issue": ""
+    },
+    {
+      "id": "no-skipped-cases",
+      "passed": true,
+      "status": "pass",
+      "evidence": [
+        [],
+        [],
+        []
+      ],
+      "target": "zero skipped mandatory cases",
+      "issue": ""
+    }
+  ],
+  "summary": {
+    "checks_passed": 10,
+    "checks_total": 10,
+    "case_count": 11,
+    "provider_parity": 1.0,
+    "portable_parity": 1.0,
+    "total_seconds": 25.712822999994387,
+    "blocker_count": 0
+  },
+  "issues": [],
+  "skipped": [],
+  "per_case": [
+    {
+      "id": "python-compiler-contract",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "schema": "wavemind.experience_packet.v1",
+        "citations": [
+          "experience:exp_integration@v1"
+        ]
+      },
+      "issue": ""
+    },
+    {
+      "id": "openai-agents-contract",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "session_persisted": true,
+        "ephemeral": true,
+        "citations": [
+          "experience:exp_integration@v1"
+        ]
+      },
+      "issue": ""
+    },
+    {
+      "id": "anthropic-memory-contract",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "tool": {
+          "type": "memory_20250818",
+          "name": "memory"
+        },
+        "content": "Check health and logs.\nRoll back.",
+        "traversal_blocked": true
+      },
+      "issue": ""
+    },
+    {
+      "id": "mcp-contract",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "tools": [
+          "compile_experience_packet",
+          "expand_experience"
+        ],
+        "citations": [
+          "experience:exp_integration@v1"
+        ]
+      },
+      "issue": ""
+    },
+    {
+      "id": "langgraph-contract",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "compiled": true,
+        "citations": [
+          "experience:exp_integration@v1"
+        ]
+      },
+      "issue": ""
+    },
+    {
+      "id": "http-memory-contract",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "remembered": true,
+        "queried": true,
+        "feedback": true,
+        "explained": "wavemind.memory_explanation.v1",
+        "forgotten": 1
+      },
+      "issue": ""
+    },
+    {
+      "id": "http-experience-contract",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "citations": [
+          "experience:exp_integration@v1"
+        ],
+        "bundle_parity": 1.0
+      },
+      "issue": ""
+    },
+    {
+      "id": "provider-semantic-parity",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "parity": 1.0,
+        "surface_count": 5,
+        "citations": {
+          "http": [
+            "experience:exp_integration@v1"
+          ],
+          "langgraph": [
+            "experience:exp_integration@v1"
+          ],
+          "mcp": [
+            "experience:exp_integration@v1"
+          ],
+          "openai": [
+            "experience:exp_integration@v1"
+          ],
+          "python": [
+            "experience:exp_integration@v1"
+          ]
+        }
+      },
+      "issue": ""
+    },
+    {
+      "id": "portable-bundle-parity",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "parity": 1.0,
+        "idempotent": true,
+        "records": 1
+      },
+      "issue": ""
+    },
+    {
+      "id": "mem0-import-idempotency",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "same_id": true,
+        "record_count": 1
+      },
+      "issue": ""
+    },
+    {
+      "id": "typescript-packed-live-contract",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "packed_install": true,
+        "live_memory_lifecycle": true,
+        "safe_retry": true,
+        "mutation_not_retried": true,
+        "cancellation": true,
+        "concurrent_explanations": 16
+      },
+      "issue": ""
+    }
+  ],
+  "claim_boundary": "Deterministic local contract and clean-package evidence for the pinned provider SDKs and HTTP runtime. It is not a certification of third-party hosted provider availability."
+}
