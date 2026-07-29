@@ -419,6 +419,7 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
         "output_tag": "trajectory-delta",
         "max_summary_chars": 2_800,
         "source_states_preserved": True,
+        "reader_evidence": "dereferenced_source_state",
         "answer_labels_used": False,
     }
     assert (
@@ -427,6 +428,10 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
     )
     assert memory_os["retrieval_view"] == "trajectory_delta"
     assert memory_os["retrieval_tags"] == ["trajectory-delta"]
+    assert (
+        memory_os["reader_evidence_view"]
+        == "dereferenced_source_state"
+    )
     assert memory_os["trajectory_consolidation"]["created"] > 0
     assert (
         memory_os["trajectory_consolidation"]["provenance_coverage"]
@@ -455,9 +460,9 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
         ),
     }
     assert memory_os["task_success_rate"] == 1.0
-    assert memory_os["reused_answers"] == 0
-    assert memory_os["generated_answers"] == 2
-    assert reader.answer_calls == 4
+    assert memory_os["reused_answers"] == 2
+    assert memory_os["generated_answers"] == 0
+    assert reader.answer_calls == 2
     assert len(rows) == 4
     assert checkpoint_rows == rows
     assert all(row["context_sha256"] for row in rows)

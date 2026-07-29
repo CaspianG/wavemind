@@ -207,6 +207,29 @@ class TrajectoryDeltaConsolidator:
             )
         return report
 
+    def source_text(self, result: Any) -> str:
+        """Return immutable source evidence for a derived query result."""
+
+        source_ids = result.metadata.get("source_memory_ids") or ()
+        if not source_ids:
+            return str(result.text)
+        try:
+            source_id = int(source_ids[0])
+        except (TypeError, ValueError, IndexError):
+            return str(result.text)
+        cached = getattr(self.memory, "_records_by_id", None)
+        if isinstance(cached, dict):
+            record = cached.get(source_id)
+            if record is not None:
+                return str(record.text)
+        store = getattr(self.memory, "store", None)
+        get_record = getattr(store, "get", None)
+        if callable(get_record):
+            record = get_record(source_id)
+            if record is not None:
+                return str(record.text)
+        return str(result.text)
+
     def _records(self, namespace: str | None) -> list[Any]:
         cached = getattr(self.memory, "_records_by_id", None)
         if isinstance(cached, dict):

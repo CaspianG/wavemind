@@ -726,6 +726,7 @@ def _query_memory(
     semantic_rerank_k: int = 20,
     semantic_rerank_weight: float = 0.70,
     tags: tuple[str, ...] | None = None,
+    dereference_trajectory_evidence: bool = False,
 ) -> tuple[dict[str, list[str]], dict[str, Any]]:
     if semantic_rerank_k < top_k:
         raise ValueError("semantic_rerank_k must be at least top_k")
@@ -749,6 +750,11 @@ def _query_memory(
     memory.audit_queries = bool(use_memory_os)
     query_top_k = semantic_rerank_k if semantic_reranker is not None else top_k
     candidate_top_k = max(query_top_k, min(50, query_top_k * 10))
+    trajectory_view = (
+        TrajectoryDeltaConsolidator(memory)
+        if dereference_trajectory_evidence
+        else None
+    )
     for question in dataset.questions:
         namespace = f"longmemeval-v2-small:{question.domain}"
         retrieval_query = _retrieval_query(question.question)
@@ -781,7 +787,14 @@ def _query_memory(
                 max_results_per_diversity_group=2,
             )
         snippets = [
-            _query_snippet(result.text, retrieval_query)
+            _query_snippet(
+                (
+                    trajectory_view.source_text(result)
+                    if trajectory_view is not None
+                    else result.text
+                ),
+                retrieval_query,
+            )
             for result in results
         ]
         if semantic_reranker is not None and results:
@@ -855,6 +868,11 @@ def _query_memory(
             "trajectory_delta" if tags else "raw_trajectory_state"
         ),
         "retrieval_tags": list(tags or ()),
+        "reader_evidence_view": (
+            "dereferenced_source_state"
+            if dereference_trajectory_evidence
+            else "retrieved_record"
+        ),
         "worker_runs": len(worker_reports),
         "worker_errors": sum(
             int(dict(row.get("prewarm") or {}).get("errors") or 0)
@@ -1432,6 +1450,7 @@ def run_benchmark(
                 semantic_rerank_k=semantic_rerank_k,
                 semantic_rerank_weight=semantic_rerank_weight,
                 tags=("trajectory-delta",),
+                dereference_trajectory_evidence=True,
             )
             os_metrics["trajectory_consolidation"] = (
                 consolidation.as_dict()
@@ -1598,6 +1617,7 @@ def run_benchmark(
                     "output_tag": "trajectory-delta",
                     "max_summary_chars": 2_800,
                     "source_states_preserved": True,
+                    "reader_evidence": "dereferenced_source_state",
                     "answer_labels_used": False,
                 },
             },

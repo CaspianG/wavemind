@@ -104,6 +104,9 @@ def test_trajectory_delta_consolidation_is_idempotent_and_provenanced(tmp_path):
         assert rows[0].metadata["source"] == "wavemind_trajectory_delta"
         assert rows[0].metadata["source_memory_ids"][0] in source_ids
         assert rows[0].metadata["trajectory_id"] == "run-1"
+        assert worker.source_text(rows[0]) == memory.store.get(
+            rows[0].metadata["source_memory_ids"][0]
+        ).text
     finally:
         memory.close()
 
