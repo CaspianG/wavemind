@@ -113,9 +113,9 @@ def test_trajectory_delta_consolidation_is_idempotent_and_provenanced(tmp_path):
             raw,
             source_text="source excerpt",
         )
-        assert packet.startswith("Experience summary:\n")
+        assert packet.startswith("Exact source state:\nsource excerpt")
         assert "My Open Incidents" in packet
-        assert packet.endswith("Source evidence:\nsource excerpt")
+        assert "Related trajectory summary:\n" in packet
     finally:
         memory.close()
 

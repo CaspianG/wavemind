@@ -442,11 +442,12 @@ class TrajectoryDeltaConsolidator:
                 }:
                     continue
                 source_ids = record.metadata.get("source_memory_ids") or ()
-                try:
-                    linked_id = int(source_ids[0])
-                except (TypeError, ValueError, IndexError):
-                    continue
-                summaries.setdefault(linked_id, str(record.text))
+                for raw_id in source_ids:
+                    try:
+                        linked_id = int(raw_id)
+                    except (TypeError, ValueError):
+                        continue
+                    summaries.setdefault(linked_id, str(record.text))
             self._summary_by_source_id = summaries
         return self._summary_by_source_id.get(source_id, "")
 
@@ -465,10 +466,10 @@ class TrajectoryDeltaConsolidator:
         if not summary:
             return source_text
         return (
-            "Experience summary:\n"
-            f"{summary}\n"
-            "Source evidence:\n"
-            f"{source_text}"
+            "Exact source state:\n"
+            f"{source_text}\n"
+            "Related trajectory summary:\n"
+            f"{summary}"
         )
 
     def _records(self, namespace: str | None) -> list[Any]:

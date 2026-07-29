@@ -419,21 +419,23 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
         "output_tag": "trajectory-experience",
         "max_summary_chars": 4_800,
         "source_states_preserved": True,
-        "reader_evidence": "trajectory_summary_plus_ranked_source_states",
-        "reader_summary_max_chars": 1_800,
-        "reader_source_states": 2,
-        "reader_source_state_max_chars": 1_000,
+        "shortlist_policy": "same_raw_top_k_as_core",
+        "reader_evidence": "source_state_then_trajectory_summary",
+        "reader_summary_max_chars": 1_000,
         "answer_labels_used": False,
     }
     assert (
         memory_os["execution_mode"]
-        == "memory_os_feedback_free_trajectory_experience"
+        == "memory_os_source_preserving_trajectory_context"
     )
-    assert memory_os["retrieval_view"] == "trajectory_experience"
-    assert memory_os["retrieval_tags"] == ["trajectory-experience"]
+    assert (
+        memory_os["retrieval_view"]
+        == "raw_trajectory_state_with_trajectory_context"
+    )
+    assert memory_os["retrieval_tags"] == ["trajectory-state"]
     assert (
         memory_os["reader_evidence_view"]
-        == "trajectory_summary_plus_ranked_source_states"
+        == "source_state_then_trajectory_summary"
     )
     assert memory_os["trajectory_consolidation"]["created"] > 0
     assert (

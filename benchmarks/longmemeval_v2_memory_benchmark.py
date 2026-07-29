@@ -777,6 +777,7 @@ def _query_memory(
     tags: tuple[str, ...] | None = None,
     dereference_trajectory_evidence: bool = False,
     expand_trajectory_evidence: bool = False,
+    enrich_trajectory_evidence: bool = False,
 ) -> tuple[dict[str, list[str]], dict[str, Any]]:
     if semantic_rerank_k < top_k:
         raise ValueError("semantic_rerank_k must be at least top_k")
@@ -802,7 +803,11 @@ def _query_memory(
     candidate_top_k = max(query_top_k, min(50, query_top_k * 10))
     trajectory_view = (
         TrajectoryDeltaConsolidator(memory)
-        if dereference_trajectory_evidence or expand_trajectory_evidence
+        if (
+            dereference_trajectory_evidence
+            or expand_trajectory_evidence
+            or enrich_trajectory_evidence
+        )
         else None
     )
     for question in dataset.questions:
@@ -859,6 +864,15 @@ def _query_memory(
                     retrieval_query,
                 )
             )
+        if enrich_trajectory_evidence:
+            assert trajectory_view is not None
+            snippets = [
+                trajectory_view.experience_packet_text(
+                    result,
+                    source_text=snippet,
+                )
+                for result, snippet in zip(results, snippets, strict=True)
+            ]
         if semantic_reranker is not None and results:
             query_vector = np.asarray(
                 encode_query_text(semantic_reranker, retrieval_query),
@@ -924,21 +938,31 @@ def _query_memory(
     stats = cache.stats()
     return contexts, {
         "execution_mode": (
-            "memory_os_feedback_free_trajectory_experience"
+            "memory_os_source_preserving_trajectory_context"
             if use_memory_os
             else "wavemind_core"
         ),
         "retrieval_view": (
-            "trajectory_experience" if use_memory_os else "raw_trajectory_state"
+            "raw_trajectory_state_with_trajectory_context"
+            if enrich_trajectory_evidence
+            else (
+                "trajectory_experience"
+                if use_memory_os
+                else "raw_trajectory_state"
+            )
         ),
         "retrieval_tags": list(tags or ()),
         "reader_evidence_view": (
+            "source_state_then_trajectory_summary"
+            if enrich_trajectory_evidence
+            else (
             "trajectory_summary_plus_ranked_source_states"
             if expand_trajectory_evidence
             else (
-            "dereferenced_source_state"
-            if dereference_trajectory_evidence
-            else "retrieved_record"
+                "dereferenced_source_state"
+                if dereference_trajectory_evidence
+                else "retrieved_record"
+            )
             )
         ),
         "worker_runs": len(worker_reports),
@@ -1518,8 +1542,8 @@ def run_benchmark(
                 semantic_reranker=semantic_reranker,
                 semantic_rerank_k=semantic_rerank_k,
                 semantic_rerank_weight=semantic_rerank_weight,
-                tags=("trajectory-experience",),
-                expand_trajectory_evidence=True,
+                tags=("trajectory-state",),
+                enrich_trajectory_evidence=True,
             )
             os_metrics["trajectory_consolidation"] = (
                 consolidation.as_dict()
@@ -1686,12 +1710,11 @@ def run_benchmark(
                     "output_tag": "trajectory-experience",
                     "max_summary_chars": 4_800,
                     "source_states_preserved": True,
+                    "shortlist_policy": "same_raw_top_k_as_core",
                     "reader_evidence": (
-                        "trajectory_summary_plus_ranked_source_states"
+                        "source_state_then_trajectory_summary"
                     ),
-                    "reader_summary_max_chars": 1_800,
-                    "reader_source_states": 2,
-                    "reader_source_state_max_chars": 1_000,
+                    "reader_summary_max_chars": 1_000,
                     "answer_labels_used": False,
                 },
             },
