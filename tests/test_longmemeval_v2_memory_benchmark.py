@@ -4,8 +4,12 @@ import json
 import urllib.request
 from pathlib import Path
 
+import numpy as np
+import pytest
+
 from benchmarks.longmemeval_v2_memory_benchmark import (
     OllamaReader,
+    PersistentCachedTextEncoder,
     V2Question,
     _encoder_metadata,
     _stratified_question_sample,
@@ -63,6 +67,102 @@ def test_encoder_metadata_records_reproducible_ollama_configuration():
         "vector_dim": 384,
         "char_ngram_weight": 0.0,
     }
+
+
+def test_persistent_embedding_cache_resumes_without_reencoding(tmp_path):
+    class CountingEncoder:
+        vector_dim = 3
+        batch_size = 2
+        cache_key = "fixture-encoder-v1"
+
+        def __init__(self):
+            self.single_calls = 0
+            self.batch_calls = 0
+
+        def encode_vector(self, text):
+            self.single_calls += 1
+            return np.asarray([3.0, 4.0, 0.0], dtype=np.float32)
+
+        def encode_vectors(self, texts):
+            values = list(texts)
+            self.batch_calls += 1
+            return np.asarray(
+                [[3.0, 4.0, 0.0] for _ in values],
+                dtype=np.float32,
+            )
+
+    cache_path = tmp_path / "embeddings.sqlite3"
+    first_base = CountingEncoder()
+    first = PersistentCachedTextEncoder(first_base, cache_path)
+    try:
+        first_documents = first.encode_document_vectors(["alpha", "beta"])
+        first_query = first.encode_query_vector("question")
+        assert first_base.batch_calls == 1
+        assert first_base.single_calls == 1
+        assert first.stats()["writes"] == 3
+    finally:
+        first.close()
+
+    second_base = CountingEncoder()
+    second = PersistentCachedTextEncoder(second_base, cache_path)
+    try:
+        second_documents = second.encode_document_vectors(["alpha", "beta"])
+        second_query = second.encode_query_vector("question")
+        assert np.allclose(second_documents, first_documents)
+        assert np.allclose(second_query, first_query)
+        assert second_base.batch_calls == 0
+        assert second_base.single_calls == 0
+        assert second.stats()["entries"] == 3
+        assert second.stats()["hits"] == 3
+    finally:
+        second.close()
+
+
+def test_persistent_embedding_cache_keeps_completed_batches_after_failure(tmp_path):
+    class FailingEncoder:
+        vector_dim = 2
+        batch_size = 2
+        cache_key = "failing-encoder-v1"
+
+        def __init__(self, fail_after=None):
+            self.batch_calls = 0
+            self.fail_after = fail_after
+
+        def encode_vectors(self, texts):
+            values = list(texts)
+            self.batch_calls += 1
+            if self.fail_after is not None and self.batch_calls > self.fail_after:
+                raise RuntimeError("simulated transport timeout")
+            return np.asarray(
+                [[float(len(value)), 1.0] for value in values],
+                dtype=np.float32,
+            )
+
+        def encode_vector(self, text):
+            return self.encode_vectors([text])[0]
+
+    cache_path = tmp_path / "resume.sqlite3"
+    first_base = FailingEncoder(fail_after=1)
+    first = PersistentCachedTextEncoder(first_base, cache_path)
+    try:
+        with pytest.raises(RuntimeError, match="simulated transport timeout"):
+            first.encode_document_vectors(["one", "two", "three", "four"])
+        assert first.stats()["entries"] == 2
+    finally:
+        first.close()
+
+    resumed_base = FailingEncoder()
+    resumed = PersistentCachedTextEncoder(resumed_base, cache_path)
+    try:
+        vectors = resumed.encode_document_vectors(
+            ["one", "two", "three", "four"]
+        )
+        assert vectors.shape == (4, 2)
+        assert resumed.stats()["hits"] == 2
+        assert resumed.stats()["writes"] == 2
+        assert resumed_base.batch_calls == 1
+    finally:
+        resumed.close()
 
 
 def test_stratified_question_sample_is_reproducible_and_covers_strata():

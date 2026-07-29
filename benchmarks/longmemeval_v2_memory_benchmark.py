@@ -9,6 +9,7 @@ import os
 import random
 import re
 import shutil
+import sqlite3
 import statistics
 import subprocess
 import sys
@@ -22,6 +23,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Protocol
 
+import numpy as np
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
@@ -32,6 +35,9 @@ from wavemind.encoders import (
     HashingTextEncoder,
     OllamaTextEncoder,
     TextVectorEncoder,
+    encode_document_batch,
+    encode_document_text,
+    encode_query_text,
     is_stopword_token,
     normalize_token,
 )
@@ -1018,7 +1024,189 @@ def _evaluate_contexts(
     )
 
 
+class PersistentCachedTextEncoder:
+    """Resume-safe SQLite cache for deterministic benchmark embeddings."""
+
+    def __init__(
+        self,
+        base_encoder: TextVectorEncoder,
+        path: str | Path,
+    ) -> None:
+        self.base_encoder = base_encoder
+        self.vector_dim = int(base_encoder.vector_dim)
+        self.path = Path(path).resolve()
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.cache_key = getattr(
+            base_encoder,
+            "cache_key",
+            f"{type(base_encoder).__name__}|{self.vector_dim}",
+        )
+        self._connection = sqlite3.connect(self.path)
+        self._connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS embeddings (
+                cache_key TEXT NOT NULL,
+                role TEXT NOT NULL,
+                text_sha256 TEXT NOT NULL,
+                vector BLOB NOT NULL,
+                vector_dim INTEGER NOT NULL,
+                PRIMARY KEY (cache_key, role, text_sha256)
+            )
+            """
+        )
+        self._connection.commit()
+        self.hits = 0
+        self.misses = 0
+        self.writes = 0
+
+    def close(self) -> None:
+        self._connection.close()
+
+    def encode_vector(self, text: str) -> np.ndarray:
+        return self.encode_query_vector(text)
+
+    def encode_vectors(self, texts) -> np.ndarray:
+        return self.encode_document_vectors(texts)
+
+    def encode_query_vector(self, text: str) -> np.ndarray:
+        cached = self._get("query", text)
+        if cached is not None:
+            return cached
+        vector = np.asarray(
+            encode_query_text(self.base_encoder, text),
+            dtype=np.float32,
+        )
+        self._put("query", text, vector)
+        return vector
+
+    def encode_document_vector(self, text: str) -> np.ndarray:
+        cached = self._get("document", text)
+        if cached is not None:
+            return cached
+        vector = np.asarray(
+            encode_document_text(self.base_encoder, text),
+            dtype=np.float32,
+        )
+        self._put("document", text, vector)
+        return vector
+
+    def encode_document_vectors(self, texts) -> np.ndarray:
+        values = list(texts)
+        if not values:
+            return np.zeros((0, self.vector_dim), dtype=np.float32)
+        vectors: list[np.ndarray | None] = [None] * len(values)
+        missing: list[int] = []
+        for index, text in enumerate(values):
+            cached = self._get("document", text)
+            if cached is None:
+                missing.append(index)
+            else:
+                vectors[index] = cached
+        batch_size = max(
+            1,
+            int(getattr(self.base_encoder, "batch_size", 32)),
+        )
+        for offset in range(0, len(missing), batch_size):
+            indexes = missing[offset : offset + batch_size]
+            batch_texts = [values[index] for index in indexes]
+            batch_vectors = np.asarray(
+                encode_document_batch(self.base_encoder, batch_texts),
+                dtype=np.float32,
+            )
+            expected_shape = (len(indexes), self.vector_dim)
+            if batch_vectors.shape != expected_shape:
+                raise RuntimeError(
+                    "cached encoder batch shape "
+                    f"{batch_vectors.shape}, expected {expected_shape}"
+                )
+            with self._connection:
+                for index, text, vector in zip(
+                    indexes,
+                    batch_texts,
+                    batch_vectors,
+                    strict=True,
+                ):
+                    normalized = np.asarray(vector, dtype=np.float32)
+                    vectors[index] = normalized
+                    self._put("document", text, normalized, commit=False)
+        return np.stack(
+            [vector for vector in vectors if vector is not None]
+        ).astype(np.float32)
+
+    def stats(self) -> dict[str, Any]:
+        entries = int(
+            self._connection.execute(
+                "SELECT COUNT(*) FROM embeddings WHERE cache_key = ?",
+                (self.cache_key,),
+            ).fetchone()[0]
+        )
+        return {
+            "enabled": True,
+            "schema": "wavemind.benchmark_embedding_cache.v1",
+            "path": str(self.path),
+            "entries": entries,
+            "hits": self.hits,
+            "misses": self.misses,
+            "writes": self.writes,
+        }
+
+    def _get(self, role: str, text: str) -> np.ndarray | None:
+        row = self._connection.execute(
+            """
+            SELECT vector, vector_dim
+            FROM embeddings
+            WHERE cache_key = ? AND role = ? AND text_sha256 = ?
+            """,
+            (self.cache_key, role, self._text_sha(text)),
+        ).fetchone()
+        if row is None:
+            self.misses += 1
+            return None
+        vector = np.frombuffer(row[0], dtype=np.float32).copy()
+        if int(row[1]) != self.vector_dim or vector.shape != (self.vector_dim,):
+            raise RuntimeError("persistent embedding cache contains an invalid vector")
+        self.hits += 1
+        return vector
+
+    def _put(
+        self,
+        role: str,
+        text: str,
+        vector: np.ndarray,
+        *,
+        commit: bool = True,
+    ) -> None:
+        normalized = np.asarray(vector, dtype=np.float32)
+        if normalized.shape != (self.vector_dim,):
+            raise RuntimeError(
+                f"embedding shape {normalized.shape}, expected {(self.vector_dim,)}"
+            )
+        self._connection.execute(
+            """
+            INSERT OR REPLACE INTO embeddings (
+                cache_key, role, text_sha256, vector, vector_dim
+            ) VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                self.cache_key,
+                role,
+                self._text_sha(text),
+                normalized.tobytes(),
+                self.vector_dim,
+            ),
+        )
+        self.writes += 1
+        if commit:
+            self._connection.commit()
+
+    @staticmethod
+    def _text_sha(text: str) -> str:
+        return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
 def _encoder_metadata(encoder: TextVectorEncoder) -> dict[str, Any]:
+    if isinstance(encoder, PersistentCachedTextEncoder):
+        encoder = encoder.base_encoder
     metadata: dict[str, Any] = {
         "kind": "custom",
         "class": type(encoder).__name__,
@@ -1251,6 +1439,11 @@ def run_benchmark(
             },
             "dataset_checksums": dataset.source_files,
             "embedding": _encoder_metadata(encoder),
+            "embedding_cache": (
+                encoder.stats()
+                if isinstance(encoder, PersistentCachedTextEncoder)
+                else {"enabled": False}
+            ),
             "retrieval": {
                 "vector_weight": 0.60,
                 "lexical_weight": 1.0,
@@ -1349,6 +1542,16 @@ def main() -> int:
     )
     parser.add_argument("--ollama-embedding-vector-dim", type=int, default=1024)
     parser.add_argument("--ollama-embedding-batch-size", type=int, default=32)
+    parser.add_argument(
+        "--ollama-embedding-timeout-seconds",
+        type=float,
+        default=600.0,
+    )
+    parser.add_argument(
+        "--embedding-cache",
+        type=Path,
+        help="Persistent SQLite embedding cache for restart-safe benchmark runs.",
+    )
     parser.add_argument("--resume-result", type=Path)
     parser.add_argument("--resume-per-query", type=Path)
     parser.add_argument(
@@ -1375,7 +1578,12 @@ def main() -> int:
             base_url=args.ollama_embedding_base_url,
             vector_dim=args.ollama_embedding_vector_dim,
             batch_size=args.ollama_embedding_batch_size,
+            timeout_seconds=args.ollama_embedding_timeout_seconds,
         )
+    if args.embedding_cache:
+        if encoder is None:
+            parser.error("--embedding-cache requires an explicit embedding model")
+        encoder = PersistentCachedTextEncoder(encoder, args.embedding_cache)
     resume_rows: list[dict[str, Any]] | None = None
     resume_metadata: dict[str, Any] | None = None
     if args.resume_result:
@@ -1460,19 +1668,23 @@ def main() -> int:
             handle.flush()
         checkpoint_keys.add(key)
 
-    payload, rows = run_benchmark(
-        args.data_root,
-        reader=reader,
-        encoder=encoder,
-        top_k=args.top_k,
-        limit_questions=args.limit_questions,
-        question_sample_size=args.question_sample_size,
-        question_sample_seed=args.question_sample_seed,
-        work_dir=args.work_dir,
-        resume_rows=resume_rows,
-        resume_metadata=resume_metadata,
-        on_row=checkpoint,
-    )
+    try:
+        payload, rows = run_benchmark(
+            args.data_root,
+            reader=reader,
+            encoder=encoder,
+            top_k=args.top_k,
+            limit_questions=args.limit_questions,
+            question_sample_size=args.question_sample_size,
+            question_sample_seed=args.question_sample_seed,
+            work_dir=args.work_dir,
+            resume_rows=resume_rows,
+            resume_metadata=resume_metadata,
+            on_row=checkpoint,
+        )
+    finally:
+        if isinstance(encoder, PersistentCachedTextEncoder):
+            encoder.close()
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
