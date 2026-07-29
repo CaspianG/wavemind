@@ -73,6 +73,10 @@ def test_integration_admission_passes_frozen_three_run_gate(monkeypatch):
 
     assert payload["schema"] == INTEGRATION_ADMISSION_SCHEMA
     assert payload["status"] == "admitted"
+    assert re.fullmatch(r"[0-9a-f]{40}", payload["source_sha"])
+    assert payload["suite"]["fingerprint_sha256"] == (
+        INTEGRATION_SUITE_FINGERPRINT
+    )
     assert payload["admitted"] is True
     assert payload["suite"]["fingerprint_sha256"] == (
         INTEGRATION_SUITE_FINGERPRINT
