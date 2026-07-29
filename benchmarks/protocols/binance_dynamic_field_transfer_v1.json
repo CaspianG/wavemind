@@ -1,0 +1,125 @@
+{
+  "protocol": "wavemind.crypto.binance-dynamic-field-transfer.v1",
+  "frozen_at_utc": "2026-07-29T15:27:00Z",
+  "purpose": "One-read 20-asset evaluation of a causal expanding ExtraTrees plus WaveField veto selected on disjoint development assets.",
+  "source": {
+    "provider": "Binance public data archive",
+    "base_url": "https://data.binance.vision/data/futures/um",
+    "market": "USD-M perpetual futures",
+    "interval": "4h",
+    "start": "2023-01-01",
+    "end": "2026-06-30",
+    "integrity": "Every available archive file must pass the provider CHECKSUM before it enters a gzip bundle. Canonical klines are mandatory; missing derivative files are explicitly recorded."
+  },
+  "selection_evidence": {
+    "training_assets": 13,
+    "development_transfer_assets": 16,
+    "development_grid_configurations": 1008,
+    "selected_transfer_signals": 172,
+    "selected_transfer_accuracy": 0.7906976744186046,
+    "selected_transfer_wilson_low_95": 0.7238842017860079,
+    "selected_transfer_worst_supported_fold_accuracy": 0.6923076923076923,
+    "selected_transfer_market_episodes": 40,
+    "selected_transfer_market_episode_accuracy": 0.725,
+    "reverse_transfer_signals": 174,
+    "reverse_transfer_accuracy": 0.7586206896551724,
+    "reverse_transfer_wilson_low_95": 0.6898949589996887,
+    "negative_control": "One of three deterministic asset hash folds reached only 0.63 accuracy. The final holdout therefore tests transfer rather than claiming universal development stability."
+  },
+  "training_symbols": [
+    "ADAUSDT",
+    "ATOMUSDT",
+    "BCHUSDT",
+    "BNBUSDT",
+    "BTCUSDT",
+    "DOGEUSDT",
+    "DOTUSDT",
+    "ETCUSDT",
+    "ETHUSDT",
+    "LINKUSDT",
+    "LTCUSDT",
+    "SOLUSDT",
+    "XRPUSDT"
+  ],
+  "holdout_symbols": [
+    "AAVEUSDT",
+    "ALGOUSDT",
+    "APEUSDT",
+    "APTUSDT",
+    "AVAXUSDT",
+    "COMPUSDT",
+    "CRVUSDT",
+    "FILUSDT",
+    "LDOUSDT",
+    "MANAUSDT",
+    "NEARUSDT",
+    "OPUSDT",
+    "RUNEUSDT",
+    "SANDUSDT",
+    "THETAUSDT",
+    "TRXUSDT",
+    "UNIUSDT",
+    "XLMUSDT",
+    "XTZUSDT",
+    "WOOUSDT"
+  ],
+  "normalization": {
+    "scope": "per asset",
+    "fit_period_end_exclusive": "2024-01-01",
+    "center": "median",
+    "scale": "q90 - q10",
+    "clip": [-10.0, 10.0],
+    "labels_used": false
+  },
+  "initial_training_period": ["2023-07-01", "2024-01-01"],
+  "holdout_folds": [
+    ["2024-01-01", "2024-07-01"],
+    ["2024-07-01", "2025-01-01"],
+    ["2025-01-01", "2025-07-01"],
+    ["2025-07-01", "2026-01-01"],
+    ["2026-01-01", "2026-07-01"]
+  ],
+  "candidate_event": {
+    "return_feature": "return_12",
+    "return_quantile": 0.01,
+    "open_interest_feature": "oi_change_1",
+    "open_interest_quantile": 0.5,
+    "threshold_scope": "per asset using only feature history before each period",
+    "overlap_control": "At most one candidate per asset until the previous 24h target matures."
+  },
+  "extra_trees_head": {
+    "estimators": 200,
+    "minimum_samples_leaf": 10,
+    "maximum_features": 0.7,
+    "class_weight": "balanced",
+    "random_seed": 29,
+    "sample_weight": "inverse number of training events sharing the same timestamp"
+  },
+  "joint_veto": {
+    "minimum_up_probability": 0.55,
+    "random_seed": 29,
+    "decision": "Emit an up forecast only when both the expanding ExtraTrees head and the expanding positive-vs-negative WaveField memory assign at least 0.55 up probability."
+  },
+  "minimum_training_events": 30,
+  "causality": {
+    "model_updates": "Before each holdout fold, both models are rebuilt from training-asset events whose 24h labels matured before that fold began.",
+    "asset_isolation": "No holdout-asset label is used for training, model updates, normalization, threshold selection, or calibration.",
+    "time_isolation": "Candidate thresholds use features before the evaluated period. Outcome labels are never used until their target timestamp has passed.",
+    "dependence_control": "Signals are reported as asset observations, UTC market blocks, and market episodes separated by more than 48 hours.",
+    "holdout_policy": "No asset, feature, parameter, threshold, fold, direction, gate, or final sample size may change after this file is committed. A failed gate remains reported."
+  },
+  "strict_gate": {
+    "minimum_signals": 150,
+    "minimum_direction_accuracy": 0.7,
+    "minimum_wilson_low_95": 0.65,
+    "minimum_supported_folds": 5,
+    "minimum_fold_support": 10,
+    "minimum_supported_fold_accuracy": 0.65,
+    "minimum_supported_assets": 16,
+    "minimum_asset_support": 5,
+    "minimum_supported_asset_accuracy": 0.55,
+    "minimum_market_episodes": 30,
+    "minimum_market_episode_accuracy": 0.65,
+    "minimum_market_episode_wilson_low_95": 0.55
+  }
+}
