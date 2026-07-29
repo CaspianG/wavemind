@@ -84,6 +84,7 @@ def run_dynamic_field_transfer(
     seed = int(protocol["joint_veto"]["random_seed"])
 
     events: list[dict[str, Any]] = []
+    candidate_events: list[dict[str, Any]] = []
     fold_audits: list[dict[str, Any]] = []
     candidate_count = 0
     training_fingerprints: list[str] = []
@@ -131,7 +132,7 @@ def run_dynamic_field_transfer(
         accepted = (tree_probability >= threshold) & (
             field_probability >= threshold
         )
-        fold_events = [
+        fold_candidates = [
             {
                 "fold_index": fold_index,
                 "symbol": str(holdout.symbols[index]),
@@ -160,7 +161,16 @@ def run_dynamic_field_transfer(
                 ),
             }
             for position, index in enumerate(query)
-            if accepted[position]
+        ]
+        candidate_events.extend(fold_candidates)
+        fold_events = [
+            event
+            for event, is_accepted in zip(
+                fold_candidates,
+                accepted,
+                strict=True,
+            )
+            if is_accepted
         ]
         events.extend(fold_events)
         fingerprint = _training_fingerprint(
@@ -191,6 +201,10 @@ def run_dynamic_field_transfer(
         dependence,
         protocol["strict_gate"],
     )
+    diagnostic_ablations = summarize_diagnostic_ablations(
+        candidate_events,
+        threshold=threshold,
+    )
     return {
         "benchmark": "dynamic asset-disjoint WaveField transfer",
         "protocol": str(protocol["protocol"]),
@@ -209,6 +223,10 @@ def run_dynamic_field_transfer(
         },
         "dependence_control": dependence,
         "strict_gate": gate,
+        "diagnostic_ablations": {
+            "status": "post-holdout diagnostic; not used by the strict gate",
+            "policies": diagnostic_ablations,
+        },
     }
 
 
@@ -284,6 +302,34 @@ def _training_fingerprint(
     return digest.hexdigest()
 
 
+def summarize_diagnostic_ablations(
+    candidate_events: Sequence[Mapping[str, Any]],
+    *,
+    threshold: float,
+) -> dict[str, Any]:
+    selectors = {
+        "all_candidates": lambda row: True,
+        "extra_trees_only": lambda row: (
+            float(row["tree_probability_up"]) >= threshold
+        ),
+        "wavefield_only": lambda row: (
+            float(row["field_probability_up"]) >= threshold
+        ),
+        "joint_veto": lambda row: (
+            float(row["tree_probability_up"]) >= threshold
+            and float(row["field_probability_up"]) >= threshold
+        ),
+    }
+    output: dict[str, Any] = {}
+    for name, selector in selectors.items():
+        selected = [row for row in candidate_events if selector(row)]
+        output[name] = {
+            "summary": _summarize_slices(selected),
+            "dependence_control": summarize_market_dependence(selected),
+        }
+    return output
+
+
 def render_markdown(payload: Mapping[str, Any]) -> str:
     summary = payload["evaluation"]["summary"]
     episodes = payload["dependence_control"]["market_episodes"]
@@ -338,6 +384,30 @@ def render_markdown(payload: Mapping[str, Any]) -> str:
             f"| {row['symbol']} | {row['signals']} | "
             f"{_percent(row['accuracy'])} | "
             f"{_percent(row['wilson_low_95'])} |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Frozen-Threshold Diagnostic Ablation",
+            "",
+            (
+                "This diagnostic was added after the primary holdout read and "
+                "does not affect the strict gate."
+            ),
+            "",
+            "| policy | signals | accuracy | Wilson low 95% | episodes | episode accuracy |",
+            "|---|---:|---:|---:|---:|---:|",
+        ]
+    )
+    for name, result in payload["diagnostic_ablations"]["policies"].items():
+        policy_summary = result["summary"]
+        policy_episodes = result["dependence_control"]["market_episodes"]
+        lines.append(
+            f"| {name} | {policy_summary['signals']} | "
+            f"{_percent(policy_summary['accuracy'])} | "
+            f"{_percent(policy_summary['wilson_low_95'])} | "
+            f"{policy_episodes['observations']} | "
+            f"{_percent(policy_episodes['accuracy'])} |"
         )
     lines.extend(
         [

@@ -359,6 +359,7 @@ against the provider checksums and fingerprinted in the result JSON.
 |---|---:|---:|---:|---:|---:|---:|:---:|
 | decelerating-capitulation rule | 16 | 55 | 0.764 | 0.637 | 16 | 0.750 | no |
 | fixed-2023 ExtraTrees + WaveField veto | 8 | 41 | 0.707 | 0.555 | 23 | 0.739 | no |
+| expanding ExtraTrees + WaveField veto | 20 | 193 | 0.731 | 0.664 | 43 | 0.698 | no |
 
 The simple causal rule clears 70% across the aggregate sample, four supported
 half-year folds, and market episodes. It misses its predeclared support gate:
@@ -376,11 +377,36 @@ with Wilson low `0.724`; the reverse transfer produced `0.759` on 174 signals.
 One deterministic asset hash fold still fell to `0.630`, so these are selection
 results rather than final evidence.
 
-The final protocol is frozen in
-`benchmarks/protocols/binance_dynamic_field_transfer_v1.json`: 20 new assets,
-five half-year folds, at least 150 signals, all five folds supported, at least
-16 supported assets, and at least 30 market episodes. Its result remains
-pending until the checksum-verified holdout is complete and read once.
+The final protocol was frozen in
+`benchmarks/protocols/binance_dynamic_field_transfer_v1.json` before 20 new
+asset bundles were downloaded. On the one-read holdout it produces 141 correct
+forecasts out of 193 (`0.731`), with Wilson low `0.664`, all 20 assets
+supported, all five half-year folds supported, and 43 market episodes. This is
+independent evidence above 70% with non-trivial support.
+
+The stronger predeclared gate still rejects the run. The 2024-H2 and 2026-H1
+folds are `0.644` and `0.636` against a `0.65` floor. NEAR is `6/11`
+(`0.545`) against the `0.55` supported-asset floor. Episode accuracy is
+`0.698`, while its Wilson lower bound is `0.549` against a `0.55` threshold.
+No threshold or gate was changed after seeing these near misses.
+
+A frozen-threshold diagnostic, added after the primary holdout read and excluded
+from admission, separates the components:
+
+| policy | signals | accuracy | Wilson low 95% | episodes | episode accuracy |
+|---|---:|---:|---:|---:|---:|
+| all candidate rebounds | 508 | 0.663 | 0.621 | 57 | 0.772 |
+| ExtraTrees only | 248 | 0.738 | 0.680 | 46 | 0.696 |
+| WaveField only | 332 | 0.732 | 0.682 | 51 | 0.765 |
+| frozen joint veto | 193 | 0.731 | 0.664 | 43 | 0.698 |
+
+WaveField alone lifts signal accuracy by 6.9 percentage points over all
+candidate rebounds while retaining 332 observations. The ExtraTrees veto does
+not improve WaveField-only accuracy on this holdout. Because this comparison is
+post-holdout diagnostics, it supports mechanism analysis rather than replacing
+the frozen primary result. The evidence applies to rare 24-hour
+post-capitulation rebounds, not every market window and not target-price
+forecasting.
 
 Reproducible outputs:
 
@@ -391,6 +417,8 @@ Reproducible outputs:
 - `benchmarks/results/crypto/binance_asset_normalized_field_transfer_v1.json`
 - `benchmarks/results/crypto/binance_asset_normalized_field_transfer_v1.md`
 - `benchmarks/protocols/binance_dynamic_field_transfer_v1.json`
+- `benchmarks/results/crypto/binance_dynamic_field_transfer_v1.json`
+- `benchmarks/results/crypto/binance_dynamic_field_transfer_v1.md`
 
 ### Cross-exchange and market-episode audit
 
@@ -1217,3 +1245,17 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
     `0.535` raw / `0.554` balanced / `0.629` AUC on holdout3 and `0.677` /
     `0.611` / `0.678` on holdout4. Neither passes. The current field contains a
     partial risk-regime signal, not a universal direction or 70% market edge.
+48. Done, conditional evidence: a frozen 16-asset decelerating-capitulation
+    transfer reaches `0.764` on 55 signals and `0.750` on 16 market episodes.
+    It misses the predeclared signal, Wilson, asset-support, and episode-count
+    gates, so the rule remains conditional.
+49. Done, independent 70% evidence: protocol commit `e92ca62` froze 20 unseen
+    assets before download. Expanding ExtraTrees plus WaveField reaches `0.731`
+    on 193 signals with Wilson low `0.664`, all 20 assets supported, five
+    supported half-year folds, and 43 market episodes. The stronger stability
+    gate remains rejected because two folds are below `0.65`, NEAR is `0.545`,
+    and episode Wilson low is `0.549`.
+50. Next: freeze the simpler WaveField-only dynamic policy before another
+    disjoint asset or genuinely forward period. The post-holdout diagnostic
+    reaches `0.732` on 332 signals with Wilson low `0.682` and `0.765` episode
+    accuracy, but it cannot replace the already evaluated joint-veto primary.
