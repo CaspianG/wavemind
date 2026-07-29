@@ -4,6 +4,7 @@ import pytest
 
 from benchmarks.crypto_decelerating_capitulation_transfer_benchmark import (
     evaluate_strict_gate,
+    fingerprint_files,
     run_frozen_transfer,
     summarize_market_dependence,
 )
@@ -101,3 +102,22 @@ def test_frozen_transfer_rejects_a_different_asset_set() -> None:
             protocol=protocol,
             protocol_sha256="abc",
         )
+
+
+def test_fingerprint_files_is_content_bound_and_name_sorted(tmp_path) -> None:
+    second = tmp_path / "b.json.gz"
+    first = tmp_path / "a.json.gz"
+    second.write_bytes(b"second")
+    first.write_bytes(b"first")
+
+    fingerprints = fingerprint_files([second, first])
+
+    assert [row["name"] for row in fingerprints] == [
+        "a.json.gz",
+        "b.json.gz",
+    ]
+    assert fingerprints[0]["bytes"] == 5
+    assert fingerprints[0]["sha256"] == (
+        "a7937b64b8caa58f03721bb6bacf5c78"
+        "cb235febe0e70b1b84cd99541461a08e"
+    )

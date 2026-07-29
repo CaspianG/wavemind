@@ -248,6 +248,23 @@ def load_protocol(path: str | Path) -> tuple[dict[str, Any], str]:
     return json.loads(content), hashlib.sha256(content).hexdigest()
 
 
+def fingerprint_files(paths: Sequence[str | Path]) -> list[dict[str, Any]]:
+    fingerprints: list[dict[str, Any]] = []
+    for value in sorted((Path(path) for path in paths), key=lambda path: path.name):
+        digest = hashlib.sha256()
+        with value.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+        fingerprints.append(
+            {
+                "name": value.name,
+                "bytes": value.stat().st_size,
+                "sha256": digest.hexdigest(),
+            }
+        )
+    return fingerprints
+
+
 def _dependence_row(
     group: int,
     events: Sequence[Mapping[str, Any]],
@@ -312,6 +329,7 @@ def main() -> int:
         protocol=protocol,
         protocol_sha256=protocol_sha256,
     )
+    payload["source_bundles"] = fingerprint_files(args.bundle)
     args.output_json.parent.mkdir(parents=True, exist_ok=True)
     args.output_json.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2) + "\n",

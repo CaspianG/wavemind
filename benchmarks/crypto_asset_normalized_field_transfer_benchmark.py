@@ -28,6 +28,7 @@ from benchmarks.crypto_capitulation_confirmation_benchmark import (  # noqa: E40
 )
 from benchmarks.crypto_decelerating_capitulation_transfer_benchmark import (  # noqa: E402
     evaluate_strict_gate,
+    fingerprint_files,
     render_markdown as render_simple_markdown,
     summarize_market_dependence,
 )
@@ -443,6 +444,10 @@ def main() -> int:
         protocol=protocol,
         protocol_sha256=protocol_sha256,
     )
+    payload["source_bundles"] = fingerprint_files(args.holdout_bundle)
+    payload["development_cache"] = fingerprint_files(
+        [args.development_cache]
+    )[0]
     args.output_json.parent.mkdir(parents=True, exist_ok=True)
     args.output_json.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
