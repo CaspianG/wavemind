@@ -12,6 +12,7 @@ from benchmarks.longmemeval_v2_memory_benchmark import (
     PersistentCachedTextEncoder,
     V2Question,
     _encoder_metadata,
+    _experience_query_intent,
     _resume_reranker_config,
     _stratified_question_sample,
     load_longmemeval_v2_small,
@@ -269,6 +270,21 @@ def test_retrieval_query_removes_answer_formatting_and_conversation_filler():
     assert query == "servicenow portal filters contain incident"
 
 
+def test_experience_query_intent_is_feedback_free_and_conservative():
+    assert (
+        _experience_query_intent(
+            "In our typical workflow, which form should I open?"
+        )
+        == "procedure"
+    )
+    assert (
+        _experience_query_intent(
+            'Which column header sits between "Price" and "Delivery time"?'
+        )
+        == "state"
+    )
+
+
 def _write_fixture(root: Path) -> None:
     (root / "haystacks").mkdir(parents=True)
     questions = [
@@ -420,23 +436,23 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
         "max_summary_chars": 4_800,
         "source_states_preserved": True,
         "shortlist_policy": "same_raw_top_k_as_core",
-        "reader_evidence": "source_state_then_trajectory_summary",
-        "reader_summary_max_chars": 1_000,
+        "query_routing": "feedback_free_procedure_intent",
+        "reader_evidence": "intent_selected_record",
         "answer_labels_used": False,
     }
     assert (
         memory_os["execution_mode"]
-        == "memory_os_source_preserving_trajectory_context"
+        == "memory_os_feedback_free_intent_routed_experience"
     )
     assert (
         memory_os["retrieval_view"]
-        == "raw_trajectory_state_with_trajectory_context"
+        == "intent_routed_state_or_trajectory_experience"
     )
-    assert memory_os["retrieval_tags"] == ["trajectory-state"]
-    assert (
-        memory_os["reader_evidence_view"]
-        == "source_state_then_trajectory_summary"
-    )
+    assert memory_os["retrieval_tags"] == [
+        "intent:procedure=trajectory-experience",
+        "intent:state=trajectory-state",
+    ]
+    assert memory_os["reader_evidence_view"] == "retrieved_record"
     assert memory_os["trajectory_consolidation"]["created"] > 0
     assert (
         memory_os["trajectory_consolidation"]["provenance_coverage"]
@@ -465,9 +481,9 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
         ),
     }
     assert memory_os["task_success_rate"] == 1.0
-    assert memory_os["reused_answers"] == 0
-    assert memory_os["generated_answers"] == 2
-    assert reader.answer_calls == 4
+    assert memory_os["reused_answers"] == 1
+    assert memory_os["generated_answers"] == 1
+    assert reader.answer_calls == 3
     assert len(rows) == 4
     assert checkpoint_rows == rows
     assert all(row["context_sha256"] for row in rows)

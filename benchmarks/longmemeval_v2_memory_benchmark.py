@@ -519,6 +519,29 @@ def _retrieval_query(text: str) -> str:
     return " ".join(tokens) or semantic_text.strip()
 
 
+def _experience_query_intent(text: str) -> str:
+    normalized = " ".join(text.lower().split())
+    procedure_markers = (
+        "typical workflow",
+        "company protocol",
+        "how should",
+        "how do i",
+        "how many buttons",
+        "how many links",
+        "at minimum, how many",
+        "which button",
+        "which form should",
+        "which module",
+        "what steps",
+        "ordered steps",
+    )
+    return (
+        "procedure"
+        if any(marker in normalized for marker in procedure_markers)
+        else "state"
+    )
+
+
 class OllamaReader:
     def __init__(
         self,
@@ -778,6 +801,7 @@ def _query_memory(
     dereference_trajectory_evidence: bool = False,
     expand_trajectory_evidence: bool = False,
     enrich_trajectory_evidence: bool = False,
+    route_trajectory_experience: bool = False,
 ) -> tuple[dict[str, list[str]], dict[str, Any]]:
     if semantic_rerank_k < top_k:
         raise ValueError("semantic_rerank_k must be at least top_k")
@@ -813,6 +837,13 @@ def _query_memory(
     for question in dataset.questions:
         namespace = f"longmemeval-v2-small:{question.domain}"
         retrieval_query = _retrieval_query(question.question)
+        query_tags = tags
+        if route_trajectory_experience:
+            query_tags = (
+                ("trajectory-experience",)
+                if _experience_query_intent(question.question) == "procedure"
+                else ("trajectory-state",)
+            )
         metadata_filters = {
             "trajectory_id": dataset.haystacks[question.id],
         }
@@ -824,7 +855,7 @@ def _query_memory(
                 retrieval_query,
                 namespace=namespace,
                 top_k=query_top_k,
-                tags=tags,
+                tags=query_tags,
                 metadata_filters=metadata_filters,
                 candidate_top_k=candidate_top_k,
                 diversity_metadata_key="trajectory_id",
@@ -835,7 +866,7 @@ def _query_memory(
                 retrieval_query,
                 namespace=namespace,
                 top_k=query_top_k,
-                tags=tags,
+                tags=query_tags,
                 metadata_filters=metadata_filters,
                 candidate_top_k=candidate_top_k,
                 diversity_metadata_key="trajectory_id",
@@ -938,20 +969,28 @@ def _query_memory(
     stats = cache.stats()
     return contexts, {
         "execution_mode": (
-            "memory_os_source_preserving_trajectory_context"
+            "memory_os_feedback_free_intent_routed_experience"
             if use_memory_os
             else "wavemind_core"
         ),
         "retrieval_view": (
-            "raw_trajectory_state_with_trajectory_context"
-            if enrich_trajectory_evidence
+            "intent_routed_state_or_trajectory_experience"
+            if route_trajectory_experience
             else (
-                "trajectory_experience"
-                if use_memory_os
-                else "raw_trajectory_state"
+                "raw_trajectory_state_with_trajectory_context"
+                if enrich_trajectory_evidence
+                else (
+                    "trajectory_experience"
+                    if use_memory_os
+                    else "raw_trajectory_state"
+                )
             )
         ),
-        "retrieval_tags": list(tags or ()),
+        "retrieval_tags": (
+            ["intent:procedure=trajectory-experience", "intent:state=trajectory-state"]
+            if route_trajectory_experience
+            else list(tags or ())
+        ),
         "reader_evidence_view": (
             "source_state_then_trajectory_summary"
             if enrich_trajectory_evidence
@@ -1542,8 +1581,7 @@ def run_benchmark(
                 semantic_reranker=semantic_reranker,
                 semantic_rerank_k=semantic_rerank_k,
                 semantic_rerank_weight=semantic_rerank_weight,
-                tags=("trajectory-state",),
-                enrich_trajectory_evidence=True,
+                route_trajectory_experience=True,
             )
             os_metrics["trajectory_consolidation"] = (
                 consolidation.as_dict()
@@ -1711,10 +1749,8 @@ def run_benchmark(
                     "max_summary_chars": 4_800,
                     "source_states_preserved": True,
                     "shortlist_policy": "same_raw_top_k_as_core",
-                    "reader_evidence": (
-                        "source_state_then_trajectory_summary"
-                    ),
-                    "reader_summary_max_chars": 1_000,
+                    "query_routing": "feedback_free_procedure_intent",
+                    "reader_evidence": "intent_selected_record",
                     "answer_labels_used": False,
                 },
             },
