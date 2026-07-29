@@ -30,6 +30,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from wavemind import WaveMind
+from wavemind.context_compiler import MemoryContextCompiler, MemoryContextPolicy
 from wavemind.encoders import (
     DEFAULT_TOKEN_STOPWORDS,
     HashingTextEncoder,
@@ -802,6 +803,7 @@ def _query_memory(
     expand_trajectory_evidence: bool = False,
     enrich_trajectory_evidence: bool = False,
     route_trajectory_experience: bool = False,
+    compile_memory_context: bool = False,
 ) -> tuple[dict[str, list[str]], dict[str, Any]]:
     if semantic_rerank_k < top_k:
         raise ValueError("semantic_rerank_k must be at least top_k")
@@ -817,6 +819,19 @@ def _query_memory(
     worker_reports: list[dict[str, Any]] = []
     maintenance_latencies: list[float] = []
     maintenance_ms = 0.0
+    original_context_tokens = 0
+    context_compiler = (
+        MemoryContextCompiler(
+            MemoryContextPolicy(
+                default_token_budget=1_200,
+                max_items=top_k,
+                max_item_tokens=800,
+                min_item_tokens=48,
+            )
+        )
+        if compile_memory_context
+        else None
+    )
     seen: Counter[str] = Counter()
     totals = Counter(
         f"longmemeval-v2-small:{question.domain}"
@@ -936,6 +951,16 @@ def _query_memory(
         else:
             snippets = snippets[:top_k]
             results = results[:top_k]
+        original_context_tokens += sum(_token_estimate(value) for value in snippets)
+        if context_compiler is not None:
+            compiled = context_compiler.compile(
+                retrieval_query,
+                results,
+                texts=snippets,
+                token_budget=1_200,
+                max_items=top_k,
+            )
+            snippets = [item.text for item in compiled.items]
         retrieval_ms = (time.perf_counter() - started) * 1_000.0
         latencies.append(retrieval_ms)
         contexts[question.id] = snippets
@@ -967,9 +992,14 @@ def _query_memory(
         # but do not attribute a worker cycle to the preceding request latency.
         end_to_end.append(retrieval_ms)
     stats = cache.stats()
+    compiled_context_tokens = sum(
+        _token_estimate(value)
+        for values in contexts.values()
+        for value in values
+    )
     return contexts, {
         "execution_mode": (
-            "memory_os_feedback_free_intent_routed_experience"
+            "memory_os_direct_feedback_free_intent_routed_experience"
             if use_memory_os
             else "wavemind_core"
         ),
@@ -1004,6 +1034,18 @@ def _query_memory(
             )
             )
         ),
+        "context_compiler": (
+            {
+                "enabled": True,
+                "schema": "wavemind.memory_context.v1",
+                "token_budget_per_query": 1_200,
+                "max_items": top_k,
+                "max_item_tokens": 800,
+                "query_aware": True,
+            }
+            if context_compiler is not None
+            else {"enabled": False}
+        ),
         "worker_runs": len(worker_reports),
         "worker_errors": sum(
             int(dict(row.get("prewarm") or {}).get("errors") or 0)
@@ -1037,10 +1079,15 @@ def _query_memory(
         ),
         "cache_hits": stats.hits,
         "cache_misses": stats.misses,
-        "context_tokens": sum(
-            _token_estimate(value)
-            for values in contexts.values()
-            for value in values
+        "original_context_tokens": original_context_tokens,
+        "context_tokens": compiled_context_tokens,
+        "context_token_relative_reduction": (
+            max(
+                0.0,
+                1.0 - compiled_context_tokens / original_context_tokens,
+            )
+            if original_context_tokens
+            else 0.0
         ),
     }
 
@@ -1582,6 +1629,7 @@ def run_benchmark(
                 semantic_rerank_k=semantic_rerank_k,
                 semantic_rerank_weight=semantic_rerank_weight,
                 route_trajectory_experience=True,
+                compile_memory_context=True,
             )
             os_metrics["trajectory_consolidation"] = (
                 consolidation.as_dict()
@@ -1752,6 +1800,13 @@ def run_benchmark(
                     "query_routing": "feedback_free_procedure_intent",
                     "reader_evidence": "intent_selected_record",
                     "answer_labels_used": False,
+                    "context_compiler": {
+                        "schema": "wavemind.memory_context.v1",
+                        "token_budget_per_query": 1_200,
+                        "max_items": top_k,
+                        "max_item_tokens": 800,
+                        "query_aware": True,
+                    },
                 },
             },
             "field": {"width": 32, "height": 32, "layers": 2},

@@ -60,6 +60,12 @@ from .experience_compiler import (
     ExperiencePacket,
     ExperiencePacketItem,
 )
+from .context_compiler import (
+    CompiledMemoryContext,
+    CompiledMemoryContextItem,
+    MemoryContextCompiler,
+    MemoryContextPolicy,
+)
 from .experience_quality_admission import (
     evaluate_experience_quality_admission,
     render_experience_quality_admission_markdown,
@@ -352,6 +358,8 @@ from .trajectory_consolidation import (
 __version__ = "2.8.0"
 
 __all__ = [
+    "CompiledMemoryContext",
+    "CompiledMemoryContextItem",
     "FieldProjector",
     "CANARY_SCHEMA",
     "FieldStateCRDT",
@@ -426,6 +434,8 @@ __all__ = [
     "MemoryFirewall",
     "MemoryFirewallDenied",
     "MemoryFirewallPolicy",
+    "MemoryContextCompiler",
+    "MemoryContextPolicy",
     "MemoryRedTeamCase",
     "MemoryRedTeamResult",
     "MemoryOSHotQuery",
