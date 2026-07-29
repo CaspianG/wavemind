@@ -237,5 +237,8 @@ def test_trajectory_experience_consolidates_ordered_states(tmp_path):
         assert rows[0].metadata["source_memory_ids"] == source_ids
         assert rows[0].metadata["trajectory_state_count"] == 2
         assert "trajectory-state" not in rows[0].tags
+        assert [
+            record.id for record in worker.source_records(rows[0])
+        ] == source_ids
     finally:
         memory.close()

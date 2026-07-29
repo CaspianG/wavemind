@@ -402,6 +402,30 @@ class TrajectoryDeltaConsolidator:
                 return str(record.text)
         return str(result.text)
 
+    def source_records(self, result: Any) -> list[Any]:
+        """Return all immutable source records linked to a derived result."""
+
+        source_ids = result.metadata.get("source_memory_ids") or ()
+        records: list[Any] = []
+        cached = getattr(self.memory, "_records_by_id", None)
+        store = getattr(self.memory, "store", None)
+        get_record = getattr(store, "get", None)
+        for raw_id in source_ids:
+            try:
+                source_id = int(raw_id)
+            except (TypeError, ValueError):
+                continue
+            record = (
+                cached.get(source_id)
+                if isinstance(cached, dict)
+                else None
+            )
+            if record is None and callable(get_record):
+                record = get_record(source_id)
+            if record is not None:
+                records.append(record)
+        return records
+
     def summary_text(self, result: Any) -> str:
         """Return the extractive summary linked to a raw source result."""
 

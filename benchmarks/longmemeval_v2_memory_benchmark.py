@@ -450,6 +450,55 @@ def _query_snippet(
     return "\n".join(chunks[index] for index in sorted(selected_indices))
 
 
+def _trajectory_experience_packet(
+    result: Any,
+    *,
+    trajectory_view: TrajectoryDeltaConsolidator,
+    query: str,
+    max_summary_chars: int = 1_800,
+    max_source_chars: int = 1_000,
+    source_states: int = 2,
+) -> str:
+    if source_states <= 0:
+        raise ValueError("source_states must be positive")
+    query_terms = {
+        token
+        for token in re.findall(r"\w+", query.lower())
+        if len(token) >= 3
+    }
+    candidates: list[tuple[tuple[float, int, int], str]] = []
+    for order, record in enumerate(trajectory_view.source_records(result)):
+        snippet = _query_snippet(
+            record.text,
+            query,
+            max_chars=max_source_chars,
+            chunk_chars=min(600, max_source_chars),
+            chunk_overlap=min(120, max_source_chars // 4),
+        )
+        matched = sum(term in snippet.lower() for term in query_terms)
+        token_count = max(1, len(re.findall(r"\w+", snippet)))
+        score = matched / math.sqrt(token_count)
+        candidates.append(((-score, -matched, order), snippet))
+    candidates.sort(key=lambda item: item[0])
+    selected_sources = [
+        value for _, value in candidates[:source_states] if value
+    ]
+    summary = _query_snippet(
+        result.text,
+        query,
+        max_chars=max_summary_chars,
+    )
+    pieces = ["Experience summary:", summary]
+    if selected_sources:
+        pieces.extend(
+            (
+                "Exact source states:",
+                "\n\n".join(selected_sources),
+            )
+        )
+    return "\n".join(piece for piece in pieces if piece)
+
+
 def _retrieval_query(text: str) -> str:
     semantic_text = re.split(
         r"\n+\s*Mark your final answer\b",
@@ -727,6 +776,7 @@ def _query_memory(
     semantic_rerank_weight: float = 0.70,
     tags: tuple[str, ...] | None = None,
     dereference_trajectory_evidence: bool = False,
+    expand_trajectory_evidence: bool = False,
 ) -> tuple[dict[str, list[str]], dict[str, Any]]:
     if semantic_rerank_k < top_k:
         raise ValueError("semantic_rerank_k must be at least top_k")
@@ -752,7 +802,7 @@ def _query_memory(
     candidate_top_k = max(query_top_k, min(50, query_top_k * 10))
     trajectory_view = (
         TrajectoryDeltaConsolidator(memory)
-        if dereference_trajectory_evidence
+        if dereference_trajectory_evidence or expand_trajectory_evidence
         else None
     )
     for question in dataset.questions:
@@ -786,18 +836,29 @@ def _query_memory(
                 diversity_metadata_key="trajectory_id",
                 max_results_per_diversity_group=2,
             )
-        snippets = [
-            _query_snippet(
-                (
-                    trajectory_view.source_text(result)
-                    if dereference_trajectory_evidence
-                    and trajectory_view is not None
-                    else result.text
-                ),
-                retrieval_query,
+        snippets = []
+        for result in results:
+            if expand_trajectory_evidence:
+                assert trajectory_view is not None
+                snippets.append(
+                    _trajectory_experience_packet(
+                        result,
+                        trajectory_view=trajectory_view,
+                        query=retrieval_query,
+                    )
+                )
+                continue
+            snippets.append(
+                _query_snippet(
+                    (
+                        trajectory_view.source_text(result)
+                        if dereference_trajectory_evidence
+                        and trajectory_view is not None
+                        else result.text
+                    ),
+                    retrieval_query,
+                )
             )
-            for result in results
-        ]
         if semantic_reranker is not None and results:
             query_vector = np.asarray(
                 encode_query_text(semantic_reranker, retrieval_query),
@@ -872,9 +933,13 @@ def _query_memory(
         ),
         "retrieval_tags": list(tags or ()),
         "reader_evidence_view": (
+            "trajectory_summary_plus_ranked_source_states"
+            if expand_trajectory_evidence
+            else (
             "dereferenced_source_state"
             if dereference_trajectory_evidence
             else "retrieved_record"
+            )
         ),
         "worker_runs": len(worker_reports),
         "worker_errors": sum(
@@ -1454,6 +1519,7 @@ def run_benchmark(
                 semantic_rerank_k=semantic_rerank_k,
                 semantic_rerank_weight=semantic_rerank_weight,
                 tags=("trajectory-experience",),
+                expand_trajectory_evidence=True,
             )
             os_metrics["trajectory_consolidation"] = (
                 consolidation.as_dict()
@@ -1620,7 +1686,12 @@ def run_benchmark(
                     "output_tag": "trajectory-experience",
                     "max_summary_chars": 4_800,
                     "source_states_preserved": True,
-                    "reader_evidence": "extractive_trajectory_summary",
+                    "reader_evidence": (
+                        "trajectory_summary_plus_ranked_source_states"
+                    ),
+                    "reader_summary_max_chars": 1_800,
+                    "reader_source_states": 2,
+                    "reader_source_state_max_chars": 1_000,
                     "answer_labels_used": False,
                 },
             },
