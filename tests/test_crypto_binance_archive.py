@@ -4,7 +4,6 @@ import csv
 import gzip
 import hashlib
 import io
-import urllib.error
 import zipfile
 from datetime import date
 
@@ -155,28 +154,25 @@ def test_read_url_retries_transient_network_failure(monkeypatch):
     from benchmarks import crypto_binance_archive as archive
 
     calls = []
+    resets = []
 
-    class Response:
-        def __enter__(self):
-            return self
-
-        def __exit__(self, *_args):
-            return False
-
-        def read(self):
-            return b"verified"
-
-    def flaky_open(_request, timeout):
-        calls.append(timeout)
+    def flaky_read(_url):
+        calls.append(45)
         if len(calls) < 3:
-            raise urllib.error.URLError("temporary TLS failure")
-        return Response()
+            raise archive.requests.ConnectionError("temporary TLS failure")
+        return b"verified"
 
-    monkeypatch.setattr(archive.urllib.request, "urlopen", flaky_open)
+    monkeypatch.setattr(archive, "_session_read", flaky_read)
+    monkeypatch.setattr(
+        archive,
+        "_reset_http_session",
+        lambda: resets.append(True),
+    )
     monkeypatch.setattr(archive.time, "sleep", lambda _seconds: None)
 
     assert archive._read_url("https://example/archive.zip") == b"verified"
     assert calls == [45, 45, 45]
+    assert resets == [True, True]
 
 
 def test_archive_spec_has_monthly_and_daily_sources():

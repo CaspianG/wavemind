@@ -49,10 +49,12 @@ bench = [
   "qdrant-client>=1.9",
 ]
 crypto = [
+  "requests>=2.32",
   "ccxt>=4",
   "pandas>=2",
 ]
 crypto-ml = [
+  "requests>=2.32",
   "ccxt>=4",
   "lightgbm>=4.6",
   "pandas>=2",
@@ -76,6 +78,7 @@ production = [
 dev = [
   "pytest>=8",
   "httpx>=0.27",
+  "requests>=2.32",
   "langchain-classic>=1.0",
 ]
 

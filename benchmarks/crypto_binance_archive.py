@@ -7,9 +7,8 @@ import hashlib
 import io
 import json
 import sys
+import threading
 import time
-import urllib.error
-import urllib.request
 import zipfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict, dataclass
@@ -17,6 +16,8 @@ from datetime import date, datetime, timedelta, timezone
 from itertools import chain
 from pathlib import Path
 from typing import Any, Callable, Iterable, Sequence
+
+import requests
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
@@ -34,6 +35,7 @@ ARCHIVE_SOURCES = (
     "metrics",
     "book_depth",
 )
+_HTTP_LOCAL = threading.local()
 INTRADAY_TIMEFRAME = "5m"
 KLINE_COLUMNS = (
     "open_time",
@@ -443,20 +445,45 @@ def _download_method(kind: str):
 def _read_url(url: str, *, attempts: int = 8) -> bytes:
     if attempts <= 0:
         raise ValueError("attempts must be positive")
-    request = urllib.request.Request(url, headers={"User-Agent": "WaveMind-Research/1.0"})
     for attempt in range(attempts):
         try:
-            with urllib.request.urlopen(request, timeout=45) as response:
-                return response.read()
-        except urllib.error.HTTPError as exc:
-            if exc.code < 500 and exc.code != 429:
-                raise RuntimeError(f"Archive request failed ({exc.code}): {url}") from exc
+            return _session_read(url)
+        except requests.HTTPError as exc:
+            status = exc.response.status_code if exc.response is not None else 0
+            if status < 500 and status != 429:
+                raise RuntimeError(
+                    f"Archive request failed ({status}): {url}"
+                ) from exc
             error: Exception = exc
-        except (urllib.error.URLError, TimeoutError, ConnectionError) as exc:
+        except requests.RequestException as exc:
             error = exc
+        _reset_http_session()
         if attempt + 1 < attempts:
             time.sleep(min(8.0, 0.5 * (2**attempt)))
     raise RuntimeError(f"Archive request failed after {attempts} attempts: {url}") from error
+
+
+def _session_read(url: str) -> bytes:
+    session = _http_session()
+    with session.get(url, timeout=45) as response:
+        response.raise_for_status()
+        return response.content
+
+
+def _http_session() -> requests.Session:
+    session = getattr(_HTTP_LOCAL, "session", None)
+    if session is None:
+        session = requests.Session()
+        session.headers.update({"User-Agent": "WaveMind-Research/1.0"})
+        _HTTP_LOCAL.session = session
+    return session
+
+
+def _reset_http_session() -> None:
+    session = getattr(_HTTP_LOCAL, "session", None)
+    if session is not None:
+        session.close()
+        delattr(_HTTP_LOCAL, "session")
 
 
 def _zip_csv_rows(
