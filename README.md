@@ -49,6 +49,7 @@ claim that one vector database should replace every other system.
 | Production Memory OS | `admitted`, 13/13 requirements | [`memory_os_admission_results.json`](benchmarks/memory_os_admission_results.json) |
 | Adaptive agent-memory advantage | Controlled adaptive slice is admitted; the composite public gate is blocked pending the full strict LongMemEval-V2 rerun | [`agent_memory_advantage_admission_results.json`](benchmarks/agent_memory_advantage_admission_results.json) |
 | Experienced Work Agent | `admitted`, 12/12 checks; held-out success `16.7%` -> `100%`, repeated errors `83.3%` -> `0%`, context `-40%` | [`experience_quality_admission_results.json`](benchmarks/experience_quality_admission_results.json) |
+| Developer onboarding | `admitted`, 8/8 checks; Python, TypeScript, MCP, and Docker starters; first cited Experience Packet in `0.58s` | [`developer_experience_admission_results.json`](benchmarks/developer_experience_admission_results.json) |
 | Remote Redis/worker soak | 6 hours, 500/500 cycles, 2,500 attempts, zero failures or state corruption | [`memory_os_remote_worker_soak_results.json`](benchmarks/memory_os_remote_worker_soak_results.json) |
 | LongMemEval-V2 protocol | Strict frozen-20 smoke: official per-question haystacks, isolated A/B stores, Core `10%`, Memory OS `10%`; full strict rerun remains gated | [`strict smoke`](benchmarks/longmemeval_v2_frozen20_protocol_results.json) / [`legacy 451-question execution`](benchmarks/longmemeval_v2_small_memory_os_results.json) |
 | Core production readiness | `pass`, 39/39 criteria | [`production_readiness_results.json`](benchmarks/production_readiness_results.json) |
@@ -81,6 +82,23 @@ Want to see and manage memory in a browser?
 wavemind studio
 ```
 
+Want a runnable project that produces a trusted Experience Packet?
+
+```sh
+wavemind init my-agent --template python
+cd my-agent
+python app.py
+```
+
+Use `--template typescript`, `--template mcp`, or `--template docker` for the
+other starter paths. The Docker starter runs with
+`docker compose up --build`. Diagnose Python, SQLite, local state, the encoder,
+the Experience Compiler, and optional Node/Docker/MCP support with:
+
+```sh
+wavemind doctor --project .
+```
+
 By default, WaveMind creates `wavemind.sqlite3` in the current working
 directory. That file is the local source of truth. Keep it out of git and back
 it up like application state.
@@ -92,6 +110,8 @@ Start here if you only want to use WaveMind from the terminal:
 | Goal | Command |
 |---|---|
 | Show first-run help | `wavemind quickstart` |
+| Create a runnable starter | `wavemind init my-agent --template python` |
+| Diagnose the local environment | `wavemind doctor --project my-agent` |
 | Store a memory | `wavemind remember "Andrey prefers short answers" --namespace user:42` |
 | Search memory | `wavemind query "answer style" --namespace user:42` |
 | Consolidate active patterns | `wavemind consolidate --namespace user:42 --seed "Rust compiler systems"` |

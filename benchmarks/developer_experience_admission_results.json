@@ -1,0 +1,221 @@
+{
+  "schema": "wavemind.developer_experience_admission.v1",
+  "generated_at": "2026-07-29T01:13:17.089546+00:00",
+  "source_sha": "c50c1f15286f1eead8e0d774c1238c1e3acfd114",
+  "status": "admitted",
+  "admitted": true,
+  "environment": {
+    "python": "3.13.3",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "node": "C:\\Program Files\\nodejs\\node.EXE",
+    "docker": "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.EXE"
+  },
+  "summary": {
+    "checks_passed": 8,
+    "checks_total": 8,
+    "first_packet_seconds": 0.5844261999955052,
+    "total_seconds": 4.123932599999534
+  },
+  "checks": [
+    {
+      "id": "starter-templates",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "docker": [
+          ".env.example",
+          ".gitignore",
+          ".wavemind-project.json",
+          "Dockerfile",
+          "README.md",
+          "compose.yaml"
+        ],
+        "mcp": [
+          ".env.example",
+          ".gitignore",
+          ".wavemind-project.json",
+          "README.md",
+          "experience_mcp.py",
+          "mcp.json",
+          "requirements.txt"
+        ],
+        "python": [
+          ".env.example",
+          ".gitignore",
+          ".wavemind-project.json",
+          "README.md",
+          "app.py",
+          "requirements.txt"
+        ],
+        "typescript": [
+          ".env.example",
+          ".gitignore",
+          ".wavemind-project.json",
+          "README.md",
+          "package.json",
+          "src/index.ts",
+          "tsconfig.json"
+        ]
+      },
+      "target": "Python, TypeScript, MCP, and Docker starters"
+    },
+    {
+      "id": "first-experience-packet",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "run": 1,
+        "returncode": 0,
+        "latency_ms": 584.4261999955052,
+        "schema": "wavemind.experience_packet.v1",
+        "item_count": 1,
+        "citations": [
+          "experience:starter-deploy-recovery@v1"
+        ],
+        "stderr": ""
+      },
+      "target": "one cited Experience Packet within 300 seconds"
+    },
+    {
+      "id": "persistent-idempotent-packet",
+      "passed": true,
+      "status": "pass",
+      "evidence": [
+        {
+          "run": 1,
+          "returncode": 0,
+          "latency_ms": 584.4261999955052,
+          "schema": "wavemind.experience_packet.v1",
+          "item_count": 1,
+          "citations": [
+            "experience:starter-deploy-recovery@v1"
+          ],
+          "stderr": ""
+        },
+        {
+          "run": 2,
+          "returncode": 0,
+          "latency_ms": 554.1387999983272,
+          "schema": "wavemind.experience_packet.v1",
+          "item_count": 1,
+          "citations": [
+            "experience:starter-deploy-recovery@v1"
+          ],
+          "stderr": ""
+        }
+      ],
+      "target": "second run returns the same single citation"
+    },
+    {
+      "id": "doctor",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "passed": 9,
+        "warnings": 1,
+        "failed": 0,
+        "required_failed": 0
+      },
+      "target": "all required diagnostics pass"
+    },
+    {
+      "id": "safe-overwrite",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "overwrite_blocked": true,
+        "unrelated_file_preserved": true
+      },
+      "target": "default refusal and unrelated-file preservation with --force"
+    },
+    {
+      "id": "python-mcp-syntax",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "python_returncode": 0,
+        "mcp_returncode": 0
+      },
+      "target": "both generated Python entrypoints compile"
+    },
+    {
+      "id": "typescript-syntax",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "node": "C:\\Program Files\\nodejs\\node.EXE",
+        "returncode": 0,
+        "stderr": ""
+      },
+      "target": "Node parses the generated ESM-compatible TypeScript starter"
+    },
+    {
+      "id": "docker-compose-config",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "docker": "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.EXE",
+        "returncode": 0,
+        "stderr": ""
+      },
+      "target": "generated one-command Docker starter has valid Compose config"
+    }
+  ],
+  "per_case": [
+    {
+      "case": "init-python",
+      "passed": true,
+      "latency_ms": 7.3705999966477975,
+      "files": [
+        ".env.example",
+        ".gitignore",
+        ".wavemind-project.json",
+        "README.md",
+        "app.py",
+        "requirements.txt"
+      ]
+    },
+    {
+      "case": "init-typescript",
+      "passed": true,
+      "latency_ms": 6.65310000476893,
+      "files": [
+        ".env.example",
+        ".gitignore",
+        ".wavemind-project.json",
+        "README.md",
+        "package.json",
+        "src/index.ts",
+        "tsconfig.json"
+      ]
+    },
+    {
+      "case": "init-mcp",
+      "passed": true,
+      "latency_ms": 7.540899998275563,
+      "files": [
+        ".env.example",
+        ".gitignore",
+        ".wavemind-project.json",
+        "README.md",
+        "experience_mcp.py",
+        "mcp.json",
+        "requirements.txt"
+      ]
+    },
+    {
+      "case": "init-docker",
+      "passed": true,
+      "latency_ms": 6.411699992895592,
+      "files": [
+        ".env.example",
+        ".gitignore",
+        ".wavemind-project.json",
+        "Dockerfile",
+        "README.md",
+        "compose.yaml"
+      ]
+    }
+  ],
+  "claim_boundary": "Local clean-project onboarding and syntax/configuration evidence. The generated Docker runtime is exercised separately by full-check CI."
+}

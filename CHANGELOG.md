@@ -6,6 +6,11 @@ authoritative release sources.
 
 ## Unreleased
 
+- Added `wavemind init` starter projects for Python, TypeScript, MCP, and
+  Docker, plus `wavemind doctor` runtime and Experience Packet diagnostics.
+- Hardened LongMemEval-V2 with official per-question haystacks, isolated A/B
+  stores, crash-safe checkpoints, and a blocked public gate when uplift or
+  latency evidence is insufficient.
 - Added the Experienced Work Agent runtime, which compiles guarded experience
   records into tool plans and learns only from verified trajectories.
 - Added a frozen 60/30 coding, support, and enterprise benchmark plus a strict
