@@ -1,0 +1,110 @@
+{
+  "protocol": "wavemind.crypto.binance-asset-normalized-field-transfer.v1",
+  "frozen_at_utc": "2026-07-29T14:45:00Z",
+  "purpose": "One-read asset-and-time-disjoint evaluation of a WaveField veto over an asset-normalized post-capitulation event head.",
+  "source": {
+    "provider": "Binance public data archive",
+    "base_url": "https://data.binance.vision/data/futures/um",
+    "market": "USD-M perpetual futures",
+    "interval": "4h",
+    "start": "2023-01-01",
+    "end": "2026-06-30",
+    "integrity": "Every archive file must pass the provider CHECKSUM before it enters a gzip bundle."
+  },
+  "development": {
+    "row_cache": "data/capitulation-confirmation-rows-v1.json.gz",
+    "assets": 13,
+    "normalization_period_end_exclusive": "2024-01-01",
+    "training_period": ["2023-07-01", "2024-01-01"],
+    "validation_period": ["2024-01-01", "2025-01-01"],
+    "labels_used_for_training": "Only 13 development assets from the training period.",
+    "selection_result": {
+      "validation_signals": 33,
+      "validation_direction_accuracy": 0.8484848484848485,
+      "validation_wilson_low_95": 0.6909734728354664
+    },
+    "asset_time_stress_not_used_as_fresh_evidence": {
+      "assets": 16,
+      "period": ["2025-01-01", "2026-07-01"],
+      "signals": 45,
+      "direction_accuracy": 0.8,
+      "wilson_low_95": 0.6617901359048793
+    }
+  },
+  "holdout_symbols": [
+    "ARUSDT",
+    "BALUSDT",
+    "CHRUSDT",
+    "FLOWUSDT",
+    "GALAUSDT",
+    "GMTUSDT",
+    "KNCUSDT",
+    "ONEUSDT"
+  ],
+  "normalization": {
+    "scope": "per asset",
+    "fit_period_end_exclusive": "2024-01-01",
+    "center": "median",
+    "scale": "q90 - q10",
+    "clip": [-10.0, 10.0],
+    "feature_policy": "All causal numeric event-cache features except hour_sin, hour_cos, weekday_sin, and weekday_cos."
+  },
+  "candidate_event": {
+    "return_feature": "return_12",
+    "return_quantile": 0.01,
+    "open_interest_feature": "oi_change_1",
+    "open_interest_quantile": 0.1,
+    "threshold_scope": "per asset using only feature history before the evaluated period",
+    "overlap_control": "At most one candidate per asset until the previous 24h forecast matures."
+  },
+  "extra_trees_head": {
+    "estimators": 400,
+    "minimum_samples_leaf": 5,
+    "maximum_features": 0.7,
+    "class_weight": "balanced",
+    "random_seed": 29,
+    "sample_weight": "inverse number of training events sharing the same timestamp",
+    "minimum_up_probability": 0.7
+  },
+  "wavefield_veto": {
+    "projector_width": 20,
+    "projector_height": 20,
+    "projector_seed": 29,
+    "field_width": 20,
+    "field_height": 20,
+    "field_layers": 4,
+    "decay": 0.99,
+    "speed": 0.1,
+    "nonlinearity": 0.008,
+    "evolution_steps": 3,
+    "minimum_up_probability": 0.5,
+    "decision": "Emit an up forecast only when both the ExtraTrees head and the positive-vs-negative WaveField resonance pass their frozen thresholds."
+  },
+  "holdout_folds": [
+    ["2024-01-01", "2024-07-01"],
+    ["2024-07-01", "2025-01-01"],
+    ["2025-01-01", "2025-07-01"],
+    ["2025-07-01", "2026-01-01"],
+    ["2026-01-01", "2026-07-01"]
+  ],
+  "dependence_control": {
+    "utc_market_blocks": "Group selected asset forecasts by UTC day.",
+    "market_episodes": "Merge selected UTC blocks separated by no more than 48h.",
+    "episode_label": "Hit when the median signed future return of selected assets is positive."
+  },
+  "strict_gate": {
+    "minimum_signals": 40,
+    "minimum_direction_accuracy": 0.7,
+    "minimum_wilson_low_95": 0.65,
+    "minimum_supported_folds": 4,
+    "minimum_fold_support": 5,
+    "minimum_supported_fold_accuracy": 0.65,
+    "minimum_supported_assets": 6,
+    "minimum_asset_support": 5,
+    "minimum_supported_asset_accuracy": 0.6,
+    "minimum_market_episodes": 15,
+    "minimum_market_episode_accuracy": 0.65,
+    "minimum_market_episode_wilson_low_95": 0.5
+  },
+  "holdout_policy": "No symbol, feature, normalization, model parameter, field parameter, threshold, fold, direction, or gate may change after this file is committed. Failed gates remain reported."
+}
