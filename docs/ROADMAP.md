@@ -143,6 +143,12 @@ policy matters more than raw vector-database scale:
   success `16.7% -> 100%`, repeated errors `83.3% -> 0%`, 25% fewer tool
   steps, 40% less context, and p95 within the 20% budget. This is controlled
   local product evidence, not yet a public-dataset or external-agent claim.
+- `wavemind init` now creates runnable Python, TypeScript, MCP, and Docker
+  starters without deleting unrelated files. The Python starter promotes a
+  lesson only after three verified outcomes and prints a persisted Experience
+  Packet; `wavemind doctor` verifies Python, SQLite, state writes, encoder and
+  compiler behavior while reporting optional Node, Docker-engine, and MCP
+  capabilities separately.
 - `benchmarks/memory_os_intelligence_report.py` now turns checked-in Memory OS
   worker evidence into `benchmarks/memory_os_intelligence_results.json` and
   `benchmarks/MEMORY_OS_INTELLIGENCE.md`. It exposes hot-query prewarm,

@@ -84,6 +84,12 @@ from .k8s_operator import (
     operator_status,
 )
 from .object_store import S3SnapshotStore
+from .onboarding import (
+    TEMPLATES as ONBOARDING_TEMPLATES,
+    initialize_project,
+    print_doctor,
+    run_doctor,
+)
 from .postgres_recovery import build_postgres_pitr_plan
 from .production_evidence import (
     build_production_evidence_dispatch_plan,
@@ -216,6 +222,17 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command")
 
     sub.add_parser("quickstart", help="Show the shortest CLI path")
+
+    init = sub.add_parser("init", help="Create a runnable WaveMind starter project")
+    init.add_argument("directory", nargs="?", default="wavemind-starter")
+    init.add_argument("--template", choices=ONBOARDING_TEMPLATES, default="python")
+    init.add_argument("--name")
+    init.add_argument("--force", action="store_true")
+    init.add_argument("--json", action="store_true")
+
+    doctor = sub.add_parser("doctor", help="Check the local WaveMind environment")
+    doctor.add_argument("--project", type=Path, default=Path.cwd())
+    doctor.add_argument("--json", action="store_true")
 
     remember = sub.add_parser("remember", help="Store a memory")
     remember.add_argument("text")
@@ -2515,6 +2532,8 @@ Where data goes:
 
 Useful next commands:
   wavemind --help
+  wavemind init my-agent --template python
+  wavemind doctor --project my-agent
   wavemind studio
   wavemind import ./notes.txt --namespace demo
   wavemind serve --host 127.0.0.1 --port 8000
@@ -2572,6 +2591,34 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "quickstart":
         print_quickstart()
         return 0
+
+    if args.command == "init":
+        try:
+            payload = initialize_project(
+                args.directory,
+                template=args.template,
+                name=args.name,
+                force=args.force,
+            )
+        except (OSError, ValueError) as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print(f"Created {payload['template']} starter in {payload['root']}")
+            for path in payload["files"]:
+                print(f"  {path}")
+            print(f"Next: {payload['next_command']}")
+        return 0
+
+    if args.command == "doctor":
+        payload = run_doctor(args.project)
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print_doctor(payload)
+        return 0 if payload["status"] == "pass" else 2
 
     if args.command == "test":
         import pytest

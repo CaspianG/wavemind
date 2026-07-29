@@ -9,6 +9,8 @@ benchmarks only when the deployment requires them.
 | Goal | Guide |
 |---|---|
 | Install and recall the first memory | [Quick Start](../README.md#quick-start) |
+| Generate a Python, TypeScript, MCP, or Docker starter | `wavemind init` in the [Quick Start](../README.md#quick-start) |
+| Diagnose the local runtime and project | `wavemind doctor --project <path>` |
 | See the product UI | [WaveMind Studio](../README.md#wavemind-studio) |
 | Embed WaveMind in Python or HTTP | [Examples in the README](../README.md#python-example) |
 | Choose a real application pattern | [Use Cases](USE_CASES.md) |

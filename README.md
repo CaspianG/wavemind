@@ -81,6 +81,23 @@ Want to see and manage memory in a browser?
 wavemind studio
 ```
 
+Want a runnable project that produces a trusted Experience Packet?
+
+```sh
+wavemind init my-agent --template python
+cd my-agent
+python app.py
+```
+
+Use `--template typescript`, `--template mcp`, or `--template docker` for the
+other starter paths. The Docker starter runs with
+`docker compose up --build`. Diagnose Python, SQLite, local state, the encoder,
+the Experience Compiler, and optional Node/Docker/MCP support with:
+
+```sh
+wavemind doctor --project .
+```
+
 By default, WaveMind creates `wavemind.sqlite3` in the current working
 directory. That file is the local source of truth. Keep it out of git and back
 it up like application state.
@@ -92,6 +109,8 @@ Start here if you only want to use WaveMind from the terminal:
 | Goal | Command |
 |---|---|
 | Show first-run help | `wavemind quickstart` |
+| Create a runnable starter | `wavemind init my-agent --template python` |
+| Diagnose the local environment | `wavemind doctor --project my-agent` |
 | Store a memory | `wavemind remember "Andrey prefers short answers" --namespace user:42` |
 | Search memory | `wavemind query "answer style" --namespace user:42` |
 | Consolidate active patterns | `wavemind consolidate --namespace user:42 --seed "Rust compiler systems"` |
