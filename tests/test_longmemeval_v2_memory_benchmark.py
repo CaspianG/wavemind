@@ -8,6 +8,7 @@ from benchmarks.longmemeval_v2_memory_benchmark import (
     OllamaReader,
     V2Question,
     load_longmemeval_v2_small,
+    _query_snippet,
     run_benchmark,
     score_response,
 )
@@ -28,6 +29,25 @@ class FixtureReader:
 
     def judge(self, *, evaluator, question, response):
         return question.answer.lower() in response.lower()
+
+
+def test_query_snippet_keeps_relevant_windows_from_long_single_lines():
+    text = (
+        "irrelevant field " * 300
+        + "Dell XPS largest SSD option costs an extra 300 dollars "
+        + "unrelated footer " * 300
+    )
+
+    snippet = _query_snippet(
+        text,
+        "What is the extra amount for the largest Dell XPS SSD option?",
+        max_chars=1200,
+        chunk_chars=400,
+        chunk_overlap=80,
+    )
+
+    assert "extra 300 dollars" in snippet
+    assert len(snippet) <= 1200
 
 
 def _write_fixture(root: Path) -> None:
@@ -109,6 +129,8 @@ def test_loader_requires_complete_small_haystacks_and_pins_checksums(tmp_path):
 
     assert len(dataset.questions) == 2
     assert len(dataset.memories) == 200
+    assert len(dataset.haystacks["q1"]) == 100
+    assert dataset.haystacks["q1"][0] == "web-0"
     assert len(dataset.source_files["trajectories_sha256"]) == 64
     assert dataset.questions[1].image == str(
         (tmp_path / "question.png").resolve()
@@ -150,12 +172,14 @@ def test_official_style_deterministic_scorers():
 def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
     _write_fixture(tmp_path)
     reader = FixtureReader()
+    checkpoint_rows = []
 
     payload, rows = run_benchmark(
         tmp_path,
         reader=reader,
         top_k=3,
         work_dir=tmp_path,
+        on_row=checkpoint_rows.append,
     )
     results = {row["engine"]: row for row in payload["results"]}
     memory_os = results["WaveMind + Memory OS"]
@@ -163,6 +187,8 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
     assert payload["schema"] == "wavemind.longmemeval_v2_small.v1"
     assert payload["scenario"]["queries"] == 2
     assert payload["scenario"]["question_images_supported"] is True
+    assert payload["scenario"]["official_question_haystacks"] is True
+    assert payload["scenario"]["isolated_ab_stores"] is True
     assert memory_os["execution_mode"] == "memory_os_direct_feedback_free"
     assert memory_os["worker_runs"] == 2
     assert memory_os["worker_errors"] == 0
@@ -172,6 +198,7 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
     assert memory_os["generated_answers"] == 0
     assert reader.answer_calls == 2
     assert len(rows) == 4
+    assert checkpoint_rows == rows
     assert all(row["context_sha256"] for row in rows)
 
 
@@ -256,7 +283,7 @@ def test_ollama_reader_expands_context_only_for_images(tmp_path):
         ],
     )
 
-    assert "num_ctx" not in requests[0]["options"]
+    assert requests[0]["options"]["num_ctx"] == 8192
     assert requests[1]["options"]["num_ctx"] == 4096
     image_prompt = requests[2]["prompt"]
     assert "first evidence" in image_prompt

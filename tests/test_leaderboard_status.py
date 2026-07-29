@@ -134,11 +134,11 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert payload["agent_memory_admission"]["schema"] == (
         "wavemind.agent_memory_advantage_admission.v1"
     )
-    assert payload["agent_memory_admission"]["status"] == "admitted"
-    assert payload["agent_memory_admission"]["admitted"] is True
-    assert payload["agent_memory_admission"]["summary"]["checks_passed"] == 13
+    assert payload["agent_memory_admission"]["status"] == "blocked"
+    assert payload["agent_memory_admission"]["admitted"] is False
+    assert payload["agent_memory_admission"]["summary"]["checks_passed"] == 12
     assert payload["agent_memory_admission"]["summary"]["checks_total"] == 13
-    assert payload["agent_memory_admission"]["summary"]["public_benchmarks_passed"] == 3
+    assert payload["agent_memory_admission"]["summary"]["public_benchmarks_passed"] == 2
     assert payload["structured_memory"]["schema"] == "wavemind.structured_memory_report.v1"
     assert payload["structured_memory"]["status"] == "pass"
     assert payload["structured_memory"]["modality_count"] == 7

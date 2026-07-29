@@ -3421,11 +3421,60 @@ def _public_benchmarks(root: Path) -> list[dict[str, Any]]:
             if entry.get("id") == "vectordbbench":
                 entry["current"] = summary
                 break
-    longmemeval_v2_payload = _load_json(
+    longmemeval_v2_legacy_payload = _load_json(
         root / "benchmarks" / "longmemeval_v2_small_memory_os_results.json"
+    )
+    longmemeval_v2_strict_payload = _load_json(
+        root / "benchmarks" / "longmemeval_v2_frozen20_protocol_results.json"
+    )
+    longmemeval_v2_payload = (
+        longmemeval_v2_strict_payload or longmemeval_v2_legacy_payload
     )
     if longmemeval_v2_payload:
         results = _engine_results(longmemeval_v2_payload)
+        scenario_value = longmemeval_v2_payload.get("scenario")
+        scenario = scenario_value if isinstance(scenario_value, dict) else {}
+        strict_protocol = (
+            scenario.get("official_question_haystacks") is True
+            and scenario.get("isolated_ab_stores") is True
+        )
+        current = {
+            "WaveMind Core": _metric_summary(
+                results.get("WaveMind"),
+                (
+                    "task_success_rate",
+                    "p50_latency_ms",
+                    "p95_latency_ms",
+                    "p99_latency_ms",
+                    "scored_queries",
+                    "errors",
+                ),
+            ),
+            "WaveMind + Memory OS": _metric_summary(
+                results.get("WaveMind + Memory OS"),
+                (
+                    "task_success_rate",
+                    "p50_latency_ms",
+                    "p95_latency_ms",
+                    "p99_latency_ms",
+                    "end_to_end_p95_ms",
+                    "worker_runs",
+                    "worker_errors",
+                    "scored_queries",
+                    "errors",
+                ),
+            ),
+        }
+        if (
+            strict_protocol
+            and longmemeval_v2_legacy_payload is not None
+            and longmemeval_v2_legacy_payload is not longmemeval_v2_payload
+        ):
+            legacy_results = _engine_results(longmemeval_v2_legacy_payload)
+            current["Legacy full execution"] = _metric_summary(
+                legacy_results.get("WaveMind + Memory OS"),
+                ("task_success_rate", "scored_queries", "worker_errors"),
+            )
         for entry in entries:
             if entry.get("id") != "longmemeval_v2":
                 continue
@@ -3434,9 +3483,18 @@ def _public_benchmarks(root: Path) -> list[dict[str, Any]]:
                     "status": "implemented",
                     "source": "benchmarks/longmemeval_v2_memory_benchmark.py",
                     "dataset": (
-                        "Official LongMemEval-V2 Small: 451 web-agent questions, "
-                        "including all 29 image questions, scored by the pinned "
-                        "local qwen2.5vl:3b reader."
+                        (
+                            "Official LongMemEval-V2 Small frozen-20 protocol "
+                            "smoke with per-question 100-trajectory haystacks, "
+                            "isolated A/B stores, and pinned local qwen2.5:3b. "
+                            "The earlier 451-question run remains legacy "
+                            "execution evidence."
+                        )
+                        if strict_protocol
+                        else (
+                            "Official LongMemEval-V2 Small legacy 451-question "
+                            "execution; strict A/B protocol evidence is pending."
+                        )
                     ),
                     "metrics": [
                         "task_success_rate",
@@ -3446,42 +3504,16 @@ def _public_benchmarks(root: Path) -> list[dict[str, Any]]:
                         "retrieval_p99_ms",
                         "worker_errors",
                     ],
-                    "current": {
-                        "WaveMind Core": _metric_summary(
-                            results.get("WaveMind"),
-                            (
-                                "task_success_rate",
-                                "p50_latency_ms",
-                                "p95_latency_ms",
-                                "p99_latency_ms",
-                                "scored_queries",
-                                "errors",
-                            ),
-                        ),
-                        "WaveMind + Memory OS": _metric_summary(
-                            results.get("WaveMind + Memory OS"),
-                            (
-                                "task_success_rate",
-                                "p50_latency_ms",
-                                "p95_latency_ms",
-                                "p99_latency_ms",
-                                "end_to_end_p95_ms",
-                                "worker_runs",
-                                "worker_errors",
-                                "scored_queries",
-                                "errors",
-                            ),
-                        ),
-                    },
+                    "current": current,
                     "target": (
-                        "Improve task success over WaveMind Core on the full "
-                        "Small tier without worker errors or more than one "
-                        "percentage point of quality regression."
+                        "Reach at least 0.18 task success, improve at least four "
+                        "categories and beat Core by at least 0.01 on all 451 "
+                        "questions, while keeping end-to-end p95 regression "
+                        "within both 20 percent and 5 ms."
                     ),
                     "next_step": (
-                        "Raise absolute answer quality with a stronger local "
-                        "reader while keeping the checked retrieval and Memory "
-                        "OS execution protocol unchanged."
+                        "Improve retrieval and Memory OS policy on the frozen "
+                        "protocol before spending compute on the full strict run."
                     ),
                 }
             )

@@ -7,6 +7,7 @@ import json
 import math
 import os
 import re
+import shutil
 import statistics
 import subprocess
 import sys
@@ -18,7 +19,7 @@ from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any, Callable, Protocol
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
@@ -61,6 +62,7 @@ class V2Memory:
 class V2Dataset:
     questions: list[V2Question]
     memories: list[V2Memory]
+    haystacks: dict[str, tuple[str, ...]]
     source_files: dict[str, str]
 
 
@@ -178,13 +180,16 @@ def load_longmemeval_v2_small(
     ]
     haystacks = json.loads(haystack_path.read_text(encoding="utf-8"))
     selected_ids: set[str] = set()
+    selected_haystacks: dict[str, tuple[str, ...]] = {}
     for question in questions:
         ids = haystacks.get(question.id)
         if not isinstance(ids, list) or len(ids) != 100:
             raise ValueError(
                 f"small haystack for {question.id} must contain 100 trajectories"
             )
-        selected_ids.update(str(value) for value in ids)
+        selected = tuple(str(value) for value in ids)
+        selected_haystacks[question.id] = selected
+        selected_ids.update(selected)
 
     memories: list[V2Memory] = []
     found: set[str] = set()
@@ -229,6 +234,7 @@ def load_longmemeval_v2_small(
     return V2Dataset(
         questions=questions,
         memories=memories,
+        haystacks=selected_haystacks,
         source_files={
             "questions_sha256": _sha256(questions_path),
             "trajectories_sha256": _sha256(trajectories_path),
@@ -249,17 +255,36 @@ def _token_estimate(text: str) -> int:
     return max(1, math.ceil(len(text.split()) * 1.25))
 
 
-def _query_snippet(text: str, query: str, *, max_chars: int = 4_000) -> str:
+def _query_snippet(
+    text: str,
+    query: str,
+    *,
+    max_chars: int = 4_000,
+    chunk_chars: int = 800,
+    chunk_overlap: int = 160,
+) -> str:
     if len(text) <= max_chars:
         return text
+    if chunk_chars <= 0 or chunk_overlap < 0 or chunk_overlap >= chunk_chars:
+        raise ValueError("snippet chunking requires 0 <= overlap < chunk size")
     query_terms = {
         token
         for token in re.findall(r"\w+", query.lower())
         if len(token) >= 3
     }
-    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    chunks: list[str] = []
+    for line in (line.strip() for line in text.splitlines() if line.strip()):
+        if len(line) <= chunk_chars:
+            chunks.append(line)
+            continue
+        step = chunk_chars - chunk_overlap
+        chunks.extend(
+            line[offset : offset + chunk_chars]
+            for offset in range(0, len(line), step)
+            if line[offset : offset + chunk_chars].strip()
+        )
     ranked = sorted(
-        enumerate(lines),
+        enumerate(chunks),
         key=lambda item: (
             -sum(term in item[1].lower() for term in query_terms),
             item[0],
@@ -286,6 +311,7 @@ class OllamaReader:
         base_url: str = "http://127.0.0.1:11434",
         supports_images: bool = False,
         timeout_seconds: float = 180.0,
+        text_context_window: int = 8192,
         image_context_window: int = 4096,
         image_context_items: int = 1,
         image_context_chars: int = 4000,
@@ -296,6 +322,9 @@ class OllamaReader:
         self.base_url = base_url.rstrip("/")
         self.supports_images = bool(supports_images or vision_model)
         self.timeout_seconds = float(timeout_seconds)
+        self.text_context_window = int(text_context_window)
+        if self.text_context_window < 4096:
+            raise ValueError("text_context_window must be at least 4096")
         self.image_context_window = int(image_context_window)
         if self.image_context_window < 4096:
             raise ValueError("image_context_window must be at least 4096")
@@ -330,6 +359,7 @@ class OllamaReader:
                 "temperature": 0,
                 "seed": self.seed,
                 "num_predict": int(max_tokens),
+                "num_ctx": self.text_context_window,
             },
         }
         if image is not None:
@@ -507,25 +537,31 @@ def _query_memory(
     memory.audit_queries = bool(use_memory_os)
     for question in dataset.questions:
         namespace = f"longmemeval-v2-small:{question.domain}"
+        retrieval_query = question.question
+        metadata_filters = {
+            "trajectory_id": dataset.haystacks[question.id],
+        }
         started = time.perf_counter()
         if use_memory_os:
             results = query_with_cache(
                 memory,
                 cache,
-                question.question,
+                retrieval_query,
                 namespace=namespace,
                 top_k=top_k,
+                metadata_filters=metadata_filters,
             )
         else:
             results = memory.query(
-                question.question,
+                retrieval_query,
                 namespace=namespace,
                 top_k=top_k,
+                metadata_filters=metadata_filters,
             )
         retrieval_ms = (time.perf_counter() - started) * 1_000.0
         latencies.append(retrieval_ms)
         contexts[question.id] = [
-            _query_snippet(result.text, question.question)
+            _query_snippet(result.text, retrieval_query)
             for result in results
         ]
         current_maintenance = 0.0
@@ -591,6 +627,7 @@ def _evaluate_contexts(
     reader: Reader | None,
     reuse_rows: dict[str, list[dict[str, Any]]] | None = None,
     reuse_source: str = "matching checkpoint",
+    on_row: Callable[[dict[str, Any]], None] | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     if reader is None:
         return (
@@ -622,16 +659,17 @@ def _evaluate_contexts(
             None,
         )
         if reusable:
-            per_query.append(
-                {
-                    **{
-                        key: value
-                        for key, value in reusable.items()
-                        if key not in {"engine", "response_reused_from"}
-                    },
-                    "response_reused_from": reuse_source,
-                }
-            )
+            row = {
+                **{
+                    key: value
+                    for key, value in reusable.items()
+                    if key not in {"engine", "response_reused_from"}
+                },
+                "response_reused_from": reuse_source,
+            }
+            per_query.append(row)
+            if on_row is not None:
+                on_row(row)
             answer_latencies.append(0.0)
             reused_answers += 1
             continue
@@ -648,18 +686,19 @@ def _evaluate_contexts(
             passed = False
             error = f"{type(exc).__name__}: {exc}"
         answer_latencies.append((time.perf_counter() - started) * 1_000.0)
-        per_query.append(
-            {
-                "question_id": question.id,
-                "domain": question.domain,
-                "category": question.question_type,
-                "has_image": question.image is not None,
-                "passed": passed,
-                "response": response,
-                "error": error,
-                "context_sha256": context_sha,
-            }
-        )
+        row = {
+            "question_id": question.id,
+            "domain": question.domain,
+            "category": question.question_type,
+            "has_image": question.image is not None,
+            "passed": passed,
+            "response": response,
+            "error": error,
+            "context_sha256": context_sha,
+        }
+        per_query.append(row)
+        if on_row is not None:
+            on_row(row)
     scored = len(per_query)
     category_success = {
         category: statistics.mean(
@@ -702,6 +741,7 @@ def run_benchmark(
     work_dir: str | Path | None = None,
     resume_rows: list[dict[str, Any]] | None = None,
     resume_metadata: dict[str, Any] | None = None,
+    on_row: Callable[[dict[str, Any]], None] | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     dataset = load_longmemeval_v2_small(
         data_root,
@@ -713,27 +753,33 @@ def run_benchmark(
     )
     temp_parent = str(work_dir) if work_dir is not None else None
     with tempfile.TemporaryDirectory(dir=temp_parent) as temp_dir:
-        memory = WaveMind(
-            db_path=Path(temp_dir) / "longmemeval-v2-small.sqlite3",
-            encoder=encoder,
-            width=32,
-            height=32,
-            layers=2,
-            index_kind="numpy",
-            score_threshold=0.0,
-            evolve_on_feed=0,
-            vector_weight=0.78,
-            field_weight=0.06,
-            priority_weight=0.16,
-            lexical_weight=0.35,
-            short_query_lexical_weight=1.5,
-            rerank_k=max(top_k, 30),
-            persist_access_on_query=False,
-            query_feedback_strength=0.0,
-            audit_queries=False,
-        )
+        temp_path = Path(temp_dir)
+        base_path = temp_path / "longmemeval-v2-base.sqlite3"
+
+        def open_memory(path: Path) -> WaveMind:
+            return WaveMind(
+                db_path=path,
+                encoder=encoder,
+                width=32,
+                height=32,
+                layers=2,
+                index_kind="numpy",
+                score_threshold=0.0,
+                evolve_on_feed=0,
+                vector_weight=0.78,
+                field_weight=0.06,
+                priority_weight=0.16,
+                lexical_weight=0.35,
+                short_query_lexical_weight=1.5,
+                rerank_k=max(top_k, 30),
+                persist_access_on_query=False,
+                query_feedback_strength=0.0,
+                audit_queries=False,
+            )
+
+        seed_memory = open_memory(base_path)
         try:
-            memory.remember_batch(
+            seed_memory.remember_batch(
                 {
                     "text": item.text,
                     "namespace": item.namespace,
@@ -742,20 +788,35 @@ def run_benchmark(
                 }
                 for item in dataset.memories
             )
+        finally:
+            seed_memory.close()
+
+        core_path = temp_path / "longmemeval-v2-core.sqlite3"
+        os_path = temp_path / "longmemeval-v2-memory-os.sqlite3"
+        shutil.copy2(base_path, core_path)
+        shutil.copy2(base_path, os_path)
+
+        core_memory = open_memory(core_path)
+        try:
             core_contexts, core_metrics = _query_memory(
-                memory,
+                core_memory,
                 dataset,
                 top_k=top_k,
                 use_memory_os=False,
             )
+        finally:
+            core_memory.close()
+
+        os_memory = open_memory(os_path)
+        try:
             os_contexts, os_metrics = _query_memory(
-                memory,
+                os_memory,
                 dataset,
                 top_k=top_k,
                 use_memory_os=True,
             )
         finally:
-            memory.close()
+            os_memory.close()
     prior_core: dict[str, list[dict[str, Any]]] = {}
     prior_os: dict[str, list[dict[str, Any]]] = {}
     for row in resume_rows or []:
@@ -774,6 +835,11 @@ def run_benchmark(
         reader=reader,
         reuse_rows=prior_core,
         reuse_source="WaveMind checkpoint",
+        on_row=(
+            (lambda row: on_row({"engine": "WaveMind", **row}))
+            if on_row is not None
+            else None
+        ),
     )
     os_reuse: dict[str, list[dict[str, Any]]] = {}
     for row in core_rows:
@@ -786,6 +852,11 @@ def run_benchmark(
         reader=reader,
         reuse_rows=os_reuse,
         reuse_source="matching Core or Memory OS checkpoint",
+        on_row=(
+            (lambda row: on_row({"engine": "WaveMind + Memory OS", **row}))
+            if on_row is not None
+            else None
+        ),
     )
     results = [
         {"engine": "WaveMind", **core_metrics, **core_quality},
@@ -826,6 +897,8 @@ def run_benchmark(
                 "question_images_supported": bool(
                     reader is not None and reader.supports_images
                 ),
+                "official_question_haystacks": True,
+                "isolated_ab_stores": True,
                 "full_small_run": (
                     limit_questions is None and len(dataset.questions) == 451
                 ),
@@ -848,6 +921,11 @@ def run_benchmark(
                 ),
                 "supports_images": (
                     reader.supports_images if reader is not None else False
+                ),
+                "text_context_window": (
+                    getattr(reader, "text_context_window", None)
+                    if reader is not None
+                    else None
                 ),
                 "image_context_window": (
                     getattr(reader, "image_context_window", None)
@@ -895,6 +973,7 @@ def main() -> int:
         default=os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434"),
     )
     parser.add_argument("--reader-supports-images", action="store_true")
+    parser.add_argument("--ollama-text-context-window", type=int, default=8192)
     parser.add_argument("--ollama-image-context-window", type=int, default=4096)
     parser.add_argument("--ollama-image-context-items", type=int, default=1)
     parser.add_argument("--ollama-image-context-chars", type=int, default=4000)
@@ -943,6 +1022,7 @@ def main() -> int:
             vision_model=args.ollama_vision_model,
             base_url=args.ollama_base_url,
             supports_images=args.reader_supports_images,
+            text_context_window=args.ollama_text_context_window,
             image_context_window=args.ollama_image_context_window,
             image_context_items=args.ollama_image_context_items,
             image_context_chars=args.ollama_image_context_chars,
@@ -950,6 +1030,40 @@ def main() -> int:
         if args.ollama_model
         else None
     )
+    args.per_query_output.parent.mkdir(parents=True, exist_ok=True)
+    checkpoint_rows = list(resume_rows or [])
+    checkpoint_keys = {
+        (
+            str(row.get("engine") or ""),
+            str(row.get("question_id") or ""),
+            str(row.get("context_sha256") or ""),
+        )
+        for row in checkpoint_rows
+    }
+    args.per_query_output.write_text(
+        "".join(
+            json.dumps(row, ensure_ascii=False, separators=(",", ":")) + "\n"
+            for row in checkpoint_rows
+        ),
+        encoding="utf-8",
+    )
+
+    def checkpoint(row: dict[str, Any]) -> None:
+        key = (
+            str(row.get("engine") or ""),
+            str(row.get("question_id") or ""),
+            str(row.get("context_sha256") or ""),
+        )
+        if key in checkpoint_keys:
+            return
+        with args.per_query_output.open("a", encoding="utf-8") as handle:
+            handle.write(
+                json.dumps(row, ensure_ascii=False, separators=(",", ":"))
+                + "\n"
+            )
+            handle.flush()
+        checkpoint_keys.add(key)
+
     payload, rows = run_benchmark(
         args.data_root,
         reader=reader,
@@ -958,13 +1072,13 @@ def main() -> int:
         work_dir=args.work_dir,
         resume_rows=resume_rows,
         resume_metadata=resume_metadata,
+        on_row=checkpoint,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
-    args.per_query_output.parent.mkdir(parents=True, exist_ok=True)
     args.per_query_output.write_text(
         "".join(
             json.dumps(row, ensure_ascii=False, separators=(",", ":")) + "\n"

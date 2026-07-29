@@ -1,13 +1,13 @@
 {
   "schema": "wavemind.agent_memory_advantage_admission.v1",
-  "generated_at": "2026-07-28T07:23:22Z",
+  "generated_at": "2026-07-29T00:31:44Z",
   "source_sha": "590bc8df80e0adf3125f5d33bee0b4f086fe17ab",
-  "status": "admitted",
-  "admitted": true,
+  "status": "blocked",
+  "admitted": false,
   "summary": {
-    "checks_passed": 13,
+    "checks_passed": 12,
     "checks_total": 13,
-    "public_benchmarks_passed": 3,
+    "public_benchmarks_passed": 2,
     "public_benchmarks_total": 3
   },
   "checks": [
@@ -134,14 +134,22 @@
         "evaluation_mode": null,
         "scored_queries": null,
         "full_small_run": null,
-        "question_images_supported": null
+        "question_images_supported": null,
+        "official_question_haystacks": null,
+        "isolated_ab_stores": null,
+        "improved_categories": 0,
+        "p95_latency_delta_ms": null,
+        "p95_latency_regression": null
       },
       "target": {
         "min_queries": 1977,
         "direct_memory_os": true,
         "worker_runs": "> 0",
         "worker_errors": 0,
-        "quality_regression": "<= 0.01",
+        "quality": {
+          "maximum_regression": 0.01
+        },
+        "p95_latency": "not required by this retrieval-evidence artifact",
         "answer_evaluation": "not required by this retrieval-evidence artifact"
       },
       "issue": ""
@@ -162,22 +170,30 @@
         "evaluation_mode": null,
         "scored_queries": null,
         "full_small_run": null,
-        "question_images_supported": null
+        "question_images_supported": null,
+        "official_question_haystacks": null,
+        "isolated_ab_stores": null,
+        "improved_categories": 0,
+        "p95_latency_delta_ms": null,
+        "p95_latency_regression": null
       },
       "target": {
         "min_queries": 470,
         "direct_memory_os": true,
         "worker_runs": "> 0",
         "worker_errors": 0,
-        "quality_regression": "<= 0.01",
+        "quality": {
+          "maximum_regression": 0.01
+        },
+        "p95_latency": "not required by this retrieval-evidence artifact",
         "answer_evaluation": "not required by this retrieval-evidence artifact"
       },
       "issue": ""
     },
     {
       "id": "public-longmemeval_v2_small",
-      "passed": true,
-      "status": "pass",
+      "passed": false,
+      "status": "action_required",
       "evidence": {
         "artifact": "benchmarks/longmemeval_v2_small_memory_os_results.json",
         "source_sha": "590bc8df80e0adf3125f5d33bee0b4f086fe17ab",
@@ -190,17 +206,30 @@
         "evaluation_mode": "official_answer_local_reader",
         "scored_queries": 451,
         "full_small_run": true,
-        "question_images_supported": true
+        "question_images_supported": true,
+        "official_question_haystacks": null,
+        "isolated_ab_stores": null,
+        "improved_categories": 4,
+        "p95_latency_delta_ms": 11.853400006657466,
+        "p95_latency_regression": 0.9368203082612909
       },
       "target": {
         "min_queries": 451,
         "direct_memory_os": true,
         "worker_runs": "> 0",
         "worker_errors": 0,
-        "quality_regression": "<= 0.01",
-        "answer_evaluation": "local reader on all 451 questions with image support"
+        "quality": {
+          "minimum_task_success": 0.18,
+          "minimum_memory_os_uplift": 0.01,
+          "minimum_improved_categories": 4
+        },
+        "p95_latency": {
+          "maximum_regression": 0.2,
+          "maximum_delta_ms": 5.0
+        },
+        "answer_evaluation": "local reader on all 451 questions with image support, official haystacks, and isolated A/B stores"
       },
-      "issue": ""
+      "issue": "longmemeval_v2_small does not contain complete direct Memory OS evidence"
     }
   ],
   "public_evidence": {
@@ -220,14 +249,22 @@
         "evaluation_mode": null,
         "scored_queries": null,
         "full_small_run": null,
-        "question_images_supported": null
+        "question_images_supported": null,
+        "official_question_haystacks": null,
+        "isolated_ab_stores": null,
+        "improved_categories": 0,
+        "p95_latency_delta_ms": null,
+        "p95_latency_regression": null
       },
       "target": {
         "min_queries": 1977,
         "direct_memory_os": true,
         "worker_runs": "> 0",
         "worker_errors": 0,
-        "quality_regression": "<= 0.01",
+        "quality": {
+          "maximum_regression": 0.01
+        },
+        "p95_latency": "not required by this retrieval-evidence artifact",
         "answer_evaluation": "not required by this retrieval-evidence artifact"
       },
       "issue": ""
@@ -248,22 +285,30 @@
         "evaluation_mode": null,
         "scored_queries": null,
         "full_small_run": null,
-        "question_images_supported": null
+        "question_images_supported": null,
+        "official_question_haystacks": null,
+        "isolated_ab_stores": null,
+        "improved_categories": 0,
+        "p95_latency_delta_ms": null,
+        "p95_latency_regression": null
       },
       "target": {
         "min_queries": 470,
         "direct_memory_os": true,
         "worker_runs": "> 0",
         "worker_errors": 0,
-        "quality_regression": "<= 0.01",
+        "quality": {
+          "maximum_regression": 0.01
+        },
+        "p95_latency": "not required by this retrieval-evidence artifact",
         "answer_evaluation": "not required by this retrieval-evidence artifact"
       },
       "issue": ""
     },
     "longmemeval_v2_small": {
       "id": "public-longmemeval_v2_small",
-      "passed": true,
-      "status": "pass",
+      "passed": false,
+      "status": "action_required",
       "evidence": {
         "artifact": "benchmarks/longmemeval_v2_small_memory_os_results.json",
         "source_sha": "590bc8df80e0adf3125f5d33bee0b4f086fe17ab",
@@ -276,19 +321,34 @@
         "evaluation_mode": "official_answer_local_reader",
         "scored_queries": 451,
         "full_small_run": true,
-        "question_images_supported": true
+        "question_images_supported": true,
+        "official_question_haystacks": null,
+        "isolated_ab_stores": null,
+        "improved_categories": 4,
+        "p95_latency_delta_ms": 11.853400006657466,
+        "p95_latency_regression": 0.9368203082612909
       },
       "target": {
         "min_queries": 451,
         "direct_memory_os": true,
         "worker_runs": "> 0",
         "worker_errors": 0,
-        "quality_regression": "<= 0.01",
-        "answer_evaluation": "local reader on all 451 questions with image support"
+        "quality": {
+          "minimum_task_success": 0.18,
+          "minimum_memory_os_uplift": 0.01,
+          "minimum_improved_categories": 4
+        },
+        "p95_latency": {
+          "maximum_regression": 0.2,
+          "maximum_delta_ms": 5.0
+        },
+        "answer_evaluation": "local reader on all 451 questions with image support, official haystacks, and isolated A/B stores"
       },
-      "issue": ""
+      "issue": "longmemeval_v2_small does not contain complete direct Memory OS evidence"
     }
   },
-  "issues": [],
+  "issues": [
+    "longmemeval_v2_small does not contain complete direct Memory OS evidence"
+  ],
   "claim_boundary": "Admission requires controlled paired advantage evidence and direct Memory OS execution on all three public memory benchmarks."
 }

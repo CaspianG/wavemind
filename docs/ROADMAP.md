@@ -575,13 +575,17 @@ policy matters more than raw vector-database scale:
   bootstrap samples, real Chroma/Qdrant baselines, positive lift in two dynamic
   categories, task success `0.389 -> 1.000`, stale errors `0.611 -> 0.000`,
   context savings `0.502`, and p95 latency within the admission budget.
-- LoCoMo, LongMemEval-S, and LongMemEval-V2 Small now execute Memory OS policies
-  directly rather than reusing proxy results. LoCoMo is a small honest
-  regression within the one-point gate, LongMemEval-S matches Core retrieval
-  quality, and LongMemEval-V2 Small improves local-reader task success from
-  `0.0754` to `0.0909` over all 451 questions including 29 image questions.
+- LoCoMo and LongMemEval-S execute Memory OS policies directly rather than
+  reusing proxy results. LoCoMo is a small honest regression within the
+  one-point gate and LongMemEval-S matches Core retrieval quality. The earlier
+  451-question LongMemEval-V2 execution predates strict per-question haystack
+  filtering and isolated A/B stores, so it is retained as execution history,
+  not accepted as uplift evidence. The strict frozen-20 protocol currently
+  ties Core and Memory OS at `0.10`.
 - `wavemind agent-memory-advantage-admission` joins those four artifacts into a
-  strict `13/13` release gate. It rejects missing exact-SHA evidence, incomplete
+  strict 13-check release gate. The controlled adaptive slice is admitted, but
+  the composite public gate is blocked until the full strict LongMemEval-V2
+  evidence passes. The gate rejects missing exact-SHA evidence, incomplete
   public runs, worker errors, stale-error regressions, insufficient context
   savings, or excessive p95 latency.
 - `benchmarks/cluster_autoscale_report.py` now extracts cluster autoscale
@@ -607,10 +611,11 @@ policy matters more than raw vector-database scale:
   restore-from-latest support, remote download verification, object-store
   disaster-recovery drills, and object-store retention are available as the
   first durability layer.
-- Public direct Memory OS evidence now exists for full LoCoMo and
-  LongMemEval-S, and full answer-quality evidence exists for LongMemEval-V2
-  Small with the pinned local multimodal reader. Absolute V2 answer quality is
-  still low, so stronger-reader evaluation remains a proof-quality priority.
+- Public direct Memory OS evidence exists for full LoCoMo and LongMemEval-S.
+  LongMemEval-V2 has full legacy execution evidence plus a strict frozen-20
+  protocol smoke with official haystacks, isolated stores, and crash-safe
+  checkpoints. A full strict rerun, at least `0.18` answer quality, and positive
+  Memory OS lift remain proof-quality priorities.
 - A production MCP server exposes remember, recall, feedback, forget,
   inspection, provenance/explanation, and namespace management with durable
   idempotency, namespace isolation, TTL, destructive-operation confirmation,

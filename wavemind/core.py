@@ -418,9 +418,14 @@ class WaveMind:
         tags: Iterable[str] | None = None,
         min_score: float | None = None,
         query_vector: np.ndarray | None = None,
+        metadata_filters: Mapping[str, Any] | None = None,
     ) -> list[QueryResult]:
         self._refresh_namespace_if_due(namespace)
-        allowed_ids = self._allowed_ids(namespace=namespace, tags=tags)
+        allowed_ids = self._allowed_ids(
+            namespace=namespace,
+            tags=tags,
+            metadata_filters=metadata_filters,
+        )
         if not allowed_ids:
             return []
 
@@ -549,6 +554,9 @@ class WaveMind:
                     "candidate_count": len(candidate_scores),
                     "tags": list(tags or []),
                     "min_score": threshold,
+                    "metadata_filters": self._serializable_metadata_filters(
+                        metadata_filters
+                    ),
                 },
             )
         return selected
@@ -1362,9 +1370,11 @@ class WaveMind:
         self,
         namespace: str,
         tags: Iterable[str] | None = None,
+        metadata_filters: Mapping[str, Any] | None = None,
     ) -> set[int]:
         ids = set(self._namespace_ids.get(namespace, set()))
         required_tags = set(tags or ())
+        required_metadata = dict(metadata_filters or {})
         if not ids:
             return set()
         allowed = set()
@@ -1374,8 +1384,44 @@ class WaveMind:
                 continue
             if required_tags and not required_tags.issubset(set(record.tags)):
                 continue
+            if required_metadata and not self._metadata_matches(
+                record.metadata,
+                required_metadata,
+            ):
+                continue
             allowed.add(id)
         return allowed
+
+    @staticmethod
+    def _metadata_matches(
+        metadata: Mapping[str, Any],
+        filters: Mapping[str, Any],
+    ) -> bool:
+        for key, expected in filters.items():
+            if not str(key):
+                raise ValueError("metadata filter keys must not be empty")
+            actual = metadata.get(str(key))
+            if isinstance(expected, (list, tuple, set, frozenset)):
+                if actual not in expected:
+                    return False
+            elif actual != expected:
+                return False
+        return True
+
+    @staticmethod
+    def _serializable_metadata_filters(
+        filters: Mapping[str, Any] | None,
+    ) -> dict[str, Any]:
+        payload: dict[str, Any] = {}
+        for key, value in sorted((filters or {}).items()):
+            payload[str(key)] = (
+                sorted(value, key=lambda item: str(item))
+                if isinstance(value, (set, frozenset))
+                else list(value)
+                if isinstance(value, tuple)
+                else value
+            )
+        return payload
 
     def _refresh_field_magnitude(self) -> None:
         self._field_magnitude = np.nan_to_num(

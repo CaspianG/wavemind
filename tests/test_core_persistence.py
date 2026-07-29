@@ -31,6 +31,39 @@ def make_mind(db_path: Path, **kwargs) -> WaveMind:
     return WaveMind(**params)
 
 
+def test_query_filters_exact_or_allowed_metadata_values(tmp_path):
+    mind = make_mind(tmp_path / "metadata-filter.sqlite3", score_threshold=0.0)
+    try:
+        alpha = mind.remember(
+            "shared workflow evidence",
+            namespace="agent",
+            metadata={"trajectory_id": "alpha", "state": "complete"},
+        )
+        beta = mind.remember(
+            "shared workflow evidence",
+            namespace="agent",
+            metadata={"trajectory_id": "beta", "state": "complete"},
+        )
+
+        exact = mind.query(
+            "workflow evidence",
+            namespace="agent",
+            top_k=5,
+            metadata_filters={"trajectory_id": "alpha"},
+        )
+        allowed = mind.query(
+            "workflow evidence",
+            namespace="agent",
+            top_k=5,
+            metadata_filters={"trajectory_id": ("beta", "gamma")},
+        )
+
+        assert [row.id for row in exact] == [alpha]
+        assert [row.id for row in allowed] == [beta]
+    finally:
+        mind.close()
+
+
 def test_sqlite_store_serializes_shared_connection_access(tmp_path):
     store = SQLiteMemoryStore(tmp_path / "concurrent.sqlite3")
     entered = threading.Event()
