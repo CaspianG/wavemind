@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import math
 import time
 import re
 from collections import Counter
@@ -167,6 +168,7 @@ class WaveMind:
         lexical_weight: float = 0.20,
         short_query_lexical_weight: float = 2.0,
         max_lexical_token_frequency: int = 64,
+        lexical_idf_normalization: bool = False,
         rerank_k: int = 10,
         field_disable_after: int = 1000,
         graph_weight: float = 0.0,
@@ -196,6 +198,7 @@ class WaveMind:
         self.lexical_weight = float(lexical_weight)
         self.short_query_lexical_weight = float(short_query_lexical_weight)
         self.max_lexical_token_frequency = int(max_lexical_token_frequency)
+        self.lexical_idf_normalization = bool(lexical_idf_normalization)
         self.rerank_k = int(rerank_k)
         self.field_disable_after = int(field_disable_after)
         self.graph_weight = float(graph_weight)
@@ -519,7 +522,12 @@ class WaveMind:
                 field_score = self._field_resonance(record.pattern) if field_weight > 0 else 0.0
                 graph_score = graph_scores.get(candidate_id, self.graph.energy(candidate_id) if self.graph_weight > 0 else 0.0)
                 priority_score = min(1.0, max(0.0, record.priority / 10.0))
-                lexical_score = self._lexical_match(query_tokens, record.id, record.text)
+                lexical_score = self._lexical_match(
+                    query_tokens,
+                    record.id,
+                    record.text,
+                    allowed_ids=allowed_ids,
+                )
                 score = (
                     self.vector_weight * vector_score
                     + field_weight * field_score
@@ -597,6 +605,7 @@ class WaveMind:
                     "max_results_per_diversity_group": (
                         int(max_results_per_diversity_group)
                     ),
+                    "lexical_idf_normalization": self.lexical_idf_normalization,
                 },
             )
         return selected
@@ -1506,12 +1515,42 @@ class WaveMind:
             if normalized not in LEXICAL_STOPWORDS and not is_stopword_token(token)
         )
 
-    def _lexical_match(self, query_tokens: tuple[str, ...], id: int | None, text: str) -> float:
+    def _lexical_match(
+        self,
+        query_tokens: tuple[str, ...],
+        id: int | None,
+        text: str,
+        *,
+        allowed_ids: set[int] | None = None,
+    ) -> float:
         if not query_tokens:
             return 0.0
         text_tokens = self._record_tokens.get(int(id)) if id is not None else None
         if text_tokens is None:
             text_tokens = frozenset(self._tokens(text))
+        if self.lexical_idf_normalization and allowed_ids:
+            weights = {
+                token: math.log(
+                    (len(allowed_ids) + 1)
+                    / (
+                        len(self._token_ids.get(token, set()) & allowed_ids)
+                        + 1
+                    )
+                )
+                + 1.0
+                for token in query_tokens
+            }
+            denominator = sum(weights.values())
+            if denominator <= 0.0:
+                return 0.0
+            return (
+                sum(
+                    weight
+                    for token, weight in weights.items()
+                    if token in text_tokens
+                )
+                / denominator
+            )
         matched = sum(1 for token in query_tokens if token in text_tokens)
         return matched / len(query_tokens)
 

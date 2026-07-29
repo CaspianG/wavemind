@@ -132,6 +132,46 @@ def test_short_query_exact_match_can_beat_stronger_vector_candidate(tmp_path):
     assert results[0].id == expected_id
 
 
+def test_idf_normalized_lexical_score_prefers_rare_query_evidence(tmp_path):
+    mind = WaveMind(
+        db_path=tmp_path / "idf-lexical.sqlite3",
+        encoder=FlatSemanticEncoder(),
+        width=16,
+        height=16,
+        layers=2,
+        index_kind="numpy",
+        vector_weight=0.0,
+        field_weight=0.0,
+        priority_weight=0.0,
+        lexical_weight=1.0,
+        short_query_lexical_weight=1.0,
+        max_lexical_token_frequency=100,
+        lexical_idf_normalization=True,
+        rerank_k=50,
+    )
+    try:
+        mind.remember("sharedtopic generic evidence", namespace="idf")
+        expected_id = mind.remember(
+            "uniqueneedle decisive evidence",
+            namespace="idf",
+        )
+        for index in range(20):
+            mind.remember(
+                f"sharedtopic background record {index}",
+                namespace="idf",
+            )
+
+        results = mind.query(
+            "sharedtopic uniqueneedle",
+            namespace="idf",
+            top_k=1,
+        )
+
+        assert results[0].id == expected_id
+    finally:
+        mind.close()
+
+
 def test_query_can_diversify_results_by_metadata_group(tmp_path):
     mind = WaveMind(
         db_path=tmp_path / "diversity.sqlite3",
