@@ -1,0 +1,87 @@
+{
+  "protocol": "wavemind.crypto.binance-decelerating-capitulation-transfer.v2",
+  "frozen_at_utc": "2026-07-29T14:20:00Z",
+  "supersedes": {
+    "protocol": "wavemind.crypto.binance-decelerating-capitulation-transfer.v1",
+    "reason": "Source preflight failed before any holdout bundle or outcome was loaded: EOSUSDT has no official Binance 4h archive after September 2025, while the frozen test requires 2026-H1.",
+    "unchanged_symbols": [
+      "1INCHUSDT",
+      "ENJUSDT",
+      "ICPUSDT",
+      "IOTAUSDT",
+      "MKRUSDT",
+      "SUSHIUSDT",
+      "ZILUSDT"
+    ],
+    "replacement_symbol": "CHZUSDT",
+    "replacement_check": "Only source availability was checked before this file was committed: official metrics exist in January 2023 and 4h klines exist in June 2026."
+  },
+  "purpose": "One-read asset-disjoint transfer of a causal post-capitulation rebound rule selected before evaluating the holdout assets.",
+  "source": {
+    "provider": "Binance public data archive",
+    "base_url": "https://data.binance.vision/data/futures/um",
+    "market": "USD-M perpetual futures",
+    "interval": "4h",
+    "start": "2023-01-01",
+    "end": "2026-06-30",
+    "integrity": "Every archive file must pass the provider CHECKSUM before it enters a gzip bundle."
+  },
+  "selection_evidence": {
+    "assets": 29,
+    "selection_period": "2024-01-01 through 2024-12-31",
+    "signals": 77,
+    "direction_accuracy": 0.7922077922077922,
+    "wilson_low_95": 0.6887625050462091,
+    "stress_period_not_used_for_selection": "2025-01-01 through 2026-06-30",
+    "stress_signals": 53,
+    "stress_direction_accuracy": 0.7735849056603774
+  },
+  "holdout_symbols": [
+    "1INCHUSDT",
+    "CHZUSDT",
+    "ENJUSDT",
+    "ICPUSDT",
+    "IOTAUSDT",
+    "MKRUSDT",
+    "SUSHIUSDT",
+    "ZILUSDT"
+  ],
+  "frozen_rule": {
+    "return_feature": "return_12",
+    "return_quantile": 0.005,
+    "open_interest_feature": "oi_change_1",
+    "open_interest_quantile": 0.05,
+    "confirmation": "decelerating_selloff",
+    "confirmation_formula": "return_1 > return_3 / 3",
+    "prediction": "up",
+    "forecast_horizon": "24h"
+  },
+  "fold_boundaries": [
+    ["2024-01-01", "2024-07-01"],
+    ["2024-07-01", "2025-01-01"],
+    ["2025-01-01", "2025-07-01"],
+    ["2025-07-01", "2026-01-01"],
+    ["2026-01-01", "2026-07-01"]
+  ],
+  "causality": {
+    "threshold_fit": "Each fold fits feature quantiles only on observations whose 24h targets matured before that fold began.",
+    "overlap_control": "At most one signal per asset is counted until the previous 24h forecast matures.",
+    "market_block_control": "Signals are also collapsed into UTC-day market blocks.",
+    "episode_control": "Market blocks separated by no more than 48h are merged into one episode.",
+    "holdout_policy": "The assets, rule, folds, direction, and gates cannot change after this file is committed. A failed result remains reported."
+  },
+  "strict_gate": {
+    "minimum_signals": 40,
+    "minimum_direction_accuracy": 0.7,
+    "minimum_wilson_low_95": 0.65,
+    "minimum_supported_folds": 4,
+    "minimum_fold_support": 5,
+    "minimum_supported_fold_accuracy": 0.65,
+    "minimum_supported_assets": 6,
+    "minimum_asset_support": 5,
+    "minimum_supported_asset_accuracy": 0.6,
+    "minimum_market_episodes": 15,
+    "minimum_market_episode_accuracy": 0.65,
+    "minimum_market_episode_wilson_low_95": 0.5
+  }
+}
