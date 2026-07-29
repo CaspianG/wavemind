@@ -212,6 +212,7 @@ class WaveMind:
         self._namespace_store_refresh_at: dict[str, float] = {}
         self._records_by_id: dict[int, MemoryRecord] = {}
         self._namespace_ids: dict[str, set[int]] = {}
+        self._namespace_token_counts: dict[str, Counter[str]] = {}
         self._token_ids: dict[str, set[int]] = {}
         self._record_tokens: dict[int, frozenset[str]] = {}
         self._graph_dirty = True
@@ -480,6 +481,7 @@ class WaveMind:
         lexical_token_weights = self._lexical_query_weights(
             query_tokens,
             allowed_ids,
+            namespace=namespace,
         )
         field_weight = self._effective_field_weight(len(allowed_ids))
         lexical_weight = self._effective_lexical_weight(query_tokens)
@@ -1373,6 +1375,7 @@ class WaveMind:
     def _build_cache(self, records: Iterable[MemoryRecord]) -> None:
         self._records_by_id.clear()
         self._namespace_ids.clear()
+        self._namespace_token_counts.clear()
         self._token_ids.clear()
         self._record_tokens.clear()
         for record in records:
@@ -1385,10 +1388,15 @@ class WaveMind:
         id = int(record.id)
         self._records_by_id[id] = record
         self._namespace_ids.setdefault(record.namespace, set()).add(id)
-        tokens = self._tokens(record.text)
-        self._record_tokens[id] = frozenset(tokens)
+        tokens = frozenset(self._tokens(record.text))
+        self._record_tokens[id] = tokens
+        namespace_counts = self._namespace_token_counts.setdefault(
+            record.namespace,
+            Counter(),
+        )
         for token in tokens:
             self._token_ids.setdefault(token, set()).add(id)
+            namespace_counts[token] += 1
         self._mark_graph_dirty()
 
     def _uncache_record(self, id: int) -> None:
@@ -1403,13 +1411,19 @@ class WaveMind:
         tokens = self._record_tokens.pop(int(id), None)
         if tokens is None:
             tokens = frozenset(self._tokens(record.text))
+        namespace_counts = self._namespace_token_counts.get(record.namespace)
         for token in tokens:
             token_ids = self._token_ids.get(token)
-            if token_ids is None:
-                continue
-            token_ids.discard(int(id))
-            if not token_ids:
-                self._token_ids.pop(token, None)
+            if token_ids is not None:
+                token_ids.discard(int(id))
+                if not token_ids:
+                    self._token_ids.pop(token, None)
+            if namespace_counts is not None:
+                namespace_counts[token] -= 1
+                if namespace_counts[token] <= 0:
+                    del namespace_counts[token]
+        if namespace_counts is not None and not namespace_counts:
+            self._namespace_token_counts.pop(record.namespace, None)
         self._mark_graph_dirty()
 
     def _mark_graph_dirty(self) -> None:
@@ -1551,20 +1565,32 @@ class WaveMind:
         self,
         query_tokens: tuple[str, ...],
         allowed_ids: set[int],
+        *,
+        namespace: str,
     ) -> dict[str, float] | None:
         if not self.lexical_idf_normalization or not query_tokens or not allowed_ids:
             return None
         allowed_count = len(allowed_ids)
+        namespace_ids = self._namespace_ids.get(namespace, set())
+        namespace_counts = (
+            self._namespace_token_counts.get(namespace)
+            if allowed_ids == namespace_ids
+            else None
+        )
+
+        def document_frequency(token: str) -> int:
+            if namespace_counts is not None:
+                return int(namespace_counts.get(token, 0))
+            token_ids = self._token_ids.get(token, set())
+            return sum(1 for memory_id in token_ids if memory_id in allowed_ids)
+
         return {
             token: math.log(
                 (allowed_count + 1)
-                / (
-                    len(self._token_ids.get(token, set()) & allowed_ids)
-                    + 1
-                )
+                / (document_frequency(token) + 1)
             )
             + 1.0
-            for token in query_tokens
+            for token in dict.fromkeys(query_tokens)
         }
 
     def _lexical_candidate_ids(

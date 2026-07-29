@@ -172,6 +172,59 @@ def test_idf_normalized_lexical_score_prefers_rare_query_evidence(tmp_path):
         mind.close()
 
 
+def test_idf_document_frequency_cache_tracks_namespaces_and_forget(tmp_path):
+    mind = WaveMind(
+        db_path=tmp_path / "idf-frequency-cache.sqlite3",
+        encoder=FlatSemanticEncoder(),
+        width=16,
+        height=16,
+        layers=2,
+        index_kind="numpy",
+        lexical_idf_normalization=True,
+    )
+    try:
+        first_id = mind.remember(
+            "sharedtopic first",
+            namespace="first",
+            metadata={"group": "kept"},
+        )
+        mind.remember(
+            "sharedtopic second",
+            namespace="first",
+            metadata={"group": "drop"},
+        )
+        mind.remember("sharedtopic other", namespace="other")
+
+        first_ids = mind._allowed_ids("first")
+        weights = mind._lexical_query_weights(
+            mind._tokens("sharedtopic missing"),
+            first_ids,
+            namespace="first",
+        )
+
+        assert weights is not None
+        assert weights["missing"] > weights["sharedtopic"]
+        assert mind._namespace_token_counts["first"]["sharedtopic"] == 2
+        assert mind._namespace_token_counts["other"]["sharedtopic"] == 1
+
+        filtered_ids = mind._allowed_ids(
+            "first",
+            metadata_filters={"group": "kept"},
+        )
+        filtered_weights = mind._lexical_query_weights(
+            mind._tokens("sharedtopic missing"),
+            filtered_ids,
+            namespace="first",
+        )
+        assert filtered_weights is not None
+        assert filtered_weights["missing"] > filtered_weights["sharedtopic"]
+
+        assert mind.forget(id=first_id) == 1
+        assert mind._namespace_token_counts["first"]["sharedtopic"] == 1
+    finally:
+        mind.close()
+
+
 def test_query_can_diversify_results_by_metadata_group(tmp_path):
     mind = WaveMind(
         db_path=tmp_path / "diversity.sqlite3",
