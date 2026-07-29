@@ -764,7 +764,7 @@ def _query_memory(
                 metadata_filters=metadata_filters,
                 candidate_top_k=candidate_top_k,
                 diversity_metadata_key="trajectory_id",
-                max_results_per_diversity_group=1,
+                max_results_per_diversity_group=2,
             )
         else:
             results = memory.query(
@@ -774,7 +774,7 @@ def _query_memory(
                 metadata_filters=metadata_filters,
                 candidate_top_k=candidate_top_k,
                 diversity_metadata_key="trajectory_id",
-                max_results_per_diversity_group=1,
+                max_results_per_diversity_group=2,
             )
         snippets = [
             _query_snippet(result.text, retrieval_query)
@@ -863,7 +863,7 @@ def _query_memory(
             semantic_rerank_weight if semantic_reranker is not None else 0.0
         ),
         "diversity_metadata_key": "trajectory_id",
-        "max_results_per_diversity_group": 1,
+        "max_results_per_diversity_group": 2,
         "memory_os_policy_mode": (
             "feedback_free_safe" if use_memory_os else "disabled"
         ),
@@ -1357,7 +1357,7 @@ def run_benchmark(
                 lexical_weight=1.0,
                 short_query_lexical_weight=1.5,
                 max_lexical_token_frequency=512,
-                lexical_idf_normalization=True,
+                lexical_idf_normalization=False,
                 rerank_k=max(top_k, 30),
                 persist_access_on_query=False,
                 query_feedback_strength=0.0,
@@ -1556,10 +1556,10 @@ def run_benchmark(
                 "priority_weight": 0.16,
                 "field_weight": 0.06,
                 "max_lexical_token_frequency": 512,
-                "lexical_idf_normalization": True,
+                "lexical_idf_normalization": False,
                 "candidate_top_k": max(top_k, min(50, top_k * 10)),
                 "diversity_metadata_key": "trajectory_id",
-                "max_results_per_diversity_group": 1,
+                "max_results_per_diversity_group": 2,
                 "query_instruction_normalization": True,
                 "snippet_max_chars": 2_800,
                 "snippet_neighbor_lines": 2,

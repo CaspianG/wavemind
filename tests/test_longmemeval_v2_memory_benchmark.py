@@ -410,6 +410,7 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
     assert payload["scenario"]["official_question_haystacks"] is True
     assert payload["scenario"]["isolated_ab_stores"] is True
     assert payload["retrieval"]["query_instruction_normalization"] is True
+    assert payload["retrieval"]["lexical_idf_normalization"] is False
     assert payload["retrieval"]["diversity_metadata_key"] == "trajectory_id"
     assert payload["retrieval"]["candidate_top_k"] == 30
     assert memory_os["execution_mode"] == "memory_os_direct_feedback_free"
@@ -418,7 +419,7 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
     assert memory_os["maintenance_interval_queries"] == 32
     assert memory_os["candidate_top_k"] == 30
     assert memory_os["diversity_metadata_key"] == "trajectory_id"
-    assert memory_os["max_results_per_diversity_group"] == 1
+    assert memory_os["max_results_per_diversity_group"] == 2
     assert memory_os["request_path_excludes_background_maintenance"] is True
     assert memory_os["end_to_end_p95_ms"] == memory_os["p95_latency_ms"]
     assert memory_os["maintenance_p95_ms"] > 0.0
