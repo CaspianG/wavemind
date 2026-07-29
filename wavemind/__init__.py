@@ -90,6 +90,13 @@ from .memory_safety import (
     default_memory_red_team_cases,
     run_memory_safety_suite,
 )
+from .memory_safety_admission import (
+    MEMORY_SAFETY_ADMISSION_SCHEMA,
+    MEMORY_SAFETY_SUITE_FINGERPRINT,
+    MEMORY_SAFETY_SUITE_REVISION,
+    evaluate_memory_safety_admission,
+    render_memory_safety_admission_markdown,
+)
 from .advisor import (
     MemoryArchitectureAdvice,
     MemoryArchitectureRecommendation,
@@ -611,6 +618,11 @@ __all__ = [
     "run_memory_os_canary",
     "run_memory_os_policy_evolution",
     "run_memory_safety_suite",
+    "MEMORY_SAFETY_ADMISSION_SCHEMA",
+    "MEMORY_SAFETY_SUITE_FINGERPRINT",
+    "MEMORY_SAFETY_SUITE_REVISION",
+    "evaluate_memory_safety_admission",
+    "render_memory_safety_admission_markdown",
     "production_scale_profile_names",
     "scale_status_meets_or_exceeds",
     "serverless_sample_bundle",
