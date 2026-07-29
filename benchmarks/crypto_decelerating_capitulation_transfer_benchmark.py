@@ -29,7 +29,7 @@ DEFAULT_PROTOCOL = (
     PROJECT_ROOT
     / "benchmarks"
     / "protocols"
-    / "binance_decelerating_capitulation_transfer_v2.json"
+    / "binance_decelerating_capitulation_transfer_v3.json"
 )
 
 
