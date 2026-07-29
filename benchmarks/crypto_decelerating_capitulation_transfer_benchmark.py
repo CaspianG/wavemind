@@ -188,7 +188,8 @@ def render_markdown(payload: Mapping[str, Any]) -> str:
         "# Frozen Decelerating-Capitulation Transfer",
         "",
         "This is a one-read asset-disjoint holdout. The protocol was committed "
-        "before the eight holdout assets were downloaded or evaluated.",
+        f"before all {len(payload['holdout_symbols'])} holdout assets were "
+        "downloaded or evaluated.",
         "",
         f"- protocol SHA-256: `{payload['protocol_sha256']}`;",
         "- assets: " + ", ".join(payload["holdout_symbols"]) + ";",
