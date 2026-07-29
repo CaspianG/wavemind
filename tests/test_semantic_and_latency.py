@@ -132,6 +132,64 @@ def test_short_query_exact_match_can_beat_stronger_vector_candidate(tmp_path):
     assert results[0].id == expected_id
 
 
+def test_query_can_diversify_results_by_metadata_group(tmp_path):
+    mind = WaveMind(
+        db_path=tmp_path / "diversity.sqlite3",
+        encoder=FlatSemanticEncoder(),
+        width=16,
+        height=16,
+        layers=2,
+        index_kind="numpy",
+        vector_weight=0.0,
+        field_weight=0.0,
+        priority_weight=1.0,
+        lexical_weight=0.0,
+        short_query_lexical_weight=0.0,
+        rerank_k=5,
+    )
+    try:
+        mind.remember(
+            "first duplicate",
+            namespace="diverse",
+            metadata={"trajectory_id": "a"},
+            priority=10.0,
+        )
+        mind.remember(
+            "second duplicate",
+            namespace="diverse",
+            metadata={"trajectory_id": "a"},
+            priority=9.0,
+        )
+        mind.remember(
+            "second trajectory",
+            namespace="diverse",
+            metadata={"trajectory_id": "b"},
+            priority=8.0,
+        )
+        mind.remember(
+            "third trajectory",
+            namespace="diverse",
+            metadata={"trajectory_id": "c"},
+            priority=7.0,
+        )
+
+        results = mind.query(
+            "memory",
+            namespace="diverse",
+            top_k=3,
+            candidate_top_k=4,
+            diversity_metadata_key="trajectory_id",
+        )
+
+        assert [result.metadata["trajectory_id"] for result in results] == [
+            "a",
+            "b",
+            "c",
+        ]
+    finally:
+        mind.close()
+
+
 def test_common_query_words_do_not_expand_lexical_candidates(tmp_path):
     mind = WaveMind(
         db_path=tmp_path / "stopwords.sqlite3",

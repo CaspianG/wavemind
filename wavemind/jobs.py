@@ -78,6 +78,9 @@ class HotMemoryCache:
         tags: Iterable[str] | None = None,
         min_score: float | None = None,
         metadata_filters: dict[str, Any] | None = None,
+        candidate_top_k: int | None = None,
+        diversity_metadata_key: str | None = None,
+        max_results_per_diversity_group: int = 1,
     ) -> list[QueryResult] | None:
         key = self._key(
             namespace,
@@ -86,6 +89,9 @@ class HotMemoryCache:
             tags=tags,
             min_score=min_score,
             metadata_filters=metadata_filters,
+            candidate_top_k=candidate_top_k,
+            diversity_metadata_key=diversity_metadata_key,
+            max_results_per_diversity_group=max_results_per_diversity_group,
         )
         entry = self._items.get(key)
         now = time.time()
@@ -108,6 +114,9 @@ class HotMemoryCache:
         tags: Iterable[str] | None = None,
         min_score: float | None = None,
         metadata_filters: dict[str, Any] | None = None,
+        candidate_top_k: int | None = None,
+        diversity_metadata_key: str | None = None,
+        max_results_per_diversity_group: int = 1,
     ) -> None:
         key = self._key(
             namespace,
@@ -116,6 +125,9 @@ class HotMemoryCache:
             tags=tags,
             min_score=min_score,
             metadata_filters=metadata_filters,
+            candidate_top_k=candidate_top_k,
+            diversity_metadata_key=diversity_metadata_key,
+            max_results_per_diversity_group=max_results_per_diversity_group,
         )
         self._items[key] = _CacheEntry(
             value=list(value),
@@ -153,6 +165,9 @@ class HotMemoryCache:
         tags: Iterable[str] | None,
         min_score: float | None,
         metadata_filters: dict[str, Any] | None = None,
+        candidate_top_k: int | None = None,
+        diversity_metadata_key: str | None = None,
+        max_results_per_diversity_group: int = 1,
     ) -> tuple[object, ...]:
         return (
             namespace,
@@ -161,6 +176,9 @@ class HotMemoryCache:
             tuple(sorted(tags or ())),
             None if min_score is None else float(min_score),
             _metadata_filter_cache_key(metadata_filters),
+            None if candidate_top_k is None else int(candidate_top_k),
+            diversity_metadata_key,
+            int(max_results_per_diversity_group),
         )
 
 
@@ -216,6 +234,9 @@ class RedisHotMemoryCache:
         tags: Iterable[str] | None = None,
         min_score: float | None = None,
         metadata_filters: dict[str, Any] | None = None,
+        candidate_top_k: int | None = None,
+        diversity_metadata_key: str | None = None,
+        max_results_per_diversity_group: int = 1,
     ) -> list[QueryResult] | None:
         key = self._key(
             namespace,
@@ -224,6 +245,9 @@ class RedisHotMemoryCache:
             tags=tags,
             min_score=min_score,
             metadata_filters=metadata_filters,
+            candidate_top_k=candidate_top_k,
+            diversity_metadata_key=diversity_metadata_key,
+            max_results_per_diversity_group=max_results_per_diversity_group,
         )
         raw = self.client.get(key)
         if raw is None:
@@ -258,6 +282,9 @@ class RedisHotMemoryCache:
         tags: Iterable[str] | None = None,
         min_score: float | None = None,
         metadata_filters: dict[str, Any] | None = None,
+        candidate_top_k: int | None = None,
+        diversity_metadata_key: str | None = None,
+        max_results_per_diversity_group: int = 1,
     ) -> None:
         key = self._key(
             namespace,
@@ -266,6 +293,9 @@ class RedisHotMemoryCache:
             tags=tags,
             min_score=min_score,
             metadata_filters=metadata_filters,
+            candidate_top_k=candidate_top_k,
+            diversity_metadata_key=diversity_metadata_key,
+            max_results_per_diversity_group=max_results_per_diversity_group,
         )
         payload = [
             {
@@ -322,6 +352,9 @@ class RedisHotMemoryCache:
         tags: Iterable[str] | None,
         min_score: float | None,
         metadata_filters: dict[str, Any] | None = None,
+        candidate_top_k: int | None = None,
+        diversity_metadata_key: str | None = None,
+        max_results_per_diversity_group: int = 1,
     ) -> str:
         tail = HotMemoryCache._key(
             namespace,
@@ -330,6 +363,9 @@ class RedisHotMemoryCache:
             tags=tags,
             min_score=min_score,
             metadata_filters=metadata_filters,
+            candidate_top_k=candidate_top_k,
+            diversity_metadata_key=diversity_metadata_key,
+            max_results_per_diversity_group=max_results_per_diversity_group,
         )
         digest = hashlib.sha256(
             json.dumps(tail, ensure_ascii=False, sort_keys=True).encode("utf-8")
@@ -525,6 +561,9 @@ def query_with_vector_cache(
     tags: Iterable[str] | None = None,
     min_score: float | None = None,
     metadata_filters: dict[str, Any] | None = None,
+    candidate_top_k: int | None = None,
+    diversity_metadata_key: str | None = None,
+    max_results_per_diversity_group: int = 1,
 ) -> list[QueryResult]:
     query_vector = _cached_query_vector(memory, vector_cache, text)
     return memory.query(
@@ -535,6 +574,9 @@ def query_with_vector_cache(
         min_score=min_score,
         query_vector=query_vector,
         metadata_filters=metadata_filters,
+        candidate_top_k=candidate_top_k,
+        diversity_metadata_key=diversity_metadata_key,
+        max_results_per_diversity_group=max_results_per_diversity_group,
     )
 
 
@@ -549,6 +591,9 @@ def query_with_cache(
     min_score: float | None = None,
     vector_cache: QueryVectorCache | RedisQueryVectorCache | None = None,
     metadata_filters: dict[str, Any] | None = None,
+    candidate_top_k: int | None = None,
+    diversity_metadata_key: str | None = None,
+    max_results_per_diversity_group: int = 1,
 ) -> list[QueryResult]:
     cached = cache.get(
         namespace,
@@ -557,6 +602,9 @@ def query_with_cache(
         tags=tags,
         min_score=min_score,
         metadata_filters=metadata_filters,
+        candidate_top_k=candidate_top_k,
+        diversity_metadata_key=diversity_metadata_key,
+        max_results_per_diversity_group=max_results_per_diversity_group,
     )
     if cached is not None:
         return cached
@@ -568,6 +616,9 @@ def query_with_cache(
             tags=tags,
             min_score=min_score,
             metadata_filters=metadata_filters,
+            candidate_top_k=candidate_top_k,
+            diversity_metadata_key=diversity_metadata_key,
+            max_results_per_diversity_group=max_results_per_diversity_group,
         )
     else:
         results = query_with_vector_cache(
@@ -579,6 +630,9 @@ def query_with_cache(
             tags=tags,
             min_score=min_score,
             metadata_filters=metadata_filters,
+            candidate_top_k=candidate_top_k,
+            diversity_metadata_key=diversity_metadata_key,
+            max_results_per_diversity_group=max_results_per_diversity_group,
         )
     cache.put(
         namespace,
@@ -588,6 +642,9 @@ def query_with_cache(
         tags=tags,
         min_score=min_score,
         metadata_filters=metadata_filters,
+        candidate_top_k=candidate_top_k,
+        diversity_metadata_key=diversity_metadata_key,
+        max_results_per_diversity_group=max_results_per_diversity_group,
     )
     return results
 

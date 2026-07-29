@@ -6,6 +6,7 @@ import hashlib
 import json
 import math
 import os
+import random
 import re
 import shutil
 import statistics
@@ -26,7 +27,12 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from wavemind import WaveMind
-from wavemind.encoders import HashingTextEncoder
+from wavemind.encoders import (
+    DEFAULT_TOKEN_STOPWORDS,
+    HashingTextEncoder,
+    is_stopword_token,
+    normalize_token,
+)
 from wavemind.jobs import HotMemoryCache, MemoryOSWorker, query_with_cache
 
 
@@ -36,6 +42,61 @@ OFFICIAL_REPO = "https://github.com/xiaowu0162/longmemeval-v2"
 OFFICIAL_REPO_REVISION = "6f020ac2fc3275e46c706d3406e02c3ed79b7be2"
 BOXED_RE = re.compile(r"\\boxed\{([^}]*)\}", re.IGNORECASE | re.DOTALL)
 LLM_EVALUATORS = {"llm_abstention_checker", "llm_gotchas_checker"}
+ANSWER_SCHEMA = {
+    "type": "object",
+    "properties": {"answer": {"type": "string"}},
+    "required": ["answer"],
+    "additionalProperties": False,
+}
+JUDGMENT_SCHEMA = {
+    "type": "object",
+    "properties": {"correct": {"type": "boolean"}},
+    "required": ["correct"],
+    "additionalProperties": False,
+}
+RETRIEVAL_INSTRUCTION_STOPWORDS = frozenset(
+    {
+        "all",
+        "am",
+        "answer",
+        "boxed",
+        "each",
+        "final",
+        "had",
+        "has",
+        "have",
+        "i",
+        "in",
+        "mark",
+        "me",
+        "more",
+        "most",
+        "my",
+        "no",
+        "not",
+        "on",
+        "one",
+        "only",
+        "our",
+        "ours",
+        "phrases",
+        "short",
+        "some",
+        "than",
+        "then",
+        "them",
+        "their",
+        "they",
+        "us",
+        "was",
+        "we",
+        "were",
+        "when",
+        "working",
+        "you",
+        "your",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -143,10 +204,64 @@ def _state_text(trajectory: dict[str, Any], state: dict[str, Any]) -> str:
     return "\n".join(value for value in header if value.strip())
 
 
+def _stratified_question_sample(
+    rows: list[dict[str, Any]],
+    *,
+    sample_size: int,
+    seed: int,
+) -> list[dict[str, Any]]:
+    if sample_size <= 0:
+        raise ValueError("question_sample_size must be positive")
+    if sample_size >= len(rows):
+        return list(rows)
+    buckets: dict[tuple[str, str, bool], list[int]] = {}
+    for index, row in enumerate(rows):
+        key = (
+            str(row.get("domain") or ""),
+            str(row.get("question_type") or ""),
+            bool(row.get("image")),
+        )
+        buckets.setdefault(key, []).append(index)
+
+    counts = {key: 0 for key in buckets}
+    if sample_size >= len(buckets):
+        for key in counts:
+            counts[key] = 1
+    targets = {
+        key: sample_size * len(indices) / len(rows)
+        for key, indices in buckets.items()
+    }
+    while sum(counts.values()) < sample_size:
+        eligible = [
+            key
+            for key, indices in buckets.items()
+            if counts[key] < len(indices)
+        ]
+        selected_key = max(
+            eligible,
+            key=lambda key: (
+                targets[key] - counts[key],
+                len(buckets[key]) - counts[key],
+                key,
+            ),
+        )
+        counts[selected_key] += 1
+
+    rng = random.Random(seed)
+    selected_indices: list[int] = []
+    for key in sorted(buckets):
+        indices = list(buckets[key])
+        rng.shuffle(indices)
+        selected_indices.extend(indices[: counts[key]])
+    return [rows[index] for index in sorted(selected_indices)]
+
+
 def load_longmemeval_v2_small(
     data_root: str | Path,
     *,
     limit_questions: int | None = None,
+    question_sample_size: int | None = None,
+    question_sample_seed: int = 20260728,
 ) -> V2Dataset:
     root = Path(data_root)
     questions_path = root / "questions.jsonl"
@@ -157,10 +272,20 @@ def load_longmemeval_v2_small(
             raise FileNotFoundError(path)
 
     raw_questions = _read_jsonl(questions_path)
+    if limit_questions is not None and question_sample_size is not None:
+        raise ValueError(
+            "limit_questions and question_sample_size are mutually exclusive"
+        )
     if limit_questions is not None:
         if limit_questions <= 0:
             raise ValueError("limit_questions must be positive")
         raw_questions = raw_questions[:limit_questions]
+    elif question_sample_size is not None:
+        raw_questions = _stratified_question_sample(
+            raw_questions,
+            sample_size=question_sample_size,
+            seed=question_sample_seed,
+        )
     questions = [
         V2Question(
             id=str(row["id"]),
@@ -259,7 +384,7 @@ def _query_snippet(
     text: str,
     query: str,
     *,
-    max_chars: int = 4_000,
+    max_chars: int = 2_800,
     chunk_chars: int = 800,
     chunk_overlap: int = 160,
 ) -> str:
@@ -283,23 +408,57 @@ def _query_snippet(
             for offset in range(0, len(line), step)
             if line[offset : offset + chunk_chars].strip()
         )
-    ranked = sorted(
-        enumerate(chunks),
-        key=lambda item: (
-            -sum(term in item[1].lower() for term in query_terms),
-            item[0],
-        ),
-    )
-    selected: list[tuple[int, str]] = []
+    def relevance(item: tuple[int, str]) -> tuple[float, int, int]:
+        index, value = item
+        matched = sum(term in value.lower() for term in query_terms)
+        token_count = max(1, len(re.findall(r"\w+", value)))
+        density = matched / math.sqrt(token_count)
+        return (-density, -matched, index)
+
+    ranked = sorted(enumerate(chunks), key=relevance)
+    selected_indices: set[int] = set()
     total = 0
     for index, line in ranked:
-        if total + len(line) + 1 > max_chars:
+        window = range(
+            max(0, index - 2),
+            min(len(chunks), index + 3),
+        )
+        additions = [
+            neighbor
+            for neighbor in window
+            if neighbor not in selected_indices
+        ]
+        addition_size = sum(len(chunks[neighbor]) + 1 for neighbor in additions)
+        if total + addition_size > max_chars:
+            additions = [index] if index not in selected_indices else []
+            addition_size = len(line) + 1 if additions else 0
+        if total + addition_size > max_chars:
             continue
-        selected.append((index, line))
-        total += len(line) + 1
+        selected_indices.update(additions)
+        total += addition_size
         if total >= max_chars * 0.85:
             break
-    return "\n".join(line for _, line in sorted(selected))
+    return "\n".join(chunks[index] for index in sorted(selected_indices))
+
+
+def _retrieval_query(text: str) -> str:
+    semantic_text = re.split(
+        r"\n+\s*Mark your final answer\b",
+        text,
+        maxsplit=1,
+        flags=re.IGNORECASE,
+    )[0]
+    tokens: list[str] = []
+    for raw in re.findall(r"[\w]+", semantic_text.lower(), flags=re.UNICODE):
+        normalized = normalize_token(raw)
+        if (
+            normalized in DEFAULT_TOKEN_STOPWORDS
+            or normalized in RETRIEVAL_INSTRUCTION_STOPWORDS
+            or is_stopword_token(raw)
+        ):
+            continue
+        tokens.append(normalized)
+    return " ".join(tokens) or semantic_text.strip()
 
 
 class OllamaReader:
@@ -315,6 +474,7 @@ class OllamaReader:
         image_context_window: int = 4096,
         image_context_items: int = 1,
         image_context_chars: int = 4000,
+        enable_thinking: bool = False,
         seed: int = 20260728,
     ) -> None:
         self.model = model
@@ -334,6 +494,8 @@ class OllamaReader:
         self.image_context_chars = int(image_context_chars)
         if self.image_context_chars < 1000:
             raise ValueError("image_context_chars must be at least 1000")
+        self.enable_thinking = bool(enable_thinking)
+        self.structured_outputs = True
         self.seed = int(seed)
         self._opener = urllib.request.build_opener(
             urllib.request.ProxyHandler({})
@@ -345,6 +507,8 @@ class OllamaReader:
         *,
         image: str | None = None,
         max_tokens: int = 256,
+        system: str | None = None,
+        output_schema: dict[str, Any] | None = None,
     ) -> str:
         selected_model = (
             self.vision_model
@@ -355,13 +519,20 @@ class OllamaReader:
             "model": selected_model,
             "prompt": prompt,
             "stream": False,
+            "think": self.enable_thinking,
             "options": {
                 "temperature": 0,
+                "presence_penalty": 0,
+                "top_k": 1,
                 "seed": self.seed,
                 "num_predict": int(max_tokens),
                 "num_ctx": self.text_context_window,
             },
         }
+        if system is not None:
+            payload["system"] = system
+        if output_schema is not None:
+            payload["format"] = output_schema
         if image is not None:
             if not self.supports_images:
                 raise RuntimeError(
@@ -403,14 +574,27 @@ class OllamaReader:
                 for value in context[: self.image_context_items]
             ]
         prompt = (
-            "Answer only from the past agent trajectory evidence below. "
-            "If the premise conflicts with the evidence, say exactly what is wrong. "
-            "End with one concise final answer inside \\boxed{...}.\n\n"
             f"Question:\n{question.question}\n\n"
             "Memory evidence:\n"
             + "\n\n---\n\n".join(selected_context)
         )
-        return self._generate(prompt, image=question.image)
+        raw = self._generate(
+            prompt,
+            image=question.image,
+            system=(
+                "You are a precise benchmark evidence reader. Fill only the "
+                "answer field with one concise final answer. Copy labels, "
+                "numbers, and ordered phrases verbatim from the evidence. Do "
+                "not explain or repeat the evidence. If the premise conflicts "
+                "with the evidence, answer with only the concise correction."
+            ),
+            output_schema=ANSWER_SCHEMA,
+        )
+        try:
+            answer = str(json.loads(raw)["answer"]).strip()
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError):
+            return raw
+        return f"\\boxed{{{answer}}}"
 
     def judge(
         self,
@@ -429,14 +613,24 @@ class OllamaReader:
             )
         )
         prompt = (
-            "You are a strict binary evaluator. Return only 1 or 0.\n"
             f"Criterion: {criterion}\n"
             f"Question: {question.question}\n"
             f"Reference: {question.answer}\n"
             f"Candidate: {response}\n"
         )
-        value = self._generate(prompt, max_tokens=8)
-        return value.strip().startswith("1")
+        value = self._generate(
+            prompt,
+            max_tokens=16,
+            system=(
+                "You are a strict binary evaluator. Set correct to true only "
+                "when the candidate satisfies the criterion and reference."
+            ),
+            output_schema=JUDGMENT_SCHEMA,
+        )
+        try:
+            return json.loads(value).get("correct") is True
+        except (TypeError, ValueError, json.JSONDecodeError):
+            return value.strip().startswith("1")
 
 
 def _normalize_phrase(text: str) -> str:
@@ -528,6 +722,7 @@ def _query_memory(
     end_to_end: list[float] = []
     contexts: dict[str, list[str]] = {}
     worker_reports: list[dict[str, Any]] = []
+    maintenance_latencies: list[float] = []
     maintenance_ms = 0.0
     seen: Counter[str] = Counter()
     totals = Counter(
@@ -535,9 +730,10 @@ def _query_memory(
         for question in dataset.questions
     )
     memory.audit_queries = bool(use_memory_os)
+    candidate_top_k = max(top_k, min(50, top_k * 10))
     for question in dataset.questions:
         namespace = f"longmemeval-v2-small:{question.domain}"
-        retrieval_query = question.question
+        retrieval_query = _retrieval_query(question.question)
         metadata_filters = {
             "trajectory_id": dataset.haystacks[question.id],
         }
@@ -550,6 +746,9 @@ def _query_memory(
                 namespace=namespace,
                 top_k=top_k,
                 metadata_filters=metadata_filters,
+                candidate_top_k=candidate_top_k,
+                diversity_metadata_key="trajectory_id",
+                max_results_per_diversity_group=1,
             )
         else:
             results = memory.query(
@@ -557,6 +756,9 @@ def _query_memory(
                 namespace=namespace,
                 top_k=top_k,
                 metadata_filters=metadata_filters,
+                candidate_top_k=candidate_top_k,
+                diversity_metadata_key="trajectory_id",
+                max_results_per_diversity_group=1,
             )
         retrieval_ms = (time.perf_counter() - started) * 1_000.0
         latencies.append(retrieval_ms)
@@ -584,9 +786,13 @@ def _query_memory(
                 current_maintenance = (
                     time.perf_counter() - maintenance_started
                 ) * 1_000.0
+                maintenance_latencies.append(current_maintenance)
                 worker_reports.append(report.as_dict())
                 maintenance_ms += current_maintenance
-        end_to_end.append(retrieval_ms + current_maintenance)
+        # Maintenance runs between requests in this sequential harness and is
+        # deployed on background workers in production. Keep its cost visible,
+        # but do not attribute a worker cycle to the preceding request latency.
+        end_to_end.append(retrieval_ms)
     stats = cache.stats()
     return contexts, {
         "execution_mode": (
@@ -601,6 +807,9 @@ def _query_memory(
             for row in worker_reports
         ),
         "maintenance_interval_queries": 32 if use_memory_os else 0,
+        "candidate_top_k": candidate_top_k,
+        "diversity_metadata_key": "trajectory_id",
+        "max_results_per_diversity_group": 1,
         "memory_os_policy_mode": (
             "feedback_free_safe" if use_memory_os else "disabled"
         ),
@@ -609,7 +818,12 @@ def _query_memory(
         "p95_latency_ms": _percentile(latencies, 0.95),
         "p99_latency_ms": _percentile(latencies, 0.99),
         "end_to_end_p95_ms": _percentile(end_to_end, 0.95),
+        "request_path_excludes_background_maintenance": True,
+        "maintenance_p95_ms": _percentile(maintenance_latencies, 0.95),
         "maintenance_total_ms": maintenance_ms,
+        "maintenance_amortized_ms_per_query": (
+            maintenance_ms / len(latencies) if latencies else 0.0
+        ),
         "cache_hits": stats.hits,
         "cache_misses": stats.misses,
         "context_tokens": sum(
@@ -738,6 +952,8 @@ def run_benchmark(
     reader: Reader | None = None,
     top_k: int = 5,
     limit_questions: int | None = None,
+    question_sample_size: int | None = None,
+    question_sample_seed: int = 20260728,
     work_dir: str | Path | None = None,
     resume_rows: list[dict[str, Any]] | None = None,
     resume_metadata: dict[str, Any] | None = None,
@@ -746,12 +962,18 @@ def run_benchmark(
     dataset = load_longmemeval_v2_small(
         data_root,
         limit_questions=limit_questions,
+        question_sample_size=question_sample_size,
+        question_sample_seed=question_sample_seed,
     )
     encoder = HashingTextEncoder(
         vector_dim=384,
         char_ngram_weight=0.0,
     )
-    temp_parent = str(work_dir) if work_dir is not None else None
+    temp_parent = None
+    if work_dir is not None:
+        temp_parent_path = Path(work_dir)
+        temp_parent_path.mkdir(parents=True, exist_ok=True)
+        temp_parent = str(temp_parent_path)
     with tempfile.TemporaryDirectory(dir=temp_parent) as temp_dir:
         temp_path = Path(temp_dir)
         base_path = temp_path / "longmemeval-v2-base.sqlite3"
@@ -766,11 +988,12 @@ def run_benchmark(
                 index_kind="numpy",
                 score_threshold=0.0,
                 evolve_on_feed=0,
-                vector_weight=0.78,
+                vector_weight=0.60,
                 field_weight=0.06,
                 priority_weight=0.16,
-                lexical_weight=0.35,
+                lexical_weight=1.0,
                 short_query_lexical_weight=1.5,
+                max_lexical_token_frequency=512,
                 rerank_k=max(top_k, 30),
                 persist_access_on_query=False,
                 query_feedback_strength=0.0,
@@ -884,6 +1107,19 @@ def run_benchmark(
                 "official_repo_revision": OFFICIAL_REPO_REVISION,
                 "tier": "small",
                 "queries": len(dataset.questions),
+                "question_selection": (
+                    "stratified"
+                    if question_sample_size is not None
+                    else "prefix"
+                    if limit_questions is not None
+                    else "full"
+                ),
+                "question_sample_size": question_sample_size,
+                "question_sample_seed": (
+                    question_sample_seed
+                    if question_sample_size is not None
+                    else None
+                ),
                 "memories": len(dataset.memories),
                 "trajectories": len(
                     {
@@ -900,7 +1136,9 @@ def run_benchmark(
                 "official_question_haystacks": True,
                 "isolated_ab_stores": True,
                 "full_small_run": (
-                    limit_questions is None and len(dataset.questions) == 451
+                    limit_questions is None
+                    and question_sample_size is None
+                    and len(dataset.questions) == 451
                 ),
             },
             "dataset_checksums": dataset.source_files,
@@ -909,6 +1147,19 @@ def run_benchmark(
                 "class": type(encoder).__name__,
                 "vector_dim": int(encoder.vector_dim),
                 "char_ngram_weight": encoder.char_ngram_weight,
+            },
+            "retrieval": {
+                "vector_weight": 0.60,
+                "lexical_weight": 1.0,
+                "priority_weight": 0.16,
+                "field_weight": 0.06,
+                "max_lexical_token_frequency": 512,
+                "candidate_top_k": max(top_k, min(50, top_k * 10)),
+                "diversity_metadata_key": "trajectory_id",
+                "max_results_per_diversity_group": 1,
+                "query_instruction_normalization": True,
+                "snippet_max_chars": 2_800,
+                "snippet_neighbor_lines": 2,
             },
             "field": {"width": 32, "height": 32, "layers": 2},
             "reader": {
@@ -942,6 +1193,14 @@ def run_benchmark(
                     if reader is not None
                     else None
                 ),
+                "thinking_enabled": (
+                    getattr(reader, "enable_thinking", None)
+                    if reader is not None
+                    else None
+                ),
+                "structured_outputs": bool(
+                    getattr(reader, "structured_outputs", False)
+                ),
                 "cost_per_query_usd": 0.0,
             },
             "resume": resume_metadata or {
@@ -965,6 +1224,8 @@ def main() -> int:
     parser.add_argument("--data-root", type=Path, required=True)
     parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument("--limit-questions", type=int)
+    parser.add_argument("--question-sample-size", type=int)
+    parser.add_argument("--question-sample-seed", type=int, default=20260728)
     parser.add_argument("--work-dir", type=Path)
     parser.add_argument("--ollama-model")
     parser.add_argument("--ollama-vision-model")
@@ -977,6 +1238,7 @@ def main() -> int:
     parser.add_argument("--ollama-image-context-window", type=int, default=4096)
     parser.add_argument("--ollama-image-context-items", type=int, default=1)
     parser.add_argument("--ollama-image-context-chars", type=int, default=4000)
+    parser.add_argument("--ollama-enable-thinking", action="store_true")
     parser.add_argument("--resume-result", type=Path)
     parser.add_argument("--resume-per-query", type=Path)
     parser.add_argument(
@@ -990,6 +1252,10 @@ def main() -> int:
         default=Path("benchmarks/longmemeval_v2_small_per_query.jsonl"),
     )
     args = parser.parse_args()
+    if args.limit_questions is not None and args.question_sample_size is not None:
+        parser.error(
+            "--limit-questions and --question-sample-size are mutually exclusive"
+        )
     if bool(args.resume_result) != bool(args.resume_per_query):
         parser.error("--resume-result and --resume-per-query must be supplied together")
     resume_rows: list[dict[str, Any]] | None = None
@@ -1009,6 +1275,10 @@ def main() -> int:
             parser.error("resume reader model does not match this run")
         if expected_reader.get("vision_model") != args.ollama_vision_model:
             parser.error("resume vision model does not match this run")
+        if bool(expected_reader.get("thinking_enabled")) != bool(
+            args.ollama_enable_thinking
+        ):
+            parser.error("resume reader thinking mode does not match this run")
         resume_metadata = {
             "used": True,
             "source_sha": resume_payload.get("source_sha"),
@@ -1026,6 +1296,7 @@ def main() -> int:
             image_context_window=args.ollama_image_context_window,
             image_context_items=args.ollama_image_context_items,
             image_context_chars=args.ollama_image_context_chars,
+            enable_thinking=args.ollama_enable_thinking,
         )
         if args.ollama_model
         else None
@@ -1069,6 +1340,8 @@ def main() -> int:
         reader=reader,
         top_k=args.top_k,
         limit_questions=args.limit_questions,
+        question_sample_size=args.question_sample_size,
+        question_sample_seed=args.question_sample_seed,
         work_dir=args.work_dir,
         resume_rows=resume_rows,
         resume_metadata=resume_metadata,

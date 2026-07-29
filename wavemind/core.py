@@ -419,7 +419,16 @@ class WaveMind:
         min_score: float | None = None,
         query_vector: np.ndarray | None = None,
         metadata_filters: Mapping[str, Any] | None = None,
+        candidate_top_k: int | None = None,
+        diversity_metadata_key: str | None = None,
+        max_results_per_diversity_group: int = 1,
     ) -> list[QueryResult]:
+        if candidate_top_k is not None and int(candidate_top_k) < int(top_k):
+            raise ValueError("candidate_top_k must be greater than or equal to top_k")
+        if diversity_metadata_key is not None and not diversity_metadata_key.strip():
+            raise ValueError("diversity_metadata_key must not be empty")
+        if max_results_per_diversity_group <= 0:
+            raise ValueError("max_results_per_diversity_group must be positive")
         self._refresh_namespace_if_due(namespace)
         allowed_ids = self._allowed_ids(
             namespace=namespace,
@@ -442,7 +451,10 @@ class WaveMind:
         else:
             query_vector = np.asarray(query_vector, dtype=np.float32)
 
-        vector_top_k = max(top_k, self.rerank_k)
+        vector_top_k = max(
+            int(candidate_top_k) if candidate_top_k is not None else top_k,
+            self.rerank_k,
+        )
         with trace_span(
             "wavemind.query.index_search",
             {
@@ -529,7 +541,23 @@ class WaveMind:
                 )
 
         results.sort(key=lambda item: item.score, reverse=True)
-        selected = results[:top_k]
+        selected: list[QueryResult] = []
+        diversity_counts: Counter[str] = Counter()
+        for result in results:
+            if diversity_metadata_key is not None:
+                group = str(
+                    result.metadata.get(diversity_metadata_key)
+                    or f"memory:{result.id}"
+                )
+                if (
+                    diversity_counts[group]
+                    >= max_results_per_diversity_group
+                ):
+                    continue
+                diversity_counts[group] += 1
+            selected.append(result)
+            if len(selected) >= top_k:
+                break
         for result in selected:
             record = self._records_by_id[result.id]
             record.access_count += 1
@@ -556,6 +584,15 @@ class WaveMind:
                     "min_score": threshold,
                     "metadata_filters": self._serializable_metadata_filters(
                         metadata_filters
+                    ),
+                    "candidate_top_k": (
+                        int(candidate_top_k)
+                        if candidate_top_k is not None
+                        else None
+                    ),
+                    "diversity_metadata_key": diversity_metadata_key,
+                    "max_results_per_diversity_group": (
+                        int(max_results_per_diversity_group)
                     ),
                 },
             )

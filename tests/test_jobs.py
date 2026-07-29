@@ -392,6 +392,66 @@ def test_hot_memory_cache_separates_metadata_scopes(tmp_path):
         memory.close()
 
 
+def test_hot_memory_cache_separates_diversified_queries(tmp_path):
+    memory = WaveMind(
+        db_path=tmp_path / "diversity-cache.sqlite3",
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+        score_threshold=0.0,
+        vector_weight=0.0,
+        field_weight=0.0,
+        priority_weight=1.0,
+        lexical_weight=0.0,
+        short_query_lexical_weight=0.0,
+        rerank_k=3,
+    )
+    cache = HotMemoryCache(capacity=4, ttl_seconds=60)
+    try:
+        memory.remember(
+            "shared evidence alpha first",
+            namespace="tenant:a",
+            metadata={"trajectory_id": "alpha"},
+            priority=3.0,
+        )
+        memory.remember(
+            "shared evidence alpha second",
+            namespace="tenant:a",
+            metadata={"trajectory_id": "alpha"},
+            priority=2.0,
+        )
+        memory.remember(
+            "shared evidence beta",
+            namespace="tenant:a",
+            metadata={"trajectory_id": "beta"},
+            priority=1.0,
+        )
+
+        ordinary = query_with_cache(
+            memory,
+            cache,
+            "shared evidence",
+            namespace="tenant:a",
+            top_k=2,
+        )
+        diversified = query_with_cache(
+            memory,
+            cache,
+            "shared evidence",
+            namespace="tenant:a",
+            top_k=2,
+            candidate_top_k=3,
+            diversity_metadata_key="trajectory_id",
+        )
+
+        assert len({item.metadata["trajectory_id"] for item in ordinary}) == 1
+        assert len({item.metadata["trajectory_id"] for item in diversified}) == 2
+        assert cache.stats().misses == 2
+    finally:
+        memory.close()
+
+
 def test_hot_memory_cache_evicts_least_recent_queries():
     cache = HotMemoryCache(capacity=1, ttl_seconds=60)
 

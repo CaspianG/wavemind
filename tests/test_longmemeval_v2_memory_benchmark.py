@@ -7,7 +7,9 @@ from pathlib import Path
 from benchmarks.longmemeval_v2_memory_benchmark import (
     OllamaReader,
     V2Question,
+    _stratified_question_sample,
     load_longmemeval_v2_small,
+    _retrieval_query,
     _query_snippet,
     run_benchmark,
     score_response,
@@ -31,6 +33,34 @@ class FixtureReader:
         return question.answer.lower() in response.lower()
 
 
+def test_stratified_question_sample_is_reproducible_and_covers_strata():
+    rows = [
+        {
+            "id": f"web-{index}",
+            "domain": "web",
+            "question_type": "procedure",
+            "image": None,
+        }
+        for index in range(8)
+    ]
+    rows.extend(
+        {
+            "id": f"enterprise-{index}",
+            "domain": "enterprise",
+            "question_type": "static-environment",
+            "image": "question.png",
+        }
+        for index in range(2)
+    )
+
+    first = _stratified_question_sample(rows, sample_size=4, seed=7)
+    second = _stratified_question_sample(rows, sample_size=4, seed=7)
+
+    assert [row["id"] for row in first] == [row["id"] for row in second]
+    assert {row["domain"] for row in first} == {"web", "enterprise"}
+    assert len(first) == 4
+
+
 def test_query_snippet_keeps_relevant_windows_from_long_single_lines():
     text = (
         "irrelevant field " * 300
@@ -48,6 +78,38 @@ def test_query_snippet_keeps_relevant_windows_from_long_single_lines():
 
     assert "extra 300 dollars" in snippet
     assert len(snippet) <= 1200
+
+
+def test_query_snippet_preserves_neighboring_ui_options():
+    text = "\n".join(
+        [
+            "unrelated heading",
+            "menuitem Edit personal filters",
+            "menuitem Incident Mobile",
+            "menuitem Incident Portal",
+            "menuitem My Open Incidents",
+            "unrelated footer",
+        ]
+    )
+
+    snippet = _query_snippet(
+        text,
+        "filters incident portal open",
+        max_chars=200,
+    )
+
+    assert "Incident Mobile" in snippet
+    assert "Incident Portal" in snippet
+    assert "My Open Incidents" in snippet
+
+
+def test_retrieval_query_removes_answer_formatting_and_conversation_filler():
+    query = _retrieval_query(
+        "I am working with our ServiceNow portal. Which Filters contain "
+        "Incident?\n\nMark your final answer in \\boxed{}."
+    )
+
+    assert query == "servicenow portal filters contain incident"
 
 
 def _write_fixture(root: Path) -> None:
@@ -173,12 +235,13 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
     _write_fixture(tmp_path)
     reader = FixtureReader()
     checkpoint_rows = []
+    work_dir = tmp_path / "generated" / "work"
 
     payload, rows = run_benchmark(
         tmp_path,
         reader=reader,
         top_k=3,
-        work_dir=tmp_path,
+        work_dir=work_dir,
         on_row=checkpoint_rows.append,
     )
     results = {row["engine"]: row for row in payload["results"]}
@@ -189,10 +252,21 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
     assert payload["scenario"]["question_images_supported"] is True
     assert payload["scenario"]["official_question_haystacks"] is True
     assert payload["scenario"]["isolated_ab_stores"] is True
+    assert payload["retrieval"]["query_instruction_normalization"] is True
+    assert payload["retrieval"]["diversity_metadata_key"] == "trajectory_id"
+    assert payload["retrieval"]["candidate_top_k"] == 30
     assert memory_os["execution_mode"] == "memory_os_direct_feedback_free"
     assert memory_os["worker_runs"] == 2
     assert memory_os["worker_errors"] == 0
     assert memory_os["maintenance_interval_queries"] == 32
+    assert memory_os["candidate_top_k"] == 30
+    assert memory_os["diversity_metadata_key"] == "trajectory_id"
+    assert memory_os["max_results_per_diversity_group"] == 1
+    assert memory_os["request_path_excludes_background_maintenance"] is True
+    assert memory_os["end_to_end_p95_ms"] == memory_os["p95_latency_ms"]
+    assert memory_os["maintenance_p95_ms"] > 0.0
+    assert memory_os["maintenance_total_ms"] > 0.0
+    assert memory_os["maintenance_amortized_ms_per_query"] > 0.0
     assert memory_os["task_success_rate"] == 1.0
     assert memory_os["reused_answers"] == 2
     assert memory_os["generated_answers"] == 0
@@ -200,6 +274,7 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
     assert len(rows) == 4
     assert checkpoint_rows == rows
     assert all(row["context_sha256"] for row in rows)
+    assert work_dir.is_dir()
 
 
 def test_v2_runner_resumes_only_matching_non_error_contexts(tmp_path):
@@ -241,6 +316,9 @@ def test_ollama_reader_expands_context_only_for_images(tmp_path):
     requests = []
 
     class Response:
+        def __init__(self, body):
+            self.body = body
+
         def __enter__(self):
             return self
 
@@ -248,13 +326,21 @@ def test_ollama_reader_expands_context_only_for_images(tmp_path):
             return None
 
         def read(self):
-            return b'{"response":"\\\\boxed{ok}"}'
+            return self.body
 
     class Opener:
         def open(self, request, timeout):
             assert isinstance(request, urllib.request.Request)
-            requests.append(json.loads(request.data.decode("utf-8")))
-            return Response()
+            payload = json.loads(request.data.decode("utf-8"))
+            requests.append(payload)
+            response = (
+                json.dumps({"answer": "ok"})
+                if "format" in payload
+                else "\\boxed{ok}"
+            )
+            return Response(
+                json.dumps({"response": response}).encode("utf-8")
+            )
 
     reader = OllamaReader(
         model="fixture",
@@ -266,7 +352,7 @@ def test_ollama_reader_expands_context_only_for_images(tmp_path):
     reader._opener = Opener()
     reader._generate("text only")
     reader._generate("with image", image=str(image_path))
-    reader.answer(
+    answer = reader.answer(
         question=V2Question(
             "image-question",
             "web",
@@ -284,8 +370,12 @@ def test_ollama_reader_expands_context_only_for_images(tmp_path):
     )
 
     assert requests[0]["options"]["num_ctx"] == 8192
+    assert requests[0]["think"] is False
     assert requests[1]["options"]["num_ctx"] == 4096
+    assert answer == "\\boxed{ok}"
     image_prompt = requests[2]["prompt"]
+    assert requests[2]["format"]["required"] == ["answer"]
+    assert "precise benchmark evidence reader" in requests[2]["system"]
     assert "first evidence" in image_prompt
     assert "middle truncated for reader context budget" in image_prompt
     assert "first evidence tail" in image_prompt
