@@ -77,8 +77,16 @@ class HotMemoryCache:
         top_k: int,
         tags: Iterable[str] | None = None,
         min_score: float | None = None,
+        metadata_filters: dict[str, Any] | None = None,
     ) -> list[QueryResult] | None:
-        key = self._key(namespace, query, top_k=top_k, tags=tags, min_score=min_score)
+        key = self._key(
+            namespace,
+            query,
+            top_k=top_k,
+            tags=tags,
+            min_score=min_score,
+            metadata_filters=metadata_filters,
+        )
         entry = self._items.get(key)
         now = time.time()
         if entry is None or entry.expires_at <= now:
@@ -99,8 +107,16 @@ class HotMemoryCache:
         top_k: int,
         tags: Iterable[str] | None = None,
         min_score: float | None = None,
+        metadata_filters: dict[str, Any] | None = None,
     ) -> None:
-        key = self._key(namespace, query, top_k=top_k, tags=tags, min_score=min_score)
+        key = self._key(
+            namespace,
+            query,
+            top_k=top_k,
+            tags=tags,
+            min_score=min_score,
+            metadata_filters=metadata_filters,
+        )
         self._items[key] = _CacheEntry(
             value=list(value),
             expires_at=time.time() + self.ttl_seconds,
@@ -136,6 +152,7 @@ class HotMemoryCache:
         top_k: int,
         tags: Iterable[str] | None,
         min_score: float | None,
+        metadata_filters: dict[str, Any] | None = None,
     ) -> tuple[object, ...]:
         return (
             namespace,
@@ -143,6 +160,7 @@ class HotMemoryCache:
             int(top_k),
             tuple(sorted(tags or ())),
             None if min_score is None else float(min_score),
+            _metadata_filter_cache_key(metadata_filters),
         )
 
 
@@ -197,8 +215,16 @@ class RedisHotMemoryCache:
         top_k: int,
         tags: Iterable[str] | None = None,
         min_score: float | None = None,
+        metadata_filters: dict[str, Any] | None = None,
     ) -> list[QueryResult] | None:
-        key = self._key(namespace, query, top_k=top_k, tags=tags, min_score=min_score)
+        key = self._key(
+            namespace,
+            query,
+            top_k=top_k,
+            tags=tags,
+            min_score=min_score,
+            metadata_filters=metadata_filters,
+        )
         raw = self.client.get(key)
         if raw is None:
             self._misses += 1
@@ -231,8 +257,16 @@ class RedisHotMemoryCache:
         top_k: int,
         tags: Iterable[str] | None = None,
         min_score: float | None = None,
+        metadata_filters: dict[str, Any] | None = None,
     ) -> None:
-        key = self._key(namespace, query, top_k=top_k, tags=tags, min_score=min_score)
+        key = self._key(
+            namespace,
+            query,
+            top_k=top_k,
+            tags=tags,
+            min_score=min_score,
+            metadata_filters=metadata_filters,
+        )
         payload = [
             {
                 "id": item.id,
@@ -287,6 +321,7 @@ class RedisHotMemoryCache:
         top_k: int,
         tags: Iterable[str] | None,
         min_score: float | None,
+        metadata_filters: dict[str, Any] | None = None,
     ) -> str:
         tail = HotMemoryCache._key(
             namespace,
@@ -294,6 +329,7 @@ class RedisHotMemoryCache:
             top_k=top_k,
             tags=tags,
             min_score=min_score,
+            metadata_filters=metadata_filters,
         )
         digest = hashlib.sha256(
             json.dumps(tail, ensure_ascii=False, sort_keys=True).encode("utf-8")
@@ -488,6 +524,7 @@ def query_with_vector_cache(
     top_k: int = 3,
     tags: Iterable[str] | None = None,
     min_score: float | None = None,
+    metadata_filters: dict[str, Any] | None = None,
 ) -> list[QueryResult]:
     query_vector = _cached_query_vector(memory, vector_cache, text)
     return memory.query(
@@ -497,6 +534,7 @@ def query_with_vector_cache(
         tags=tags,
         min_score=min_score,
         query_vector=query_vector,
+        metadata_filters=metadata_filters,
     )
 
 
@@ -510,6 +548,7 @@ def query_with_cache(
     tags: Iterable[str] | None = None,
     min_score: float | None = None,
     vector_cache: QueryVectorCache | RedisQueryVectorCache | None = None,
+    metadata_filters: dict[str, Any] | None = None,
 ) -> list[QueryResult]:
     cached = cache.get(
         namespace,
@@ -517,6 +556,7 @@ def query_with_cache(
         top_k=top_k,
         tags=tags,
         min_score=min_score,
+        metadata_filters=metadata_filters,
     )
     if cached is not None:
         return cached
@@ -527,6 +567,7 @@ def query_with_cache(
             top_k=top_k,
             tags=tags,
             min_score=min_score,
+            metadata_filters=metadata_filters,
         )
     else:
         results = query_with_vector_cache(
@@ -537,6 +578,7 @@ def query_with_cache(
             top_k=top_k,
             tags=tags,
             min_score=min_score,
+            metadata_filters=metadata_filters,
         )
     cache.put(
         namespace,
@@ -545,8 +587,32 @@ def query_with_cache(
         top_k=top_k,
         tags=tags,
         min_score=min_score,
+        metadata_filters=metadata_filters,
     )
     return results
+
+
+def _metadata_filter_cache_key(
+    metadata_filters: dict[str, Any] | None,
+) -> tuple[tuple[str, str], ...]:
+    values: list[tuple[str, str]] = []
+    for key, value in sorted((metadata_filters or {}).items()):
+        if isinstance(value, (list, tuple, set, frozenset)):
+            normalized = sorted(value, key=lambda item: str(item))
+        else:
+            normalized = value
+        values.append(
+            (
+                str(key),
+                json.dumps(
+                    normalized,
+                    ensure_ascii=False,
+                    sort_keys=True,
+                    default=str,
+                ),
+            )
+        )
+    return tuple(values)
 
 
 @dataclass(frozen=True)

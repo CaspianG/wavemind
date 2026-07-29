@@ -186,6 +186,55 @@ def test_fastapi_remember_query_forget_and_stats(tmp_path):
         mind.close()
 
 
+def test_fastapi_query_metadata_filters_are_cache_safe(tmp_path):
+    mind = WaveMind(
+        db_path=tmp_path / "api-metadata-filter.sqlite3",
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+        score_threshold=0.0,
+    )
+    try:
+        with TestClient(create_app(mind=mind)) as client:
+            for trajectory_id in ("alpha", "beta"):
+                response = client.post(
+                    "/remember",
+                    json={
+                        "text": "shared workflow evidence",
+                        "namespace": "agent",
+                        "metadata": {"trajectory_id": trajectory_id},
+                    },
+                )
+                assert response.status_code == 200
+
+            alpha = client.post(
+                "/query",
+                json={
+                    "text": "workflow evidence",
+                    "namespace": "agent",
+                    "top_k": 1,
+                    "metadata_filters": {"trajectory_id": ["alpha"]},
+                },
+            )
+            beta = client.post(
+                "/query",
+                json={
+                    "text": "workflow evidence",
+                    "namespace": "agent",
+                    "top_k": 1,
+                    "metadata_filters": {"trajectory_id": ["beta"]},
+                },
+            )
+
+            assert alpha.status_code == 200
+            assert beta.status_code == 200
+            assert alpha.json()["results"][0]["metadata"]["trajectory_id"] == "alpha"
+            assert beta.json()["results"][0]["metadata"]["trajectory_id"] == "beta"
+    finally:
+        mind.close()
+
+
 def test_fastapi_remember_batch_persists_items_and_invalidates_cache(tmp_path):
     mind = WaveMind(
         db_path=tmp_path / "api-remember-batch.sqlite3",

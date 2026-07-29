@@ -346,6 +346,52 @@ def test_hot_memory_cache_reuses_query_results(tmp_path):
         memory.close()
 
 
+def test_hot_memory_cache_separates_metadata_scopes(tmp_path):
+    memory = WaveMind(
+        db_path=tmp_path / "metadata-cache.sqlite3",
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+        score_threshold=0.0,
+    )
+    cache = HotMemoryCache(capacity=4, ttl_seconds=60)
+    try:
+        memory.remember(
+            "shared evidence",
+            namespace="tenant:a",
+            metadata={"trajectory_id": "alpha"},
+        )
+        memory.remember(
+            "shared evidence",
+            namespace="tenant:a",
+            metadata={"trajectory_id": "beta"},
+        )
+
+        alpha = query_with_cache(
+            memory,
+            cache,
+            "shared evidence",
+            namespace="tenant:a",
+            top_k=1,
+            metadata_filters={"trajectory_id": ("alpha",)},
+        )
+        beta = query_with_cache(
+            memory,
+            cache,
+            "shared evidence",
+            namespace="tenant:a",
+            top_k=1,
+            metadata_filters={"trajectory_id": ("beta",)},
+        )
+
+        assert alpha[0].metadata["trajectory_id"] == "alpha"
+        assert beta[0].metadata["trajectory_id"] == "beta"
+        assert cache.stats().misses == 2
+    finally:
+        memory.close()
+
+
 def test_hot_memory_cache_evicts_least_recent_queries():
     cache = HotMemoryCache(capacity=1, ttl_seconds=60)
 

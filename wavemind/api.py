@@ -657,6 +657,7 @@ class QueryRequest(BaseModel):
     top_k: int = 3
     tags: list[str] = Field(default_factory=list)
     min_score: float | None = None
+    metadata_filters: dict[str, Any] = Field(default_factory=dict)
 
 
 class QueryResultResponse(BaseModel):
@@ -1332,6 +1333,7 @@ def create_app(
                     top_k=request.top_k,
                     tags=request.tags,
                     min_score=request.min_score,
+                    metadata_filters=request.metadata_filters,
                 )
             return query_with_vector_cache(
                 app.state.mind,
@@ -1341,6 +1343,7 @@ def create_app(
                 top_k=request.top_k,
                 tags=request.tags,
                 min_score=request.min_score,
+                metadata_filters=request.metadata_filters,
             )
         return query_with_cache(
             app.state.mind,
@@ -1351,6 +1354,7 @@ def create_app(
             tags=request.tags,
             min_score=request.min_score,
             vector_cache=app.state.vector_cache,
+            metadata_filters=request.metadata_filters,
         )
 
     def _query_result_responses(results) -> list[QueryResultResponse]:
