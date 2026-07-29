@@ -95,6 +95,11 @@ def run_frozen_field_transfer(
         return_quantile=float(candidate["return_quantile"]),
         oi_quantile=float(candidate["open_interest_quantile"]),
     )
+    train_indices = matured_target_indices(
+        development,
+        train_indices,
+        cutoff=str(training_end),
+    )
     if len(train_indices) < 30:
         raise ValueError("frozen training set has fewer than 30 events")
 
@@ -314,6 +319,23 @@ def candidate_indices(
         collapsed.append(index)
         next_allowed[symbol] = timestamp + 86_400
     return np.asarray(collapsed, dtype=int)
+
+
+def matured_target_indices(
+    prepared: PreparedRows,
+    indices: Sequence[int],
+    *,
+    cutoff: str,
+) -> np.ndarray:
+    cutoff_timestamp = _timestamp(cutoff)
+    return np.asarray(
+        [
+            int(index)
+            for index in indices
+            if prepared.rows[int(index)].target_timestamp < cutoff_timestamp
+        ],
+        dtype=int,
+    )
 
 
 def render_markdown(payload: Mapping[str, Any]) -> str:

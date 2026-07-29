@@ -6,6 +6,7 @@ import numpy as np
 
 from benchmarks.crypto_asset_normalized_field_transfer_benchmark import (
     candidate_indices,
+    matured_target_indices,
     prepare_rows,
 )
 from benchmarks.crypto_derivatives_field_benchmark import FeatureRow
@@ -120,3 +121,44 @@ def test_candidate_indices_use_per_asset_history_and_collapse_overlap() -> None:
         ("BBBUSDT", test_start),
         ("BBBUSDT", test_start + 90_000),
     }
+
+
+def test_matured_target_indices_exclude_labels_after_training_cutoff() -> None:
+    cutoff = _timestamp("2024-01-01")
+    rows = [
+        _row(
+            "AAAUSDT",
+            cutoff - offset,
+            return_12=-100.0,
+            oi_change_1=-100.0,
+        )
+        for offset in (172_800, 86_400, 43_200)
+    ]
+    rows.extend(
+        _row(
+            "AAAUSDT",
+            _timestamp("2023-01-01") + index * 86_400,
+            return_12=float(index),
+            oi_change_1=float(index),
+        )
+        for index in range(120)
+    )
+    prepared = prepare_rows(rows, normalization_end="2024-01-01")
+    recent = np.asarray(
+        [
+            index
+            for index, row in enumerate(prepared.rows)
+            if row.timestamp >= cutoff - 172_800
+        ],
+        dtype=int,
+    )
+
+    matured = matured_target_indices(
+        prepared,
+        recent,
+        cutoff="2024-01-01",
+    )
+
+    assert [prepared.rows[index].timestamp for index in matured] == [
+        cutoff - 172_800
+    ]
