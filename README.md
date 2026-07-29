@@ -47,10 +47,10 @@ claim that one vector database should replace every other system.
 | Proof | Current checked result | Source |
 |---|---|---|
 | Production Memory OS | `admitted`, 13/13 requirements | [`memory_os_admission_results.json`](benchmarks/memory_os_admission_results.json) |
-| Adaptive agent-memory advantage | `admitted`, 13/13 checks; task success `38.9%` -> `100%`, stale errors `61.1%` -> `0%` | [`agent_memory_advantage_admission_results.json`](benchmarks/agent_memory_advantage_admission_results.json) |
+| Adaptive agent-memory advantage | Controlled adaptive slice is admitted; the composite public gate is blocked pending the full strict LongMemEval-V2 rerun | [`agent_memory_advantage_admission_results.json`](benchmarks/agent_memory_advantage_admission_results.json) |
 | Experienced Work Agent | `admitted`, 12/12 checks; held-out success `16.7%` -> `100%`, repeated errors `83.3%` -> `0%`, context `-40%` | [`experience_quality_admission_results.json`](benchmarks/experience_quality_admission_results.json) |
 | Remote Redis/worker soak | 6 hours, 500/500 cycles, 2,500 attempts, zero failures or state corruption | [`memory_os_remote_worker_soak_results.json`](benchmarks/memory_os_remote_worker_soak_results.json) |
-| LongMemEval-V2 Small | 451/451 questions, all 29 image questions; task success `7.54%` -> `9.09%` with Memory OS | [`longmemeval_v2_small_memory_os_results.json`](benchmarks/longmemeval_v2_small_memory_os_results.json) |
+| LongMemEval-V2 protocol | Strict frozen-20 smoke: official per-question haystacks, isolated A/B stores, Core `10%`, Memory OS `10%`; full strict rerun remains gated | [`strict smoke`](benchmarks/longmemeval_v2_frozen20_protocol_results.json) / [`legacy 451-question execution`](benchmarks/longmemeval_v2_small_memory_os_results.json) |
 | Core production readiness | `pass`, 39/39 criteria | [`production_readiness_results.json`](benchmarks/production_readiness_results.json) |
 | Public package | PyPI and GitHub release `v2.8.0` | [PyPI](https://pypi.org/project/wavemind/) / [release](https://github.com/CaspianG/wavemind/releases/latest) |
 
@@ -159,6 +159,18 @@ The integration pattern is intentionally small:
 2. Pass the returned memories into your prompt, screen, search result, or
    decision function.
 3. Call `remember()` after something worth keeping happens.
+
+Queries can also apply exact metadata filters. A collection value means
+"match any", which is useful for tenant scopes, document sets, or benchmark
+haystacks:
+
+```python
+hits = memory.query(
+    "Which decision was approved?",
+    namespace="team:research",
+    metadata_filters={"document_id": ["report-17", "report-42"]},
+)
+```
 
 ## HTTP Example
 
@@ -518,10 +530,10 @@ loopback, and production evidence.
 | Evidence | Current checked result |
 |---|---|
 | Memory OS admission | `admitted`, 13/13 requirements |
-| Agent-memory advantage admission | `admitted`, 13/13 checks; 7 repeated trials and 95% paired intervals |
+| Agent-memory advantage admission | Controlled adaptive slice passes; composite public gate blocked on strict LongMemEval-V2 |
 | Memory OS remote soak | 6 hours, 500 cycles, 2500 attempts, zero corruption |
 | Real multimodal admission | `admitted`; 1000 assets, 200 queries, precision@1 `0.925`, retrieval p99 `48.64 ms` |
-| Direct Memory OS public runs | LoCoMo 1977 queries; LongMemEval-S 470 queries; LongMemEval-V2 Small 451 questions |
+| Direct Memory OS public runs | LoCoMo 1977 queries; LongMemEval-S 470 queries; strict isolated LongMemEval-V2 frozen-20 smoke |
 | Strict production evidence | 5/8 requirements |
 | LongMemEval evidence retrieval | WaveMind recall@5 `0.782` |
 | Real LoCoMo memory systems | WaveMind recall@5 `0.548`; Mem0 OSS `0.500`; Hindsight OSS `0.316` |
@@ -562,12 +574,13 @@ If you already use Chroma for local memory, see the practical migration guide:
   and consolidation rather than winning every pure ANN latency test.
 - Direct feedback-free Memory OS is not a universal quality boost. On LoCoMo it
   is slightly below Core (`precision@1 0.2382` vs `0.2387`); on LongMemEval-S it
-  matches Core, while the controlled sequential benchmark and LongMemEval-V2
-  Small show positive task-quality lift.
-- LongMemEval-V2 Small proves complete local execution, image-question support,
-  and a measured relative lift, but absolute answer success remains low
-  (`9.09%`) with the lightweight `qwen2.5vl:3b` reader. It is evidence for the
-  memory protocol, not a claim of state-of-the-art answer generation.
+  matches Core. The controlled sequential benchmark remains the admitted uplift
+  evidence.
+- The earlier 451-question LongMemEval-V2 run proves execution coverage, but it
+  predates official per-question haystack filtering and isolated A/B stores, so
+  its `7.54% -> 9.09%` result is not accepted as Memory OS uplift. The strict
+  frozen-20 rerun reaches `10%` for both Core and Memory OS with
+  `qwen2.5:3b`; a full strict rerun and the `18%` quality target remain open.
 - `MemoryFieldGraph` is a discrete graph over stored memories, not a continuous
   physics field.
 - Production Memory OS is admitted for its documented remote Redis/worker
@@ -597,8 +610,9 @@ Near-term priorities:
   persistence, and lifecycle gates.
 - Tune feedback-free Memory OS on LoCoMo, where the complete direct run is
   currently within the admission tolerance but does not beat Core.
-- Improve absolute LongMemEval-V2 answer quality with a stronger reproducible
-  local reader while preserving the admitted 451-question protocol.
+- Raise strict LongMemEval-V2 answer quality from the frozen-20 `10%` smoke to
+  at least `18%`, then rerun all 451 questions with official haystacks,
+  isolated A/B stores, image support, and a pinned local reader.
 - Improve dynamic re-ranking latency, context efficiency, and cost without
   weakening stale suppression, provenance, or recall quality.
 - Expand production operations with stronger index-health metrics, alerting

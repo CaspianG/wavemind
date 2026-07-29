@@ -91,15 +91,26 @@ def _public_payload(
             "queries": query_count,
             "full_small_run": longmemeval_v2,
             "question_images_supported": longmemeval_v2,
+            "official_question_haystacks": longmemeval_v2,
+            "isolated_ab_stores": longmemeval_v2,
         },
         "results": [
             {
                 "engine": "WaveMind",
                 "precision_at_1": 0.70,
+                "task_success_rate": 0.50 if longmemeval_v2 else None,
+                "end_to_end_p95_ms": 5.0,
+                "category_success": {
+                    "one": 0.4,
+                    "two": 0.4,
+                    "three": 0.4,
+                    "four": 0.4,
+                    "five": 0.4,
+                },
             },
             {
                 "engine": "WaveMind + Memory OS",
-                "precision_at_1": 0.70,
+                "precision_at_1": 0.72 if longmemeval_v2 else 0.70,
                 "execution_mode": "memory_os_direct_feedback_free",
                 "worker_runs": 10,
                 "worker_errors": 0,
@@ -109,7 +120,15 @@ def _public_payload(
                     else "retrieval"
                 ),
                 "scored_queries": query_count if longmemeval_v2 else 0,
-                "task_success_rate": 0.50 if longmemeval_v2 else None,
+                "task_success_rate": 0.52 if longmemeval_v2 else None,
+                "end_to_end_p95_ms": 5.5,
+                "category_success": {
+                    "one": 0.5,
+                    "two": 0.5,
+                    "three": 0.5,
+                    "four": 0.5,
+                    "five": 0.4,
+                },
             },
         ],
     }
@@ -183,6 +202,33 @@ def test_admission_admits_complete_same_sha_evidence(tmp_path):
     markdown = render_agent_memory_advantage_admission_markdown(payload)
     assert "# WaveMind Agent Memory Advantage Admission" in markdown
     assert "Direct public benchmarks: **3/3**" in markdown
+    json.dumps(payload, allow_nan=False)
+
+
+def test_admission_rejects_legacy_or_non_improving_v2_evidence(tmp_path):
+    _write_passing_evidence(tmp_path)
+    artifact, query_count = PUBLIC_ARTIFACTS["longmemeval_v2_small"]
+    payload = _public_payload(query_count, longmemeval_v2=True)
+    payload["scenario"]["official_question_haystacks"] = False
+    payload["scenario"]["isolated_ab_stores"] = False
+    payload["results"][1]["task_success_rate"] = 0.50
+    payload["results"][1]["category_success"] = payload["results"][0][
+        "category_success"
+    ]
+    payload["results"][1]["end_to_end_p95_ms"] = 11.0
+    _write_json(tmp_path, artifact, payload)
+
+    admission = evaluate_agent_memory_advantage_admission(
+        tmp_path,
+        expected_source_sha=SHA,
+    )
+
+    check = admission["public_evidence"]["longmemeval_v2_small"]
+    assert check["passed"] is False
+    assert check["evidence"]["official_question_haystacks"] is False
+    assert check["evidence"]["isolated_ab_stores"] is False
+    assert check["evidence"]["improved_categories"] == 0
+    assert check["evidence"]["p95_latency_delta_ms"] == 6.0
 
 
 def test_admission_rejects_latency_or_source_regression(tmp_path):

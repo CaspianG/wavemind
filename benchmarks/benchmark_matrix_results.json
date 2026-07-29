@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-28T22:43:41Z",
-  "source_ref": "4b6d7dd3e938",
+  "generated_at": "2026-07-29T00:31:45Z",
+  "source_ref": "85f00b41f082",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -166,7 +166,7 @@
       "id": "agent_memory_advantage",
       "name": "Adaptive agent-memory advantage",
       "category": "agent-memory",
-      "status": "implemented",
+      "status": "runner-ready",
       "source": "benchmarks/agent_memory_advantage_benchmark.py",
       "dataset": "Sequential correction, preference, state-transition, and workflow-gotcha cases with identical memories, queries, embeddings, token budgets, and top-k across engines.",
       "competitors": [
@@ -3359,7 +3359,7 @@
       "category": "web-agent-memory",
       "status": "implemented",
       "source_url": "https://arxiv.org/abs/2605.12493",
-      "dataset": "Official LongMemEval-V2 Small: 451 web-agent questions, including all 29 image questions, scored by the pinned local qwen2.5vl:3b reader.",
+      "dataset": "Official LongMemEval-V2 Small frozen-20 protocol smoke with per-question 100-trajectory haystacks, isolated A/B stores, and pinned local qwen2.5:3b. The earlier 451-question run remains legacy execution evidence.",
       "competitors": [
         "AgentRunbook-R",
         "Chroma RAG",
@@ -3373,28 +3373,33 @@
         "retrieval_p99_ms",
         "worker_errors"
       ],
-      "target": "Improve task success over WaveMind Core on the full Small tier without worker errors or more than one percentage point of quality regression.",
-      "next_step": "Raise absolute answer quality with a stronger local reader while keeping the checked retrieval and Memory OS execution protocol unchanged.",
+      "target": "Reach at least 0.18 task success, improve at least four categories and beat Core by at least 0.01 on all 451 questions, while keeping end-to-end p95 regression within both 20 percent and 5 ms.",
+      "next_step": "Improve retrieval and Memory OS policy on the frozen protocol before spending compute on the full strict run.",
       "source": "benchmarks/longmemeval_v2_memory_benchmark.py",
       "current": {
         "WaveMind Core": {
-          "task_success_rate": 0.07538802660753881,
-          "p50_latency_ms": 6.923999986611307,
-          "p95_latency_ms": 12.6528000109829,
-          "p99_latency_ms": 19.537300016963854,
-          "scored_queries": 451,
+          "task_success_rate": 0.1,
+          "p50_latency_ms": 13.118199996824842,
+          "p95_latency_ms": 33.474700001534075,
+          "p99_latency_ms": 33.474700001534075,
+          "scored_queries": 20,
           "errors": 0
         },
         "WaveMind + Memory OS": {
-          "task_success_rate": 0.09090909090909091,
-          "p50_latency_ms": 7.414499996230006,
-          "p95_latency_ms": 13.880899990908802,
-          "p99_latency_ms": 32.95570000773296,
-          "end_to_end_p95_ms": 24.506200017640367,
-          "worker_runs": 15,
+          "task_success_rate": 0.1,
+          "p50_latency_ms": 13.919899996835738,
+          "p95_latency_ms": 65.66349999775412,
+          "p99_latency_ms": 65.66349999775412,
+          "end_to_end_p95_ms": 2074.162700002489,
+          "worker_runs": 1,
           "worker_errors": 0,
-          "scored_queries": 451,
+          "scored_queries": 20,
           "errors": 0
+        },
+        "Legacy full execution": {
+          "task_success_rate": 0.09090909090909091,
+          "scored_queries": 451,
+          "worker_errors": 0
         }
       }
     },

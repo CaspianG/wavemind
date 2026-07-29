@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 import subprocess
 from datetime import datetime, timezone
@@ -286,16 +287,61 @@ def _validate_public_artifact(
         )
     worker_errors = _as_int(memory_os.get("worker_errors"))
     requires_answer_eval = name == "longmemeval_v2_small"
+    core_categories = (
+        core.get("category_success")
+        if isinstance(core.get("category_success"), dict)
+        else {}
+    )
+    memory_os_categories = (
+        memory_os.get("category_success")
+        if isinstance(memory_os.get("category_success"), dict)
+        else {}
+    )
+    improved_categories = sum(
+        1
+        for category, value in memory_os_categories.items()
+        if category in core_categories
+        and _as_float(value, default=-1.0)
+        > _as_float(core_categories.get(category), default=-1.0)
+    )
+    core_p95 = _as_float(
+        core.get("end_to_end_p95_ms"),
+        default=_as_float(core.get("p95_latency_ms"), default=float("inf")),
+    )
+    memory_os_p95 = _as_float(
+        memory_os.get("end_to_end_p95_ms"),
+        default=_as_float(
+            memory_os.get("p95_latency_ms"),
+            default=float("inf"),
+        ),
+    )
+    p95_delta_ms: float | None = None
+    p95_regression: float | None = None
+    if (
+        math.isfinite(core_p95)
+        and math.isfinite(memory_os_p95)
+        and core_p95 > 0.0
+    ):
+        p95_delta_ms = memory_os_p95 - core_p95
+        p95_regression = p95_delta_ms / core_p95
     answer_eval_ok = (
         not requires_answer_eval
         or (
             payload.get("schema") == "wavemind.longmemeval_v2_small.v1"
             and scenario.get("full_small_run") is True
             and scenario.get("question_images_supported") is True
+            and scenario.get("official_question_haystacks") is True
+            and scenario.get("isolated_ab_stores") is True
             and _as_int(memory_os.get("scored_queries")) >= min_queries
             and memory_os.get("evaluation_mode")
             == "official_answer_local_reader"
-            and memory_os.get("task_success_rate") is not None
+            and memory_os_quality >= 0.18
+            and memory_os_quality >= core_quality + 0.01
+            and improved_categories >= 4
+            and p95_regression is not None
+            and p95_delta_ms is not None
+            and p95_regression <= 0.20
+            and p95_delta_ms <= 5.0
         )
     )
     passed = (
@@ -305,7 +351,11 @@ def _validate_public_artifact(
         and str(memory_os.get("execution_mode") or "").startswith("memory_os_direct")
         and _as_int(memory_os.get("worker_runs")) > 0
         and worker_errors == 0
-        and memory_os_quality >= core_quality - 0.01
+        and (
+            memory_os_quality >= core_quality + 0.01
+            if requires_answer_eval
+            else memory_os_quality >= core_quality - 0.01
+        )
         and answer_eval_ok
     )
     return _check(
@@ -326,15 +376,38 @@ def _validate_public_artifact(
             "question_images_supported": scenario.get(
                 "question_images_supported"
             ),
+            "official_question_haystacks": scenario.get(
+                "official_question_haystacks"
+            ),
+            "isolated_ab_stores": scenario.get("isolated_ab_stores"),
+            "improved_categories": improved_categories,
+            "p95_latency_delta_ms": p95_delta_ms,
+            "p95_latency_regression": p95_regression,
         },
         target={
             "min_queries": min_queries,
             "direct_memory_os": True,
             "worker_runs": "> 0",
             "worker_errors": 0,
-            "quality_regression": "<= 0.01",
+            "quality": (
+                {
+                    "minimum_task_success": 0.18,
+                    "minimum_memory_os_uplift": 0.01,
+                    "minimum_improved_categories": 4,
+                }
+                if requires_answer_eval
+                else {"maximum_regression": 0.01}
+            ),
+            "p95_latency": (
+                {"maximum_regression": 0.20, "maximum_delta_ms": 5.0}
+                if requires_answer_eval
+                else "not required by this retrieval-evidence artifact"
+            ),
             "answer_evaluation": (
-                "local reader on all 451 questions with image support"
+                (
+                    "local reader on all 451 questions with image support, "
+                    "official haystacks, and isolated A/B stores"
+                )
                 if requires_answer_eval
                 else "not required by this retrieval-evidence artifact"
             ),

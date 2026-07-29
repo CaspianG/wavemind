@@ -376,7 +376,15 @@ by the production gate.
 | [VectorDBBench](https://github.com/zilliztech/VectorDBBench) | Vector database insertion/search/filter/cost-performance benchmark. | runner ready | Chroma / Qdrant / Milvus / Weaviate / Pinecone / FAISS | WaveMind now exports a reproducible custom dataset (`train.parquet`, `test.parquet`, `neighbors.parquet`, `scalar_labels.parquet`) for official VectorDBBench runs. |
 | [LoCoMo](https://arxiv.org/abs/2402.17753) | Long conversation memory, temporal consistency, multi-hop recall. Retrieval-only runner is implemented for official `locomo10.json`. | implemented | Static vector / Chroma / Qdrant | Improve answer generation accuracy on top of the stronger sentence-transformers evidence retrieval run. |
 | [LongMemEval](https://arxiv.org/abs/2410.10813) | Long-term assistant memory with updates and abstention. | implemented retrieval + local Ollama answer smoke | Static vector / Chroma / Qdrant / Mem0-style memory | Add stronger LLM answer quality, abstention, and Chroma/Qdrant RAG answer baselines. |
-| [LongMemEval-V2](https://arxiv.org/abs/2605.12493) | Web-agent memory: state recall, dynamic state, workflow gotchas. | planned | AgentRunbook-R / Chroma RAG / Qdrant RAG | Prove WaveMind can retrieve compact evidence from agent trajectories. |
+| [LongMemEval-V2](https://arxiv.org/abs/2605.12493) | Web-agent memory: state recall, dynamic state, workflow gotchas. | full legacy execution + strict frozen-20 protocol smoke | AgentRunbook-R / Chroma RAG / Qdrant RAG | Reach at least `18%` answer quality, improve at least four categories, and prove positive Memory OS lift on the full isolated protocol. |
+
+The strict LongMemEval-V2 runner applies each question's official 100-trajectory
+haystack as an exact metadata filter, starts Core and Memory OS from separate
+copies of the same SQLite state, pins the local reader context window, and
+checkpoints every answer by engine, question, and context hash. The checked
+frozen-20 smoke reaches `10%` task success for both arms. It is a protocol and
+regression artifact, not a completed quality admission or a positive Memory OS
+uplift claim.
 | [LMEB](https://github.com/KaLM-Embedding/LMEB) | Long-horizon memory embedding tasks beyond normal passage retrieval. | planned | Embedding-only baselines / Chroma / Qdrant | Choose the default semantic encoder using memory-specific tasks. |
 | [RAGBench](https://huggingface.co/datasets/rungalileo/ragbench) | Downstream RAG context and answer quality. | planned | Chroma RAG / Qdrant RAG / Pinecone RAG | Show whether stale-memory suppression improves context relevance. |
 
