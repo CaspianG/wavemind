@@ -477,6 +477,10 @@ class WaveMind:
 
         threshold = self.score_threshold if min_score is None else float(min_score)
         query_tokens = self._tokens(text)
+        lexical_token_weights = self._lexical_query_weights(
+            query_tokens,
+            allowed_ids,
+        )
         field_weight = self._effective_field_weight(len(allowed_ids))
         lexical_weight = self._effective_lexical_weight(query_tokens)
         candidate_scores = {candidate.id: candidate.score for candidate in candidates}
@@ -526,7 +530,7 @@ class WaveMind:
                     query_tokens,
                     record.id,
                     record.text,
-                    allowed_ids=allowed_ids,
+                    token_weights=lexical_token_weights,
                 )
                 score = (
                     self.vector_weight * vector_score
@@ -1521,38 +1525,47 @@ class WaveMind:
         id: int | None,
         text: str,
         *,
-        allowed_ids: set[int] | None = None,
+        token_weights: Mapping[str, float] | None = None,
     ) -> float:
         if not query_tokens:
             return 0.0
         text_tokens = self._record_tokens.get(int(id)) if id is not None else None
         if text_tokens is None:
             text_tokens = frozenset(self._tokens(text))
-        if self.lexical_idf_normalization and allowed_ids:
-            weights = {
-                token: math.log(
-                    (len(allowed_ids) + 1)
-                    / (
-                        len(self._token_ids.get(token, set()) & allowed_ids)
-                        + 1
-                    )
-                )
-                + 1.0
-                for token in query_tokens
-            }
-            denominator = sum(weights.values())
+        if token_weights:
+            denominator = sum(token_weights.values())
             if denominator <= 0.0:
                 return 0.0
             return (
                 sum(
                     weight
-                    for token, weight in weights.items()
+                    for token, weight in token_weights.items()
                     if token in text_tokens
                 )
                 / denominator
             )
         matched = sum(1 for token in query_tokens if token in text_tokens)
         return matched / len(query_tokens)
+
+    def _lexical_query_weights(
+        self,
+        query_tokens: tuple[str, ...],
+        allowed_ids: set[int],
+    ) -> dict[str, float] | None:
+        if not self.lexical_idf_normalization or not query_tokens or not allowed_ids:
+            return None
+        allowed_count = len(allowed_ids)
+        return {
+            token: math.log(
+                (allowed_count + 1)
+                / (
+                    len(self._token_ids.get(token, set()) & allowed_ids)
+                    + 1
+                )
+            )
+            + 1.0
+            for token in query_tokens
+        }
 
     def _lexical_candidate_ids(
         self,
