@@ -874,6 +874,26 @@ class AuditResponse(BaseModel):
     events: list[AuditEventResponse]
 
 
+class MemoryExplanationResponse(BaseModel):
+    schema_name: str = Field(
+        default="wavemind.memory_explanation.v1",
+        validation_alias="schema",
+        serialization_alias="schema",
+    )
+    id: int
+    namespace: str
+    text: str
+    tags: list[str]
+    metadata: dict[str, Any]
+    provenance: dict[str, Any]
+    created_at: float
+    updated_at: float
+    expires_at: float | None
+    priority: float
+    access_count: int
+    audit_events: list[AuditEventResponse]
+
+
 class ObservabilityResponse(BaseModel):
     enabled: bool
     exporter: str
@@ -2348,6 +2368,57 @@ def create_app(
                 )
                 for event in events
             ]
+        )
+
+    @app.get(
+        "/memories/{memory_id}/explain",
+        response_model=MemoryExplanationResponse,
+        dependencies=[Depends(require_role("read"))],
+    )
+    def explain_memory(
+        memory_id: int,
+        namespace: str = Query(default="default", min_length=1),
+        audit_limit: int = Query(default=20, ge=1, le=100),
+    ) -> MemoryExplanationResponse:
+        record = app.state.mind.store.get(memory_id)
+        if record is None or record.namespace != namespace or record.is_expired:
+            raise HTTPException(status_code=404, detail="Memory not found")
+        events = app.state.mind.audit_events(
+            namespace=namespace,
+            memory_id=memory_id,
+            limit=audit_limit,
+        )
+        mcp_metadata = record.metadata.get("_wavemind_mcp", {})
+        provenance = (
+            dict(mcp_metadata.get("provenance") or {})
+            if isinstance(mcp_metadata, dict)
+            else {}
+        )
+        if not provenance and isinstance(record.metadata.get("provenance"), dict):
+            provenance = dict(record.metadata["provenance"])
+        return MemoryExplanationResponse(
+            id=int(record.id),
+            namespace=record.namespace,
+            text=record.text,
+            tags=list(record.tags),
+            metadata=record.metadata,
+            provenance=provenance,
+            created_at=record.created_at,
+            updated_at=record.updated_at,
+            expires_at=record.expires_at,
+            priority=record.priority,
+            access_count=record.access_count,
+            audit_events=[
+                AuditEventResponse(
+                    id=int(event.id),
+                    created_at=event.created_at,
+                    action=event.action,
+                    namespace=event.namespace,
+                    memory_id=event.memory_id,
+                    metadata=event.metadata,
+                )
+                for event in events
+            ],
         )
 
     @app.post("/import", response_model=ImportResponse, dependencies=[Depends(require_role("write"))])

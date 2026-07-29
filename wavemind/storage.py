@@ -664,6 +664,7 @@ class SQLiteMemoryStore:
         self,
         namespace: str | None = None,
         action: str | None = None,
+        memory_id: int | None = None,
         limit: int = 100,
     ) -> list[AuditEvent]:
         params: list[Any] = []
@@ -674,6 +675,9 @@ class SQLiteMemoryStore:
         if action is not None:
             where.append("action = ?")
             params.append(action)
+        if memory_id is not None:
+            where.append("memory_id = ?")
+            params.append(int(memory_id))
         sql = "SELECT * FROM audit_events"
         if where:
             sql += " WHERE " + " AND ".join(where)
@@ -1234,6 +1238,7 @@ class PostgresMemoryStore:
         self,
         namespace: str | None = None,
         action: str | None = None,
+        memory_id: int | None = None,
         limit: int = 100,
     ) -> list[AuditEvent]:
         params: list[Any] = []
@@ -1244,6 +1249,9 @@ class PostgresMemoryStore:
         if action is not None:
             where.append("action = %s")
             params.append(action)
+        if memory_id is not None:
+            where.append("memory_id = %s")
+            params.append(int(memory_id))
         sql = f"SELECT * FROM {self.audit_table}"
         if where:
             sql += " WHERE " + " AND ".join(where)

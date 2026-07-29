@@ -1121,11 +1121,13 @@ class WaveMind:
         self,
         namespace: str | None = None,
         action: str | None = None,
+        memory_id: int | None = None,
         limit: int = 100,
     ) -> list[AuditEvent]:
         return self.store.list_audit_events(
             namespace=namespace,
             action=action,
+            memory_id=memory_id,
             limit=limit,
         )
 
