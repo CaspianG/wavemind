@@ -104,9 +104,18 @@ def test_trajectory_delta_consolidation_is_idempotent_and_provenanced(tmp_path):
         assert rows[0].metadata["source"] == "wavemind_trajectory_delta"
         assert rows[0].metadata["source_memory_ids"][0] in source_ids
         assert rows[0].metadata["trajectory_id"] == "run-1"
+        assert "trajectory-state" not in rows[0].tags
         assert worker.source_text(rows[0]) == memory.store.get(
             rows[0].metadata["source_memory_ids"][0]
         ).text
+        raw = memory.store.get(rows[0].metadata["source_memory_ids"][0])
+        packet = worker.experience_packet_text(
+            raw,
+            source_text="source excerpt",
+        )
+        assert packet.startswith("Experience summary:\n")
+        assert "My Open Incidents" in packet
+        assert packet.endswith("Source evidence:\nsource excerpt")
     finally:
         memory.close()
 

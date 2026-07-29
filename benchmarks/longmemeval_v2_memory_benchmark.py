@@ -727,6 +727,7 @@ def _query_memory(
     semantic_rerank_weight: float = 0.70,
     tags: tuple[str, ...] | None = None,
     dereference_trajectory_evidence: bool = False,
+    enrich_trajectory_evidence: bool = False,
 ) -> tuple[dict[str, list[str]], dict[str, Any]]:
     if semantic_rerank_k < top_k:
         raise ValueError("semantic_rerank_k must be at least top_k")
@@ -752,7 +753,7 @@ def _query_memory(
     candidate_top_k = max(query_top_k, min(50, query_top_k * 10))
     trajectory_view = (
         TrajectoryDeltaConsolidator(memory)
-        if dereference_trajectory_evidence
+        if dereference_trajectory_evidence or enrich_trajectory_evidence
         else None
     )
     for question in dataset.questions:
@@ -790,7 +791,8 @@ def _query_memory(
             _query_snippet(
                 (
                     trajectory_view.source_text(result)
-                    if trajectory_view is not None
+                    if dereference_trajectory_evidence
+                    and trajectory_view is not None
                     else result.text
                 ),
                 retrieval_query,
@@ -825,8 +827,19 @@ def _query_memory(
                 ),
             )[:top_k]
             snippets = [snippets[index] for index in ordered]
+            results = [results[index] for index in ordered]
         else:
             snippets = snippets[:top_k]
+            results = results[:top_k]
+        if enrich_trajectory_evidence:
+            assert trajectory_view is not None
+            snippets = [
+                trajectory_view.experience_packet_text(
+                    result,
+                    source_text=snippet,
+                )
+                for result, snippet in zip(results, snippets, strict=True)
+            ]
         retrieval_ms = (time.perf_counter() - started) * 1_000.0
         latencies.append(retrieval_ms)
         contexts[question.id] = snippets
@@ -860,18 +873,26 @@ def _query_memory(
     stats = cache.stats()
     return contexts, {
         "execution_mode": (
-            "memory_os_direct_feedback_free_trajectory_delta"
+            "memory_os_feedback_free_experience_packet"
             if use_memory_os
             else "wavemind_core"
         ),
         "retrieval_view": (
-            "trajectory_delta" if tags else "raw_trajectory_state"
+            "raw_trajectory_state_enriched"
+            if enrich_trajectory_evidence
+            else (
+                "trajectory_delta" if tags else "raw_trajectory_state"
+            )
         ),
         "retrieval_tags": list(tags or ()),
         "reader_evidence_view": (
+            "experience_summary_plus_source_state"
+            if enrich_trajectory_evidence
+            else (
             "dereferenced_source_state"
             if dereference_trajectory_evidence
             else "retrieved_record"
+            )
         ),
         "worker_runs": len(worker_reports),
         "worker_errors": sum(
@@ -1419,6 +1440,7 @@ def run_benchmark(
                 semantic_reranker=semantic_reranker,
                 semantic_rerank_k=semantic_rerank_k,
                 semantic_rerank_weight=semantic_rerank_weight,
+                tags=("trajectory-state",),
             )
         finally:
             core_memory.close()
@@ -1449,8 +1471,8 @@ def run_benchmark(
                 semantic_reranker=semantic_reranker,
                 semantic_rerank_k=semantic_rerank_k,
                 semantic_rerank_weight=semantic_rerank_weight,
-                tags=("trajectory-delta",),
-                dereference_trajectory_evidence=True,
+                tags=("trajectory-state",),
+                enrich_trajectory_evidence=True,
             )
             os_metrics["trajectory_consolidation"] = (
                 consolidation.as_dict()
@@ -1612,12 +1634,14 @@ def run_benchmark(
                 "snippet_max_chars": 2_800,
                 "snippet_neighbor_lines": 2,
                 "memory_os_view": {
-                    "kind": "extractive_trajectory_delta",
+                    "kind": "source_preserving_experience_packet",
                     "input_tag": "trajectory-state",
                     "output_tag": "trajectory-delta",
                     "max_summary_chars": 2_800,
+                    "reader_summary_max_chars": 1_000,
                     "source_states_preserved": True,
-                    "reader_evidence": "dereferenced_source_state",
+                    "shortlist_policy": "same_raw_top_k_as_core",
+                    "reader_evidence": "summary_plus_source_state",
                     "answer_labels_used": False,
                 },
             },

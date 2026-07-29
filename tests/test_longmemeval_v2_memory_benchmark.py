@@ -414,23 +414,25 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
     assert payload["retrieval"]["diversity_metadata_key"] == "trajectory_id"
     assert payload["retrieval"]["candidate_top_k"] == 30
     assert payload["retrieval"]["memory_os_view"] == {
-        "kind": "extractive_trajectory_delta",
+        "kind": "source_preserving_experience_packet",
         "input_tag": "trajectory-state",
         "output_tag": "trajectory-delta",
         "max_summary_chars": 2_800,
+        "reader_summary_max_chars": 1_000,
         "source_states_preserved": True,
-        "reader_evidence": "dereferenced_source_state",
+        "shortlist_policy": "same_raw_top_k_as_core",
+        "reader_evidence": "summary_plus_source_state",
         "answer_labels_used": False,
     }
     assert (
         memory_os["execution_mode"]
-        == "memory_os_direct_feedback_free_trajectory_delta"
+        == "memory_os_feedback_free_experience_packet"
     )
-    assert memory_os["retrieval_view"] == "trajectory_delta"
-    assert memory_os["retrieval_tags"] == ["trajectory-delta"]
+    assert memory_os["retrieval_view"] == "raw_trajectory_state_enriched"
+    assert memory_os["retrieval_tags"] == ["trajectory-state"]
     assert (
         memory_os["reader_evidence_view"]
-        == "dereferenced_source_state"
+        == "experience_summary_plus_source_state"
     )
     assert memory_os["trajectory_consolidation"]["created"] > 0
     assert (
@@ -460,9 +462,9 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
         ),
     }
     assert memory_os["task_success_rate"] == 1.0
-    assert memory_os["reused_answers"] == 2
-    assert memory_os["generated_answers"] == 0
-    assert reader.answer_calls == 2
+    assert memory_os["reused_answers"] == 0
+    assert memory_os["generated_answers"] == 2
+    assert reader.answer_calls == 4
     assert len(rows) == 4
     assert checkpoint_rows == rows
     assert all(row["context_sha256"] for row in rows)

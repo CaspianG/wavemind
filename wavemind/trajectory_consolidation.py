@@ -57,6 +57,7 @@ class TrajectoryDeltaConsolidator:
 
     def __init__(self, memory: Any):
         self.memory = memory
+        self._summary_by_source_id: dict[int, str] | None = None
 
     def run_once(
         self,
@@ -162,7 +163,16 @@ class TrajectoryDeltaConsolidator:
                         "text": summary,
                         "namespace": record.namespace,
                         "tags": tuple(
-                            dict.fromkeys((*record.tags, output_tag))
+                            dict.fromkeys(
+                                (
+                                    *(
+                                        tag
+                                        for tag in record.tags
+                                        if tag != input_tag
+                                    ),
+                                    output_tag,
+                                )
+                            )
                         ),
                         "metadata": metadata,
                         "priority": float(record.priority),
@@ -184,6 +194,7 @@ class TrajectoryDeltaConsolidator:
                 )
                 break
 
+        self._summary_by_source_id = None
         report = TrajectoryConsolidationReport(
             namespace=namespace,
             scanned_memories=len(records),
@@ -229,6 +240,48 @@ class TrajectoryDeltaConsolidator:
             if record is not None:
                 return str(record.text)
         return str(result.text)
+
+    def summary_text(self, result: Any) -> str:
+        """Return the extractive summary linked to a raw source result."""
+
+        try:
+            source_id = int(result.id)
+        except (TypeError, ValueError):
+            return ""
+        if self._summary_by_source_id is None:
+            summaries: dict[int, str] = {}
+            for record in self._records(namespace=None):
+                if record.metadata.get("source") != self.SOURCE:
+                    continue
+                source_ids = record.metadata.get("source_memory_ids") or ()
+                try:
+                    linked_id = int(source_ids[0])
+                except (TypeError, ValueError, IndexError):
+                    continue
+                summaries.setdefault(linked_id, str(record.text))
+            self._summary_by_source_id = summaries
+        return self._summary_by_source_id.get(source_id, "")
+
+    def experience_packet_text(
+        self,
+        result: Any,
+        *,
+        source_text: str,
+        max_summary_chars: int = 1_000,
+    ) -> str:
+        """Enrich selected source evidence without changing the shortlist."""
+
+        if max_summary_chars <= 0:
+            raise ValueError("max_summary_chars must be positive")
+        summary = self.summary_text(result)[:max_summary_chars].strip()
+        if not summary:
+            return source_text
+        return (
+            "Experience summary:\n"
+            f"{summary}\n"
+            "Source evidence:\n"
+            f"{source_text}"
+        )
 
     def _records(self, namespace: str | None) -> list[Any]:
         cached = getattr(self.memory, "_records_by_id", None)
