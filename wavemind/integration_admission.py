@@ -18,8 +18,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
-from fastapi.testclient import TestClient
-
 from .api import create_app
 from .core import WaveMind
 from .experience import (
@@ -320,6 +318,8 @@ def _run_suite(root: Path, source_sha: str) -> dict[str, Any]:
 
 
 def _provider_cases(root: Path) -> list[dict[str, Any]]:
+    from fastapi.testclient import TestClient
+
     store = SQLiteExperienceStore(root / "experience.db")
     mind = WaveMind(db_path=root / "memory.db")
     citations: dict[str, list[str]] = {}

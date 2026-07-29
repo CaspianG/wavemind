@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 import wavemind.integration_admission as admission
@@ -59,6 +61,29 @@ def _available_environment() -> dict:
         "fingerprint_sha256": "a" * 64,
     }
     return payload
+
+
+def test_base_cli_does_not_import_test_client() -> None:
+    script = """
+import importlib.abc
+import sys
+
+class BlockTestClient(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname == "fastapi.testclient":
+            raise ImportError("fastapi.testclient is unavailable")
+        return None
+
+sys.meta_path.insert(0, BlockTestClient())
+import wavemind.cli
+"""
+    completed = subprocess.run(
+        [sys.executable, "-c", script],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert completed.returncode == 0, completed.stderr
 
 
 def test_integration_admission_passes_frozen_three_run_gate(monkeypatch):
