@@ -505,9 +505,9 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
         ),
     }
     assert memory_os["task_success_rate"] == 1.0
-    assert memory_os["reused_answers"] == 0
-    assert memory_os["generated_answers"] == 2
-    assert reader.answer_calls == 4
+    assert memory_os["reused_answers"] == 1
+    assert memory_os["generated_answers"] == 1
+    assert reader.answer_calls == 3
     assert len(rows) == 4
     assert checkpoint_rows == rows
     assert all(row["context_sha256"] for row in rows)
