@@ -4,7 +4,7 @@ Notable user-facing and operational changes are recorded here. Git tags,
 GitHub Releases, checked evidence artifacts, and package versions remain the
 authoritative release sources.
 
-## Unreleased
+## [2.9.0] - 2026-07-30
 
 - Added `wavemind init` starter projects for Python, TypeScript, MCP, and
   Docker, plus `wavemind doctor` runtime and Experience Packet diagnostics.
@@ -22,6 +22,8 @@ authoritative release sources.
   records into tool plans and learns only from verified trajectories.
 - Added a frozen 60/30 coding, support, and enterprise benchmark plus a strict
   12-check quality admission and weekly evidence refresh.
+
+Release: [WaveMind v2.9.0](https://github.com/CaspianG/wavemind/releases/tag/v2.9.0)
 
 ## [2.8.0] - 2026-07-28
 
@@ -66,6 +68,7 @@ Release: [WaveMind v2.6.3](https://github.com/CaspianG/wavemind/releases/tag/v2.
 
 | Version | Published | Notes |
 |---|---|---|
+| [v2.9.0](https://github.com/CaspianG/wavemind/releases/tag/v2.9.0) | 2026-07-30 | Trusted agent experience, safety, portability, and SDKs |
 | [v2.8.0](https://github.com/CaspianG/wavemind/releases/tag/v2.8.0) | 2026-07-28 | Adaptive multimodal agent memory and MCP |
 | [v2.7.0](https://github.com/CaspianG/wavemind/releases/tag/v2.7.0) | 2026-07-27 | Multimodal lifecycle and public presentation |
 | [v2.6.3](https://github.com/CaspianG/wavemind/releases/tag/v2.6.3) | 2026-07-27 | Production Memory OS release |
@@ -77,6 +80,7 @@ Release: [WaveMind v2.6.3](https://github.com/CaspianG/wavemind/releases/tag/v2.
 See the complete [release archive](https://github.com/CaspianG/wavemind/releases)
 for earlier versions and attached evidence bundles.
 
+[2.9.0]: https://github.com/CaspianG/wavemind/compare/v2.8.0...v2.9.0
 [2.8.0]: https://github.com/CaspianG/wavemind/compare/v2.7.0...v2.8.0
 [2.7.0]: https://github.com/CaspianG/wavemind/compare/v2.6.3...v2.7.0
 [2.6.3]: https://github.com/CaspianG/wavemind/compare/v2.6.2...v2.6.3

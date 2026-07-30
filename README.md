@@ -55,7 +55,7 @@ claim that one vector database should replace every other system.
 | Remote Redis/worker soak | 6 hours, 500/500 cycles, 2,500 attempts, zero failures or state corruption | [`memory_os_remote_worker_soak_results.json`](benchmarks/memory_os_remote_worker_soak_results.json) |
 | LongMemEval-V2 protocol | Strict frozen-20 smoke: official per-question haystacks, isolated A/B stores, Core `10%`, Memory OS `10%`; full strict rerun remains gated | [`strict smoke`](benchmarks/longmemeval_v2_frozen20_protocol_results.json) / [`legacy 451-question execution`](benchmarks/longmemeval_v2_small_memory_os_results.json) |
 | Core production readiness | `pass`, 39/39 criteria | [`production_readiness_results.json`](benchmarks/production_readiness_results.json) |
-| Public package | PyPI and GitHub release `v2.8.0` | [PyPI](https://pypi.org/project/wavemind/) / [release](https://github.com/CaspianG/wavemind/releases/latest) |
+| Public package | PyPI and GitHub release `v2.9.0` | [PyPI](https://pypi.org/project/wavemind/) / [release](https://github.com/CaspianG/wavemind/releases/latest) |
 
 Remote multi-region, managed serverless, 100M service evidence, and universal
 multimodal admission remain explicitly gated. See

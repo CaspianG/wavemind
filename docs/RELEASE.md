@@ -6,7 +6,8 @@ WaveMind uses Git tags for releases.
 
 1. Make sure `main` is green in GitHub Actions.
 2. Update the version in `pyproject.toml`, `wavemind/__init__.py`,
-   `deploy/helm/wavemind/Chart.yaml`, `deploy/helm/wavemind/values.yaml`,
+   both `version` and `appVersion` in `deploy/helm/wavemind/Chart.yaml`,
+   `deploy/helm/wavemind/values.yaml`,
    `docker-compose.yml`, `deploy/remote/inventory.example.json`,
    `deploy/serverless/wavemind-serverless.sample.json`, and
    `deploy/cloud/gcp-remote-active-active/terraform.tfvars.example`.
