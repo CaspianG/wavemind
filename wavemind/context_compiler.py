@@ -124,28 +124,6 @@ class MemoryContextCompiler:
 
         original_tokens = sum(_estimated_tokens(text) for text in source_texts)
         selected = list(zip(ranked, source_texts, strict=True))[:item_limit]
-        selected_tokens = sum(
-            _estimated_tokens(source_text) for _, source_text in selected
-        )
-        if selected_tokens <= budget:
-            items = tuple(
-                _compiled_item(
-                    result,
-                    source_text=source_text,
-                    excerpt=source_text,
-                    rank=rank,
-                )
-                for rank, (result, source_text) in enumerate(selected, start=1)
-            )
-            return CompiledMemoryContext(
-                query=query,
-                token_budget=budget,
-                estimated_tokens=selected_tokens,
-                original_estimated_tokens=original_tokens,
-                items=items,
-                omitted_count=max(0, len(ranked) - len(items)),
-                policy=self._policy_metadata(),
-            )
         weights = [2, *([1] * max(0, len(selected) - 1))]
         remaining_budget = budget
         remaining_weight = sum(weights)
@@ -176,12 +154,28 @@ class MemoryContextCompiler:
             if not excerpt or estimated > remaining_budget:
                 remaining_weight -= weight
                 continue
+            memory_id = int(getattr(result, "id", 0) or 0)
+            metadata = dict(getattr(result, "metadata", {}) or {})
             items.append(
-                _compiled_item(
-                    result,
-                    source_text=source_text,
-                    excerpt=excerpt,
+                CompiledMemoryContextItem(
+                    memory_id=memory_id,
                     rank=rank,
+                    text=excerpt,
+                    score=float(getattr(result, "score", 0.0) or 0.0),
+                    citation=f"memory:{memory_id}",
+                    estimated_tokens=estimated,
+                    original_estimated_tokens=_estimated_tokens(source_text),
+                    truncated=excerpt != source_text,
+                    provenance={
+                        "namespace": str(
+                            getattr(result, "namespace", "") or ""
+                        ),
+                        "tags": list(getattr(result, "tags", ()) or ()),
+                        "source_memory_ids": list(
+                            metadata.get("source_memory_ids") or ()
+                        ),
+                        "trajectory_id": metadata.get("trajectory_id"),
+                    },
                 )
             )
             remaining_budget -= estimated
@@ -195,46 +189,13 @@ class MemoryContextCompiler:
             original_estimated_tokens=original_tokens,
             items=tuple(items),
             omitted_count=max(0, len(ranked) - len(items)),
-            policy=self._policy_metadata(),
+            policy={
+                **asdict(self.policy),
+                "query_aware": True,
+                "rank_weighting": "2:1",
+                "source_text_preserved": True,
+            },
         )
-
-    def _policy_metadata(self) -> dict[str, Any]:
-        return {
-            **asdict(self.policy),
-            "query_aware": True,
-            "rank_weighting": "2:1",
-            "source_text_preserved": True,
-            "preserve_when_within_budget": True,
-        }
-
-
-def _compiled_item(
-    result: Any,
-    *,
-    source_text: str,
-    excerpt: str,
-    rank: int,
-) -> CompiledMemoryContextItem:
-    memory_id = int(getattr(result, "id", 0) or 0)
-    metadata = dict(getattr(result, "metadata", {}) or {})
-    return CompiledMemoryContextItem(
-        memory_id=memory_id,
-        rank=rank,
-        text=excerpt,
-        score=float(getattr(result, "score", 0.0) or 0.0),
-        citation=f"memory:{memory_id}",
-        estimated_tokens=_estimated_tokens(excerpt),
-        original_estimated_tokens=_estimated_tokens(source_text),
-        truncated=excerpt != source_text,
-        provenance={
-            "namespace": str(getattr(result, "namespace", "") or ""),
-            "tags": list(getattr(result, "tags", ()) or ()),
-            "source_memory_ids": list(
-                metadata.get("source_memory_ids") or ()
-            ),
-            "trajectory_id": metadata.get("trajectory_id"),
-        },
-    )
 
 
 def _estimated_tokens(text: str) -> int:
