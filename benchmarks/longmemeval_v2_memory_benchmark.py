@@ -50,6 +50,7 @@ DATASET_REPO = "xiaowu0162/longmemeval-v2"
 DATASET_REVISION = "f152293e235517d504809563c833d7190b8c713b"
 OFFICIAL_REPO = "https://github.com/xiaowu0162/longmemeval-v2"
 OFFICIAL_REPO_REVISION = "6f020ac2fc3275e46c706d3406e02c3ed79b7be2"
+MEMORY_OS_CONTEXT_TOKEN_BUDGET = 1_150
 BOXED_RE = re.compile(r"\\boxed\{([^}]*)\}", re.IGNORECASE | re.DOTALL)
 LLM_EVALUATORS = {"llm_abstention_checker", "llm_gotchas_checker"}
 ANSWER_SCHEMA = {
@@ -821,10 +822,11 @@ def _query_memory(
     maintenance_ms = 0.0
     original_context_tokens = 0
     context_passthrough_queries = 0
+    hybrid_context_queries = 0
     context_compiler = (
         MemoryContextCompiler(
             MemoryContextPolicy(
-                default_token_budget=1_200,
+                default_token_budget=MEMORY_OS_CONTEXT_TOKEN_BUDGET,
                 max_items=top_k,
                 max_item_tokens=800,
                 min_item_tokens=48,
@@ -847,6 +849,7 @@ def _query_memory(
             dereference_trajectory_evidence
             or expand_trajectory_evidence
             or enrich_trajectory_evidence
+            or route_trajectory_experience
         )
         else None
     )
@@ -854,6 +857,9 @@ def _query_memory(
         namespace = f"longmemeval-v2-small:{question.domain}"
         retrieval_query = _retrieval_query(question.question)
         query_intent = _experience_query_intent(question.question)
+        precompiled_experience = (
+            route_trajectory_experience and query_intent == "procedure"
+        )
         query_tags = tags
         if route_trajectory_experience:
             query_tags = (
@@ -953,16 +959,31 @@ def _query_memory(
         else:
             snippets = snippets[:top_k]
             results = results[:top_k]
+        if (
+            context_compiler is not None
+            and not precompiled_experience
+            and trajectory_view is not None
+            and results
+        ):
+            trajectory_summary = trajectory_view.summary_text(results[0])
+            if trajectory_summary:
+                snippets = [
+                    _query_snippet(
+                        trajectory_summary,
+                        retrieval_query,
+                        max_chars=1_600,
+                    ),
+                    *snippets,
+                ]
+                results = [results[0], *results]
+                hybrid_context_queries += 1
         original_context_tokens += sum(_token_estimate(value) for value in snippets)
-        precompiled_experience = (
-            route_trajectory_experience and query_intent == "procedure"
-        )
         if context_compiler is not None and not precompiled_experience:
             compiled = context_compiler.compile(
                 retrieval_query,
                 results,
                 texts=snippets,
-                token_budget=1_200,
+                token_budget=MEMORY_OS_CONTEXT_TOKEN_BUDGET,
                 max_items=top_k,
             )
             snippets = [item.text for item in compiled.items]
@@ -1045,11 +1066,12 @@ def _query_memory(
             {
                 "enabled": True,
                 "schema": "wavemind.memory_context.v1",
-                "token_budget_per_query": 1_200,
+                "token_budget_per_query": MEMORY_OS_CONTEXT_TOKEN_BUDGET,
                 "max_items": top_k,
                 "max_item_tokens": 800,
                 "query_aware": True,
                 "precompiled_experience_passthrough": True,
+                "hybrid_summary_plus_raw": True,
             }
             if context_compiler is not None
             else {"enabled": False}
@@ -1090,6 +1112,7 @@ def _query_memory(
         "original_context_tokens": original_context_tokens,
         "context_tokens": compiled_context_tokens,
         "context_passthrough_queries": context_passthrough_queries,
+        "hybrid_context_queries": hybrid_context_queries,
         "context_token_relative_reduction": (
             max(
                 0.0,
@@ -1811,11 +1834,12 @@ def run_benchmark(
                     "answer_labels_used": False,
                     "context_compiler": {
                         "schema": "wavemind.memory_context.v1",
-                        "token_budget_per_query": 1_200,
+                        "token_budget_per_query": MEMORY_OS_CONTEXT_TOKEN_BUDGET,
                         "max_items": top_k,
                         "max_item_tokens": 800,
                         "query_aware": True,
                         "precompiled_experience_passthrough": True,
+                        "hybrid_summary_plus_raw": True,
                     },
                 },
             },

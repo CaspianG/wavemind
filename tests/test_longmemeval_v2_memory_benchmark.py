@@ -441,11 +441,12 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
         "answer_labels_used": False,
         "context_compiler": {
             "schema": "wavemind.memory_context.v1",
-            "token_budget_per_query": 1_200,
+                "token_budget_per_query": 1_150,
             "max_items": 3,
             "max_item_tokens": 800,
             "query_aware": True,
             "precompiled_experience_passthrough": True,
+            "hybrid_summary_plus_raw": True,
         },
     }
     assert (
@@ -464,13 +465,15 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
     assert memory_os["context_compiler"] == {
         "enabled": True,
         "schema": "wavemind.memory_context.v1",
-        "token_budget_per_query": 1_200,
+        "token_budget_per_query": 1_150,
         "max_items": 3,
         "max_item_tokens": 800,
         "query_aware": True,
         "precompiled_experience_passthrough": True,
+        "hybrid_summary_plus_raw": True,
     }
     assert memory_os["context_passthrough_queries"] == 1
+    assert memory_os["hybrid_context_queries"] == 1
     assert memory_os["context_tokens"] <= memory_os["original_context_tokens"]
     assert 0.0 <= memory_os["context_token_relative_reduction"] <= 1.0
     assert memory_os["trajectory_consolidation"]["created"] > 0
@@ -501,9 +504,9 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
         ),
     }
     assert memory_os["task_success_rate"] == 1.0
-    assert memory_os["reused_answers"] == 1
-    assert memory_os["generated_answers"] == 1
-    assert reader.answer_calls == 3
+    assert memory_os["reused_answers"] == 0
+    assert memory_os["generated_answers"] == 2
+    assert reader.answer_calls == 4
     assert len(rows) == 4
     assert checkpoint_rows == rows
     assert all(row["context_sha256"] for row in rows)
