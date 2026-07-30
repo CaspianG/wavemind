@@ -441,12 +441,13 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
         "answer_labels_used": False,
         "context_compiler": {
             "schema": "wavemind.memory_context.v1",
-                "token_budget_per_query": 1_150,
+            "token_budget_per_query": 1_150,
             "max_items": 3,
             "max_item_tokens": 800,
             "query_aware": True,
             "precompiled_experience_passthrough": True,
-            "hybrid_summary_plus_raw": True,
+            "state_exact_source_preserved": True,
+            "derived_summary_for_state_queries": False,
         },
     }
     assert (
@@ -470,10 +471,10 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
         "max_item_tokens": 800,
         "query_aware": True,
         "precompiled_experience_passthrough": True,
-        "hybrid_summary_plus_raw": True,
+        "state_exact_source_preserved": True,
+        "derived_summary_for_state_queries": False,
     }
     assert memory_os["context_passthrough_queries"] == 1
-    assert memory_os["hybrid_context_queries"] == 1
     assert memory_os["context_tokens"] <= memory_os["original_context_tokens"]
     assert 0.0 <= memory_os["context_token_relative_reduction"] <= 1.0
     assert memory_os["trajectory_consolidation"]["created"] > 0

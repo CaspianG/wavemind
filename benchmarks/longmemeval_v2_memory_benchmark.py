@@ -822,7 +822,6 @@ def _query_memory(
     maintenance_ms = 0.0
     original_context_tokens = 0
     context_passthrough_queries = 0
-    hybrid_context_queries = 0
     context_compiler = (
         MemoryContextCompiler(
             MemoryContextPolicy(
@@ -959,24 +958,6 @@ def _query_memory(
         else:
             snippets = snippets[:top_k]
             results = results[:top_k]
-        if (
-            context_compiler is not None
-            and not precompiled_experience
-            and trajectory_view is not None
-            and results
-        ):
-            trajectory_summary = trajectory_view.summary_text(results[0])
-            if trajectory_summary:
-                snippets = [
-                    _query_snippet(
-                        trajectory_summary,
-                        retrieval_query,
-                        max_chars=1_600,
-                    ),
-                    *snippets,
-                ]
-                results = [results[0], *results]
-                hybrid_context_queries += 1
         original_context_tokens += sum(_token_estimate(value) for value in snippets)
         if context_compiler is not None and not precompiled_experience:
             compiled = context_compiler.compile(
@@ -1071,7 +1052,8 @@ def _query_memory(
                 "max_item_tokens": 800,
                 "query_aware": True,
                 "precompiled_experience_passthrough": True,
-                "hybrid_summary_plus_raw": True,
+                "state_exact_source_preserved": True,
+                "derived_summary_for_state_queries": False,
             }
             if context_compiler is not None
             else {"enabled": False}
@@ -1112,7 +1094,6 @@ def _query_memory(
         "original_context_tokens": original_context_tokens,
         "context_tokens": compiled_context_tokens,
         "context_passthrough_queries": context_passthrough_queries,
-        "hybrid_context_queries": hybrid_context_queries,
         "context_token_relative_reduction": (
             max(
                 0.0,
@@ -1839,7 +1820,8 @@ def run_benchmark(
                         "max_item_tokens": 800,
                         "query_aware": True,
                         "precompiled_experience_passthrough": True,
-                        "hybrid_summary_plus_raw": True,
+                        "state_exact_source_preserved": True,
+                        "derived_summary_for_state_queries": False,
                     },
                 },
             },
