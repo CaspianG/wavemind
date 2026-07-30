@@ -7,12 +7,6 @@ from typing import Any, Iterable, Sequence
 
 
 _TOKEN_RE = re.compile(r"[\w-]+", re.UNICODE)
-_STRUCTURED_LABELS = (
-    "action:",
-    "new observed labels:",
-    "observed labels:",
-    "trajectory outcome:",
-)
 
 
 @dataclass(frozen=True)
@@ -198,7 +192,6 @@ class MemoryContextCompiler:
             policy={
                 **asdict(self.policy),
                 "query_aware": True,
-                "structured_salience": True,
                 "rank_weighting": "2:1",
                 "source_text_preserved": True,
             },
@@ -246,11 +239,7 @@ def _query_aware_excerpt(
         folded = value.casefold()
         matches = sum(term in folded for term in query_terms)
         density = matches / math.sqrt(max(1, len(_TOKEN_RE.findall(value))))
-        structured_salience = sum(
-            1.0 for label in _STRUCTURED_LABELS if label in folded
-        )
-        combined = matches + density + structured_salience * 0.35
-        return (-combined, -matches, index)
+        return (-density, -matches, index)
 
     ranked = sorted(enumerate(chunks), key=relevance)
     selected: set[int] = set()

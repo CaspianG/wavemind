@@ -75,26 +75,6 @@ def test_context_compiler_is_deterministic_and_keeps_short_text():
     assert first.token_saving == 0.0
 
 
-def test_context_compiler_preserves_structured_agent_evidence():
-    text = "\n".join(
-        [
-            "Trajectory goal: follow the company protocol.",
-            *[f"Unrelated note {index}: routine work." for index in range(80)],
-            "Step 19: Action: open the correct request list.",
-            "New observed labels: Open Records | Items",
-        ]
-    )
-    packet = MemoryContextCompiler().compile(
-        "What is the company protocol?",
-        [Result(id=1, text=text, score=1.0)],
-        token_budget=120,
-    )
-
-    assert packet.estimated_tokens <= 120
-    assert "Open Records | Items" in packet.items[0].text
-    assert packet.policy["structured_salience"] is True
-
-
 def test_context_compiler_validates_inputs():
     with pytest.raises(ValueError, match="at least 32"):
         MemoryContextPolicy(default_token_budget=31)

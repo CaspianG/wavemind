@@ -1042,7 +1042,6 @@ def _query_memory(
                 "max_items": top_k,
                 "max_item_tokens": 800,
                 "query_aware": True,
-                "structured_salience": True,
             }
             if context_compiler is not None
             else {"enabled": False}
@@ -1807,7 +1806,6 @@ def run_benchmark(
                         "max_items": top_k,
                         "max_item_tokens": 800,
                         "query_aware": True,
-                        "structured_salience": True,
                     },
                 },
             },
