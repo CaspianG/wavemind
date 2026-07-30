@@ -237,6 +237,73 @@ def test_fetch_latest_completed_bars_rejects_stale_exchange_data(monkeypatch):
         )
 
 
+def test_parse_symbol_migration_and_merge_prefers_current_symbol(monkeypatch):
+    from benchmarks import crypto_current_forecast as forecast
+    from benchmarks.crypto_ohlcv import OHLCVBar
+
+    migration = forecast.parse_symbol_migration(
+        "GRAM/USDT:USDT=binance|TON/USDT:USDT|2026-06-17"
+    )
+    assert migration.target_symbol == "GRAM/USDT:USDT"
+    assert migration.predecessor_exchange == "binance"
+    assert migration.predecessor_symbol == "TON/USDT:USDT"
+    assert migration.current_start_utc.isoformat() == "2026-06-17T00:00:00+00:00"
+
+    now = int(datetime.now(timezone.utc).timestamp())
+    base = now - 7 * 3600
+    predecessor = [
+        OHLCVBar(
+            timestamp=base + index * 3600,
+            open=100.0 + index,
+            high=101.0 + index,
+            low=99.0 + index,
+            close=100.0 + index,
+            volume=10.0,
+        )
+        for index in range(6)
+    ]
+    predecessor.append(
+        OHLCVBar(
+            timestamp=base + 6 * 3600,
+            open=106.0,
+            high=106.0,
+            low=106.0,
+            close=106.0,
+            volume=0.0,
+        )
+    )
+    current = [
+        OHLCVBar(
+            timestamp=base + index * 3600,
+            open=200.0 + index,
+            high=201.0 + index,
+            low=199.0 + index,
+            close=200.0 + index,
+            volume=20.0,
+        )
+        for index in range(4, 7)
+    ]
+
+    def fake_fetch_ohlcv_ccxt(**kwargs):
+        if kwargs["symbol"] == "TON/USDT:USDT":
+            return predecessor
+        return current
+
+    monkeypatch.setattr(forecast, "fetch_ohlcv_ccxt", fake_fetch_ohlcv_ccxt)
+    rows = forecast.fetch_latest_completed_bars_with_migration(
+        exchange_id="okx",
+        symbol="GRAM/USDT:USDT",
+        timeframe="1h",
+        limit=6,
+        migration=migration,
+    )
+
+    assert len(rows) == 6
+    assert rows[-1].close == 206.0
+    assert rows[-2].close == 205.0
+    assert all(row.volume > 0.0 for row in rows)
+
+
 def test_market_snapshot_hash_changes_with_input_candle():
     from benchmarks.crypto_current_forecast import market_snapshot_sha256
     from benchmarks.crypto_ohlcv import OHLCVBar

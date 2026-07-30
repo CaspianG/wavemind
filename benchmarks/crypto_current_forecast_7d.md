@@ -7,9 +7,10 @@ The market forecast is always up/down with a target price because a future close
 
 | symbol | horizon | data end UTC | market forecast | expected move | target price | trade validation | last close | evidence strength | validation reason | policy signal | policy candidate | policy target | calibrated probability | probability kind |
 |---|---:|---|---|---:|---:|---|---:|---:|---|---|---|---:|---:|---|
-| BTC/USDT | 7d | 2026-07-04T00:00:00+00:00 | up | 0.31% | 63334 | no_trade | 63140.6 | 0.000 | unsupported_timeframe:1d | flat | flat | 63140.6 |  | none |
-| ETH/USDT | 7d | 2026-07-04T00:00:00+00:00 | up | 1.36% | 1804.83 | no_trade | 1780.64 | 0.000 | unsupported_timeframe:1d | flat | flat | 1780.64 |  | none |
-| SOL/USDT | 7d | 2026-07-04T00:00:00+00:00 | down | -1.55% | 80.5292 | no_trade | 81.8 | 0.000 | unsupported_timeframe:1d | flat | flat | 81.8 |  | none |
+| BTC/USDT:USDT | 7d | 2026-07-30T00:00:00+00:00 | up | 0.75% | 64435 | no_trade | 63955.1 | 0.000 | unsupported_timeframe:1d | flat | flat | 63955.1 |  | none |
+| ETH/USDT:USDT | 7d | 2026-07-30T00:00:00+00:00 | down | -0.81% | 1894.3 | no_trade | 1909.77 | 0.000 | unsupported_timeframe:1d | flat | flat | 1909.77 |  | none |
+| SOL/USDT:USDT | 7d | 2026-07-30T00:00:00+00:00 | down | -1.02% | 72.8821 | no_trade | 73.63 | 0.000 | unsupported_timeframe:1d | flat | flat | 73.63 |  | none |
+| GRAM/USDT:USDT | 7d | 2026-07-30T00:00:00+00:00 | up | 0.18% | 1.40554 | no_trade | 1.403 | 0.000 | unsupported_timeframe:1d | flat | flat | 1.403 |  | none |
 
 Validation profile: historical active direction accuracy 0.586, signal rate 0.018, positive market slices 7/27.
 

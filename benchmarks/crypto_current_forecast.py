@@ -94,6 +94,39 @@ class DirectionalForecast:
     note: str
 
 
+@dataclass(frozen=True)
+class SymbolMigration:
+    target_symbol: str
+    predecessor_exchange: str
+    predecessor_symbol: str
+    current_start_utc: datetime
+
+
+def parse_symbol_migration(value: str) -> SymbolMigration:
+    try:
+        target_symbol, source = value.split("=", maxsplit=1)
+        predecessor_exchange, predecessor_symbol, current_start = source.split("|", maxsplit=2)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(
+            "migration must be TARGET=EXCHANGE|PREDECESSOR|CURRENT_START_UTC"
+        ) from exc
+    fields = (target_symbol, predecessor_exchange, predecessor_symbol, current_start)
+    if any(not field.strip() for field in fields):
+        raise argparse.ArgumentTypeError("migration fields must not be empty")
+    try:
+        start = datetime.fromisoformat(current_start.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("migration start must be an ISO-8601 datetime or date") from exc
+    if start.tzinfo is None:
+        start = start.replace(tzinfo=timezone.utc)
+    return SymbolMigration(
+        target_symbol=target_symbol.strip(),
+        predecessor_exchange=predecessor_exchange.strip(),
+        predecessor_symbol=predecessor_symbol.strip(),
+        current_start_utc=start.astimezone(timezone.utc),
+    )
+
+
 def completed_bars(rows: Iterable[Iterable[Any]], *, timeframe: str, now_ts: int | None = None) -> list[OHLCVBar]:
     now = int(now_ts if now_ts is not None else datetime.now(timezone.utc).timestamp())
     seconds = timeframe_to_seconds(timeframe)
@@ -138,6 +171,64 @@ def fetch_latest_completed_bars(
     if data_age_seconds > seconds * int(max_data_age_bars):
         raise RuntimeError(
             f"Stale market data for {symbol} {timeframe}: latest completed candle is "
+            f"{data_age_seconds} seconds old"
+        )
+    return selected
+
+
+def fetch_latest_completed_bars_with_migration(
+    *,
+    exchange_id: str,
+    symbol: str,
+    timeframe: str,
+    limit: int,
+    migration: SymbolMigration,
+    max_data_age_bars: int = 2,
+) -> list[OHLCVBar]:
+    if migration.target_symbol != symbol:
+        raise ValueError(
+            f"Migration target {migration.target_symbol!r} does not match requested symbol {symbol!r}"
+        )
+    seconds = timeframe_to_seconds(timeframe)
+    now = int(datetime.now(timezone.utc).timestamp())
+    history_since = now - seconds * (limit + 160)
+    current_start = int(migration.current_start_utc.timestamp())
+    predecessor = fetch_ohlcv_ccxt(
+        exchange_id=migration.predecessor_exchange,
+        symbol=migration.predecessor_symbol,
+        timeframe=timeframe,
+        since=history_since * 1000,
+        limit=limit + 240,
+    )
+    current = fetch_ohlcv_ccxt(
+        exchange_id=exchange_id,
+        symbol=symbol,
+        timeframe=timeframe,
+        since=max(history_since, current_start) * 1000,
+        limit=limit + 240,
+    )
+    merged = {
+        bar.timestamp: bar
+        for bar in predecessor
+        if bar.volume > 0.0 and bar.timestamp + seconds <= now
+    }
+    merged.update(
+        {
+            bar.timestamp: bar
+            for bar in current
+            if bar.timestamp + seconds <= now
+        }
+    )
+    bars = [merged[timestamp] for timestamp in sorted(merged)]
+    if len(bars) < limit:
+        raise ValueError(
+            f"Only {len(bars)} completed migrated bars fetched for {symbol} {timeframe}; need {limit}"
+        )
+    selected = bars[-limit:]
+    data_age_seconds = now - (selected[-1].timestamp + seconds)
+    if data_age_seconds > seconds * int(max_data_age_bars):
+        raise RuntimeError(
+            f"Stale migrated market data for {symbol} {timeframe}: latest completed candle is "
             f"{data_age_seconds} seconds old"
         )
     return selected
@@ -768,6 +859,17 @@ def main() -> int:
     parser.add_argument("--output", type=Path, default=Path("benchmarks/crypto_current_forecast.json"))
     parser.add_argument("--report", type=Path, default=Path("benchmarks/crypto_current_forecast.md"))
     parser.add_argument(
+        "--migration",
+        action="append",
+        type=parse_symbol_migration,
+        default=[],
+        metavar="TARGET=EXCHANGE|PREDECESSOR|CURRENT_START_UTC",
+        help=(
+            "Explicit same-asset ticker migration. Historical predecessor candles are merged "
+            "with the current symbol and current-symbol candles win overlap."
+        ),
+    )
+    parser.add_argument(
         "--ledger",
         type=Path,
         default=None,
@@ -778,14 +880,27 @@ def main() -> int:
     preset = HORIZON_PRESETS[args.horizon]
     validation = validation_by_engine(args.profile_json, engine_name="WaveMind timeframe policy")
     calibration_profile = load_calibration_profile(args.calibration_json)
+    migrations = {migration.target_symbol: migration for migration in args.migration}
+    if len(migrations) != len(args.migration):
+        parser.error("each migration target may be declared only once")
     results = []
     for symbol in args.symbols:
-        bars = fetch_latest_completed_bars(
-            exchange_id=args.exchange,
-            symbol=symbol,
-            timeframe=str(preset["timeframe"]),
-            limit=args.bars,
-        )
+        migration = migrations.get(symbol)
+        if migration is None:
+            bars = fetch_latest_completed_bars(
+                exchange_id=args.exchange,
+                symbol=symbol,
+                timeframe=str(preset["timeframe"]),
+                limit=args.bars,
+            )
+        else:
+            bars = fetch_latest_completed_bars_with_migration(
+                exchange_id=args.exchange,
+                symbol=symbol,
+                timeframe=str(preset["timeframe"]),
+                limit=args.bars,
+                migration=migration,
+            )
         results.append(
             forecast_from_bars(
                 bars,
@@ -807,6 +922,16 @@ def main() -> int:
     payload = {
         "generated_utc": datetime.now(timezone.utc).isoformat(),
         "closed_candles_only": True,
+        "symbol_migrations": [
+            {
+                "target_symbol": migration.target_symbol,
+                "predecessor_exchange": migration.predecessor_exchange,
+                "predecessor_symbol": migration.predecessor_symbol,
+                "current_start_utc": migration.current_start_utc.isoformat(),
+                "overlap_policy": "current symbol wins; zero-volume predecessor rows excluded",
+            }
+            for migration in args.migration
+        ],
         "results": [forecast_to_dict(result) for result in results],
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)

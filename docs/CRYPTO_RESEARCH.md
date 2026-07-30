@@ -812,6 +812,22 @@ python benchmarks/crypto_current_forecast.py \
   --report benchmarks/crypto_current_forecast_24h.md
 ```
 
+For an explicit same-asset ticker migration, keep the current exchange and
+declare the predecessor. This is useful for the June 2026 TON-to-GRAM rename:
+
+```sh
+python benchmarks/crypto_current_forecast.py \
+  --exchange okx \
+  --symbols BTC/USDT:USDT ETH/USDT:USDT SOL/USDT:USDT GRAM/USDT:USDT \
+  --migration "GRAM/USDT:USDT=binance|TON/USDT:USDT|2026-06-17" \
+  --horizon 24h \
+  --bars 720
+```
+
+The merge is explicit and auditable: zero-volume predecessor candles are
+excluded, current-symbol candles win overlap, and provenance is written to the
+JSON result.
+
 What it does:
 
 - fetches recent OHLCV with CCXT pagination;
@@ -831,40 +847,45 @@ The forecast has two layers:
   policy does not find a validated trade-quality signal.
 
 Checked-in OKX 24h snapshot generated from completed 4h candles through
-`2026-07-24T20:00:00+00:00`:
+`2026-07-30T08:00:00+00:00`:
 
 | symbol | data end UTC | market forecast | expected move | target price | trade validation | last close | evidence strength | validation reason |
 |---|---|---|---:|---:|---|---:|---:|---|
-| BTC/USDT | 2026-07-24T20:00:00+00:00 | down | -0.20% | 64064.6 | no_trade | 64196.2 | 0.958 | adaptive_field_opposition |
-| ETH/USDT | 2026-07-24T20:00:00+00:00 | down | -0.13% | 1860.35 | no_trade | 1862.71 | 0.544 | low_expected_edge |
-| SOL/USDT | 2026-07-24T20:00:00+00:00 | down | -0.20% | 73.7736 | no_trade | 73.92 | 0.456 | ta_conflict |
-| XRP/USDT | 2026-07-24T20:00:00+00:00 | down | -0.03% | 1.08828 | no_trade | 1.0886 | 0.736 | low_expected_edge |
-| HYPE/USDT | 2026-07-24T20:00:00+00:00 | down | -0.54% | 57.8254 | no_trade | 58.14 | 0.886 | adaptive_trend_mismatch |
+| BTC/USDT perpetual | 2026-07-30T08:00:00+00:00 | down | -0.39% | 63731.3 | no_trade | 63980.4 | 0.929 | adaptive_trend_mismatch |
+| ETH/USDT perpetual | 2026-07-30T08:00:00+00:00 | down | -0.49% | 1893.12 | no_trade | 1902.38 | 0.836 | adaptive_trend_mismatch |
+| SOL/USDT perpetual | 2026-07-30T08:00:00+00:00 | down | -0.15% | 73.268 | no_trade | 73.38 | 0.430 | local_regime_negative |
+| GRAM/USDT perpetual | 2026-07-30T08:00:00+00:00 | down | -0.68% | 1.40738 | no_trade | 1.417 | 0.748 | flat_candidate |
 
 The 24h snapshot has a forced directional estimate, but it is still an
 `no_trade` result at the trade-signal layer. The current market did not produce a
 validated trade-quality signal.
 
-The 7d runner currently produces forced directional estimates but returns
-`no_trade` on BTC/ETH/SOL/XRP/HYPE with `unsupported_timeframe:1d`. That is intentional.
+The corresponding 7d forced estimates are BTC `up 0.75%` to `64435`, ETH
+`down 0.81%` to `1894.3`, SOL `down 1.02%` to `72.8821`, and GRAM `up 0.18%`
+to `1.40554`. All four return `no_trade` with `unsupported_timeframe:1d`.
+That is intentional.
 The policy refuses to produce trade-quality daily/weekly signals until a
 separate 1d profile passes walk-forward validation.
 
 ### Live ledger result
 
-The first settlement is negative evidence. All 15 forecasts recorded on
-2026-07-17 have matured:
+The live ledger remains negative evidence:
 
-- market direction accuracy: `0.267`;
-- 95% Wilson lower bound: `0.109`;
-- target touch rate: `0.533`;
-- mean absolute target return error: `216.1 bps`;
+- forecasts: `45`;
+- evaluated: `26`;
+- pending: `19`;
+- market direction accuracy: `0.231`;
+- 95% Wilson lower bound: `0.110`;
+- target touch rate: `0.654`;
+- mean absolute target return error: `175.8 bps`;
 - strict 70% live admission: rejected.
 
-The ledger now contains 25 rows: 15 evaluated legacy rows and 10 pending
-hash-chained rows. The first new record anchors the legacy prefix, so later
-modification of any earlier prediction breaks verification. This live result
-overrules any implication that the current model is deployment-ready.
+The ledger integrity check passes for all 45 rows, including the 15-row legacy
+prefix and 30 hash-chained records. This live result overrules any implication
+that the general forced-forecast model is deployment-ready. The independent
+`0.731` dynamic-transfer result applies only to its rare post-capitulation
+event class; none of BTC, ETH, SOL, or GRAM met that event gate in this
+snapshot.
 
 The metrics are retrieval/research metrics, not a live trading claim:
 
