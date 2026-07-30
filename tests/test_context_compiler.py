@@ -75,6 +75,26 @@ def test_context_compiler_is_deterministic_and_keeps_short_text():
     assert first.token_saving == 0.0
 
 
+def test_context_compiler_does_not_truncate_items_when_total_fits():
+    first_text = " ".join(f"primary-{index}" for index in range(88))
+    second_text = " ".join(f"secondary-{index}" for index in range(8))
+    results = [
+        Result(id=1, text=first_text, score=1.0),
+        Result(id=2, text=second_text, score=0.9),
+    ]
+
+    packet = MemoryContextCompiler().compile(
+        "primary",
+        results,
+        token_budget=120,
+    )
+
+    assert packet.estimated_tokens == 120
+    assert [item.text for item in packet.items] == [first_text, second_text]
+    assert all(item.truncated is False for item in packet.items)
+    assert packet.policy["preserve_when_within_budget"] is True
+
+
 def test_context_compiler_validates_inputs():
     with pytest.raises(ValueError, match="at least 32"):
         MemoryContextPolicy(default_token_budget=31)
