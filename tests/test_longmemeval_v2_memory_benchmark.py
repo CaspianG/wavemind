@@ -445,6 +445,7 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
             "max_items": 3,
             "max_item_tokens": 800,
             "query_aware": True,
+            "structured_salience": True,
         },
     }
     assert (
@@ -467,6 +468,7 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
         "max_items": 3,
         "max_item_tokens": 800,
         "query_aware": True,
+        "structured_salience": True,
     }
     assert memory_os["context_tokens"] <= memory_os["original_context_tokens"]
     assert 0.0 <= memory_os["context_token_relative_reduction"] <= 1.0
