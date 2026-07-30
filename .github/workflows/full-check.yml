@@ -465,6 +465,32 @@ jobs:
         run: |
           python -m pip install -e .
           python -m wavemind init /tmp/wavemind-docker-starter --template docker
+          python -m pip wheel . --no-deps --wheel-dir /tmp/wavemind-docker-starter
+          python - <<'PY'
+          from pathlib import Path
+
+          import wavemind
+
+          root = Path("/tmp/wavemind-docker-starter")
+          wheel = next(root.glob("wavemind-*.whl"))
+          dockerfile = root / "Dockerfile"
+          source = dockerfile.read_text(encoding="utf-8")
+          expected = (
+              "RUN python -m pip install --no-cache-dir "
+              f"wavemind=={wavemind.__version__}\n"
+          )
+          replacement = (
+              f"COPY {wheel.name} /tmp/{wheel.name}\n"
+              f"RUN python -m pip install --no-cache-dir /tmp/{wheel.name} "
+              f"&& rm /tmp/{wheel.name}\n"
+          )
+          if expected not in source:
+              raise SystemExit("generated Dockerfile does not pin the current version")
+          dockerfile.write_text(
+              source.replace(expected, replacement),
+              encoding="utf-8",
+          )
+          PY
           cd /tmp/wavemind-docker-starter
           trap 'docker compose down --volumes --remove-orphans' EXIT
           WAVEMIND_PORT=18081 docker compose up -d --build --wait
