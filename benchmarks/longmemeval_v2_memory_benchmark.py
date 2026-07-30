@@ -820,6 +820,7 @@ def _query_memory(
     maintenance_latencies: list[float] = []
     maintenance_ms = 0.0
     original_context_tokens = 0
+    context_passthrough_queries = 0
     context_compiler = (
         MemoryContextCompiler(
             MemoryContextPolicy(
@@ -852,11 +853,12 @@ def _query_memory(
     for question in dataset.questions:
         namespace = f"longmemeval-v2-small:{question.domain}"
         retrieval_query = _retrieval_query(question.question)
+        query_intent = _experience_query_intent(question.question)
         query_tags = tags
         if route_trajectory_experience:
             query_tags = (
                 ("trajectory-experience",)
-                if _experience_query_intent(question.question) == "procedure"
+                if query_intent == "procedure"
                 else ("trajectory-state",)
             )
         metadata_filters = {
@@ -952,7 +954,10 @@ def _query_memory(
             snippets = snippets[:top_k]
             results = results[:top_k]
         original_context_tokens += sum(_token_estimate(value) for value in snippets)
-        if context_compiler is not None:
+        precompiled_experience = (
+            route_trajectory_experience and query_intent == "procedure"
+        )
+        if context_compiler is not None and not precompiled_experience:
             compiled = context_compiler.compile(
                 retrieval_query,
                 results,
@@ -961,6 +966,8 @@ def _query_memory(
                 max_items=top_k,
             )
             snippets = [item.text for item in compiled.items]
+        elif context_compiler is not None:
+            context_passthrough_queries += 1
         retrieval_ms = (time.perf_counter() - started) * 1_000.0
         latencies.append(retrieval_ms)
         contexts[question.id] = snippets
@@ -1042,6 +1049,7 @@ def _query_memory(
                 "max_items": top_k,
                 "max_item_tokens": 800,
                 "query_aware": True,
+                "precompiled_experience_passthrough": True,
             }
             if context_compiler is not None
             else {"enabled": False}
@@ -1081,6 +1089,7 @@ def _query_memory(
         "cache_misses": stats.misses,
         "original_context_tokens": original_context_tokens,
         "context_tokens": compiled_context_tokens,
+        "context_passthrough_queries": context_passthrough_queries,
         "context_token_relative_reduction": (
             max(
                 0.0,
@@ -1806,6 +1815,7 @@ def run_benchmark(
                         "max_items": top_k,
                         "max_item_tokens": 800,
                         "query_aware": True,
+                        "precompiled_experience_passthrough": True,
                     },
                 },
             },

@@ -445,6 +445,7 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
             "max_items": 3,
             "max_item_tokens": 800,
             "query_aware": True,
+            "precompiled_experience_passthrough": True,
         },
     }
     assert (
@@ -467,7 +468,9 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
         "max_items": 3,
         "max_item_tokens": 800,
         "query_aware": True,
+        "precompiled_experience_passthrough": True,
     }
+    assert memory_os["context_passthrough_queries"] == 1
     assert memory_os["context_tokens"] <= memory_os["original_context_tokens"]
     assert 0.0 <= memory_os["context_token_relative_reduction"] <= 1.0
     assert memory_os["trajectory_consolidation"]["created"] > 0
