@@ -1,0 +1,275 @@
+{
+  "schema": "wavemind.longmemeval_v2_small.v1",
+  "generated_at": "2026-07-30T09:33:18Z",
+  "source_sha": "ddae085b8be6fc8c52fcad7c5504adef3850dc2f",
+  "status": "pass",
+  "scenario": {
+    "name": "longmemeval_v2_small",
+    "dataset_repo": "xiaowu0162/longmemeval-v2",
+    "dataset_revision": "f152293e235517d504809563c833d7190b8c713b",
+    "official_repo": "https://github.com/xiaowu0162/longmemeval-v2",
+    "official_repo_revision": "6f020ac2fc3275e46c706d3406e02c3ed79b7be2",
+    "tier": "small",
+    "queries": 32,
+    "question_selection": "stratified",
+    "question_sample_size": 32,
+    "question_sample_seed": 20260728,
+    "memories": 5095,
+    "trajectories": 200,
+    "top_k": 5,
+    "image_questions": 2,
+    "image_questions_included": 2,
+    "question_images_supported": true,
+    "official_question_haystacks": true,
+    "isolated_ab_stores": true,
+    "full_small_run": false
+  },
+  "dataset_checksums": {
+    "questions_sha256": "0a3ae5ebea938c24d7800e1e0b0828e08ae1646f939a53853b2b8cdc08e292b7",
+    "trajectories_sha256": "363cec9a8e87aa8d9101ce4e600aadbf7031d674056ebe4f969e8424abc5f3c6",
+    "small_haystack_sha256": "9b5301defb23a088a5f06e45ff8d5f35e569d78305a66d492046a9fff9b46593"
+  },
+  "embedding": {
+    "kind": "hash-token",
+    "class": "HashingTextEncoder",
+    "vector_dim": 384,
+    "char_ngram_weight": 0.0
+  },
+  "embedding_cache": {
+    "enabled": false
+  },
+  "semantic_reranker": {
+    "enabled": false,
+    "embedding": null,
+    "candidate_window": 0,
+    "rrf_weight": 0.0,
+    "cache": {
+      "enabled": false
+    }
+  },
+  "retrieval": {
+    "vector_weight": 0.6,
+    "lexical_weight": 1.0,
+    "priority_weight": 0.16,
+    "field_weight": 0.06,
+    "max_lexical_token_frequency": 512,
+    "lexical_idf_normalization": false,
+    "candidate_top_k": 50,
+    "diversity_metadata_key": "trajectory_id",
+    "max_results_per_diversity_group": 2,
+    "query_instruction_normalization": true,
+    "snippet_max_chars": 2800,
+    "snippet_neighbor_lines": 2,
+    "memory_os_view": {
+      "kind": "ordered_trajectory_experience",
+      "input_tag": "trajectory-state",
+      "output_tag": "trajectory-experience",
+      "max_summary_chars": 4800,
+      "source_states_preserved": true,
+      "shortlist_policy": "same_raw_top_k_as_core",
+      "query_routing": "feedback_free_procedure_intent",
+      "reader_evidence": "intent_selected_record",
+      "answer_labels_used": false,
+      "context_compiler": {
+        "schema": "wavemind.memory_context.v1",
+        "token_budget_per_query": 1150,
+        "max_items": 5,
+        "max_item_tokens": 800,
+        "query_aware": true,
+        "precompiled_experience_passthrough": true,
+        "hybrid_summary_plus_raw": true
+      }
+    }
+  },
+  "field": {
+    "width": 32,
+    "height": 32,
+    "layers": 2
+  },
+  "reader": {
+    "kind": "ollama",
+    "model": "qwen3.5:9b",
+    "vision_model": null,
+    "supports_images": true,
+    "text_context_window": 8192,
+    "image_context_window": 4096,
+    "image_context_items": 1,
+    "image_context_chars": 4000,
+    "thinking_enabled": false,
+    "structured_outputs": true,
+    "cost_per_query_usd": 0.0
+  },
+  "resume": {
+    "used": true,
+    "source_sha": "653d898c6cc3ac52dc94acdc686f7de5368c4805",
+    "rows": 1030,
+    "result_sha256": "aca96095f432a56c41cc1a94afb2b67928e1dadcded0cea34f4e0b779f6e2e61",
+    "per_query_sha256": "9b5e4a63a63f326bd761cf03d2e4a0f4eaf760b90b95fff37d8746cab536130a"
+  },
+  "results": [
+    {
+      "engine": "WaveMind",
+      "execution_mode": "wavemind_core",
+      "retrieval_view": "raw_trajectory_state",
+      "retrieval_tags": [
+        "trajectory-state"
+      ],
+      "reader_evidence_view": "retrieved_record",
+      "context_compiler": {
+        "enabled": false
+      },
+      "worker_runs": 0,
+      "worker_errors": 0,
+      "maintenance_interval_queries": 0,
+      "candidate_top_k": 50,
+      "semantic_reranker_enabled": false,
+      "semantic_rerank_k": 0,
+      "semantic_rerank_weight": 0.0,
+      "diversity_metadata_key": "trajectory_id",
+      "max_results_per_diversity_group": 2,
+      "memory_os_policy_mode": "disabled",
+      "query_count": 32,
+      "p50_latency_ms": 54.58279998856597,
+      "p95_latency_ms": 101.448999994318,
+      "p99_latency_ms": 163.1723000027705,
+      "end_to_end_p95_ms": 101.448999994318,
+      "request_path_excludes_background_maintenance": true,
+      "maintenance_p95_ms": 0.0,
+      "maintenance_total_ms": 0.0,
+      "maintenance_amortized_ms_per_query": 0.0,
+      "cache_hits": 0,
+      "cache_misses": 0,
+      "original_context_tokens": 63849,
+      "context_tokens": 63849,
+      "context_passthrough_queries": 0,
+      "hybrid_context_queries": 0,
+      "context_token_relative_reduction": 0.0,
+      "retrieval_answer_recoverability": {
+        "expected_answer_recoverable_rate": 0.3125,
+        "eligible_queries": 16,
+        "category_rates": {
+          "dynamic-environment": 0.3333333333333333,
+          "procedure": 0.0,
+          "static-environment": 0.42857142857142855
+        },
+        "claim_boundary": "Diagnostic label-presence check for deterministic phrase questions. It is not the official LongMemEval-V2 answer-quality score and is never used for admission."
+      },
+      "evaluation_mode": "official_answer_local_reader",
+      "reader_model": "qwen3.5:9b",
+      "reader_vision_model": null,
+      "task_success_rate": 0.1875,
+      "category_success": {
+        "dynamic-environment": 0.14285714285714285,
+        "dynamic-environment-abs": 0.3333333333333333,
+        "errors-gotchas": 0.0,
+        "procedure": 0.0,
+        "procedure-abs": 0.0,
+        "static-environment": 0.4444444444444444,
+        "static-environment-abs": 0.0
+      },
+      "scored_queries": 32,
+      "answer_p50_latency_ms": 0.0,
+      "answer_p95_latency_ms": 0.0,
+      "answer_p99_latency_ms": 0.0,
+      "image_questions_supported": true,
+      "errors": 0,
+      "generated_answers": 0,
+      "reused_answers": 32
+    },
+    {
+      "engine": "WaveMind + Memory OS",
+      "execution_mode": "memory_os_direct_feedback_free_intent_routed_experience",
+      "retrieval_view": "intent_routed_state_or_trajectory_experience",
+      "retrieval_tags": [
+        "intent:procedure=trajectory-experience",
+        "intent:state=trajectory-state"
+      ],
+      "reader_evidence_view": "retrieved_record",
+      "context_compiler": {
+        "enabled": true,
+        "schema": "wavemind.memory_context.v1",
+        "token_budget_per_query": 1150,
+        "max_items": 5,
+        "max_item_tokens": 800,
+        "query_aware": true,
+        "precompiled_experience_passthrough": true,
+        "hybrid_summary_plus_raw": true
+      },
+      "worker_runs": 2,
+      "worker_errors": 0,
+      "maintenance_interval_queries": 32,
+      "candidate_top_k": 50,
+      "semantic_reranker_enabled": false,
+      "semantic_rerank_k": 0,
+      "semantic_rerank_weight": 0.0,
+      "diversity_metadata_key": "trajectory_id",
+      "max_results_per_diversity_group": 2,
+      "memory_os_policy_mode": "feedback_free_safe",
+      "query_count": 32,
+      "p50_latency_ms": 53.786100004799664,
+      "p95_latency_ms": 107.92359999322798,
+      "p99_latency_ms": 252.58010000106879,
+      "end_to_end_p95_ms": 107.92359999322798,
+      "request_path_excludes_background_maintenance": true,
+      "maintenance_p95_ms": 3070.552100005443,
+      "maintenance_total_ms": 5581.822500011185,
+      "maintenance_amortized_ms_per_query": 174.43195312534954,
+      "cache_hits": 0,
+      "cache_misses": 80,
+      "original_context_tokens": 75464,
+      "context_tokens": 40496,
+      "context_passthrough_queries": 4,
+      "hybrid_context_queries": 28,
+      "context_token_relative_reduction": 0.46337326407293544,
+      "trajectory_consolidation": {
+        "namespace": null,
+        "scanned_memories": 5095,
+        "eligible_memories": 5095,
+        "trajectories": 200,
+        "created": 200,
+        "skipped_existing": 0,
+        "skipped_empty": 0,
+        "source_memories_with_provenance": 200,
+        "output_tag": "trajectory-experience",
+        "max_summary_chars": 4800,
+        "errors": [],
+        "ok": true,
+        "provenance_coverage": 1.0
+      },
+      "trajectory_consolidation_ms": 2776.344000012614,
+      "retrieval_answer_recoverability": {
+        "expected_answer_recoverable_rate": 0.4375,
+        "eligible_queries": 16,
+        "category_rates": {
+          "dynamic-environment": 0.3333333333333333,
+          "procedure": 0.0,
+          "static-environment": 0.7142857142857143
+        },
+        "claim_boundary": "Diagnostic label-presence check for deterministic phrase questions. It is not the official LongMemEval-V2 answer-quality score and is never used for admission."
+      },
+      "evaluation_mode": "official_answer_local_reader",
+      "reader_model": "qwen3.5:9b",
+      "reader_vision_model": null,
+      "task_success_rate": 0.21875,
+      "category_success": {
+        "dynamic-environment": 0.14285714285714285,
+        "dynamic-environment-abs": 0.0,
+        "errors-gotchas": 0.0,
+        "procedure": 0.0,
+        "procedure-abs": 0.5,
+        "static-environment": 0.5555555555555556,
+        "static-environment-abs": 0.0
+      },
+      "scored_queries": 32,
+      "answer_p50_latency_ms": 16884.715400010464,
+      "answer_p95_latency_ms": 143316.88919999579,
+      "answer_p99_latency_ms": 148044.8316999973,
+      "image_questions_supported": true,
+      "errors": 0,
+      "generated_answers": 28,
+      "reused_answers": 4
+    }
+  ],
+  "per_query_count": 64,
+  "claim_boundary": "Local-reader profile on the pinned official Small dataset. This is not an official leaderboard submission."
+}

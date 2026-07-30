@@ -1,0 +1,225 @@
+{
+  "schema": "wavemind.longmemeval_v2_split_analysis.v1",
+  "generated_at": "2026-07-30T14:11:35.162384+00:00",
+  "source_sha": "ddae085b8be6fc8c52fcad7c5504adef3850dc2f",
+  "status": "failed_experiment",
+  "experiment": {
+    "name": "hybrid1150_trajectory_and_source_context",
+    "frozen_before_held_out_evaluation": true,
+    "thresholds_frozen": true,
+    "held_out_results_used_for_tuning": false
+  },
+  "dataset": {
+    "repo": "xiaowu0162/longmemeval-v2",
+    "revision": "f152293e235517d504809563c833d7190b8c713b",
+    "official_repo_revision": "6f020ac2fc3275e46c706d3406e02c3ed79b7be2",
+    "checksums": {
+      "questions_sha256": "0a3ae5ebea938c24d7800e1e0b0828e08ae1646f939a53853b2b8cdc08e292b7",
+      "trajectories_sha256": "363cec9a8e87aa8d9101ce4e600aadbf7031d674056ebe4f969e8424abc5f3c6",
+      "small_haystack_sha256": "9b5301defb23a088a5f06e45ff8d5f35e569d78305a66d492046a9fff9b46593"
+    }
+  },
+  "inputs": {
+    "full_results": "9f4a2e0a96376e44287e48e81eacdfb2d14330fa35bb795a65e9767c9b0b337f",
+    "full_per_query": "88b9b0becb6852316cd2bccb16e6c9c76789f60dc9f9928e5e91c3d3e76ac2bb",
+    "development_results": "efef6629ab738f19dbbfeeddedaecf79c86aad5916fb45e84ed29af8fc43feeb",
+    "development_per_query": "3a5f42df7c18e9f0c31ed551d7916b1e4174d961e837f96c70b5e1063d48a831"
+  },
+  "development_split": {
+    "selection": "stratified",
+    "seed": 20260728,
+    "questions": 32,
+    "core": {
+      "task_success_rate": 0.1875,
+      "category_success": {
+        "dynamic-environment": 0.14285714285714285,
+        "dynamic-environment-abs": 0.3333333333333333,
+        "errors-gotchas": 0.0,
+        "procedure": 0.0,
+        "procedure-abs": 0.0,
+        "static-environment": 0.4444444444444444,
+        "static-environment-abs": 0.0
+      }
+    },
+    "memory_os": {
+      "task_success_rate": 0.21875,
+      "category_success": {
+        "dynamic-environment": 0.14285714285714285,
+        "dynamic-environment-abs": 0.0,
+        "errors-gotchas": 0.0,
+        "procedure": 0.0,
+        "procedure-abs": 0.5,
+        "static-environment": 0.5555555555555556,
+        "static-environment-abs": 0.0
+      }
+    },
+    "comparison": {
+      "task_success_uplift": 0.03125,
+      "improved_categories": [
+        "procedure-abs",
+        "static-environment"
+      ],
+      "improved_category_count": 2
+    }
+  },
+  "full451": {
+    "questions": 451,
+    "rows": 902,
+    "core": {
+      "task_success_rate": 0.18625277161862527,
+      "context_tokens": 905816,
+      "end_to_end_p95_ms": 107.23979999602307,
+      "category_success": {
+        "dynamic-environment": 0.18604651162790697,
+        "dynamic-environment-abs": 0.14634146341463414,
+        "errors-gotchas": 0.1724137931034483,
+        "procedure": 0.1891891891891892,
+        "procedure-abs": 0.21875,
+        "static-environment": 0.23880597014925373,
+        "static-environment-abs": 0.07272727272727272
+      }
+    },
+    "memory_os": {
+      "task_success_rate": 0.18181818181818182,
+      "context_tokens": 534472,
+      "end_to_end_p95_ms": 108.8307000027271,
+      "category_success": {
+        "dynamic-environment": 0.16279069767441862,
+        "dynamic-environment-abs": 0.0975609756097561,
+        "errors-gotchas": 0.13793103448275862,
+        "procedure": 0.13513513513513514,
+        "procedure-abs": 0.3125,
+        "static-environment": 0.26119402985074625,
+        "static-environment-abs": 0.09090909090909091
+      }
+    },
+    "comparison": {
+      "task_success_uplift": -0.00443458980044345,
+      "improved_categories": [
+        "procedure-abs",
+        "static-environment",
+        "static-environment-abs"
+      ],
+      "improved_category_count": 3,
+      "context_saving": 0.4099552226942337,
+      "p95_latency_delta_ms": 1.5909000067040324,
+      "p95_latency_regression_ratio": 0.014834977375592178
+    }
+  },
+  "untouched419": {
+    "questions": 419,
+    "rows": 838,
+    "development_overlap": 0,
+    "core": {
+      "rows": 419,
+      "unique_questions": 419,
+      "task_success_rate": 0.18854415274463007,
+      "errors": 0,
+      "category_success": {
+        "dynamic-environment": 0.189873417721519,
+        "dynamic-environment-abs": 0.13157894736842105,
+        "errors-gotchas": 0.18518518518518517,
+        "procedure": 0.2028985507246377,
+        "procedure-abs": 0.23333333333333334,
+        "static-environment": 0.232,
+        "static-environment-abs": 0.0784313725490196
+      }
+    },
+    "memory_os": {
+      "rows": 419,
+      "unique_questions": 419,
+      "task_success_rate": 0.1766109785202864,
+      "errors": 0,
+      "category_success": {
+        "dynamic-environment": 0.16455696202531644,
+        "dynamic-environment-abs": 0.07894736842105263,
+        "errors-gotchas": 0.14814814814814814,
+        "procedure": 0.14492753623188406,
+        "procedure-abs": 0.3,
+        "static-environment": 0.24,
+        "static-environment-abs": 0.09803921568627451
+      }
+    },
+    "comparison": {
+      "task_success_uplift": -0.011933174224343673,
+      "improved_categories": [
+        "procedure-abs",
+        "static-environment",
+        "static-environment-abs"
+      ],
+      "improved_category_count": 3
+    },
+    "metric_boundary": "Per-query rows prove quality, categories, and errors. Context and latency are reported only for full451 because the per-query artifact does not carry token or latency data."
+  },
+  "checks": [
+    {
+      "id": "full_protocol_complete",
+      "status": "pass",
+      "actual": {
+        "full_questions": 451,
+        "rows": 902,
+        "development_questions": 32,
+        "untouched_questions": 419
+      },
+      "requirement": "451 full questions, 902 rows, official haystacks, isolated A/B stores, all images, dev32 and untouched419"
+    },
+    {
+      "id": "zero_execution_errors",
+      "status": "pass",
+      "actual": {
+        "row_errors": 0,
+        "aggregate_errors": 0,
+        "worker_errors": 0
+      },
+      "requirement": "zero row, aggregate, and worker errors"
+    },
+    {
+      "id": "full_memory_os_quality",
+      "status": "pass",
+      "actual": 0.18181818181818182,
+      "requirement": ">= 0.18"
+    },
+    {
+      "id": "full_memory_os_uplift",
+      "status": "fail",
+      "actual": -0.00443458980044345,
+      "requirement": ">= Core + 0.01 absolute"
+    },
+    {
+      "id": "full_improved_categories",
+      "status": "fail",
+      "actual": 3,
+      "requirement": ">= 4"
+    },
+    {
+      "id": "full_context_saving",
+      "status": "pass",
+      "actual": 0.4099552226942337,
+      "requirement": ">= 0.35 versus Core"
+    },
+    {
+      "id": "full_p95_latency_delta",
+      "status": "pass",
+      "actual": 1.5909000067040324,
+      "requirement": "<= 5 ms"
+    },
+    {
+      "id": "full_p95_latency_ratio",
+      "status": "pass",
+      "actual": 0.014834977375592178,
+      "requirement": "<= 20%"
+    },
+    {
+      "id": "untouched419_memory_os_uplift",
+      "status": "fail",
+      "actual": -0.011933174224343673,
+      "requirement": ">= Core + 0.01 absolute"
+    }
+  ],
+  "failed_checks": [
+    "full_memory_os_uplift",
+    "full_improved_categories",
+    "untouched419_memory_os_uplift"
+  ],
+  "claim_boundary": "This is a failed frozen experiment, not admission evidence. It passes execution, context, and latency controls but does not prove Memory OS quality uplift. The held-out result must not be used to tune this architecture."
+}
