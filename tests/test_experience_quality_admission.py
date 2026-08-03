@@ -57,6 +57,9 @@ def _payload() -> dict:
             "tool_step_relative_reduction": 0.25,
             "context_token_relative_reduction": 0.35,
             "p95_latency_regression": 0.20,
+            "p95_runtime_overhead_absolute_delta_ms": 1.0,
+            "baseline_p95_runtime_overhead_ms": 10.0,
+            "experience_p95_runtime_overhead_ms": 11.0,
         },
         "checks": [{"id": "product", "passed": True}],
         "held_out_results": {
@@ -94,6 +97,8 @@ def test_admission_rejects_leakage_latency_and_row_mismatch(tmp_path) -> None:
     payload = _payload()
     payload["dataset"]["metadata_leakage"] = True
     payload["uplift"]["p95_latency_regression"] = 0.21
+    payload["uplift"]["p95_runtime_overhead_absolute_delta_ms"] = 6.0
+    payload["uplift"]["experience_p95_runtime_overhead_ms"] = 16.0
     payload["held_out_results"]["core"] = payload["held_out_results"]["core"][:-1]
     _write(tmp_path, payload)
 
@@ -102,6 +107,33 @@ def test_admission_rejects_leakage_latency_and_row_mismatch(tmp_path) -> None:
     failed = {check["id"] for check in result["checks"] if not check["passed"]}
     assert result["status"] == "blocked"
     assert {"frozen-split", "p95-latency", "held-out-parity"} <= failed
+
+
+def test_admission_uses_absolute_latency_limit_for_sub_5ms_baseline(tmp_path) -> None:
+    payload = _payload()
+    payload["uplift"]["p95_latency_regression"] = 2.0
+    payload["uplift"]["baseline_p95_runtime_overhead_ms"] = 1.0
+    payload["uplift"]["experience_p95_runtime_overhead_ms"] = 4.0
+    payload["uplift"]["p95_runtime_overhead_absolute_delta_ms"] = 3.0
+    _write(tmp_path, payload)
+
+    result = evaluate_experience_quality_admission(tmp_path)
+
+    assert result["status"] == "admitted"
+
+
+def test_admission_rejects_runtime_overhead_above_goal5_limit(tmp_path) -> None:
+    payload = _payload()
+    payload["uplift"]["p95_latency_regression"] = 0.10
+    payload["uplift"]["baseline_p95_runtime_overhead_ms"] = 70.0
+    payload["uplift"]["experience_p95_runtime_overhead_ms"] = 77.0
+    payload["uplift"]["p95_runtime_overhead_absolute_delta_ms"] = 7.0
+    _write(tmp_path, payload)
+
+    result = evaluate_experience_quality_admission(tmp_path)
+
+    failed = {check["id"] for check in result["checks"] if not check["passed"]}
+    assert "p95-latency" in failed
 
 
 def test_admission_requires_artifact_and_exact_source_sha(tmp_path) -> None:

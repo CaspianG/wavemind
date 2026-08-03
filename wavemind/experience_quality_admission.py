@@ -143,14 +143,49 @@ def evaluate_experience_quality_admission(
             ),
             _check(
                 "p95-latency",
-                _as_float(
-                    uplift.get("p95_latency_regression"),
+                (
+                    _as_float(
+                        uplift.get("p95_latency_regression"),
+                        default=float("inf"),
+                    )
+                    <= 0.20
+                    or (
+                        _as_float(
+                            uplift.get("baseline_p95_runtime_overhead_ms"),
+                            default=float("inf"),
+                        )
+                        < 5.0
+                        and _as_float(
+                            uplift.get(
+                                "p95_runtime_overhead_absolute_delta_ms"
+                            ),
+                            default=float("inf"),
+                        )
+                        <= 5.0
+                    )
+                )
+                and _as_float(
+                    uplift.get("experience_p95_runtime_overhead_ms"),
                     default=float("inf"),
                 )
-                <= 0.20,
-                uplift.get("p95_latency_regression"),
-                "<= 0.20 relative regression",
-                "p95 latency regression exceeds twenty percent",
+                <= 75.0,
+                {
+                    "relative_regression": uplift.get("p95_latency_regression"),
+                    "absolute_delta_ms": uplift.get(
+                        "p95_runtime_overhead_absolute_delta_ms"
+                    ),
+                    "baseline_p95_runtime_overhead_ms": uplift.get(
+                        "baseline_p95_runtime_overhead_ms"
+                    ),
+                    "experience_p95_runtime_overhead_ms": uplift.get(
+                        "experience_p95_runtime_overhead_ms"
+                    ),
+                },
+                (
+                    "<= 0.20 relative, or <= 5 ms absolute delta for a < 5 ms "
+                    "baseline; experience runtime overhead <= 75 ms"
+                ),
+                "p95 runtime overhead exceeds the admitted relative/absolute SLO",
             ),
             _held_out_parity_check(payload),
             _check(
