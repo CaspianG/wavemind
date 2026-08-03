@@ -24,6 +24,12 @@ from .openai_agents import (
     make_openai_experience_hooks,
 )
 from .experience_runtime import AgentExperienceHooks, ProviderExperienceRun
+from .state_bench import (
+    StateBenchProtocolValidation,
+    WaveMindStateBenchLearningAdapter,
+    build_state_bench_adapter_artifact,
+    validate_state_bench_training_root,
+)
 
 __all__ = [
     "ANTHROPIC_MEMORY_TOOL",
@@ -31,11 +37,14 @@ __all__ = [
     "AgentExperienceHooks",
     "ExperienceMCPAdapter",
     "ProviderExperienceRun",
+    "StateBenchProtocolValidation",
     "WaveMindAutoGenMemory",
     "WaveMindAgentsSession",
     "WaveMindCrewAITools",
     "WaveMindNode",
     "WaveMindRetriever",
+    "WaveMindStateBenchLearningAdapter",
+    "build_state_bench_adapter_artifact",
     "build_experience_mcp_server",
     "make_experience_capture_node",
     "make_anthropic_experience_hooks",
@@ -47,4 +56,5 @@ __all__ = [
     "make_persist_node",
     "make_recall_node",
     "wrap_experience_runtime_node",
+    "validate_state_bench_training_root",
 ]
