@@ -7,7 +7,6 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 BENCHMARK_PATH = Path("benchmarks/verified_experience_results.json")
 ADMISSION_PATH = Path("benchmarks/verified_experience_admission_results.json")
@@ -37,6 +36,11 @@ def _load(root: Path, path: Path) -> dict[str, Any]:
             f"{path.as_posix()} must contain a JSON object"
         )
     return value
+
+
+def _canonical_artifact_sha256(path: Path) -> str:
+    content = path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return hashlib.sha256(content).hexdigest()
 
 
 def _git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
@@ -119,10 +123,15 @@ def validate_verified_experience_artifacts(root: Path = PROJECT_ROOT) -> dict[st
         "artifact falsely claims an official paid run",
         errors,
     )
-    benchmark_hash = hashlib.sha256((root / BENCHMARK_PATH).read_bytes()).hexdigest()
+    benchmark_hash = _canonical_artifact_sha256(root / BENCHMARK_PATH)
     _require(
         admission.get("artifact_sha256") == benchmark_hash,
         "admission artifact hash does not match benchmark bytes",
+        errors,
+    )
+    _require(
+        admission.get("artifact_hash_normalization") == "lf",
+        "admission artifact hash normalization is not locked to LF",
         errors,
     )
     if _is_sha(source_sha):

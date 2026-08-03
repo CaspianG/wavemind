@@ -30,6 +30,12 @@ def _load(path: Path) -> dict[str, Any]:
     return value
 
 
+def canonical_artifact_sha256(path: Path) -> str:
+    """Hash text artifacts independently of the checkout line-ending policy."""
+    content = path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return hashlib.sha256(content).hexdigest()
+
+
 def _check(identifier: str, passed: bool, evidence: Any, target: Any) -> dict[str, Any]:
     return {
         "id": identifier,
@@ -180,7 +186,7 @@ def evaluate_verified_experience_admission(
     return _result(
         expected_sha,
         checks,
-        artifact_sha256=hashlib.sha256(artifact_path.read_bytes()).hexdigest(),
+        artifact_sha256=canonical_artifact_sha256(artifact_path),
     )
 
 
@@ -199,6 +205,7 @@ def _result(
         "source_sha": source_sha,
         "artifact": ARTIFACT.as_posix(),
         "artifact_sha256": artifact_sha256,
+        "artifact_hash_normalization": "lf" if artifact_sha256 else None,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "summary": {
             "passed": sum(check["passed"] for check in checks),

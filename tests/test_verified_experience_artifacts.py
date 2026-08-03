@@ -12,6 +12,7 @@ from benchmarks.validate_verified_experience_artifacts import (
     VerifiedExperienceArtifactError,
     validate_verified_experience_artifacts,
 )
+from wavemind.verified_experience_admission import canonical_artifact_sha256
 
 
 def test_checked_in_verified_experience_artifacts_are_consistent() -> None:
@@ -34,3 +35,12 @@ def test_validator_rejects_benchmark_bytes_changed_after_admission(
 
     with pytest.raises(VerifiedExperienceArtifactError, match="hash"):
         validate_verified_experience_artifacts(tmp_path)
+
+
+def test_artifact_hash_is_independent_of_checkout_line_endings(tmp_path: Path) -> None:
+    lf = tmp_path / "lf.json"
+    crlf = tmp_path / "crlf.json"
+    lf.write_bytes(b'{\n  "status": "pass"\n}\n')
+    crlf.write_bytes(b'{\r\n  "status": "pass"\r\n}\r\n')
+
+    assert canonical_artifact_sha256(lf) == canonical_artifact_sha256(crlf)

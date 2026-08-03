@@ -4,8 +4,9 @@
   "admitted": true,
   "source_sha": "7a457e18082c3eda2e9fbafba2a2ac32fbd2abae",
   "artifact": "benchmarks/verified_experience_results.json",
-  "artifact_sha256": "62c9c4dcef625936422e49e979b929837a1327c4ca63142e2d21bc1b276d0455",
-  "generated_at": "2026-08-03T15:12:34.439147+00:00",
+  "artifact_sha256": "61277917624aea630ccb01b83bc73c88671949f2ab99d157b2479471e3bb599e",
+  "artifact_hash_normalization": "lf",
+  "generated_at": "2026-08-03T16:11:55.432365+00:00",
   "summary": {
     "passed": 15,
     "total": 15,
