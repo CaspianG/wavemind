@@ -113,7 +113,7 @@ dev = [
   "httpx2>=2",
   "langchain-classic>=1.0",
   "mcp>=1.28,<2",
-  "ruff==0.15.22",
+  "ruff==0.16.1",
 ]
 
 [project.scripts]
