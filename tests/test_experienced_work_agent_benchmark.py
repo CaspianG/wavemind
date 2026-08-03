@@ -46,9 +46,17 @@ def test_experienced_work_agent_meets_held_out_product_gates(tmp_path) -> None:
     assert checks["p95-latency"]["evidence"] == pytest.approx(
         payload["uplift"]["p95_latency_regression"]
     )
+    by_engine = {row["engine"]: row for row in payload["results"]}
+    assert payload["uplift"]["p95_latency_regression"] == pytest.approx(
+        by_engine["WaveMind Experience"]["p95_runtime_overhead_ms"]
+        / by_engine["WaveMind Core"]["p95_runtime_overhead_ms"]
+        - 1.0
+    )
     assert payload["protocol"]["paired_latency_samples"] is True
     assert payload["protocol"]["paired_latency_regression_estimator"] == (
-        "p95 of per-case median paired relative regressions"
+        "relative regression between engine p95 runtime overheads from "
+        "per-case paired medians, excluding tool and environment-verification "
+        "latency"
     )
     assert (
         payload["protocol"]["latency_repetitions_per_case"]
@@ -63,6 +71,16 @@ def test_experienced_work_agent_meets_held_out_product_gates(tmp_path) -> None:
         len(row["paired_latency_regression_samples"]) == LATENCY_REPETITIONS
         for row in payload["held_out_results"]["experience"]
     )
+    assert all(
+        len(row["runtime_overhead_samples_ms"]) == LATENCY_REPETITIONS
+        for engine in ("core", "experience")
+        for row in payload["held_out_results"][engine]
+    )
+    assert all(
+        0.0 <= row["runtime_overhead_ms"] <= row["latency_ms"]
+        for engine in ("core", "experience")
+        for row in payload["held_out_results"][engine]
+    )
     assert payload["training"]["active_strategies"] == 6
     assert payload["dataset"]["metadata_leakage"] is False
 
@@ -70,27 +88,41 @@ def test_experienced_work_agent_meets_held_out_product_gates(tmp_path) -> None:
 def test_latency_row_uses_median_to_reject_single_runner_outlier() -> None:
     row = _median_latency_row(
         [
-            {"request_id": "case", "latency_ms": 10.0},
-            {"request_id": "case", "latency_ms": 1000.0},
-            {"request_id": "case", "latency_ms": 11.0},
+            {
+                "request_id": "case",
+                "latency_ms": 10.0,
+                "runtime_overhead_ms": 4.0,
+            },
+            {
+                "request_id": "case",
+                "latency_ms": 1000.0,
+                "runtime_overhead_ms": 400.0,
+            },
+            {
+                "request_id": "case",
+                "latency_ms": 11.0,
+                "runtime_overhead_ms": 5.0,
+            },
         ]
     )
 
     assert row["latency_ms"] == 11.0
     assert row["latency_samples_ms"] == [10.0, 1000.0, 11.0]
+    assert row["runtime_overhead_ms"] == 5.0
+    assert row["runtime_overhead_samples_ms"] == [4.0, 400.0, 5.0]
 
 
 def test_paired_latency_regression_rejects_unpaired_runner_drift() -> None:
     regression, samples = _paired_latency_regression(
         [
-            {"latency_ms": 10.0},
-            {"latency_ms": 20.0},
-            {"latency_ms": 40.0},
+            {"runtime_overhead_ms": 10.0},
+            {"runtime_overhead_ms": 20.0},
+            {"runtime_overhead_ms": 40.0},
         ],
         [
-            {"latency_ms": 11.0},
-            {"latency_ms": 22.0},
-            {"latency_ms": 44.0},
+            {"runtime_overhead_ms": 11.0},
+            {"runtime_overhead_ms": 22.0},
+            {"runtime_overhead_ms": 44.0},
         ],
     )
 
