@@ -81,6 +81,31 @@ class ScenarioRuntime:
         pass
 
 
+class _TimedRuntime:
+    def __init__(self, runtime: ScenarioRuntime):
+        self.runtime = runtime
+        self.verification_latency_ms = 0.0
+
+    @property
+    def available_tools(self) -> Sequence[str]:
+        return self.runtime.available_tools
+
+    def call(self, name: str) -> ToolExecution:
+        return self.runtime.call(name)
+
+    def verify(self) -> bool:
+        started = time.perf_counter()
+        try:
+            return self.runtime.verify()
+        finally:
+            self.verification_latency_ms += (
+                time.perf_counter() - started
+            ) * 1000.0
+
+    def close(self) -> None:
+        self.runtime.close()
+
+
 class CodingRuntime(ScenarioRuntime):
     def __init__(self, mode: str):
         self.mode = mode
@@ -627,7 +652,7 @@ def _run_experience_case(
     request: WorkRequest,
     known_errors: set[str],
 ) -> dict[str, Any]:
-    runtime = scenario.runtime()
+    runtime = _TimedRuntime(scenario.runtime())
     try:
         run = agent.run(
             request,
@@ -638,6 +663,13 @@ def _run_experience_case(
     finally:
         runtime.close()
     row = run.as_dict()
+    tool_latency_ms = sum(item.duration_ms for item in run.executions)
+    row["tool_latency_ms"] = tool_latency_ms
+    row["verification_latency_ms"] = runtime.verification_latency_ms
+    row["runtime_overhead_ms"] = max(
+        0.0,
+        run.latency_ms - tool_latency_ms - runtime.verification_latency_ms,
+    )
     row["domain"] = scenario.domain
     row["task_type"] = scenario.task_type
     return row
@@ -652,6 +684,7 @@ def _run_plan(
     context_tokens: int,
     known_errors: set[str],
     retrieval_started: float,
+    runtime_overhead_ms: float,
 ) -> dict[str, Any]:
     runtime = scenario.runtime()
     try:
@@ -681,6 +714,7 @@ def _run_plan(
         "context_tokens": context_tokens,
         "repeated_error_codes": repeated,
         "latency_ms": (time.perf_counter() - retrieval_started) * 1000.0,
+        "runtime_overhead_ms": runtime_overhead_ms,
         "domain": scenario.domain,
         "task_type": scenario.task_type,
     }
@@ -699,6 +733,7 @@ def _run_cold(
             context_tokens=0,
             known_errors=known_errors,
             retrieval_started=time.perf_counter(),
+            runtime_overhead_ms=0.0,
         )
         for scenario, request in held_out
     ]
@@ -743,6 +778,7 @@ def _run_core_case(
         top_k=3,
         min_score=0.0,
     )
+    retrieval_latency_ms = (time.perf_counter() - started) * 1000.0
     plan = ()
     if results:
         raw_plan = results[0].metadata.get("tool_plan")
@@ -756,6 +792,7 @@ def _run_core_case(
         context_tokens=sum(_estimate_tokens(item.text) for item in results),
         known_errors=known_errors,
         retrieval_started=started,
+        runtime_overhead_ms=retrieval_latency_ms,
     )
 
 
@@ -766,6 +803,9 @@ def _median_latency_row(samples: Sequence[dict[str, Any]]) -> dict[str, Any]:
     row = dict(samples[0])
     row["latency_ms"] = statistics.median(latencies)
     row["latency_samples_ms"] = latencies
+    overheads = [float(item["runtime_overhead_ms"]) for item in samples]
+    row["runtime_overhead_ms"] = statistics.median(overheads)
+    row["runtime_overhead_samples_ms"] = overheads
     return row
 
 
@@ -777,11 +817,11 @@ def _paired_latency_regression(
         raise ValueError("paired latency samples must be non-empty and balanced")
     regressions = []
     for baseline, experience in zip(baseline_samples, experience_samples, strict=True):
-        baseline_latency = float(baseline["latency_ms"])
+        baseline_latency = float(baseline["runtime_overhead_ms"])
         if baseline_latency <= 0:
             raise ValueError("baseline latency samples must be positive")
         regressions.append(
-            float(experience["latency_ms"]) / baseline_latency - 1.0
+            float(experience["runtime_overhead_ms"]) / baseline_latency - 1.0
         )
     return statistics.median(regressions), regressions
 
@@ -860,6 +900,9 @@ def _metrics(engine: str, rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
             int(row["context_tokens"]) for row in rows
         ),
         "p95_latency_ms": _p95([float(row["latency_ms"]) for row in rows]),
+        "p95_runtime_overhead_ms": _p95(
+            [float(row["runtime_overhead_ms"]) for row in rows]
+        ),
         "domain_success": {
             domain: sum(
                 bool(row["success"]) for row in rows if row["domain"] == domain
@@ -931,11 +974,12 @@ def run_benchmark(workdir: Path) -> dict[str, Any]:
             baseline["median_context_tokens"],
             experience["median_context_tokens"],
         )
-        latency_regression = _p95(
-            [
-                float(row["paired_latency_regression"])
-                for row in experience_rows
-            ]
+        latency_regression = (
+            experience["p95_runtime_overhead_ms"]
+            / baseline["p95_runtime_overhead_ms"]
+            - 1.0
+            if baseline["p95_runtime_overhead_ms"] > 0
+            else float("inf")
         )
         checks = [
             _check("training-count", len(training) == 60, len(training), 60),
@@ -1018,7 +1062,9 @@ def run_benchmark(workdir: Path) -> dict[str, Any]:
                 "core_top_k": 3,
                 "paired_latency_samples": True,
                 "paired_latency_regression_estimator": (
-                    "p95 of per-case median paired relative regressions"
+                    "relative regression between engine p95 runtime overheads "
+                    "from per-case paired medians, excluding tool and "
+                    "environment-verification latency"
                 ),
                 "latency_repetitions_per_case": LATENCY_REPETITIONS,
             },
