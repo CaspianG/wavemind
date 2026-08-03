@@ -61,7 +61,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
         + payload["freshness_gate"]["snapshot_count"]
         == payload["freshness_gate"]["source_count"]
     )
-    assert payload["freshness_gate"]["snapshot_count"] == 2
+    assert payload["freshness_gate"]["snapshot_count"] == 4
     assert payload["freshness_gate"]["stale_count"] == 0
     assert payload["freshness_gate"]["missing_count"] == 0
     assert payload["freshness_gate"]["no_timestamp_count"] == 0
@@ -70,8 +70,10 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert payload["freshness_gate"]["missing_sources"] == []
     assert payload["freshness_gate"]["no_timestamp_sources"] == []
     assert set(payload["freshness_gate"]["snapshot_sources"]) == {
+        "benchmarks/goal4_quality_experiment_results.json",
         "benchmarks/memory_os_admission_results.json",
         "benchmarks/memory_os_remote_worker_soak_results.json",
+        "benchmarks/verified_experience_admission_results.json",
     }
     assert {
         "benchmarks/production_scale_run_plan.json",
@@ -139,6 +141,22 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert payload["agent_memory_admission"]["summary"]["checks_passed"] == 12
     assert payload["agent_memory_admission"]["summary"]["checks_total"] == 13
     assert payload["agent_memory_admission"]["summary"]["public_benchmarks_passed"] == 2
+    assert payload["goal4_quality_experiment"]["schema"] == (
+        "wavemind.goal4_quality_experiment.v1"
+    )
+    assert payload["goal4_quality_experiment"]["status"] == "failed_experiment"
+    assert payload["verified_experience"]["status"] == "admitted"
+    assert payload["verified_experience"]["summary"]["passed"] == 15
+    assert payload["verified_experience"]["metrics"]["task_success_uplift"] >= 0.10
+    assert payload["verified_experience"]["state_bench_status"] == "runner_ready"
+    assert payload["goal4_quality_experiment"]["admitted"] is False
+    assert payload["goal4_quality_experiment"]["protocol"]["full_questions"] == 451
+    assert payload["goal4_quality_experiment"]["protocol"]["frozen_questions"] == 419
+    assert payload["goal4_quality_experiment"]["full451"]["task_success_uplift"] < 0
+    assert payload["goal4_quality_experiment"]["untouched419"]["task_success_uplift"] < 0
+    assert "not be presented as agent-quality admission" in (
+        payload["goal4_quality_experiment"]["claim_boundary"]
+    )
     assert payload["structured_memory"]["schema"] == "wavemind.structured_memory_report.v1"
     assert payload["structured_memory"]["status"] == "pass"
     assert payload["structured_memory"]["modality_count"] == 7
@@ -540,6 +558,7 @@ def test_checked_in_leaderboard_status_is_present_and_machine_readable():
     assert payload["production_readiness"]["overall_status"] == "pass"
     assert payload["agent_quality"]["status"] == "pass"
     assert payload["agent_impact"]["status"] == "pass"
+    assert payload["goal4_quality_experiment"]["status"] == "failed_experiment"
     assert payload["structured_memory"]["status"] == "pass"
     assert payload["memory_os_intelligence"]["status"] == "pass"
     assert payload["memory_os_policy_evolution"]["status"] == "pass"

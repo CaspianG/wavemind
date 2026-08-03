@@ -143,6 +143,23 @@ policy matters more than raw vector-database scale:
   success `16.7% -> 100%`, repeated errors `83.3% -> 0%`, 25% fewer tool
   steps, 40% less context, and p95 within the 20% budget. This is controlled
   local product evidence, not yet a public-dataset or external-agent claim.
+  Goal 4 subsequently tested a stricter LongMemEval-V2 architecture on 451
+  frozen questions and failed quality admission: full uplift was `-0.44 pp`,
+  untouched-419 uplift was `-1.19 pp`, despite `41.0%` context reduction and
+  only `+1.59 ms` p95 overhead. The failed experiment is preserved in
+  `benchmarks/goal4_quality_experiment_results.json`; its held-out results are
+  not reused for tuning.
+- The Verified Agent Experience Runtime now captures one event contract across
+  Python, HTTP, OpenAI Agents, Anthropic hooks, LangGraph, MCP, and TypeScript;
+  redacts and bounds payloads; learns only from independent outcome evidence;
+  promotes shadow procedures after repeated validation; selectively injects
+  cited packets; and exposes approval, rejection, provenance, and rollback in
+  Studio. Its frozen local admission passes 15/15 checks across 150 tasks in
+  travel, customer support, and shopping assistant: task success `20% -> 100%`,
+  repeated errors `-100%`, context `-39.2%`, unnecessary interventions `0%`,
+  and runtime p95 `6.12 ms`. A read-only STATE-Bench Agent Learning adapter is
+  runner-ready against the exact official 300-trajectory train split. This is
+  not an official paid STATE-Bench result.
 - `wavemind init` now creates runnable Python, TypeScript, MCP, and Docker
   starters without deleting unrelated files. The Python starter promotes a
   lesson only after three verified outcomes and prints a persisted Experience

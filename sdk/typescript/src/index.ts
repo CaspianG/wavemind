@@ -142,6 +142,82 @@ export interface TrajectoryInput {
   confidence?: number;
 }
 
+export type VerificationSource = "test" | "tool" | "environment" | "operator";
+
+export interface ExperienceRuntimeStartInput {
+  query: string;
+  objective: string;
+  domain: string;
+  task_type: string;
+  namespace?: string;
+  session_id?: string;
+  run_id?: string;
+  task_id?: string;
+  tools?: string[];
+  metadata?: Record<string, unknown>;
+  token_budget?: number;
+  top_k?: number;
+  canary?: boolean;
+}
+
+export interface ExperienceRuntimeEventInput {
+  id: string;
+  namespace?: string;
+  run_id: string;
+  kind: string;
+  sequence: number;
+  occurred_at?: number;
+  session_id?: string;
+  task_id?: string;
+  parent_event_id?: string;
+  tool_name?: string;
+  duration_ms?: number;
+  payload?: Record<string, unknown>;
+}
+
+export interface ExperienceRuntimeVerificationInput {
+  namespace?: string;
+  evidence_id: string;
+  source: VerificationSource;
+  verifier: string;
+  success: boolean;
+  score?: number;
+  reference?: string;
+  metadata?: Record<string, unknown>;
+  applied_experience_ids?: string[];
+}
+
+export interface ExperienceRuntimeInterventionInput {
+  query: string;
+  namespace?: string;
+  run_id?: string;
+  task_id?: string;
+  domains?: string[];
+  task_types?: string[];
+  tools?: string[];
+  token_budget?: number;
+  top_k?: number;
+  canary?: boolean;
+}
+
+export interface ExperienceRuntimeLifecycleInput {
+  namespace?: string;
+  reason: string;
+  evidence_id?: string;
+  score?: number;
+}
+
+export interface ExperienceRuntimeRun {
+  schema: "wavemind.agent_experience_run.v1";
+  namespace: string;
+  session_id: string;
+  run_id: string;
+  task_id: string;
+  next_sequence: number;
+  intervention: Record<string, unknown>;
+  applied_experience_ids: string[];
+}
+
 export class WaveMindHTTPError extends Error {
   readonly status: number;
   readonly body: unknown;
@@ -278,6 +354,113 @@ export class WaveMindClient {
     options?: RequestOptions,
   ): Promise<Record<string, unknown>> {
     return this.request("POST", "/experience/import", { bundle }, options);
+  }
+
+  startExperienceRun(
+    input: ExperienceRuntimeStartInput,
+    options?: RequestOptions,
+  ): Promise<ExperienceRuntimeRun> {
+    return this.request("POST", "/experience/runtime/runs", input, options);
+  }
+
+  captureExperienceEvent(
+    input: ExperienceRuntimeEventInput,
+    options?: RequestOptions,
+  ): Promise<Record<string, unknown>> {
+    return this.request("POST", "/experience/runtime/events", input, options);
+  }
+
+  verifyExperienceRun(
+    runId: string,
+    input: ExperienceRuntimeVerificationInput,
+    options?: RequestOptions,
+  ): Promise<Record<string, unknown>> {
+    return this.request(
+      "POST",
+      `/experience/runtime/runs/${encodeURIComponent(runId)}/verify`,
+      input,
+      options,
+    );
+  }
+
+  decideExperienceIntervention(
+    input: ExperienceRuntimeInterventionInput,
+    options?: RequestOptions,
+  ): Promise<Record<string, unknown>> {
+    return this.request(
+      "POST",
+      "/experience/runtime/interventions",
+      input,
+      options,
+      true,
+    );
+  }
+
+  listExperienceRuns(
+    namespace = "default",
+    limit = 100,
+    options?: RequestOptions,
+  ): Promise<Record<string, unknown>> {
+    const path = `/experience/runtime/runs?namespace=${encodeURIComponent(namespace)}&limit=${limit}`;
+    return this.request("GET", path, undefined, options, true);
+  }
+
+  getExperienceRun(
+    runId: string,
+    namespace = "default",
+    options?: RequestOptions,
+  ): Promise<Record<string, unknown>> {
+    const path =
+      `/experience/runtime/runs/${encodeURIComponent(runId)}` +
+      `?namespace=${encodeURIComponent(namespace)}`;
+    return this.request("GET", path, undefined, options, true);
+  }
+
+  getExperienceRuntimeState(
+    namespace = "default",
+    limit = 100,
+    options?: RequestOptions,
+  ): Promise<Record<string, unknown>> {
+    const path = `/experience/runtime/state?namespace=${encodeURIComponent(namespace)}&limit=${limit}`;
+    return this.request("GET", path, undefined, options, true);
+  }
+
+  approveExperience(
+    experienceId: string,
+    input: ExperienceRuntimeLifecycleInput,
+    options?: RequestOptions,
+  ): Promise<Record<string, unknown>> {
+    return this.experienceLifecycle("approve", experienceId, input, options);
+  }
+
+  rejectExperience(
+    experienceId: string,
+    input: ExperienceRuntimeLifecycleInput,
+    options?: RequestOptions,
+  ): Promise<Record<string, unknown>> {
+    return this.experienceLifecycle("reject", experienceId, input, options);
+  }
+
+  rollbackExperience(
+    experienceId: string,
+    input: ExperienceRuntimeLifecycleInput,
+    options?: RequestOptions,
+  ): Promise<Record<string, unknown>> {
+    return this.experienceLifecycle("rollback", experienceId, input, options);
+  }
+
+  private experienceLifecycle(
+    action: "approve" | "reject" | "rollback",
+    experienceId: string,
+    input: ExperienceRuntimeLifecycleInput,
+    options?: RequestOptions,
+  ): Promise<Record<string, unknown>> {
+    return this.request(
+      "POST",
+      `/experience/runtime/${encodeURIComponent(experienceId)}/${action}`,
+      input,
+      options,
+    );
   }
 
   private async request<T>(

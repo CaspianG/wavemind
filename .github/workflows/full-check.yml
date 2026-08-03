@@ -35,6 +35,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v6
         with:
@@ -146,6 +148,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v6
         with:
@@ -161,6 +165,7 @@ jobs:
           python benchmarks/validate_benchmark_artifacts.py \
             --max-age-days 8 \
             --output benchmarks/benchmark_artifact_audit_ci.json
+          python benchmarks/validate_verified_experience_artifacts.py
           python benchmarks/production_readiness_gate.py \
             --output /tmp/production_readiness_results.json \
             --markdown-output /tmp/PRODUCTION_READINESS.md

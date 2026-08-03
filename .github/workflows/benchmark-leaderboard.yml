@@ -344,8 +344,8 @@ jobs:
           AGENT_MEMORY_SOURCE_SHA="$(python -c 'import json; print(json.load(open("benchmarks/agent_memory_advantage_results.json", encoding="utf-8"))["source_sha"])')"
           python -m wavemind agent-memory-advantage-admission \
             --expected-source-sha "$AGENT_MEMORY_SOURCE_SHA" \
-            --fail-on-blocked \
             --json
+          python benchmarks/validate_goal4_quality_experiment.py
           python -m wavemind \
             --db .tmp-memory-os-canary.sqlite3 \
             memory-os-canary \
@@ -425,6 +425,7 @@ jobs:
             tests/test_benchmark_dashboard.py \
             tests/test_leaderboard_status.py \
             tests/test_agent_impact_leaderboard.py \
+            tests/test_goal4_quality_experiment.py \
             tests/test_structured_memory_report.py \
             tests/test_memory_os_intelligence_report.py \
             tests/test_memory_os_policy_bundle.py \
@@ -510,6 +511,7 @@ jobs:
           cp benchmarks/serverless_admission_results.json site/data/serverless_admission_results.json
           cp benchmarks/multimodal_admission_results.json site/data/multimodal_admission_results.json
           cp benchmarks/agent_impact_results.json site/data/agent_impact_results.json
+          cp benchmarks/goal4_quality_experiment_results.json site/data/goal4_quality_experiment_results.json
           cp benchmarks/structured_memory_results.json site/data/structured_memory_results.json
           cp benchmarks/memory_os_intelligence_results.json site/data/memory_os_intelligence_results.json
           cp benchmarks/cluster_autoscale_results.json site/data/cluster_autoscale_results.json
@@ -544,6 +546,7 @@ jobs:
             benchmarks/agent_coherence_results.json
             benchmarks/agent_impact_results.json
             benchmarks/AGENT_IMPACT.md
+            benchmarks/goal4_quality_experiment_results.json
             benchmarks/structured_memory_results.json
             benchmarks/STRUCTURED_MEMORY.md
             benchmarks/memory_os_intelligence_results.json

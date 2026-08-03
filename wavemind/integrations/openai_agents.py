@@ -8,6 +8,8 @@ from threading import RLock
 from typing import Any
 
 from wavemind.experience_compiler import ExperienceCompiler
+from wavemind.experience_runtime import AgentExperienceRuntime
+from .experience_runtime import AgentExperienceHooks
 from wavemind.memory_firewall import FirewallContext
 
 
@@ -164,6 +166,24 @@ def make_experience_input_callback(
         return combined
 
     return callback
+
+
+def make_openai_experience_hooks(
+    runtime: AgentExperienceRuntime,
+    *,
+    namespace: str,
+    token_budget: int = 400,
+    top_k: int = 3,
+) -> AgentExperienceHooks:
+    """Create capture, verification, and intervention hooks for OpenAI Agents."""
+
+    return AgentExperienceHooks(
+        runtime,
+        namespace=namespace,
+        provider="openai_agents",
+        token_budget=token_budget,
+        top_k=top_k,
+    )
 
 
 def _serialize_item(item: Mapping[str, Any]) -> str:

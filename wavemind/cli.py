@@ -55,6 +55,10 @@ from .experience_quality_admission import (
     evaluate_experience_quality_admission,
     render_experience_quality_admission_markdown,
 )
+from .verified_experience_admission import (
+    evaluate_verified_experience_admission,
+    render_verified_experience_admission_markdown,
+)
 from .memory_safety_admission import (
     evaluate_memory_safety_admission,
     render_memory_safety_admission_markdown,
@@ -982,6 +986,35 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path("benchmarks/EXPERIENCE_QUALITY_ADMISSION.md"),
     )
     experience_quality_admission.add_argument("--json", action="store_true")
+
+    verified_experience_admission = sub.add_parser(
+        "verified-experience-admission",
+        help="Gate the frozen Verified Agent Experience Runtime evidence",
+    )
+    verified_experience_admission.add_argument(
+        "--root",
+        type=Path,
+        default=Path.cwd(),
+        help="Repository/artifact root. Defaults to the current working directory.",
+    )
+    verified_experience_admission.add_argument("--expected-source-sha")
+    verified_experience_admission.add_argument(
+        "--write-artifacts", action="store_true"
+    )
+    verified_experience_admission.add_argument(
+        "--fail-on-blocked", action="store_true"
+    )
+    verified_experience_admission.add_argument(
+        "--output",
+        type=Path,
+        default=Path("benchmarks/verified_experience_admission_results.json"),
+    )
+    verified_experience_admission.add_argument(
+        "--markdown-output",
+        type=Path,
+        default=Path("benchmarks/VERIFIED_EXPERIENCE_ADMISSION.md"),
+    )
+    verified_experience_admission.add_argument("--json", action="store_true")
 
     memory_safety_admission = sub.add_parser(
         "memory-safety-admission",
@@ -3608,6 +3641,36 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(payload, ensure_ascii=False, indent=2))
         else:
             print_experience_quality_admission(payload)
+            if args.write_artifacts:
+                print(f"json_report: {args.output}")
+                print(f"markdown_report: {args.markdown_output}")
+        if args.fail_on_blocked and not payload["admitted"]:
+            return 2
+        return 0 if payload["status"] in {"admitted", "blocked"} else 1
+
+    if args.command == "verified-experience-admission":
+        payload = evaluate_verified_experience_admission(
+            args.root,
+            expected_source_sha=args.expected_source_sha,
+        )
+        if args.write_artifacts:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            args.markdown_output.parent.mkdir(parents=True, exist_ok=True)
+            args.markdown_output.write_text(
+                render_verified_experience_admission_markdown(payload),
+                encoding="utf-8",
+            )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print(f"verified_experience_admission: {payload['status']}")
+            print(f"source_sha: {payload['source_sha']}")
+            for check in payload["checks"]:
+                print(f"{'PASS' if check['passed'] else 'FAIL'} {check['id']}")
             if args.write_artifacts:
                 print(f"json_report: {args.output}")
                 print(f"markdown_report: {args.markdown_output}")

@@ -6,6 +6,8 @@ from threading import RLock
 from typing import Any
 
 from wavemind.experience_portability import validate_anthropic_memory_path
+from wavemind.experience_runtime import AgentExperienceRuntime
+from .experience_runtime import AgentExperienceHooks
 
 
 ANTHROPIC_MEMORY_TOOL = {
@@ -213,3 +215,21 @@ class AnthropicMemoryHandler:
 
 def anthropic_memory_filename(path: str) -> str:
     return PurePosixPath(validate_anthropic_memory_path(path)).name
+
+
+def make_anthropic_experience_hooks(
+    runtime: AgentExperienceRuntime,
+    *,
+    namespace: str,
+    token_budget: int = 400,
+    top_k: int = 3,
+) -> AgentExperienceHooks:
+    """Create lifecycle hooks compatible with Anthropic Agent SDK callbacks."""
+
+    return AgentExperienceHooks(
+        runtime,
+        namespace=namespace,
+        provider="anthropic_agent_sdk",
+        token_budget=token_budget,
+        top_k=top_k,
+    )

@@ -10,8 +10,10 @@ from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 IMMUTABLE_ADMISSION_SNAPSHOTS = {
+    "benchmarks/goal4_quality_experiment_results.json",
     "benchmarks/memory_os_admission_results.json",
     "benchmarks/memory_os_remote_worker_soak_results.json",
+    "benchmarks/verified_experience_admission_results.json",
 }
 
 
@@ -123,6 +125,22 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         load_errors,
         required=False,
     )
+    goal4_quality_experiment = _load_json(
+        root / "benchmarks" / "goal4_quality_experiment_results.json",
+        load_errors,
+    )
+    verified_experience_admission = _load_json(
+        root / "benchmarks" / "verified_experience_admission_results.json",
+        load_errors,
+    )
+    verified_experience_results = _load_json(
+        root / "benchmarks" / "verified_experience_results.json",
+        load_errors,
+    )
+    state_bench_adapter = _load_json(
+        root / "benchmarks" / "state_bench_agent_learning_adapter_results.json",
+        load_errors,
+    )
     structured_memory = _load_json(
         root / "benchmarks" / "structured_memory_results.json",
         load_errors,
@@ -217,6 +235,10 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "benchmarks/agent_memory_advantage_admission_results.json": (
             agent_memory_admission
         ),
+        "benchmarks/goal4_quality_experiment_results.json": goal4_quality_experiment,
+        "benchmarks/verified_experience_admission_results.json": verified_experience_admission,
+        "benchmarks/verified_experience_results.json": verified_experience_results,
+        "benchmarks/state_bench_agent_learning_adapter_results.json": state_bench_adapter,
         "benchmarks/structured_memory_results.json": structured_memory,
         "benchmarks/memory_os_intelligence_results.json": memory_os_intelligence,
         "benchmarks/cluster_autoscale_results.json": cluster_autoscale,
@@ -313,6 +335,30 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             "checks": agent_memory_admission.get("checks", []),
             "public_evidence": agent_memory_admission.get("public_evidence", {}),
             "claim_boundary": agent_memory_admission.get("claim_boundary", ""),
+        },
+        "goal4_quality_experiment": {
+            "schema": goal4_quality_experiment.get("schema"),
+            "status": goal4_quality_experiment.get("status", "missing"),
+            "admitted": goal4_quality_experiment.get("admitted", False),
+            "decision_sha": goal4_quality_experiment.get("decision_sha"),
+            "protocol": goal4_quality_experiment.get("protocol", {}),
+            "full451": goal4_quality_experiment.get("full451", {}),
+            "untouched419": goal4_quality_experiment.get("untouched419", {}),
+            "final_dev32": goal4_quality_experiment.get("final_dev32", {}),
+            "failed_checks": goal4_quality_experiment.get("failed_checks", []),
+            "claim_boundary": goal4_quality_experiment.get("claim_boundary", ""),
+        },
+        "verified_experience": {
+            "schema": verified_experience_admission.get("schema"),
+            "status": verified_experience_admission.get("status", "missing"),
+            "admitted": verified_experience_admission.get("admitted", False),
+            "source_sha": verified_experience_admission.get("source_sha"),
+            "summary": verified_experience_admission.get("summary", {}),
+            "metrics": verified_experience_results.get("metrics", {}),
+            "safety": verified_experience_results.get("safety", {}),
+            "state_bench_status": state_bench_adapter.get("status", "missing"),
+            "state_bench_protocol": state_bench_adapter.get("official_protocol", {}),
+            "claim_boundary": verified_experience_admission.get("claim_boundary", ""),
         },
         "structured_memory": _structured_memory_status(structured_memory),
         "multimodal_admission": {
