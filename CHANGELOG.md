@@ -4,7 +4,7 @@ Notable user-facing and operational changes are recorded here. Git tags,
 GitHub Releases, checked evidence artifacts, and package versions remain the
 authoritative release sources.
 
-## Unreleased
+## [2.10.0] - 2026-08-03
 
 - Added the Verified Agent Experience Runtime with independent outcome
   verification, evidence-gated promotion, selective cited intervention,
@@ -14,6 +14,11 @@ authoritative release sources.
 - Added a frozen 150-task, three-domain, five-repeat local admission benchmark
   and a read-only STATE-Bench Agent Learning adapter with official train-split
   protocol validation.
+- Kept the failed Goal 4 quality experiment explicit while allowing the living
+  leaderboard to publish a valid blocked verdict instead of failing the page
+  refresh.
+
+Release: [WaveMind v2.10.0](https://github.com/CaspianG/wavemind/releases/tag/v2.10.0)
 
 ## [2.9.0] - 2026-07-30
 
@@ -79,6 +84,7 @@ Release: [WaveMind v2.6.3](https://github.com/CaspianG/wavemind/releases/tag/v2.
 
 | Version | Published | Notes |
 |---|---|---|
+| [v2.10.0](https://github.com/CaspianG/wavemind/releases/tag/v2.10.0) | 2026-08-03 | Verified Agent Experience Runtime and honest quality evidence |
 | [v2.9.0](https://github.com/CaspianG/wavemind/releases/tag/v2.9.0) | 2026-07-30 | Trusted agent experience, safety, portability, and SDKs |
 | [v2.8.0](https://github.com/CaspianG/wavemind/releases/tag/v2.8.0) | 2026-07-28 | Adaptive multimodal agent memory and MCP |
 | [v2.7.0](https://github.com/CaspianG/wavemind/releases/tag/v2.7.0) | 2026-07-27 | Multimodal lifecycle and public presentation |
@@ -91,6 +97,7 @@ Release: [WaveMind v2.6.3](https://github.com/CaspianG/wavemind/releases/tag/v2.
 See the complete [release archive](https://github.com/CaspianG/wavemind/releases)
 for earlier versions and attached evidence bundles.
 
+[2.10.0]: https://github.com/CaspianG/wavemind/compare/v2.9.0...v2.10.0
 [2.9.0]: https://github.com/CaspianG/wavemind/compare/v2.8.0...v2.9.0
 [2.8.0]: https://github.com/CaspianG/wavemind/compare/v2.7.0...v2.8.0
 [2.7.0]: https://github.com/CaspianG/wavemind/compare/v2.6.3...v2.7.0

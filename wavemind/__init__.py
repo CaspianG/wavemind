@@ -365,7 +365,7 @@ from .work_agent import (
     WorkRuntime,
 )
 
-__version__ = "2.9.0"
+__version__ = "2.10.0"
 
 __all__ = [
     "FieldProjector",
