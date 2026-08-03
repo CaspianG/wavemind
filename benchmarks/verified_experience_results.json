@@ -1,0 +1,371 @@
+{
+  "schema": "wavemind.verified_experience_benchmark.v1",
+  "status": "pass",
+  "source_sha": "7a457e18082c3eda2e9fbafba2a2ac32fbd2abae",
+  "generated_at": "2026-08-03T15:09:35.570189+00:00",
+  "dataset": {
+    "revision": "verified-experience-stateful-v1-frozen-20260803",
+    "fingerprint_sha256": "2799210395afba32d175cefbf99b0c2bce1041688237790f273230d72c51a4f0",
+    "domains": [
+      "travel",
+      "customer_support",
+      "shopping_assistant"
+    ],
+    "held_out_tasks": 150,
+    "held_out_per_domain": 50,
+    "hard_per_domain": 40,
+    "split_frozen_before_evaluation": true,
+    "answer_metadata_visible_to_agent": false
+  },
+  "protocol": {
+    "repeats": 5,
+    "confidence_interval": "two-sided 95% Student t, df=4",
+    "same_tasks_and_environment_verifiers": true,
+    "evaluation_store_read_only": true,
+    "no_llm_api_gpu": true,
+    "no_test_specific_rules": true,
+    "independent_environment_verification": true,
+    "comparison_modes": [
+      "no_memory",
+      "static_always_on",
+      "selective_verified"
+    ]
+  },
+  "training": {
+    "verified_runs": 9,
+    "active_procedures": 3,
+    "active_ids": [
+      "exp_runtime_473f1476594c6e8d16cd996e",
+      "exp_runtime_c274d318f004237a3bc796f8",
+      "exp_runtime_0b7d5712e028bfd35a213fbb"
+    ],
+    "expected_events": 171,
+    "captured_events": 171,
+    "capture_rate": 1.0
+  },
+  "modes": {
+    "no_memory": {
+      "task_success": {
+        "mean": 0.2,
+        "low": 0.2,
+        "high": 0.2
+      },
+      "repeated_error_rate": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "context_tokens": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0
+      },
+      "unnecessary_intervention_rate": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0
+      },
+      "p95_latency_ms": 0.0002,
+      "domains": {
+        "travel": {
+          "task_success": {
+            "mean": 0.2,
+            "low": 0.2,
+            "high": 0.2
+          }
+        },
+        "customer_support": {
+          "task_success": {
+            "mean": 0.2,
+            "low": 0.2,
+            "high": 0.2
+          }
+        },
+        "shopping_assistant": {
+          "task_success": {
+            "mean": 0.2,
+            "low": 0.2,
+            "high": 0.2
+          }
+        }
+      },
+      "repeats": [
+        {
+          "repeat": 1,
+          "task_success": 0.2,
+          "repeated_error_rate": 1.0,
+          "context_tokens": 0,
+          "interventions": 0,
+          "unnecessary_intervention_rate": 0.0
+        },
+        {
+          "repeat": 2,
+          "task_success": 0.2,
+          "repeated_error_rate": 1.0,
+          "context_tokens": 0,
+          "interventions": 0,
+          "unnecessary_intervention_rate": 0.0
+        },
+        {
+          "repeat": 3,
+          "task_success": 0.2,
+          "repeated_error_rate": 1.0,
+          "context_tokens": 0,
+          "interventions": 0,
+          "unnecessary_intervention_rate": 0.0
+        },
+        {
+          "repeat": 4,
+          "task_success": 0.2,
+          "repeated_error_rate": 1.0,
+          "context_tokens": 0,
+          "interventions": 0,
+          "unnecessary_intervention_rate": 0.0
+        },
+        {
+          "repeat": 5,
+          "task_success": 0.2,
+          "repeated_error_rate": 1.0,
+          "context_tokens": 0,
+          "interventions": 0,
+          "unnecessary_intervention_rate": 0.0
+        }
+      ]
+    },
+    "static_always_on": {
+      "task_success": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "repeated_error_rate": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0
+      },
+      "context_tokens": {
+        "mean": 20250.0,
+        "low": 20250.0,
+        "high": 20250.0
+      },
+      "unnecessary_intervention_rate": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0
+      },
+      "p95_latency_ms": 0.006055,
+      "domains": {
+        "travel": {
+          "task_success": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          }
+        },
+        "customer_support": {
+          "task_success": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          }
+        },
+        "shopping_assistant": {
+          "task_success": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          }
+        }
+      },
+      "repeats": [
+        {
+          "repeat": 1,
+          "task_success": 1.0,
+          "repeated_error_rate": 0.0,
+          "context_tokens": 20250,
+          "interventions": 120,
+          "unnecessary_intervention_rate": 0.0
+        },
+        {
+          "repeat": 2,
+          "task_success": 1.0,
+          "repeated_error_rate": 0.0,
+          "context_tokens": 20250,
+          "interventions": 120,
+          "unnecessary_intervention_rate": 0.0
+        },
+        {
+          "repeat": 3,
+          "task_success": 1.0,
+          "repeated_error_rate": 0.0,
+          "context_tokens": 20250,
+          "interventions": 120,
+          "unnecessary_intervention_rate": 0.0
+        },
+        {
+          "repeat": 4,
+          "task_success": 1.0,
+          "repeated_error_rate": 0.0,
+          "context_tokens": 20250,
+          "interventions": 120,
+          "unnecessary_intervention_rate": 0.0
+        },
+        {
+          "repeat": 5,
+          "task_success": 1.0,
+          "repeated_error_rate": 0.0,
+          "context_tokens": 20250,
+          "interventions": 120,
+          "unnecessary_intervention_rate": 0.0
+        }
+      ]
+    },
+    "selective_verified": {
+      "task_success": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "repeated_error_rate": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0
+      },
+      "context_tokens": {
+        "mean": 12320.0,
+        "low": 12320.0,
+        "high": 12320.0
+      },
+      "unnecessary_intervention_rate": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0
+      },
+      "p95_latency_ms": 6.123055,
+      "domains": {
+        "travel": {
+          "task_success": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          }
+        },
+        "customer_support": {
+          "task_success": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          }
+        },
+        "shopping_assistant": {
+          "task_success": {
+            "mean": 1.0,
+            "low": 1.0,
+            "high": 1.0
+          }
+        }
+      },
+      "repeats": [
+        {
+          "repeat": 1,
+          "task_success": 1.0,
+          "repeated_error_rate": 0.0,
+          "context_tokens": 12320,
+          "interventions": 120,
+          "unnecessary_intervention_rate": 0.0
+        },
+        {
+          "repeat": 2,
+          "task_success": 1.0,
+          "repeated_error_rate": 0.0,
+          "context_tokens": 12320,
+          "interventions": 120,
+          "unnecessary_intervention_rate": 0.0
+        },
+        {
+          "repeat": 3,
+          "task_success": 1.0,
+          "repeated_error_rate": 0.0,
+          "context_tokens": 12320,
+          "interventions": 120,
+          "unnecessary_intervention_rate": 0.0
+        },
+        {
+          "repeat": 4,
+          "task_success": 1.0,
+          "repeated_error_rate": 0.0,
+          "context_tokens": 12320,
+          "interventions": 120,
+          "unnecessary_intervention_rate": 0.0
+        },
+        {
+          "repeat": 5,
+          "task_success": 1.0,
+          "repeated_error_rate": 0.0,
+          "context_tokens": 12320,
+          "interventions": 120,
+          "unnecessary_intervention_rate": 0.0
+        }
+      ]
+    }
+  },
+  "metrics": {
+    "task_success_uplift": 0.8,
+    "domain_task_success_uplift": {
+      "travel": 0.8,
+      "customer_support": 0.8,
+      "shopping_assistant": 0.8
+    },
+    "repeated_error_relative_reduction": 1.0,
+    "context_token_relative_reduction_vs_full_history": 0.391605,
+    "unnecessary_intervention_rate": 0.0,
+    "runtime_p95_ms": 6.123055
+  },
+  "safety": {
+    "unverified_auto_promotions": 0,
+    "namespace_leakage": 0,
+    "rollback_provenance_parity": 1.0
+  },
+  "checks": [
+    {
+      "id": "task_success_uplift",
+      "passed": true
+    },
+    {
+      "id": "positive_uplift_all_domains",
+      "passed": true
+    },
+    {
+      "id": "repeated_error_reduction",
+      "passed": true
+    },
+    {
+      "id": "context_token_reduction",
+      "passed": true
+    },
+    {
+      "id": "unnecessary_intervention",
+      "passed": true
+    },
+    {
+      "id": "runtime_latency",
+      "passed": true
+    },
+    {
+      "id": "capture_rate",
+      "passed": true
+    },
+    {
+      "id": "unverified_promotion",
+      "passed": true
+    },
+    {
+      "id": "namespace_isolation",
+      "passed": true
+    },
+    {
+      "id": "rollback_provenance",
+      "passed": true
+    }
+  ]
+}

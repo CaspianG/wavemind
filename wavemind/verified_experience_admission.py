@@ -197,7 +197,7 @@ def _result(
         "status": "admitted" if admitted else "blocked",
         "admitted": admitted,
         "source_sha": source_sha,
-        "artifact": str(ARTIFACT),
+        "artifact": ARTIFACT.as_posix(),
         "artifact_sha256": artifact_sha256,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "summary": {

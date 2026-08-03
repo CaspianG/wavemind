@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -138,13 +139,17 @@ def build_state_bench_adapter_artifact(
     *,
     training_root: str | Path,
     source_sha: str,
+    upstream_sha: str | None = None,
 ) -> dict[str, Any]:
     validation = validate_state_bench_training_root(training_root)
     return {
         "schema": "wavemind.state_bench_agent_learning_adapter.v1",
         "status": "runner_ready" if validation.valid else "blocked",
         "source_sha": source_sha,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
         "official_protocol": {
+            "repository": "https://github.com/microsoft/STATE-Bench",
+            "repository_sha": upstream_sha,
             "domains": list(STATE_BENCH_DOMAINS),
             "training_trajectories_per_domain": STATE_BENCH_TRAIN_PER_DOMAIN,
             "held_out_tasks_per_domain": 50,

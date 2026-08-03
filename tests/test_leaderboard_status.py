@@ -61,7 +61,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
         + payload["freshness_gate"]["snapshot_count"]
         == payload["freshness_gate"]["source_count"]
     )
-    assert payload["freshness_gate"]["snapshot_count"] == 3
+    assert payload["freshness_gate"]["snapshot_count"] == 4
     assert payload["freshness_gate"]["stale_count"] == 0
     assert payload["freshness_gate"]["missing_count"] == 0
     assert payload["freshness_gate"]["no_timestamp_count"] == 0
@@ -73,6 +73,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
         "benchmarks/goal4_quality_experiment_results.json",
         "benchmarks/memory_os_admission_results.json",
         "benchmarks/memory_os_remote_worker_soak_results.json",
+        "benchmarks/verified_experience_admission_results.json",
     }
     assert {
         "benchmarks/production_scale_run_plan.json",
@@ -144,6 +145,10 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
         "wavemind.goal4_quality_experiment.v1"
     )
     assert payload["goal4_quality_experiment"]["status"] == "failed_experiment"
+    assert payload["verified_experience"]["status"] == "admitted"
+    assert payload["verified_experience"]["summary"]["passed"] == 15
+    assert payload["verified_experience"]["metrics"]["task_success_uplift"] >= 0.10
+    assert payload["verified_experience"]["state_bench_status"] == "runner_ready"
     assert payload["goal4_quality_experiment"]["admitted"] is False
     assert payload["goal4_quality_experiment"]["protocol"]["full_questions"] == 451
     assert payload["goal4_quality_experiment"]["protocol"]["frozen_questions"] == 419

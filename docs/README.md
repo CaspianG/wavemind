@@ -21,6 +21,7 @@ benchmarks only when the deployment requires them.
 | Area | Guide |
 |---|---|
 | LangChain, LangGraph, LlamaIndex, CrewAI, AutoGen, and custom loops | [Framework Integrations](INTEGRATIONS.md) |
+| Capture, verify, promote, inject, inspect, and roll back agent experience | [Verified Agent Experience Runtime](VERIFIED_EXPERIENCE_RUNTIME.md) |
 | Connect any MCP-compatible agent | [MCP Integration](MCP.md) |
 | Hash, sentence-transformer, FAISS, pgvector, Qdrant, Annoy, and quantized indexes | [Embeddings And Index Backends](INDEX_BACKENDS.md) |
 | Structured payloads, multimodal contracts, storage, backup, and HTTP API | [Multimodal, Storage, And API](MULTIMODAL_AND_STORAGE.md) |
@@ -42,6 +43,8 @@ benchmarks only when the deployment requires them.
 | Current methods, artifacts, and interpretation rules | [Benchmark Guide](BENCHMARKS.md) |
 | Short public methodology | [Benchmark Brief](BENCHMARK_BRIEF.md) |
 | Adaptive agent-memory admission | [Current Admission Report](../benchmarks/AGENT_MEMORY_ADVANTAGE_ADMISSION.md) |
+| Verified agent-experience admission | [Verified Experience Admission](../benchmarks/VERIFIED_EXPERIENCE_ADMISSION.md) |
+| STATE-Bench Agent Learning interoperability | [STATE-Bench Adapter](../benchmarks/STATE_BENCH_AGENT_LEARNING_ADAPTER.md) |
 | Provider and SDK integration admission | [Integration Admission](../benchmarks/INTEGRATION_ADMISSION.md) |
 | Live checked-in status | [Living Benchmark Dashboard](https://caspiang.github.io/wavemind/) |
 | Release history | [Changelog](../CHANGELOG.md) |

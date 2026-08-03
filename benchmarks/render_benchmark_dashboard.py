@@ -299,6 +299,43 @@ def _goal4_quality_experiment_panel(status: dict[str, Any]) -> str:
     )
 
 
+def _verified_experience_panel(status: dict[str, Any]) -> str:
+    experience = status.get("verified_experience", {}) if isinstance(status, dict) else {}
+    if not isinstance(experience, dict) or not experience:
+        return ""
+    summary = experience.get("summary") if isinstance(experience.get("summary"), dict) else {}
+    metrics = experience.get("metrics") if isinstance(experience.get("metrics"), dict) else {}
+    rows = [
+        ("Status", experience.get("status", "missing")),
+        ("Checks", f"{summary.get('passed', 0)}/{summary.get('total', 0)}"),
+        ("Task-success uplift", _fmt_metric(metrics.get("task_success_uplift"))),
+        ("Repeated-error reduction", _fmt_metric(metrics.get("repeated_error_relative_reduction"))),
+        ("Context saved", _fmt_metric(metrics.get("context_token_relative_reduction_vs_full_history"))),
+        ("Unnecessary intervention", _fmt_metric(metrics.get("unnecessary_intervention_rate"))),
+        ("Runtime p95", f"{_fmt_metric(metrics.get('runtime_p95_ms'))} ms"),
+        ("STATE-Bench adapter", experience.get("state_bench_status", "missing")),
+    ]
+    table = ['<table class="compact"><tbody>']
+    for label, value in rows:
+        table.append(
+            "<tr>"
+            f"<th>{html.escape(str(label))}</th>"
+            f"<td>{html.escape(str(value))}</td>"
+            "</tr>"
+        )
+    table.append("</tbody></table>")
+    return (
+        '<section class="panel">'
+        "<h2>Verified Agent Experience</h2>"
+        "<p>Independent outcome verification, evidence-gated learning, and "
+        "selective cited intervention on a frozen local stateful protocol.</p>"
+        f"{''.join(table)}"
+        '<p><a href="../benchmarks/VERIFIED_EXPERIENCE_ADMISSION.md">'
+        "Read the verified-experience admission report</a></p>"
+        "</section>"
+    )
+
+
 def _structured_memory_panel(status: dict[str, Any]) -> str:
     structured = status.get("structured_memory", {}) if isinstance(status, dict) else {}
     if not isinstance(structured, dict) or not structured:
@@ -718,6 +755,8 @@ def render_dashboard(root: Path = PROJECT_ROOT) -> str:
   {_agent_memory_admission_panel(status)}
 
   {_goal4_quality_experiment_panel(status)}
+
+  {_verified_experience_panel(status)}
 
   {_structured_memory_panel(status)}
 

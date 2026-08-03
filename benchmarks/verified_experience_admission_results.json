@@ -1,0 +1,181 @@
+{
+  "schema": "wavemind.verified_experience_admission.v1",
+  "status": "admitted",
+  "admitted": true,
+  "source_sha": "7a457e18082c3eda2e9fbafba2a2ac32fbd2abae",
+  "artifact": "benchmarks/verified_experience_results.json",
+  "artifact_sha256": "62c9c4dcef625936422e49e979b929837a1327c4ca63142e2d21bc1b276d0455",
+  "generated_at": "2026-08-03T15:12:34.439147+00:00",
+  "summary": {
+    "passed": 15,
+    "total": 15,
+    "blockers": []
+  },
+  "checks": [
+    {
+      "id": "artifact-schema",
+      "passed": true,
+      "evidence": {
+        "schema": "wavemind.verified_experience_benchmark.v1",
+        "status": "pass"
+      },
+      "target": "passing verified-experience benchmark v1"
+    },
+    {
+      "id": "source-sha",
+      "passed": true,
+      "evidence": "7a457e18082c3eda2e9fbafba2a2ac32fbd2abae",
+      "target": "7a457e18082c3eda2e9fbafba2a2ac32fbd2abae"
+    },
+    {
+      "id": "frozen-dataset",
+      "passed": true,
+      "evidence": {
+        "revision": "verified-experience-stateful-v1-frozen-20260803",
+        "fingerprint_sha256": "2799210395afba32d175cefbf99b0c2bce1041688237790f273230d72c51a4f0",
+        "domains": [
+          "travel",
+          "customer_support",
+          "shopping_assistant"
+        ],
+        "held_out_tasks": 150,
+        "held_out_per_domain": 50,
+        "hard_per_domain": 40,
+        "split_frozen_before_evaluation": true,
+        "answer_metadata_visible_to_agent": false
+      },
+      "target": "frozen 3-domain/150-task split without answer leakage"
+    },
+    {
+      "id": "fair-protocol",
+      "passed": true,
+      "evidence": {
+        "repeats": 5,
+        "confidence_interval": "two-sided 95% Student t, df=4",
+        "same_tasks_and_environment_verifiers": true,
+        "evaluation_store_read_only": true,
+        "no_llm_api_gpu": true,
+        "no_test_specific_rules": true,
+        "independent_environment_verification": true,
+        "comparison_modes": [
+          "no_memory",
+          "static_always_on",
+          "selective_verified"
+        ]
+      },
+      "target": "five comparable repeats with executable independent verifiers"
+    },
+    {
+      "id": "capture-rate",
+      "passed": true,
+      "evidence": 1.0,
+      "target": ">= 0.99"
+    },
+    {
+      "id": "unverified-auto-promotion",
+      "passed": true,
+      "evidence": 0,
+      "target": 0
+    },
+    {
+      "id": "namespace-leakage",
+      "passed": true,
+      "evidence": 0,
+      "target": 0
+    },
+    {
+      "id": "rollback-provenance",
+      "passed": true,
+      "evidence": 1.0,
+      "target": 1.0
+    },
+    {
+      "id": "task-success-uplift",
+      "passed": true,
+      "evidence": 0.8,
+      "target": ">= 0.10"
+    },
+    {
+      "id": "all-domain-uplift",
+      "passed": true,
+      "evidence": {
+        "travel": 0.8,
+        "customer_support": 0.8,
+        "shopping_assistant": 0.8
+      },
+      "target": "positive in all three domains"
+    },
+    {
+      "id": "repeated-error-reduction",
+      "passed": true,
+      "evidence": 1.0,
+      "target": ">= 0.50"
+    },
+    {
+      "id": "context-token-reduction",
+      "passed": true,
+      "evidence": 0.391605,
+      "target": ">= 0.30"
+    },
+    {
+      "id": "unnecessary-intervention",
+      "passed": true,
+      "evidence": 0.0,
+      "target": "<= 0.10"
+    },
+    {
+      "id": "runtime-p95",
+      "passed": true,
+      "evidence": 6.123055,
+      "target": "<= 75 ms"
+    },
+    {
+      "id": "embedded-checks",
+      "passed": true,
+      "evidence": [
+        {
+          "id": "task_success_uplift",
+          "passed": true
+        },
+        {
+          "id": "positive_uplift_all_domains",
+          "passed": true
+        },
+        {
+          "id": "repeated_error_reduction",
+          "passed": true
+        },
+        {
+          "id": "context_token_reduction",
+          "passed": true
+        },
+        {
+          "id": "unnecessary_intervention",
+          "passed": true
+        },
+        {
+          "id": "runtime_latency",
+          "passed": true
+        },
+        {
+          "id": "capture_rate",
+          "passed": true
+        },
+        {
+          "id": "unverified_promotion",
+          "passed": true
+        },
+        {
+          "id": "namespace_isolation",
+          "passed": true
+        },
+        {
+          "id": "rollback_provenance",
+          "passed": true
+        }
+      ],
+      "target": "all ten benchmark checks pass"
+    }
+  ],
+  "claim_boundary": "Admission applies only to the frozen local verified-experience protocol; it is not an official STATE-Bench score."
+}

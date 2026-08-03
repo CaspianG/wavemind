@@ -49,6 +49,7 @@ claim that one vector database should replace every other system.
 | Production Memory OS | `admitted`, 13/13 requirements | [`memory_os_admission_results.json`](benchmarks/memory_os_admission_results.json) |
 | Adaptive agent-memory advantage | Controlled adaptive slice passes, but the composite public gate remains `blocked` | [`agent_memory_advantage_admission_results.json`](benchmarks/agent_memory_advantage_admission_results.json) |
 | Goal 4 generalization experiment | `failed_experiment`: full 451 quality uplift `-0.44 pp`; untouched 419 uplift `-1.19 pp`; context `-41.0%`; p95 `+1.59 ms` | [`goal4_quality_experiment_results.json`](benchmarks/goal4_quality_experiment_results.json) |
+| Verified Agent Experience Runtime | `admitted`, 15/15 checks on 150 frozen stateful tasks across three domains; success `20%` -> `100%`; repeated errors `-100%`; context `-39.2%`; runtime p95 `6.12 ms` | [`verified_experience_admission_results.json`](benchmarks/verified_experience_admission_results.json) |
 | Experienced Work Agent v1 | `admitted` only for its frozen local three-domain scenario: 12/12 checks; success `16.7%` -> `100%`; repeated errors `83.3%` -> `0%`; context `-40%` | [`experience_quality_admission_results.json`](benchmarks/experience_quality_admission_results.json) |
 | Developer onboarding | `admitted`, 8/8 checks; Python, TypeScript, MCP, and Docker starters; first cited Experience Packet in `0.58s` | [`developer_experience_admission_results.json`](benchmarks/developer_experience_admission_results.json) |
 | Memory safety | `admitted`, 10/10 checks; 375 attacks contained, 100% benign acceptance, zero cross-namespace leakage, rollback/provenance `1.00` | [`memory_safety_admission_results.json`](benchmarks/memory_safety_admission_results.json) |
@@ -105,6 +106,24 @@ wavemind doctor --project .
 By default, WaveMind creates `wavemind.sqlite3` in the current working
 directory. That file is the local source of truth. Keep it out of git and back
 it up like application state.
+
+## Verified Agent Experience
+
+The Agent Experience Runtime captures tool runs, accepts outcomes only from an
+independent test, tool, environment, or operator, and keeps new procedures in
+shadow until repeated evidence promotes them. At query time it can remain
+silent or inject one compact, cited Experience Packet.
+
+```sh
+python examples/verified_experience_runtime.py
+```
+
+The example performs a real local cycle: a cold plan fails, the environment
+verifies the result, independently verified executions activate a procedure,
+and a held-out attempt succeeds using the cited procedure. The same lifecycle
+is available through Python, HTTP, OpenAI Agents, Anthropic hooks, LangGraph,
+MCP, TypeScript, and the Studio inspection views. See the
+[runtime guide](docs/VERIFIED_EXPERIENCE_RUNTIME.md).
 
 ## CLI Cheat Sheet
 
@@ -552,6 +571,8 @@ loopback, and production evidence.
 
 | Evidence | Current checked result |
 |---|---|
+| Verified Agent Experience Runtime | `admitted`; 150 frozen tasks, 5 repeats, 95% CIs, success `0.20 -> 1.00`, context `-39.2%`, p95 `6.12 ms` |
+| STATE-Bench Agent Learning adapter | `runner_ready`; official `100 x 3` train split validated at an exact upstream SHA; official paid evaluation not run |
 | Memory OS admission | `admitted`, 13/13 requirements |
 | Agent-memory advantage admission | Controlled adaptive slice passes; composite public gate blocked on strict LongMemEval-V2 |
 | Memory OS remote soak | 6 hours, 500 cycles, 2500 attempts, zero corruption |

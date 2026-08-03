@@ -4,6 +4,17 @@ Notable user-facing and operational changes are recorded here. Git tags,
 GitHub Releases, checked evidence artifacts, and package versions remain the
 authoritative release sources.
 
+## Unreleased
+
+- Added the Verified Agent Experience Runtime with independent outcome
+  verification, evidence-gated promotion, selective cited intervention,
+  rollback, and shared Python/HTTP/provider/MCP/TypeScript contracts.
+- Added Studio inspection for run timelines, tool outcomes, candidate evidence,
+  intervention decisions, conflicts, and rollback controls.
+- Added a frozen 150-task, three-domain, five-repeat local admission benchmark
+  and a read-only STATE-Bench Agent Learning adapter with official train-split
+  protocol validation.
+
 ## [2.9.0] - 2026-07-30
 
 - Added `wavemind init` starter projects for Python, TypeScript, MCP, and

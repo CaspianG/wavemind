@@ -28,6 +28,18 @@ Memory safety admission: [`benchmarks/MEMORY_SAFETY_ADMISSION.md`](../benchmarks
 from [`benchmarks/memory_safety_admission_results.json`](../benchmarks/memory_safety_admission_results.json).
 Provider integration admission: [`benchmarks/INTEGRATION_ADMISSION.md`](../benchmarks/INTEGRATION_ADMISSION.md)
 from [`benchmarks/integration_admission_results.json`](../benchmarks/integration_admission_results.json).
+Verified Agent Experience admission: [`benchmarks/VERIFIED_EXPERIENCE_ADMISSION.md`](../benchmarks/VERIFIED_EXPERIENCE_ADMISSION.md)
+from [`benchmarks/verified_experience_admission_results.json`](../benchmarks/verified_experience_admission_results.json).
+It compares no memory, static always-on memory, and selective verified
+experience on the same 150 frozen stateful tasks across travel, customer
+support, and shopping assistant domains, with five repeats and executable
+environment verification. The result is local product evidence, not an
+official STATE-Bench score.
+STATE-Bench Agent Learning interoperability:
+[`benchmarks/STATE_BENCH_AGENT_LEARNING_ADAPTER.md`](../benchmarks/STATE_BENCH_AGENT_LEARNING_ADAPTER.md).
+The checked artifact validates the official 300-trajectory train split at an
+exact upstream commit and the required read-only `retrieve_learnings` contract;
+the paid official simulator/judge run remains explicitly unperformed.
 Living HTML dashboard: [`docs/benchmark-dashboard.html`](benchmark-dashboard.html).
 Machine-readable dashboard status: [`docs/data/leaderboard-status.json`](data/leaderboard-status.json).
 The weekly workflow also publishes the refreshed dashboard to GitHub Pages at

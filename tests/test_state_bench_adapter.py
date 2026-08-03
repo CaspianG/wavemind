@@ -64,6 +64,7 @@ def test_state_bench_protocol_validator_requires_exact_train_split(
     artifact = build_state_bench_adapter_artifact(
         training_root=root,
         source_sha="4" * 40,
+        upstream_sha="6" * 40,
     )
 
     assert validation.valid is True
@@ -71,6 +72,7 @@ def test_state_bench_protocol_validator_requires_exact_train_split(
     assert len(validation.fingerprint_sha256) == 64
     assert artifact["status"] == "runner_ready"
     assert artifact["official_protocol"]["official_paid_model_run_performed"] is False
+    assert artifact["official_protocol"]["repository_sha"] == "6" * 40
     assert "not an official STATE-Bench result" in artifact["claim_boundary"]
 
 
