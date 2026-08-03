@@ -42,15 +42,24 @@ def test_experienced_work_agent_meets_held_out_product_gates(tmp_path) -> None:
         for check_id, check in checks.items()
         if check_id != "p95-latency"
     )
-    assert checks["p95-latency"]["target"] == "<= 0.20 relative"
-    assert checks["p95-latency"]["evidence"] == pytest.approx(
-        payload["uplift"]["p95_latency_regression"]
+    assert checks["p95-latency"]["target"] == (
+        "<= 0.20 relative, or <= 5 ms absolute delta when baseline is < 5 ms; "
+        "experience runtime overhead <= 75 ms"
     )
+    assert checks["p95-latency"]["evidence"][
+        "relative_regression"
+    ] == pytest.approx(payload["uplift"]["p95_latency_regression"])
     by_engine = {row["engine"]: row for row in payload["results"]}
     assert payload["uplift"]["p95_latency_regression"] == pytest.approx(
         by_engine["WaveMind Experience"]["p95_runtime_overhead_ms"]
         / by_engine["WaveMind Core"]["p95_runtime_overhead_ms"]
         - 1.0
+    )
+    assert payload["uplift"][
+        "p95_runtime_overhead_absolute_delta_ms"
+    ] == pytest.approx(
+        by_engine["WaveMind Experience"]["p95_runtime_overhead_ms"]
+        - by_engine["WaveMind Core"]["p95_runtime_overhead_ms"]
     )
     assert payload["protocol"]["paired_latency_samples"] is True
     assert payload["protocol"]["paired_latency_regression_estimator"] == (

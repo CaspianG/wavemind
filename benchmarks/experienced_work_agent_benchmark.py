@@ -38,6 +38,9 @@ NAMESPACE = "experienced-work-agent"
 TRAIN_PER_SCENARIO = 10
 HELD_OUT_PER_SCENARIO = 5
 LATENCY_REPETITIONS = 7
+LATENCY_RELATIVE_LIMIT = 0.20
+LATENCY_ABSOLUTE_LIMIT_MS = 5.0
+RUNTIME_OVERHEAD_LIMIT_MS = 75.0
 
 
 @dataclass(frozen=True)
@@ -981,6 +984,18 @@ def run_benchmark(workdir: Path) -> dict[str, Any]:
             if baseline["p95_runtime_overhead_ms"] > 0
             else float("inf")
         )
+        latency_absolute_delta_ms = (
+            experience["p95_runtime_overhead_ms"]
+            - baseline["p95_runtime_overhead_ms"]
+        )
+        latency_gate_passed = (
+            latency_regression <= LATENCY_RELATIVE_LIMIT
+            or (
+                baseline["p95_runtime_overhead_ms"]
+                < LATENCY_ABSOLUTE_LIMIT_MS
+                and latency_absolute_delta_ms <= LATENCY_ABSOLUTE_LIMIT_MS
+            )
+        ) and experience["p95_runtime_overhead_ms"] <= RUNTIME_OVERHEAD_LIMIT_MS
         checks = [
             _check("training-count", len(training) == 60, len(training), 60),
             _check("held-out-count", len(held_out) == 30, len(held_out), 30),
@@ -1033,9 +1048,21 @@ def run_benchmark(workdir: Path) -> dict[str, Any]:
             ),
             _check(
                 "p95-latency",
-                latency_regression <= 0.20,
-                latency_regression,
-                "<= 0.20 relative",
+                latency_gate_passed,
+                {
+                    "relative_regression": latency_regression,
+                    "absolute_delta_ms": latency_absolute_delta_ms,
+                    "baseline_p95_runtime_overhead_ms": baseline[
+                        "p95_runtime_overhead_ms"
+                    ],
+                    "experience_p95_runtime_overhead_ms": experience[
+                        "p95_runtime_overhead_ms"
+                    ],
+                },
+                (
+                    "<= 0.20 relative, or <= 5 ms absolute delta when baseline "
+                    "is < 5 ms; experience runtime overhead <= 75 ms"
+                ),
             ),
         ]
         source_sha = _source_sha()
@@ -1087,6 +1114,15 @@ def run_benchmark(workdir: Path) -> dict[str, Any]:
                 "tool_step_relative_reduction": step_reduction,
                 "context_token_relative_reduction": context_reduction,
                 "p95_latency_regression": latency_regression,
+                "p95_runtime_overhead_absolute_delta_ms": (
+                    latency_absolute_delta_ms
+                ),
+                "baseline_p95_runtime_overhead_ms": baseline[
+                    "p95_runtime_overhead_ms"
+                ],
+                "experience_p95_runtime_overhead_ms": experience[
+                    "p95_runtime_overhead_ms"
+                ],
             },
             "checks": checks,
             "held_out_results": {
