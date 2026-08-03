@@ -143,6 +143,12 @@ policy matters more than raw vector-database scale:
   success `16.7% -> 100%`, repeated errors `83.3% -> 0%`, 25% fewer tool
   steps, 40% less context, and p95 within the 20% budget. This is controlled
   local product evidence, not yet a public-dataset or external-agent claim.
+  Goal 4 subsequently tested a stricter LongMemEval-V2 architecture on 451
+  frozen questions and failed quality admission: full uplift was `-0.44 pp`,
+  untouched-419 uplift was `-1.19 pp`, despite `41.0%` context reduction and
+  only `+1.59 ms` p95 overhead. The failed experiment is preserved in
+  `benchmarks/goal4_quality_experiment_results.json`; its held-out results are
+  not reused for tuning.
 - `wavemind init` now creates runnable Python, TypeScript, MCP, and Docker
   starters without deleting unrelated files. The Python starter promotes a
   lesson only after three verified outcomes and prints a persisted Experience

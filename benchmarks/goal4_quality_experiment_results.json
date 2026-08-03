@@ -1,0 +1,69 @@
+{
+  "schema": "wavemind.goal4_quality_experiment.v1",
+  "generated_at": "2026-07-30T14:38:50Z",
+  "status": "failed_experiment",
+  "admitted": false,
+  "decision_sha": "4959dbfda325bf7bab979861b93e276472e8bbfb",
+  "evaluated_source_shas": {
+    "full451": "ddae085b8be6fc8c52fcad7c5504adef3850dc2f",
+    "final_dev32": "81c8c2650115310f8b405442420f718696379207"
+  },
+  "protocol": {
+    "dataset": "LongMemEval-V2 Small",
+    "dataset_revision": "f152293e235517d504809563c833d7190b8c713b",
+    "development_questions": 32,
+    "frozen_questions": 419,
+    "full_questions": 451,
+    "thresholds_frozen": true,
+    "held_out_results_used_for_tuning": false,
+    "second_full_run_launched": false
+  },
+  "full451": {
+    "core_task_success_rate": 0.18625277161862527,
+    "memory_os_task_success_rate": 0.18181818181818182,
+    "task_success_uplift": -0.00443458980044345,
+    "improved_category_count": 3,
+    "context_token_reduction_vs_core": 0.4099552226942337,
+    "p95_latency_delta_ms": 1.5909000067040324,
+    "execution_errors": 0
+  },
+  "untouched419": {
+    "core_task_success_rate": 0.18854415274463007,
+    "memory_os_task_success_rate": 0.1766109785202864,
+    "task_success_uplift": -0.011933174224343673,
+    "development_overlap": 0,
+    "execution_errors": 0
+  },
+  "final_dev32": {
+    "core_task_success_rate": 0.1875,
+    "memory_os_task_success_rate": 0.1875,
+    "task_success_uplift": 0.0,
+    "improved_category_count": 1,
+    "context_token_reduction_vs_core": 0.3616532756973484,
+    "p95_latency_delta_ms": 2.10510000761133,
+    "execution_errors": 0,
+    "worker_errors": 0
+  },
+  "required_gates": {
+    "minimum_task_success_uplift": 0.01,
+    "minimum_improved_categories": 4,
+    "minimum_context_token_reduction": 0.35,
+    "maximum_p95_latency_delta_ms": 5.0,
+    "maximum_p95_latency_regression_ratio": 0.2
+  },
+  "failed_checks": [
+    "full451_task_success_uplift",
+    "full451_improved_categories",
+    "untouched419_task_success_uplift",
+    "final_dev32_task_success_uplift",
+    "final_dev32_improved_categories"
+  ],
+  "passed_controls": [
+    "full_protocol_complete",
+    "zero_execution_errors",
+    "context_token_reduction",
+    "p95_latency_budget",
+    "development_holdout_separation"
+  ],
+  "claim_boundary": "Goal 4 is a failed quality experiment. It proved context compression and bounded retrieval overhead, but it did not prove task-success uplift or broad category improvement. The result must not be presented as agent-quality admission."
+}

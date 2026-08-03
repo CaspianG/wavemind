@@ -40,6 +40,9 @@ def test_benchmark_dashboard_renderer_writes_static_html(tmp_path):
     assert "Controlled adaptive-memory advantage plus direct full LoCoMo" in html
     assert "Direct public benchmarks" in html
     assert "benchmarks/AGENT_MEMORY_ADVANTAGE_ADMISSION.md" in html
+    assert "Goal 4 Quality Experiment" in html
+    assert "did not improve answer quality" in html
+    assert "goal4_quality_experiment_results.json" in html
     assert "Structured Memory" in html
     assert "Typed memory evidence: image, audio, video, 3D, table, event, graph" in html
     assert "Cross-modal precision@1" in html

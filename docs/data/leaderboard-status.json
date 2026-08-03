@@ -41,9 +41,9 @@
     "status": "pass",
     "checked_at": "2026-07-29T00:32:46Z",
     "max_age_days": 8.0,
-    "source_count": 34,
+    "source_count": 35,
     "fresh_count": 32,
-    "snapshot_count": 2,
+    "snapshot_count": 3,
     "stale_count": 0,
     "missing_count": 0,
     "no_timestamp_count": 0,
@@ -53,7 +53,8 @@
     "no_timestamp_sources": [],
     "snapshot_sources": [
       "benchmarks/memory_os_admission_results.json",
-      "benchmarks/memory_os_remote_worker_soak_results.json"
+      "benchmarks/memory_os_remote_worker_soak_results.json",
+      "benchmarks/goal4_quality_experiment_results.json"
     ],
     "sources": [
       {
@@ -247,6 +248,14 @@
         "timestamp": "2026-07-29T00:31:44Z",
         "age_days": 0.0007175925925925926,
         "status": "pass"
+      },
+      {
+        "path": "benchmarks/goal4_quality_experiment_results.json",
+        "schema": "wavemind.goal4_quality_experiment.v1",
+        "timestamp_key": "generated_at",
+        "timestamp": "2026-07-30T14:38:50Z",
+        "age_days": null,
+        "status": "snapshot"
       },
       {
         "path": "benchmarks/structured_memory_results.json",
@@ -800,6 +809,56 @@
       }
     },
     "claim_boundary": "Admission requires controlled paired advantage evidence and direct Memory OS execution on all three public memory benchmarks."
+  },
+  "goal4_quality_experiment": {
+    "schema": "wavemind.goal4_quality_experiment.v1",
+    "status": "failed_experiment",
+    "admitted": false,
+    "decision_sha": "4959dbfda325bf7bab979861b93e276472e8bbfb",
+    "protocol": {
+      "dataset": "LongMemEval-V2 Small",
+      "dataset_revision": "f152293e235517d504809563c833d7190b8c713b",
+      "development_questions": 32,
+      "frozen_questions": 419,
+      "full_questions": 451,
+      "thresholds_frozen": true,
+      "held_out_results_used_for_tuning": false,
+      "second_full_run_launched": false
+    },
+    "full451": {
+      "core_task_success_rate": 0.18625277161862527,
+      "memory_os_task_success_rate": 0.18181818181818182,
+      "task_success_uplift": -0.00443458980044345,
+      "improved_category_count": 3,
+      "context_token_reduction_vs_core": 0.4099552226942337,
+      "p95_latency_delta_ms": 1.5909000067040324,
+      "execution_errors": 0
+    },
+    "untouched419": {
+      "core_task_success_rate": 0.18854415274463007,
+      "memory_os_task_success_rate": 0.1766109785202864,
+      "task_success_uplift": -0.011933174224343673,
+      "development_overlap": 0,
+      "execution_errors": 0
+    },
+    "final_dev32": {
+      "core_task_success_rate": 0.1875,
+      "memory_os_task_success_rate": 0.1875,
+      "task_success_uplift": 0.0,
+      "improved_category_count": 1,
+      "context_token_reduction_vs_core": 0.3616532756973484,
+      "p95_latency_delta_ms": 2.10510000761133,
+      "execution_errors": 0,
+      "worker_errors": 0
+    },
+    "failed_checks": [
+      "full451_task_success_uplift",
+      "full451_improved_categories",
+      "untouched419_task_success_uplift",
+      "final_dev32_task_success_uplift",
+      "final_dev32_improved_categories"
+    ],
+    "claim_boundary": "Goal 4 is a failed quality experiment. It proved context compression and bounded retrieval overhead, but it did not prove task-success uplift or broad category improvement. The result must not be presented as agent-quality admission."
   },
   "structured_memory": {
     "schema": "wavemind.structured_memory_report.v1",
@@ -9238,6 +9297,7 @@
     "benchmarks/agent_coherence_results.json",
     "benchmarks/agent_impact_results.json",
     "benchmarks/agent_memory_advantage_admission_results.json",
+    "benchmarks/goal4_quality_experiment_results.json",
     "benchmarks/structured_memory_results.json",
     "benchmarks/memory_os_intelligence_results.json",
     "benchmarks/cluster_autoscale_results.json",

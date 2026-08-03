@@ -47,13 +47,14 @@ claim that one vector database should replace every other system.
 | Proof | Current checked result | Source |
 |---|---|---|
 | Production Memory OS | `admitted`, 13/13 requirements | [`memory_os_admission_results.json`](benchmarks/memory_os_admission_results.json) |
-| Adaptive agent-memory advantage | Controlled adaptive slice is admitted; the composite public gate is blocked pending the full strict LongMemEval-V2 rerun | [`agent_memory_advantage_admission_results.json`](benchmarks/agent_memory_advantage_admission_results.json) |
-| Experienced Work Agent | `admitted`, 12/12 checks; held-out success `16.7%` -> `100%`, repeated errors `83.3%` -> `0%`, context `-40%` | [`experience_quality_admission_results.json`](benchmarks/experience_quality_admission_results.json) |
+| Adaptive agent-memory advantage | Controlled adaptive slice passes, but the composite public gate remains `blocked` | [`agent_memory_advantage_admission_results.json`](benchmarks/agent_memory_advantage_admission_results.json) |
+| Goal 4 generalization experiment | `failed_experiment`: full 451 quality uplift `-0.44 pp`; untouched 419 uplift `-1.19 pp`; context `-41.0%`; p95 `+1.59 ms` | [`goal4_quality_experiment_results.json`](benchmarks/goal4_quality_experiment_results.json) |
+| Experienced Work Agent v1 | `admitted` only for its frozen local three-domain scenario: 12/12 checks; success `16.7%` -> `100%`; repeated errors `83.3%` -> `0%`; context `-40%` | [`experience_quality_admission_results.json`](benchmarks/experience_quality_admission_results.json) |
 | Developer onboarding | `admitted`, 8/8 checks; Python, TypeScript, MCP, and Docker starters; first cited Experience Packet in `0.58s` | [`developer_experience_admission_results.json`](benchmarks/developer_experience_admission_results.json) |
 | Memory safety | `admitted`, 10/10 checks; 375 attacks contained, 100% benign acceptance, zero cross-namespace leakage, rollback/provenance `1.00` | [`memory_safety_admission_results.json`](benchmarks/memory_safety_admission_results.json) |
 | Provider integrations | `admitted`, 10/10 checks and 11/11 mandatory cases across Python, OpenAI Agents, Anthropic, MCP, LangGraph, HTTP, portable bundles, Mem0 import, and a clean TypeScript package; semantic parity `1.00` | [`integration_admission_results.json`](benchmarks/integration_admission_results.json) |
 | Remote Redis/worker soak | 6 hours, 500/500 cycles, 2,500 attempts, zero failures or state corruption | [`memory_os_remote_worker_soak_results.json`](benchmarks/memory_os_remote_worker_soak_results.json) |
-| LongMemEval-V2 protocol | Strict frozen-20 smoke: official per-question haystacks, isolated A/B stores, Core `10%`, Memory OS `10%`; full strict rerun remains gated | [`strict smoke`](benchmarks/longmemeval_v2_frozen20_protocol_results.json) / [`legacy 451-question execution`](benchmarks/longmemeval_v2_small_memory_os_results.json) |
+| LongMemEval-V2 protocol | Goal 4 completed a strict frozen 451-question experiment; it passed execution/context/latency controls but failed quality uplift, so no admission claim is made | [`failed experiment`](benchmarks/goal4_quality_experiment_results.json) / [`strict smoke`](benchmarks/longmemeval_v2_frozen20_protocol_results.json) |
 | Core production readiness | `pass`, 39/39 criteria | [`production_readiness_results.json`](benchmarks/production_readiness_results.json) |
 | Public package | PyPI and GitHub release `v2.9.0` | [PyPI](https://pypi.org/project/wavemind/) / [release](https://github.com/CaspianG/wavemind/releases/latest) |
 

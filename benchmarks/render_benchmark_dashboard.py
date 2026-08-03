@@ -255,6 +255,50 @@ def _agent_memory_admission_panel(status: dict[str, Any]) -> str:
     )
 
 
+def _goal4_quality_experiment_panel(status: dict[str, Any]) -> str:
+    experiment = (
+        status.get("goal4_quality_experiment", {})
+        if isinstance(status, dict)
+        else {}
+    )
+    if not isinstance(experiment, dict) or not experiment:
+        return ""
+    full = experiment.get("full451") if isinstance(experiment.get("full451"), dict) else {}
+    frozen = (
+        experiment.get("untouched419")
+        if isinstance(experiment.get("untouched419"), dict)
+        else {}
+    )
+    rows = [
+        ("Status", experiment.get("status", "missing")),
+        ("Admitted", str(experiment.get("admitted", False)).lower()),
+        ("Full 451 uplift", _fmt_metric(full.get("task_success_uplift"))),
+        ("Untouched 419 uplift", _fmt_metric(frozen.get("task_success_uplift"))),
+        ("Context saved", _fmt_metric(full.get("context_token_reduction_vs_core"))),
+        ("p95 delta", f"{_fmt_metric(full.get('p95_latency_delta_ms'))} ms"),
+    ]
+    table = ['<table class="compact"><tbody>']
+    for label, value in rows:
+        table.append(
+            "<tr>"
+            f"<th>{html.escape(str(label))}</th>"
+            f"<td>{html.escape(str(value))}</td>"
+            "</tr>"
+        )
+    table.append("</tbody></table>")
+    return (
+        '<section class="panel">'
+        "<h2>Goal 4 Quality Experiment</h2>"
+        "<p>The frozen LongMemEval-V2 experiment compressed context within the "
+        "latency budget but did not improve answer quality. This blocked result is "
+        "published as evidence, not treated as a dashboard failure.</p>"
+        f"{''.join(table)}"
+        '<p><a href="../benchmarks/goal4_quality_experiment_results.json">'
+        "Read the machine-readable failed experiment</a></p>"
+        "</section>"
+    )
+
+
 def _structured_memory_panel(status: dict[str, Any]) -> str:
     structured = status.get("structured_memory", {}) if isinstance(status, dict) else {}
     if not isinstance(structured, dict) or not structured:
@@ -672,6 +716,8 @@ def render_dashboard(root: Path = PROJECT_ROOT) -> str:
   {_agent_impact_panel(status)}
 
   {_agent_memory_admission_panel(status)}
+
+  {_goal4_quality_experiment_panel(status)}
 
   {_structured_memory_panel(status)}
 
