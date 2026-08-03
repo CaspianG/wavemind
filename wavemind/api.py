@@ -4,6 +4,7 @@ import hashlib
 import logging
 import os
 import time
+import uuid
 from collections import deque
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -28,6 +29,13 @@ from .experience import (
     parse_tool_trajectory,
 )
 from .experience_compiler import ExperienceCompiler
+from .experience_runtime import (
+    AgentEventKind,
+    AgentExperienceEvent,
+    AgentExperienceRuntime,
+    OutcomeVerification,
+    VerificationSource,
+)
 from .experience_portability import (
     export_experience_bundle,
     import_experience_bundle,
@@ -1120,6 +1128,69 @@ class ExperienceBundleImportRequest(BaseModel):
     bundle: dict[str, Any]
 
 
+class ExperienceRuntimeStartRequest(BaseModel):
+    query: str = Field(min_length=1)
+    objective: str = Field(min_length=1)
+    domain: str = Field(min_length=1)
+    task_type: str = Field(min_length=1)
+    namespace: str = Field(default="default", min_length=1)
+    session_id: str | None = None
+    run_id: str | None = None
+    task_id: str | None = None
+    tools: list[str] = Field(default_factory=list)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    token_budget: int = Field(default=400, ge=32)
+    top_k: int = Field(default=3, ge=1, le=100)
+    canary: bool = False
+
+
+class ExperienceRuntimeEventRequest(BaseModel):
+    id: str = Field(min_length=1)
+    namespace: str = Field(default="default", min_length=1)
+    run_id: str = Field(min_length=1)
+    kind: str = Field(min_length=1)
+    sequence: int = Field(ge=0)
+    occurred_at: float | None = None
+    session_id: str | None = None
+    task_id: str | None = None
+    parent_event_id: str | None = None
+    tool_name: str | None = None
+    duration_ms: float | None = Field(default=None, ge=0.0)
+    payload: dict[str, Any] = Field(default_factory=dict)
+
+
+class ExperienceRuntimeVerifyRequest(BaseModel):
+    namespace: str = Field(default="default", min_length=1)
+    evidence_id: str = Field(min_length=1)
+    source: str
+    verifier: str = Field(min_length=1)
+    success: bool
+    score: float | None = Field(default=None, ge=0.0, le=1.0)
+    reference: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    applied_experience_ids: list[str] = Field(default_factory=list)
+
+
+class ExperienceRuntimeInterventionRequest(BaseModel):
+    query: str = Field(min_length=1)
+    namespace: str = Field(default="default", min_length=1)
+    run_id: str | None = None
+    task_id: str | None = None
+    domains: list[str] = Field(default_factory=list)
+    task_types: list[str] = Field(default_factory=list)
+    tools: list[str] = Field(default_factory=list)
+    token_budget: int = Field(default=400, ge=32)
+    top_k: int = Field(default=3, ge=1, le=100)
+    canary: bool = False
+
+
+class ExperienceRuntimeLifecycleRequest(BaseModel):
+    namespace: str = Field(default="default", min_length=1)
+    reason: str = Field(min_length=1)
+    evidence_id: str | None = None
+    score: float = Field(default=1.0, ge=0.0, le=1.0)
+
+
 def _remember_response_id(result: Any) -> int:
     if isinstance(result, int):
         return result
@@ -1300,6 +1371,7 @@ def create_app(
     app.state.experience_store = experience_store
     app.state.experience_store_owned = False
     app.state.experience_compilers = {}
+    app.state.experience_runtimes = {}
     app.state.experience_lock = Lock()
 
     def _experience_compiler(namespace: str) -> ExperienceCompiler:
@@ -1333,6 +1405,16 @@ def create_app(
                 app.state.experience_compilers[selected] = compiler
             return compiler
 
+    def _experience_runtime(namespace: str) -> AgentExperienceRuntime:
+        compiler = _experience_compiler(namespace)
+        selected = namespace.strip()
+        with app.state.experience_lock:
+            runtime = app.state.experience_runtimes.get(selected)
+            if runtime is None:
+                runtime = AgentExperienceRuntime(compiler)
+                app.state.experience_runtimes[selected] = runtime
+            return runtime
+
     def _close_experience_store() -> None:
         if (
             app.state.experience_store_owned
@@ -1341,6 +1423,7 @@ def create_app(
             app.state.experience_store.close()
             app.state.experience_store = None
             app.state.experience_compilers.clear()
+            app.state.experience_runtimes.clear()
 
     app.router.add_event_handler("shutdown", _close_experience_store)
 
@@ -1423,6 +1506,13 @@ def create_app(
         limit: int = Query(default=200, ge=0, le=1000),
     ):
         return studio_snapshot(app.state.mind, namespace=namespace, limit=limit)
+
+    @app.get("/studio/experience", dependencies=[Depends(require_role("read"))])
+    def studio_experience(
+        namespace: str = "default",
+        limit: int = Query(default=100, ge=1, le=1000),
+    ):
+        return _experience_runtime(namespace).snapshot(namespace=namespace, limit=limit)
 
     @app.get("/studio/heatmap", dependencies=[Depends(require_role("read"))])
     def studio_heatmap(bins: int = Query(default=18, ge=4, le=48)):
@@ -1719,6 +1809,252 @@ def create_app(
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
         return report.__dict__
+
+    @app.post(
+        "/experience/runtime/runs",
+        dependencies=[Depends(require_role("write"))],
+    )
+    def start_experience_runtime_run(request: ExperienceRuntimeStartRequest):
+        runtime = _experience_runtime(request.namespace)
+        session_id = request.session_id or f"session_{uuid.uuid4().hex}"
+        run_id = request.run_id or f"run_{uuid.uuid4().hex}"
+        task_id = request.task_id or f"task_{uuid.uuid4().hex}"
+        try:
+            intervention = runtime.decide(
+                request.query,
+                namespace=request.namespace,
+                run_id=run_id,
+                task_id=task_id,
+                domains=(request.domain,),
+                task_types=(request.task_type,),
+                tools=request.tools,
+                token_budget=request.token_budget,
+                top_k=request.top_k,
+                canary=request.canary,
+            )
+            applied = (
+                tuple(item.experience_id for item in intervention.packet.items)
+                if intervention.inject and intervention.packet is not None
+                else ()
+            )
+            handle = runtime.begin_run(
+                namespace=request.namespace,
+                objective=request.objective,
+                domain=request.domain,
+                task_type=request.task_type,
+                session_id=session_id,
+                run_id=run_id,
+                task_id=task_id,
+                metadata={"provider": "http", **request.metadata},
+                applied_experience_ids=applied,
+            )
+        except (KeyError, ValueError) as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return {
+            "schema": "wavemind.agent_experience_run.v1",
+            "namespace": request.namespace,
+            "session_id": handle.session_id,
+            "run_id": handle.run_id,
+            "task_id": handle.task_id,
+            "next_sequence": runtime.next_sequence(
+                namespace=request.namespace,
+                run_id=handle.run_id,
+            ),
+            "intervention": intervention.as_dict(),
+            "applied_experience_ids": list(applied),
+        }
+
+    @app.post(
+        "/experience/runtime/events",
+        dependencies=[Depends(require_role("write"))],
+    )
+    def capture_experience_runtime_event(request: ExperienceRuntimeEventRequest):
+        runtime = _experience_runtime(request.namespace)
+        try:
+            occurred_at = request.occurred_at
+            if occurred_at is None:
+                occurred_at = next(
+                    (
+                        event.occurred_at
+                        for event in runtime.events(
+                            namespace=request.namespace,
+                            run_id=request.run_id,
+                        )
+                        if event.id == request.id
+                    ),
+                    time.time(),
+                )
+            result = runtime.capture(
+                AgentExperienceEvent(
+                    id=request.id,
+                    namespace=request.namespace,
+                    run_id=request.run_id,
+                    session_id=request.session_id,
+                    task_id=request.task_id,
+                    kind=AgentEventKind(request.kind),
+                    sequence=request.sequence,
+                    occurred_at=occurred_at,
+                    parent_event_id=request.parent_event_id,
+                    tool_name=request.tool_name,
+                    duration_ms=request.duration_ms,
+                    payload=request.payload,
+                )
+            )
+        except (KeyError, ValueError) as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return {"inserted": result.inserted, "event": result.event.as_dict()}
+
+    @app.post(
+        "/experience/runtime/runs/{run_id}/verify",
+        dependencies=[Depends(require_role("write"))],
+    )
+    def verify_experience_runtime_run(
+        run_id: str,
+        request: ExperienceRuntimeVerifyRequest,
+    ):
+        runtime = _experience_runtime(request.namespace)
+        try:
+            verification = OutcomeVerification(
+                evidence_id=request.evidence_id,
+                source=VerificationSource(request.source),
+                verifier=request.verifier,
+                success=request.success,
+                score=request.score,
+                reference=request.reference,
+                metadata=request.metadata,
+            )
+            finalization = runtime.finalize_external_run(
+                namespace=request.namespace,
+                run_id=run_id,
+                verification=verification,
+                applied_experience_ids=request.applied_experience_ids,
+            )
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail="Runtime run not found") from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return finalization.as_dict()
+
+    @app.post(
+        "/experience/runtime/interventions",
+        dependencies=[Depends(require_role("read"))],
+    )
+    def decide_experience_runtime_intervention(
+        request: ExperienceRuntimeInterventionRequest,
+    ):
+        runtime = _experience_runtime(request.namespace)
+        try:
+            return runtime.decide(
+                request.query,
+                namespace=request.namespace,
+                run_id=request.run_id,
+                task_id=request.task_id,
+                domains=request.domains,
+                task_types=request.task_types,
+                tools=request.tools,
+                token_budget=request.token_budget,
+                top_k=request.top_k,
+                canary=request.canary,
+            ).as_dict()
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @app.get(
+        "/experience/runtime/runs",
+        dependencies=[Depends(require_role("read"))],
+    )
+    def list_experience_runtime_runs(
+        namespace: str = "default",
+        limit: int = Query(default=100, ge=1, le=1000),
+    ):
+        return {
+            "runs": _experience_runtime(namespace).list_runs(
+                namespace=namespace,
+                limit=limit,
+            )
+        }
+
+    @app.get(
+        "/experience/runtime/runs/{run_id}",
+        dependencies=[Depends(require_role("read"))],
+    )
+    def inspect_experience_runtime_run(run_id: str, namespace: str = "default"):
+        try:
+            return _experience_runtime(namespace).run_details(
+                namespace=namespace,
+                run_id=run_id,
+            )
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail="Runtime run not found") from exc
+
+    @app.get(
+        "/experience/runtime/state",
+        dependencies=[Depends(require_role("read"))],
+    )
+    def inspect_experience_runtime_state(
+        namespace: str = "default",
+        limit: int = Query(default=100, ge=1, le=1000),
+    ):
+        return _experience_runtime(namespace).snapshot(namespace=namespace, limit=limit)
+
+    @app.post(
+        "/experience/runtime/{experience_id}/approve",
+        dependencies=[Depends(require_role("admin"))],
+    )
+    def approve_experience_runtime_candidate(
+        experience_id: str,
+        request: ExperienceRuntimeLifecycleRequest,
+    ):
+        if not request.evidence_id:
+            raise HTTPException(status_code=422, detail="evidence_id is required")
+        try:
+            status = _experience_runtime(request.namespace).approve(
+                experience_id,
+                namespace=request.namespace,
+                evidence_id=request.evidence_id,
+                score=request.score,
+            )
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail="Experience not found") from exc
+        return {"experience_id": experience_id, "status": status}
+
+    @app.post(
+        "/experience/runtime/{experience_id}/reject",
+        dependencies=[Depends(require_role("admin"))],
+    )
+    def reject_experience_runtime_candidate(
+        experience_id: str,
+        request: ExperienceRuntimeLifecycleRequest,
+    ):
+        try:
+            record = _experience_runtime(request.namespace).reject(
+                experience_id,
+                namespace=request.namespace,
+                reason=request.reason,
+            )
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail="Experience not found") from exc
+        return record.as_dict()
+
+    @app.post(
+        "/experience/runtime/{experience_id}/rollback",
+        dependencies=[Depends(require_role("admin"))],
+    )
+    def rollback_experience_runtime_candidate(
+        experience_id: str,
+        request: ExperienceRuntimeLifecycleRequest,
+    ):
+        try:
+            record = _experience_runtime(request.namespace).rollback(
+                experience_id,
+                namespace=request.namespace,
+                reason=request.reason,
+            )
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail="Experience not found") from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return record.as_dict()
 
     @app.post(
         "/query/batch",

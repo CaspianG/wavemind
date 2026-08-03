@@ -53,6 +53,61 @@ test("client sends typed memory and experience requests", async () => {
 });
 
 
+test("client exposes the verified agent experience lifecycle", async () => {
+  const requests = [];
+  const fetch = async (url, init) => {
+    requests.push({ url, init });
+    return new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+  };
+  const client = new WaveMindClient({
+    baseUrl: "https://memory.example.test",
+    fetch,
+  });
+
+  await client.startExperienceRun({
+    query: "repair",
+    objective: "repair service",
+    domain: "operations",
+    task_type: "repair",
+    namespace: "agent",
+  });
+  await client.captureExperienceEvent({
+    id: "event-1",
+    run_id: "run/1",
+    namespace: "agent",
+    kind: "tool.call",
+    sequence: 3,
+    tool_name: "health",
+  });
+  await client.verifyExperienceRun("run/1", {
+    namespace: "agent",
+    evidence_id: "evidence-1",
+    source: "environment",
+    verifier: "health-check",
+    success: true,
+  });
+  await client.getExperienceRuntimeState("agent", 25);
+  await client.rejectExperience("candidate/1", {
+    namespace: "agent",
+    reason: "operator rejected",
+  });
+
+  assert.deepEqual(
+    requests.map((request) => request.url),
+    [
+      "https://memory.example.test/experience/runtime/runs",
+      "https://memory.example.test/experience/runtime/events",
+      "https://memory.example.test/experience/runtime/runs/run%2F1/verify",
+      "https://memory.example.test/experience/runtime/state?namespace=agent&limit=25",
+      "https://memory.example.test/experience/runtime/candidate%2F1/reject",
+    ],
+  );
+});
+
+
 test("client encodes experience IDs and exposes structured HTTP errors", async () => {
   const fetch = async (url) => {
     assert.equal(

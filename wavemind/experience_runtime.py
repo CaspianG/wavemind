@@ -241,6 +241,17 @@ class RunFinalization:
     def verified(self) -> bool:
         return self.verification is not None
 
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "run_id": self.run_id,
+            "trajectory_id": self.trajectory_id,
+            "verified": self.verified,
+            "verification": self.verification.as_dict() if self.verification else None,
+            "candidate_ids": list(self.candidate_ids),
+            "candidate_statuses": dict(self.candidate_statuses),
+            "applied_experience_ids": list(self.applied_experience_ids),
+        }
+
 
 class AgentExperienceRuntime:
     """Evidence-gated runtime for capturing, learning, and injecting experience."""
@@ -419,6 +430,102 @@ class AgentExperienceRuntime:
                 (namespace, int(limit)),
             ).fetchall()
         return [dict(row) for row in rows]
+
+    def run_details(self, *, namespace: str, run_id: str) -> dict[str, Any]:
+        events = self.events(namespace=namespace, run_id=run_id)
+        if not events:
+            raise KeyError(run_id)
+        return {
+            "run_id": run_id,
+            "namespace": namespace,
+            "events": [event.as_dict() for event in events],
+            "verifications": self.verifications(namespace=namespace, run_id=run_id),
+        }
+
+    def snapshot(self, *, namespace: str, limit: int = 100) -> dict[str, Any]:
+        records = self.store.list(namespace=namespace, limit=max(1, int(limit)))
+        validations = self.store.candidate_validations()
+        visible_ids = {record.id for record in records}
+        return {
+            "schema": "wavemind.agent_experience_snapshot.v1",
+            "namespace": namespace,
+            "runs": self.list_runs(namespace=namespace, limit=limit),
+            "candidates": [record.as_dict() for record in records],
+            "validation_evidence": [
+                item for item in validations if item["experience_id"] in visible_ids
+            ],
+            "injection_decisions": self.injection_decisions(
+                namespace=namespace,
+                limit=limit,
+            ),
+            "audit_events": [
+                asdict(event) for event in self.store.audit_events(limit=limit)
+                if event.experience_id is None or event.experience_id in visible_ids
+            ],
+        }
+
+    def next_sequence(self, *, namespace: str, run_id: str) -> int:
+        events = self.events(namespace=namespace, run_id=run_id)
+        if not events:
+            raise KeyError(run_id)
+        return max(event.sequence for event in events) + 1
+
+    def finalize_external_run(
+        self,
+        *,
+        namespace: str,
+        run_id: str,
+        verification: OutcomeVerification | None,
+        applied_experience_ids: Sequence[str] = (),
+    ) -> RunFinalization:
+        events = self.events(namespace=namespace, run_id=run_id)
+        if not events:
+            raise KeyError(run_id)
+        session_id = events[-1].session_id
+        task_id = events[-1].task_id
+        sequence = max(event.sequence for event in events) + 1
+        terminal = {event.kind for event in events}
+        payload = (
+            {
+                "verified": True,
+                "success": verification.success,
+                "score": verification.score,
+                "source": verification.source.value,
+                "verifier": verification.verifier,
+                "evidence_id": verification.evidence_id,
+                "reference": verification.reference,
+            }
+            if verification is not None
+            else {"verified": False, "success": None}
+        )
+        for kind, event_payload in (
+            (AgentEventKind.OUTCOME, payload),
+            (AgentEventKind.TASK_FINISHED, {"verified": verification is not None}),
+            (AgentEventKind.RUN_FINISHED, {}),
+            (AgentEventKind.SESSION_FINISHED, {}),
+        ):
+            if kind in terminal:
+                continue
+            self.capture(
+                AgentExperienceEvent(
+                    id=f"evt_{uuid.uuid4().hex}",
+                    namespace=namespace,
+                    run_id=run_id,
+                    session_id=session_id,
+                    task_id=task_id,
+                    kind=kind,
+                    sequence=sequence,
+                    occurred_at=time.time(),
+                    payload=event_payload,
+                )
+            )
+            sequence += 1
+        return self.finalize_run(
+            namespace=namespace,
+            run_id=run_id,
+            verification=verification,
+            applied_experience_ids=applied_experience_ids,
+        )
 
     def verifications(self, *, namespace: str, run_id: str | None = None) -> list[dict[str, Any]]:
         query = "SELECT * FROM agent_experience_verifications WHERE namespace = ?"
@@ -622,7 +729,7 @@ class AgentExperienceRuntime:
                 review = self.compiler.review_candidate(
                     stored.id,
                     evidence_id=f"{verification.evidence_id}:{stored.kind.value}",
-                    successful=True,
+                    successful=verification.success,
                     score=verification.score,
                     context=FirewallContext(
                         namespace=namespace,
@@ -639,7 +746,10 @@ class AgentExperienceRuntime:
             else:
                 statuses[stored.id] = stored.status.value
 
+        derived_ids = {record.id for record in candidates}
         for experience_id in dict.fromkeys(applied_experience_ids):
+            if experience_id in derived_ids:
+                continue
             current = self.store.get(experience_id)
             if current is None or current.namespace != namespace or verification is None:
                 continue
@@ -961,7 +1071,7 @@ class CapturedRun:
             parent_event_id=parent_event_id,
             tool_name=tool_name,
             duration_ms=duration_ms,
-            payload=dict(payload or {}),
+            payload=self.runtime._sanitize_payload(dict(payload or {})),
         )
         self.runtime.capture(event)
         self._sequence += 1
@@ -975,10 +1085,9 @@ class CapturedRun:
         input: Mapping[str, Any] | None = None,
         **kwargs: Any,
     ) -> Any:
-        call = self._capture(
-            AgentEventKind.TOOL_CALL,
-            {"input": dict(input) if input is not None else {"args": args, "kwargs": kwargs}},
-            tool_name=tool_name,
+        call = self.capture_tool_call(
+            tool_name,
+            dict(input) if input is not None else {"args": args, "kwargs": kwargs},
         )
         started = time.perf_counter()
         try:
@@ -996,27 +1105,60 @@ class CapturedRun:
                 tool_name=tool_name,
                 duration_ms=duration,
             )
-            self._capture(
-                AgentEventKind.TOOL_RESULT,
-                {
-                    "success": False,
+            self.capture_tool_result(
+                tool_name,
+                success=False,
+                output={
                     "error_type": type(exc).__name__,
                     "error_code": getattr(exc, "code", type(exc).__name__),
                 },
                 parent_event_id=call.id,
-                tool_name=tool_name,
                 duration_ms=duration,
             )
             raise
         duration = (time.perf_counter() - started) * 1000.0
-        self._capture(
-            AgentEventKind.TOOL_RESULT,
-            {"success": True, "output": result},
+        self.capture_tool_result(
+            tool_name,
+            success=True,
+            output=result,
             parent_event_id=call.id,
-            tool_name=tool_name,
             duration_ms=duration,
         )
         return result
+
+    def capture_tool_call(
+        self,
+        tool_name: str,
+        input: Mapping[str, Any] | None = None,
+    ) -> AgentExperienceEvent:
+        return self._capture(
+            AgentEventKind.TOOL_CALL,
+            {"input": dict(input or {})},
+            tool_name=tool_name,
+        )
+
+    def capture_tool_result(
+        self,
+        tool_name: str,
+        *,
+        success: bool,
+        output: Any = None,
+        parent_event_id: str | None = None,
+        duration_ms: float | None = None,
+        metadata: Mapping[str, Any] | None = None,
+    ) -> AgentExperienceEvent:
+        payload = {
+            "success": bool(success),
+            "output": output,
+            **dict(metadata or {}),
+        }
+        return self._capture(
+            AgentEventKind.TOOL_RESULT,
+            payload,
+            parent_event_id=parent_event_id,
+            tool_name=tool_name,
+            duration_ms=duration_ms,
+        )
 
     def capture_error(
         self,
@@ -1046,6 +1188,16 @@ class CapturedRun:
         verification = verifier.verify(context)
         if not isinstance(verification, OutcomeVerification):
             raise TypeError("outcome verifier must return OutcomeVerification")
+        return self.accept_verification(verification)
+
+    def accept_verification(
+        self,
+        verification: OutcomeVerification,
+    ) -> OutcomeVerification:
+        if not isinstance(verification, OutcomeVerification):
+            raise TypeError("verification must be an OutcomeVerification")
+        if self.verification is not None and self.verification != verification:
+            raise ValueError("run already has different verification evidence")
         self.verification = verification
         self._capture(
             AgentEventKind.OUTCOME,

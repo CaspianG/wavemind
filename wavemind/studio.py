@@ -132,6 +132,7 @@ STUDIO_HTML = r"""<!doctype html>
       background: var(--panel);
       padding: 14px;
     }
+    .wide { grid-column: 1 / -1; }
     .stats {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -409,6 +410,31 @@ STUDIO_HTML = r"""<!doctype html>
         <div id="memoryOsSummary" class="meta"></div>
         <div id="memoryOsSuggestions" style="margin-top:10px"></div>
       </section>
+
+      <section class="panel wide">
+        <h2>Verified Agent Experience</h2>
+        <div class="stats" id="experienceStats"></div>
+        <div class="split">
+          <div>
+            <h2>Run Timeline</h2>
+            <div id="experienceRuns"></div>
+          </div>
+          <div>
+            <h2>Injection Decisions</h2>
+            <div id="experienceDecisions"></div>
+          </div>
+        </div>
+        <div class="split" style="margin-top:14px">
+          <div>
+            <h2>Candidate Queue and Active Procedures</h2>
+            <div id="experienceCandidates"></div>
+          </div>
+          <div>
+            <h2>Evidence, Conflicts, and Rollback</h2>
+            <div id="experienceEvidence"></div>
+          </div>
+        </div>
+      </section>
     </main>
   </div>
 
@@ -536,6 +562,106 @@ STUDIO_HTML = r"""<!doctype html>
       `).join("") : `<div class="empty">No Memory OS suggestions yet.</div>`;
     }
 
+    function renderExperience(data) {
+      const runs = data.runs || [];
+      const candidates = data.candidates || [];
+      const evidence = data.validation_evidence || [];
+      const decisions = data.injection_decisions || [];
+      const active = candidates.filter((item) => item.status === "active").length;
+      $("experienceStats").innerHTML = [
+        ["Runs", runs.length],
+        ["Candidates", candidates.length],
+        ["Active", active],
+        ["Evidence", evidence.length],
+        ["Interventions", decisions.filter((item) => item.inject).length]
+      ].map(([label, value]) => `
+        <div class="stat"><div class="value">${esc(value)}</div><div class="label">${esc(label)}</div></div>
+      `).join("");
+      $("experienceRuns").innerHTML = runs.length ? runs.map((run) => `
+        <div class="result">
+          <div class="memory-text">${esc(run.run_id)}</div>
+          <div class="meta">
+            <span class="pill">${esc(run.task_id || "task")}</span>
+            <span class="pill">${number(run.event_count)} events</span>
+            <span class="pill ${run.error_count ? "warn" : "ok"}">${number(run.error_count)} errors</span>
+            <span class="pill">${number(run.outcome_count)} outcomes</span>
+          </div>
+        </div>
+      `).join("") : `<div class="empty">No captured runs in this namespace.</div>`;
+      $("experienceDecisions").innerHTML = decisions.length ? decisions.map((item) => `
+        <div class="result">
+          <div class="memory-text">${esc(item.query)}</div>
+          <div class="meta">
+            <span class="pill ${item.inject ? "ok" : ""}">${item.inject ? "injected" : "silent"}</span>
+            <span class="pill">${esc(item.reason)}</span>
+            <span class="pill">confidence ${number(item.confidence)}</span>
+          </div>
+        </div>
+      `).join("") : `<div class="empty">No intervention decisions yet.</div>`;
+      $("experienceCandidates").innerHTML = candidates.length ? candidates.map((item) => `
+        <div class="result">
+          <div class="memory-text">${esc(item.title)}</div>
+          <p>${esc(item.content)}</p>
+          <div class="meta">
+            <span class="pill">${esc(item.kind)}</span>
+            <span class="pill ${item.status === "active" ? "ok" : item.status === "rejected" ? "danger" : ""}">${esc(item.status)}</span>
+            <span class="pill">confidence ${number(item.confidence)}</span>
+          </div>
+          <div class="small-actions">
+            <button onclick="experienceAction('${esc(item.id)}', 'approve')">Approve</button>
+            <button class="danger" onclick="experienceAction('${esc(item.id)}', 'reject')">Reject</button>
+            <button onclick="experienceAction('${esc(item.id)}', 'rollback')">Rollback</button>
+          </div>
+        </div>
+      `).join("") : `<div class="empty">No learned candidates yet.</div>`;
+      const audits = data.audit_events || [];
+      $("experienceEvidence").innerHTML = evidence.length || audits.length ? [
+        ...evidence.slice(-20).reverse().map((item) => `
+          <div class="result">
+            <div class="memory-text">${esc(item.evidence_id)}</div>
+            <div class="meta">
+              <span class="pill ${item.successful ? "ok" : "danger"}">${item.successful ? "passed" : "failed"}</span>
+              <span class="pill">${esc(item.experience_id)}</span>
+              <span class="pill">score ${number(item.score)}</span>
+            </div>
+          </div>
+        `),
+        ...audits.slice(0, 20).map((item) => `
+          <div class="result">
+            <div class="memory-text">${esc(item.action)}</div>
+            <div class="meta"><span class="pill">${esc(item.experience_id || "runtime")}</span></div>
+          </div>
+        `)
+      ].join("") : `<div class="empty">No validation or rollback evidence yet.</div>`;
+    }
+
+    async function refreshExperience() {
+      try {
+        const ns = encodeURIComponent(namespaceValue());
+        renderExperience(await request(`/studio/experience?namespace=${ns}&limit=100`));
+      } catch (error) {
+        $("experienceRuns").innerHTML = `<div class="empty danger">${esc(error.message)}</div>`;
+      }
+    }
+
+    async function experienceAction(id, action) {
+      const body = {
+        namespace: namespaceValue(),
+        reason: `Studio operator ${action}`,
+        evidence_id: action === "approve" ? `studio-${Date.now()}` : null,
+        score: 1.0
+      };
+      try {
+        await request(`/experience/runtime/${encodeURIComponent(id)}/${action}`, {
+          method: "POST",
+          body: JSON.stringify(body)
+        });
+        await refreshExperience();
+      } catch (error) {
+        $("experienceEvidence").innerHTML = `<div class="empty danger">${esc(error.message)}</div>`;
+      }
+    }
+
     async function refreshMemoryOs() {
       $("memoryOsSuggestions").innerHTML = `<div class="empty">Analyzing memory policy...</div>`;
       try {
@@ -570,6 +696,7 @@ STUDIO_HTML = r"""<!doctype html>
       renderConflicts(snapshot);
       await renderHeatmap();
       await refreshMemoryOs();
+      await refreshExperience();
     }
 
     async function runQuery() {

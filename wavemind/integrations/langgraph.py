@@ -13,7 +13,10 @@ from wavemind.experience import (
     TrustClass,
 )
 from wavemind.experience_compiler import ExperienceCompiler
+from wavemind.experience_runtime import OutcomeVerifier
 from wavemind.memory_firewall import FirewallContext
+
+from .experience_runtime import AgentExperienceHooks, ProviderExperienceRun
 
 
 def make_recall_node(
@@ -141,3 +144,101 @@ def make_experience_capture_node(
         }
 
     return capture_node
+
+
+def make_experience_runtime_start_node(
+    hooks: AgentExperienceHooks,
+    *,
+    domain: str,
+    task_type: str,
+    input_key: str = "input",
+    objective_key: str = "objective",
+    run_key: str = "wavemind_experience_run",
+    tools: tuple[str, ...] = (),
+) -> Callable[[Mapping[str, Any]], dict[str, Any]]:
+    """Start a canonical runtime run and expose a selective packet in graph state."""
+
+    def start_node(state: Mapping[str, Any]) -> dict[str, Any]:
+        query = str(state.get(input_key) or "").strip()
+        if not query:
+            raise ValueError(f"LangGraph state key {input_key!r} must not be empty")
+        objective = str(state.get(objective_key) or query).strip()
+        run = hooks.begin(
+            query,
+            objective=objective,
+            domain=domain,
+            task_type=task_type,
+            tools=tools,
+            session_id=_optional_state_text(state, "thread_id"),
+            run_id=_optional_state_text(state, "run_id"),
+            task_id=_optional_state_text(state, "task_id"),
+            metadata={"framework": "langgraph"},
+        )
+        return {
+            run_key: run,
+            f"{run_key}_id": run.run_id,
+            "experience_intervention": run.packet,
+            "experience_packet": (
+                run.intervention.packet.as_prompt()
+                if run.intervention.inject and run.intervention.packet is not None
+                else ""
+            ),
+        }
+
+    return start_node
+
+
+def wrap_experience_runtime_node(
+    node: Callable[[Mapping[str, Any]], Mapping[str, Any]],
+    *,
+    tool_name: str,
+    run_key: str = "wavemind_experience_run",
+) -> Callable[[Mapping[str, Any]], dict[str, Any]]:
+    """Wrap a LangGraph tool node with automatic call/result/error capture."""
+
+    def wrapped(state: Mapping[str, Any]) -> dict[str, Any]:
+        run = state.get(run_key)
+        if not isinstance(run, ProviderExperienceRun):
+            raise ValueError(f"LangGraph state is missing {run_key!r}")
+        call_id = run.tool_call(tool_name, {"state": dict(state)})
+        try:
+            output = dict(node(state))
+        except Exception as exc:
+            run.error(exc, error_code=type(exc).__name__)
+            run.tool_result(
+                tool_name,
+                success=False,
+                output={"error_type": type(exc).__name__},
+                call_id=call_id,
+            )
+            raise
+        run.tool_result(tool_name, success=True, output=output, call_id=call_id)
+        return output
+
+    return wrapped
+
+
+def make_experience_runtime_finish_node(
+    verifier: OutcomeVerifier,
+    *,
+    run_key: str = "wavemind_experience_run",
+) -> Callable[[Mapping[str, Any]], dict[str, Any]]:
+    """Verify and finalize a LangGraph run using independent evidence."""
+
+    def finish_node(state: Mapping[str, Any]) -> dict[str, Any]:
+        run = state.get(run_key)
+        if not isinstance(run, ProviderExperienceRun):
+            raise ValueError(f"LangGraph state is missing {run_key!r}")
+        verification = run.verify(verifier)
+        finalization = run.finish()
+        return {
+            "wavemind_verification": verification.as_dict(),
+            "wavemind_finalization": finalization.as_dict(),
+        }
+
+    return finish_node
+
+
+def _optional_state_text(state: Mapping[str, Any], key: str) -> str | None:
+    value = str(state.get(key) or "").strip()
+    return value or None
