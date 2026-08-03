@@ -2,13 +2,10 @@
 
 # WaveMind
 
-**Adaptive memory infrastructure for agents and applications that need to learn
-from experience.**
+**Adaptive memory infrastructure for agents and applications that need to learn from experience.**
 
-WaveMind gives long-running software a durable, inspectable memory layer. It
-remembers facts, preferences, state changes, workflows, errors, and feedback;
-returns a compact relevant context; reinforces what works; suppresses stale
-information; and forgets on purpose.
+WaveMind gives long-running software a durable, inspectable memory layer. It remembers facts, preferences,
+state changes, workflows, errors, and feedback; returns compact relevant context; reinforces what works, suppresses stale information, and forgets on purpose.
 
 <p><a href="https://pypi.org/project/wavemind/"><strong>PyPI</strong></a> &middot; <a href="https://github.com/CaspianG/wavemind/actions/workflows/full-check.yml">Build status</a> &middot; <a href="https://github.com/CaspianG/wavemind/releases/latest">Latest release</a> &middot; <a href="https://github.com/CaspianG/wavemind/blob/main/pyproject.toml">Python &gt;=3.10</a> &middot; <a href="LICENSE">MIT</a></p>
 
@@ -55,7 +52,7 @@ claim that one vector database should replace every other system.
 | Memory safety | `admitted`, 10/10 checks; 375 attacks contained, 100% benign acceptance, zero cross-namespace leakage, rollback/provenance `1.00` | [`memory_safety_admission_results.json`](benchmarks/memory_safety_admission_results.json) |
 | Provider integrations | `admitted`, 10/10 checks and 11/11 mandatory cases across Python, OpenAI Agents, Anthropic, MCP, LangGraph, HTTP, portable bundles, Mem0 import, and a clean TypeScript package; semantic parity `1.00` | [`integration_admission_results.json`](benchmarks/integration_admission_results.json) |
 | Remote Redis/worker soak | 6 hours, 500/500 cycles, 2,500 attempts, zero failures or state corruption | [`memory_os_remote_worker_soak_results.json`](benchmarks/memory_os_remote_worker_soak_results.json) |
-| LongMemEval-V2 protocol | Goal 4 completed a strict frozen 451-question experiment; it passed execution/context/latency controls but failed quality uplift, so no admission claim is made | [`failed experiment`](benchmarks/goal4_quality_experiment_results.json) / [`strict smoke`](benchmarks/longmemeval_v2_frozen20_protocol_results.json) |
+| LongMemEval-V2 protocol | Goal 4 completed a strict frozen 451-question experiment; it passed execution/context/latency controls but failed quality uplift, so no admission claim is made | [`failed experiment`](benchmarks/goal4_quality_experiment_results.json) / [`Memory OS run`](benchmarks/longmemeval_v2_small_memory_os_results.json) / [`strict smoke`](benchmarks/longmemeval_v2_frozen20_protocol_results.json) |
 | Core production readiness | `pass`, 39/39 criteria | [`production_readiness_results.json`](benchmarks/production_readiness_results.json) |
 | Public package | PyPI and GitHub release `v2.9.0` | [PyPI](https://pypi.org/project/wavemind/) / [release](https://github.com/CaspianG/wavemind/releases/latest) |
 
