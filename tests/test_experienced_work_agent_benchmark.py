@@ -30,6 +30,7 @@ def test_experienced_work_agent_split_is_frozen_and_balanced() -> None:
 
 
 def test_experienced_work_agent_meets_held_out_product_gates(tmp_path) -> None:
+    assert LATENCY_REPETITIONS >= 7
     payload = run_benchmark(tmp_path)
     assert payload["schema"] == "wavemind.experienced_work_agent_benchmark.v1"
     assert payload["status"] == "pass"

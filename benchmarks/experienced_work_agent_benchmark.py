@@ -37,7 +37,7 @@ DATASET_REVISION = "experienced-work-agent-v1-frozen-20260728"
 NAMESPACE = "experienced-work-agent"
 TRAIN_PER_SCENARIO = 10
 HELD_OUT_PER_SCENARIO = 5
-LATENCY_REPETITIONS = 3
+LATENCY_REPETITIONS = 7
 
 
 @dataclass(frozen=True)
