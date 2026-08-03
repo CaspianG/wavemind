@@ -10,14 +10,18 @@
 
 WaveMind turns completed OHLCV candles into memories of market states. Each memory stores the observable setup and the outcome that followed it. For a new market state, the system retrieves historical analogues, applies the wave-field priority layer, checks the current regime, and produces:
 
-- an `up` or `down` market estimate;
-- an expected percentage move and target price;
+- a validated `up` or `down` target only when the trade-quality gate passes;
+- otherwise, an adaptive conformal price range instead of a forced point target;
 - a separate `trade` or `no_trade` validation decision;
 - an evidence score that is explicitly not presented as probability;
 - a stable forecast ID plus a tamper-evident ledger record that can be
   evaluated after the horizon closes.
 
-The current 24h model uses a guarded 4h state-field: observable trend and RSI state choose direction, while WaveMind analogue memory supplies target magnitude. The rule was accepted only after a separate holdout-asset check.
+The current 24h policy uses a guarded 4h state-field for selective trade
+signals. Separately, a WaveMind risk-field estimates state-conditioned move
+magnitude and calibrates an 80% price range from matured historical errors.
+The old always-up/down estimate remains in JSON only under
+`research_forced_*`; it is not presented as a validated forecast.
 
 ## Quick Start
 
@@ -31,8 +35,9 @@ The forecast runner accepts only completed candles and fails if exchange data
 is stale. Every new ledger row includes SHA-256 fingerprints for its input
 candles and model sources, then extends a hash chain over the complete JSONL
 history. The audit runner rejects duplicate IDs or a broken chain, keeps pending
-forecasts separate from mature outcomes, and measures direction accuracy,
-target error, and whether the target was touched inside the horizon.
+forecasts separate from mature outcomes. Validated point targets are scored for
+direction and target error; uncertain forecasts are scored only for prediction
+interval coverage.
 
 ## Live Forecast Evidence
 
@@ -40,20 +45,24 @@ The live ledger is the non-selective reality check. As of the latest settlement:
 
 | metric | result |
 |---|---:|
-| physical forecasts | 37 |
-| evaluated / pending | 20 / 17 |
-| evaluated direction accuracy | **25.0%** |
-| 95% Wilson lower bound | 11.2% |
-| target touch rate | 65.0% |
-| target return MAE | 180.5 bps |
+| physical forecasts | 61 |
+| evaluated / pending | 45 / 16 |
+| directional forecasts evaluated | 41 |
+| evaluated direction accuracy | **31.7%** |
+| 95% Wilson lower bound | 19.6% |
+| prediction intervals evaluated / covered | 4 / 3 (**75.0%**) |
+| target touch rate | 75.6% |
+| target return MAE | 186.3 bps |
 | strict 70% live admission | **rejected** |
-| ledger integrity | verified, 15 legacy rows anchored + 22 hashed rows |
+| ledger integrity | verified, 15 legacy rows anchored + 46 hashed rows |
 
 The live sample is small and materially worse than the historical walk-forward
 tests. It is therefore evidence against deployment, not a breakthrough claim.
-All 20 failed or successful matured forecasts remain in
+All 41 failed or successful matured directional forecasts remain in
 [`forecast_ledger.jsonl`](benchmarks/results/crypto/forecast_ledger.jsonl);
-the next 17 are pending and will be settled from completed OKX candles.
+the next 16 rows are pending. New schema-v3 `uncertain` rows are not counted as
+direction calls. The first four matured ranges covered ETH, SOL, and GRAM; BTC
+missed its lower bound by 5.6 bps and is still counted as a miss.
 
 ## Current Evidence
 
@@ -67,6 +76,28 @@ Real OKX 4h candles, 1,200 bars per asset, four walk-forward folds, 90 test wind
 | ADA / AVAX / DOGE / LINK / XRP holdout | **WaveMind guarded state-field** | 1,800 | **0.506** | 258.9 bps | 0.389 |
 | ADA / AVAX / DOGE / LINK / XRP holdout | previous WaveMind target | 1,800 | 0.469 | 261.3 bps | 0.311 |
 | ADA / AVAX / DOGE / LINK / XRP holdout | momentum | 1,800 | 0.468 | 275.8 bps | 0.344 |
+
+### State-conditioned prediction ranges
+
+An additional benchmark tests whether WaveMind can estimate the magnitude of
+uncertainty even when direction is not predictable. It uses the same eight real
+OKX assets, 1h/4h/1d timeframes, four walk-forward folds, and 8,640 OOS queries.
+Each fold freezes its conformal quantile before the test block. Lower interval
+score is better.
+
+| interval engine | coverage | mean width | interval score | score vs zero |
+|---|---:|---:|---:|---:|
+| zero-return adaptive conformal | 78.6% | 1,499 bps | 2,075 bps | baseline |
+| historical-median adaptive conformal | 77.0% | 1,527 bps | 2,126 bps | -2.5% |
+| directional WaveMind center | 78.6% | 1,562 bps | 2,157 bps | -4.0% |
+| **WaveMind risk-field conformal** | **79.1%** | **1,333 bps** | **1,902 bps** | **+8.3%** |
+
+The useful result is risk estimation, not direction: the risk-field keeps
+coverage near the nominal 80%, reduces mean width by 11.1%, and improves the
+proper interval score by 8.3%. The gain is `+2.0%` on 4h and `+15.2%` on 1d,
+but `-7.9%` on 1h. Some 1h slices under-cover badly, so the 1h risk-field is
+rejected and the ranges remain research evidence rather than guarantees. See
+the [prediction-interval report](benchmarks/crypto_prediction_interval_report.md).
 
 ### Frozen capitulation rebound signal
 
@@ -171,6 +202,7 @@ Full reports:
 - [Frozen asset and time replication](benchmarks/results/crypto/capitulation_field_replication_24h.md)
 - [Universal full-coverage direction gate](benchmarks/results/crypto/orientation_memory_24h.md)
 - [Causal cross-asset market-wave gate](benchmarks/results/crypto/market_wave_24h.md)
+- [Adaptive conformal prediction intervals](benchmarks/crypto_prediction_interval_report.md)
 
 ### Latest causal ablations
 
@@ -351,6 +383,8 @@ It is not yet a predictive breakthrough:
 - the robust WaveMind target has slightly better holdout MAE, while the guarded state-field has better direction accuracy;
 - the 7d policy is still unvalidated and therefore returns `no_trade`;
 - evidence strength is not a calibrated probability.
+- interval coverage is useful in aggregate on 4h/1d but not stable in every
+  asset/fold slice.
 
 This branch treats those limitations as test failures to improve, not as marketing footnotes.
 
@@ -388,6 +422,10 @@ WaveMind analogue memory + dynamic field priority
         +--> guarded state direction
         +--> analogue target magnitude
         +--> trade-quality policy
+        +--> state-conditioned risk scale
+        |
+        v
+validated target OR conformal range
         |
         v
 input/model SHA-256 --> forecast ID --> hash-chained JSONL ledger
@@ -425,6 +463,8 @@ SQLite remains the source of truth for WaveMind memory. Market benchmarks compar
 | `benchmarks/crypto_binance_liquidations.py` | checksum-verified Binance COIN-M liquidation snapshots and causal 4h aggregation |
 | `benchmarks/crypto_walk_forward_benchmark.py` | field retrieval and trade-policy walk-forward tests |
 | `benchmarks/crypto_price_target_benchmark.py` | future-close target benchmarks and baselines |
+| `benchmarks/crypto_prediction_intervals.py` | causal adaptive conformal calibration and WaveMind risk scale |
+| `benchmarks/crypto_prediction_interval_benchmark.py` | real-OHLCV interval coverage, width, and proper-score evaluation |
 | `benchmarks/crypto_current_forecast.py` | fresh 24h/7d forecasts and ledger recording |
 | `benchmarks/crypto_forecast_ledger.py` | duplicate rejection, legacy anchoring, and tamper-evident hash-chain verification |
 | `benchmarks/crypto_forecast_audit.py` | automatic evaluation of matured forecasts |
@@ -455,7 +495,8 @@ Scale and consolidation checks remain available through `wavemind scale-plan --t
 - Walk-forward and holdout validation before adoption.
 - Fees and slippage for strategy metrics.
 - Completed candles only, with explicit UTC close timestamps.
-- Market forecasts and trade validation reported separately.
+- No point target is published when trade validation returns `no_trade`.
+- Forced directional diagnostics are namespaced under `research_forced_*`.
 - No probability until calibration is stable across folds, symbols, and timeframes.
 - Failed live forecasts stay in the ledger and count against the model.
 - A live 70% claim requires at least 100 evaluated forecasts, five symbols,
@@ -474,8 +515,9 @@ Scale and consolidation checks remain available through `wavemind scale-plan --t
    time. BVOL, book depth, spot flow, macro, on-chain, and sampled Deribit
    options ablations are complete. Daily Fear & Greed is also complete and
    rejected; genuinely timestamped news and liquidation history remain.
-4. Improve target magnitude and publish prediction intervals only after their
-   empirical coverage is stable by fold and asset.
+4. Improve interval robustness. The first risk-field conformal benchmark beats
+   the zero baseline by 8.3% aggregate interval score and is useful on 4h/1d,
+   but 1h and worst-slice coverage still fail stability.
 5. Validate the 1d/7d policy before allowing trade signals.
 6. Connect only an admitted signal layer to the Freqtrade adapter in dry-run mode.
 

@@ -378,21 +378,25 @@ def test_render_markdown_contains_price_target():
                 regime_agreement=0.6,
                 latency_ms=2.0,
                 validation={},
+                forecast_status="validated_signal",
+                point_target_validated=True,
+                prediction_interval_status="calibrated",
+                prediction_interval_lower_price=97_000.0,
+                prediction_interval_upper_price=103_000.0,
+                prediction_interval_calibration_samples=80,
             )
         ]
     )
 
     assert "Research forecast from completed candles only" in markdown
     assert "Evidence strength is analogue/regime agreement" in markdown
-    assert "market forecast" in markdown
+    assert "validated forecast" in markdown
     assert "trade validation" in markdown
-    assert "policy candidate" in markdown
-    assert "0.620" in markdown
-    assert "base_rate" in markdown
+    assert "calibrated price range" in markdown
     assert "BTC/USDT" in markdown
-    assert "101400" in markdown
     assert "101200" in markdown
-    assert "1.40%" in markdown
+    assert "97000 to 103000" in markdown
+    assert "+1.20%" in markdown
 
 
 def test_crypto_current_forecast_cli_writes_json_and_markdown(tmp_path):
@@ -430,8 +434,22 @@ def test_crypto_current_forecast_cli_writes_json_and_markdown(tmp_path):
     assert payload["results"][0]["engine"] == "WaveMind timeframe policy"
     assert payload["results"][0]["decision"] in {"signal", "abstain"}
     assert payload["results"][0]["trade_decision"] in {"trade", "no_trade"}
-    assert payload["results"][0]["market_forecast_direction"] in {"up", "down"}
-    assert payload["results"][0]["market_forecast_target_price"] > 0.0
+    if payload["results"][0]["trade_decision"] == "trade":
+        assert payload["results"][0]["market_forecast_direction"] in {"up", "down"}
+        assert payload["results"][0]["market_forecast_target_price"] > 0.0
+        assert payload["results"][0]["forecast_status"] == "validated_signal"
+    else:
+        assert payload["results"][0]["market_forecast_direction"] == "uncertain"
+        assert payload["results"][0]["market_forecast_target_price"] is None
+        assert payload["results"][0]["forecast_status"] == "uncertain_range_only"
+    assert payload["results"][0]["research_forced_direction"] in {"up", "down"}
+    assert payload["results"][0]["research_forced_target_price"] > 0.0
+    assert payload["results"][0]["prediction_interval_status"] == "calibrated"
+    assert payload["results"][0]["prediction_interval_lower_price"] > 0.0
+    assert (
+        payload["results"][0]["prediction_interval_upper_price"]
+        > payload["results"][0]["prediction_interval_lower_price"]
+    )
     assert payload["results"][0]["candidate_direction"] in {"up", "down", "flat"}
     assert payload["results"][0]["confidence_is_probability"] is False
     assert "not a calibrated probability" in payload["results"][0]["confidence_note"]
@@ -440,6 +458,6 @@ def test_crypto_current_forecast_cli_writes_json_and_markdown(tmp_path):
     assert payload["results"][0]["calibrated_probability"] is None
     assert len(payload["results"][0]["input_snapshot_sha256"]) == 64
     assert len(payload["results"][0]["model_source_sha256"]) == 64
-    assert payload["results"][0]["forecast_schema_version"] == 2
+    assert payload["results"][0]["forecast_schema_version"] == 3
     assert "ETH/USDT" in report.read_text(encoding="utf-8")
     assert not bars_path.exists()

@@ -55,6 +55,41 @@ def test_evaluate_forecast_keeps_unmatured_row_pending():
     assert result["seconds_until_maturity"] == 3600
 
 
+def test_uncertain_range_is_scored_without_fake_direction_or_target():
+    from benchmarks.crypto_forecast_audit import evaluate_forecast, summarize_outcomes
+    from benchmarks.crypto_ohlcv import OHLCVBar
+
+    start = int(datetime(2026, 7, 1, 0, tzinfo=timezone.utc).timestamp())
+    bars = [
+        OHLCVBar(timestamp=start, open=100.0, high=103.0, low=99.0, close=102.0, volume=1.0),
+        OHLCVBar(timestamp=start + 3600, open=102.0, high=104.0, low=101.0, close=103.0, volume=1.0),
+    ]
+    target = int(datetime(2026, 7, 1, 2, tzinfo=timezone.utc).timestamp())
+    forecast = _forecast(
+        forecast_schema_version=3,
+        forecast_status="uncertain_range_only",
+        point_target_validated=False,
+        market_forecast_direction="uncertain",
+        market_forecast_target_price=None,
+        trade_decision="no_trade",
+        prediction_interval_lower_price=98.0,
+        prediction_interval_upper_price=105.0,
+    )
+
+    result = evaluate_forecast(forecast, bars, now_ts=target)
+    summary = summarize_outcomes([result])
+
+    assert result["outcome_status"] == "evaluated"
+    assert result["prediction_interval_covered"] is True
+    assert result["direction_correct"] is None
+    assert result["target_abs_return_error_bps"] is None
+    assert summary["evaluated"] == 1
+    assert summary["direction_evaluated"] == 0
+    assert summary["interval_evaluated"] == 1
+    assert summary["prediction_interval_coverage"] == 1.0
+    assert summary["market_direction_accuracy"] is None
+
+
 def test_load_ledger_rejects_duplicate_forecast_ids(tmp_path):
     import pytest
 
@@ -167,3 +202,23 @@ def test_summarize_by_model_groups_guard_reasons_under_one_version():
     assert len(summaries) == 1
     assert summaries[0]["model"] == "guarded_state_field_v1"
     assert summaries[0]["forecasts"] == 2
+
+
+def test_summarize_by_model_separates_schema_three_intervals():
+    from benchmarks.crypto_forecast_audit import summarize_by_model
+
+    rows = [
+        _forecast(directional_method="guarded_state_field_v1:established_downtrend"),
+        _forecast(
+            forecast_id="forecast-2",
+            forecast_schema_version=3,
+            forecast_status="uncertain_range_only",
+            point_target_validated=False,
+            directional_method="guarded_state_field_v1:established_downtrend",
+        ),
+    ]
+
+    summaries = {row["model"]: row for row in summarize_by_model(rows)}
+
+    assert summaries["guarded_state_field_v1"]["forecasts"] == 1
+    assert summaries["risk_field_conformal_v1"]["forecasts"] == 1

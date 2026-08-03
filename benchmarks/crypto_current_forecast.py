@@ -23,6 +23,10 @@ from benchmarks.crypto_ohlcv import (  # noqa: E402
     timeframe_to_seconds,
 )
 from benchmarks.crypto_ohlcv import _window_features  # noqa: E402
+from benchmarks.crypto_prediction_intervals import (  # noqa: E402
+    fit_prediction_interval,
+    wave_risk_scale,
+)
 from benchmarks.crypto_walk_forward_benchmark import (  # noqa: E402
     MarketDataset,
     _create_engine,
@@ -37,7 +41,7 @@ HORIZON_PRESETS = {
 }
 
 CONFIDENCE_NOTE = "evidence strength from analogue/regime agreement; not a calibrated probability"
-FORECAST_SCHEMA_VERSION = 2
+FORECAST_SCHEMA_VERSION = 3
 
 
 @dataclass(frozen=True)
@@ -83,6 +87,17 @@ class ForecastResult:
     input_snapshot_sha256: str = ""
     model_source_sha256: str = ""
     forecast_schema_version: int = FORECAST_SCHEMA_VERSION
+    forecast_status: str = "uncertain_range_only"
+    point_target_validated: bool = False
+    prediction_interval_status: str = "unavailable"
+    prediction_interval_nominal_coverage: float = 0.80
+    prediction_interval_lower_return_bps: float | None = None
+    prediction_interval_upper_return_bps: float | None = None
+    prediction_interval_lower_price: float | None = None
+    prediction_interval_upper_price: float | None = None
+    prediction_interval_calibration_samples: int = 0
+    prediction_interval_calibration_coverage: float = 0.0
+    prediction_interval_note: str = ""
 
 
 @dataclass(frozen=True)
@@ -495,6 +510,15 @@ def forecast_from_bars(
     last_close = float(query.bars[-1].close)
     directional = guarded_state_field_forecast(windows, query, horizon=horizon)
     decision = "abstain" if prediction.filtered or prediction.direction == "flat" else "signal"
+    interval = fit_prediction_interval(
+        windows,
+        query,
+        predictor=lambda history, current: 0.0,
+        scale_predictor=wave_risk_scale,
+        horizon=horizon,
+        nominal_coverage=0.80,
+        calibration_windows=120,
+    )
     candidate_direction = prediction.candidate_direction or prediction.raw_direction or prediction.direction
     candidate_expected_return_bps = (
         float(prediction.candidate_expected_return_bps)
@@ -504,6 +528,22 @@ def forecast_from_bars(
     expected_price = last_close * (1.0 + float(prediction.expected_return_bps) / 10_000.0)
     candidate_expected_price = last_close * (1.0 + candidate_expected_return_bps / 10_000.0)
     directional_expected_price = last_close * (1.0 + directional.expected_return_bps / 10_000.0)
+    interval_lower_return_bps = (
+        float(interval.lower_return_bps) if math.isfinite(interval.lower_return_bps) else None
+    )
+    interval_upper_return_bps = (
+        float(interval.upper_return_bps) if math.isfinite(interval.upper_return_bps) else None
+    )
+    interval_lower_price = (
+        last_close * (1.0 + interval_lower_return_bps / 10_000.0)
+        if interval_lower_return_bps is not None
+        else None
+    )
+    interval_upper_price = (
+        last_close * (1.0 + interval_upper_return_bps / 10_000.0)
+        if interval_upper_return_bps is not None
+        else None
+    )
     if decision == "signal":
         calibrated_probability, probability_kind = calibrated_probability_for_evidence(
             calibration_profile,
@@ -557,6 +597,17 @@ def forecast_from_bars(
         probability_kind=probability_kind,
         input_snapshot_sha256=input_snapshot_sha256,
         model_source_sha256=model_source_sha256,
+        forecast_status="validated_signal" if decision == "signal" else "uncertain_range_only",
+        point_target_validated=decision == "signal",
+        prediction_interval_status=interval.status,
+        prediction_interval_nominal_coverage=interval.nominal_coverage,
+        prediction_interval_lower_return_bps=interval_lower_return_bps,
+        prediction_interval_upper_return_bps=interval_upper_return_bps,
+        prediction_interval_lower_price=interval_lower_price,
+        prediction_interval_upper_price=interval_upper_price,
+        prediction_interval_calibration_samples=interval.calibration_samples,
+        prediction_interval_calibration_coverage=interval.calibration_coverage,
+        prediction_interval_note=interval.note,
     )
 
 
@@ -681,6 +732,16 @@ def calibrated_probability_for_evidence(
 
 def forecast_to_dict(result: ForecastResult) -> dict[str, Any]:
     trade_decision = "trade" if result.decision == "signal" else "no_trade"
+    if result.point_target_validated:
+        market_direction: str | None = result.direction
+        market_return_bps: float | None = result.expected_return_bps
+        market_return_pct: float | None = result.expected_return_pct
+        market_target_price: float | None = result.expected_price
+    else:
+        market_direction = "uncertain"
+        market_return_bps = None
+        market_return_pct = None
+        market_target_price = None
     payload = {
         "symbol": result.symbol,
         "exchange": result.exchange,
@@ -691,10 +752,27 @@ def forecast_to_dict(result: ForecastResult) -> dict[str, Any]:
         "data_end_utc": result.data_end_utc,
         "forecast_until_utc": result.forecast_until_utc,
         "last_close": result.last_close,
-        "market_forecast_direction": result.directional_direction,
-        "market_forecast_return_bps": result.directional_expected_return_bps,
-        "market_forecast_return_pct": result.directional_expected_return_pct,
-        "market_forecast_target_price": result.directional_expected_price,
+        "forecast_status": result.forecast_status,
+        "point_target_validated": result.point_target_validated,
+        "market_forecast_direction": market_direction,
+        "market_forecast_return_bps": market_return_bps,
+        "market_forecast_return_pct": market_return_pct,
+        "market_forecast_target_price": market_target_price,
+        "prediction_interval_status": result.prediction_interval_status,
+        "prediction_interval_nominal_coverage": result.prediction_interval_nominal_coverage,
+        "prediction_interval_lower_return_bps": result.prediction_interval_lower_return_bps,
+        "prediction_interval_upper_return_bps": result.prediction_interval_upper_return_bps,
+        "prediction_interval_lower_price": result.prediction_interval_lower_price,
+        "prediction_interval_upper_price": result.prediction_interval_upper_price,
+        "prediction_interval_calibration_samples": result.prediction_interval_calibration_samples,
+        "prediction_interval_calibration_coverage": result.prediction_interval_calibration_coverage,
+        "prediction_interval_note": result.prediction_interval_note,
+        "research_forced_direction": result.directional_direction,
+        "research_forced_return_bps": result.directional_expected_return_bps,
+        "research_forced_return_pct": result.directional_expected_return_pct,
+        "research_forced_target_price": result.directional_expected_price,
+        "research_forced_method": result.directional_method,
+        "research_forced_note": result.directional_note,
         "trade_decision": trade_decision,
         "direction": result.direction,
         "decision": result.decision,
@@ -799,24 +877,38 @@ def render_markdown(results: list[ForecastResult]) -> str:
         "",
         "Research forecast from completed candles only. Not financial advice.",
         "Evidence strength is analogue/regime agreement, not a calibrated probability.",
-        "The market forecast is always up/down with a target price because a future close is never exactly flat.",
-        "`trade validation` is separate: `trade` means the policy found a validated signal; `no_trade` means a forecast exists but the signal did not pass the trade-quality gate.",
+        "A point target is published only when the trade-quality policy validates a signal.",
+        "When validation returns `no_trade`, the report shows an adaptive conformal price range instead of a false-precision target.",
         "",
-        "| symbol | horizon | data end UTC | market forecast | expected move | target price | trade validation | last close | evidence strength | validation reason | policy signal | policy candidate | policy target | calibrated probability | probability kind |",
-        "|---|---:|---|---|---:|---:|---|---:|---:|---|---|---|---:|---:|---|",
+        "| symbol | horizon | data end UTC | status | validated forecast | target price | calibrated price range | trade validation | last close | evidence strength | validation reason |",
+        "|---|---:|---|---|---|---:|---|---|---:|---:|---|",
     ]
     for result in results:
         filter_text = result.filter_reason if result.filtered else ""
-        probability_text = "" if result.calibrated_probability is None else f"{result.calibrated_probability:.3f}"
         trade_decision = "trade" if result.decision == "signal" else "no_trade"
+        if result.point_target_validated:
+            forecast_text = f"{result.direction} {result.expected_return_pct:+.2f}%"
+            target_text = f"{result.expected_price:.6g}"
+        else:
+            forecast_text = "uncertain"
+            target_text = "n/a"
+        if (
+            result.prediction_interval_lower_price is not None
+            and result.prediction_interval_upper_price is not None
+        ):
+            interval_text = (
+                f"{result.prediction_interval_lower_price:.6g} to "
+                f"{result.prediction_interval_upper_price:.6g} "
+                f"({result.prediction_interval_nominal_coverage:.0%} nominal)"
+            )
+        else:
+            interval_text = result.prediction_interval_status
         lines.append(
             "| "
             f"{result.symbol} | {result.horizon_label} | {result.data_end_utc} | "
-            f"{result.directional_direction} | {result.directional_expected_return_pct:.2f}% | "
-            f"{result.directional_expected_price:.6g} | {trade_decision} | "
-            f"{result.last_close:.6g} | {result.evidence_strength:.3f} | {filter_text} | "
-            f"{result.direction} | {result.candidate_direction} | {result.expected_price:.6g} | "
-            f"{probability_text} | {result.probability_kind} |"
+            f"{result.forecast_status} | {forecast_text} | {target_text} | "
+            f"{interval_text} | {trade_decision} | "
+            f"{result.last_close:.6g} | {result.evidence_strength:.3f} | {filter_text} |"
         )
     lines.append("")
     validation = dict(results[0].validation) if results else {}
@@ -839,6 +931,10 @@ def render_markdown(results: list[ForecastResult]) -> str:
             )
             lines.append("")
     lines.append("Validation profile is embedded in the JSON output for each row.")
+    lines.append(
+        "The JSON keeps the old forced up/down estimate under `research_forced_*` for diagnostics; "
+        "it is not a validated market forecast."
+    )
     lines.append("Calibrated probability is profile-level and still not financial advice.")
     lines.append("")
     return "\n".join(lines)

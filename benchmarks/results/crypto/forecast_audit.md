@@ -7,29 +7,33 @@ This is research evidence, not financial advice.
 
 | metric | value |
 |---|---:|
-| forecasts | 45 |
-| evaluated | 26 |
-| pending | 19 |
-| market direction accuracy | 0.231 |
-| direction Wilson low 95% | 0.110 |
+| forecasts | 61 |
+| evaluated | 45 |
+| directional forecasts evaluated | 41 |
+| prediction intervals evaluated | 4 |
+| pending | 16 |
+| market direction accuracy | 0.317 |
+| direction Wilson low 95% | 0.196 |
 | worst symbol accuracy | 0.000 |
 | strict 70% admission | no |
 | trade direction accuracy | n/a |
-| target touch rate | 0.654 |
-| mean absolute target error | 175.8 bps |
+| prediction interval coverage | 0.750 |
+| target touch rate | 0.756 |
+| mean absolute target error | 186.3 bps |
 
 ## Ledger Integrity
 
 | status | records | legacy | hashed | anchored legacy | tip hash |
 |---|---:|---:|---:|---:|---|
-| verified | 45 | 15 | 30 | 15 | `9e5b7baa0d53d444...` |
+| verified | 61 | 15 | 46 | 15 | `ee661e9869d2eb8b...` |
 
 ## By Model
 
 | model | forecasts | evaluated | direction accuracy | Wilson low | worst symbol | admitted 70% | target MAE |
 |---|---:|---:|---:|---:|---:|---|---:|
-| guarded_state_field_v1 | 20 | 16 | 0.188 | 0.066 | 0.000 | no | 120.3 bps |
-| regime_analogue_weighted | 25 | 10 | 0.300 | 0.108 | 0.000 | no | 264.6 bps |
+| guarded_state_field_v1 | 20 | 20 | 0.300 | 0.145 | 0.000 | no | 103.3 bps |
+| regime_analogue_weighted | 25 | 21 | 0.333 | 0.172 | 0.000 | no | 265.4 bps |
+| risk_field_conformal_v1 | 16 | 4 | n/a | n/a | n/a | no | n/a |
 
 ## Forecasts
 
@@ -55,28 +59,44 @@ This is research evidence, not financial advice.
 | 2026-07-24T20:00:00+00:00 | SOL/USDT:USDT | 24h | down | 73.773607 | no_trade | evaluated | 74.51 | no | yes | 99.6 bps |
 | 2026-07-24T20:00:00+00:00 | XRP/USDT:USDT | 24h | down | 1.0882798 | no_trade | evaluated | 1.1 | no | yes | 107.7 bps |
 | 2026-07-24T20:00:00+00:00 | HYPE/USDT:USDT | 24h | down | 57.825363 | no_trade | evaluated | 58.064 | yes | yes | 41.0 bps |
-| 2026-07-24T00:00:00+00:00 | BTC/USDT:USDT | 7d | up | 65363.758 | no_trade | pending |  |  |  |  |
-| 2026-07-24T00:00:00+00:00 | ETH/USDT:USDT | 7d | down | 1863.1776 | no_trade | pending |  |  |  |  |
-| 2026-07-24T00:00:00+00:00 | SOL/USDT:USDT | 7d | up | 76.318752 | no_trade | pending |  |  |  |  |
-| 2026-07-24T00:00:00+00:00 | XRP/USDT:USDT | 7d | down | 1.0880976 | no_trade | pending |  |  |  |  |
-| 2026-07-24T00:00:00+00:00 | HYPE/USDT:USDT | 7d | up | 60.458109 | no_trade | pending |  |  |  |  |
+| 2026-07-24T00:00:00+00:00 | BTC/USDT:USDT | 7d | up | 65363.758 | no_trade | evaluated | 64757.6 | no | yes | 93.2 bps |
+| 2026-07-24T00:00:00+00:00 | ETH/USDT:USDT | 7d | down | 1863.1776 | no_trade | evaluated | 1917.53 | no | yes | 289.5 bps |
+| 2026-07-24T00:00:00+00:00 | SOL/USDT:USDT | 7d | up | 76.318752 | no_trade | evaluated | 74.45 | no | yes | 246.4 bps |
+| 2026-07-24T00:00:00+00:00 | XRP/USDT:USDT | 7d | down | 1.0880976 | no_trade | evaluated | 1.0824 | yes | yes | 51.5 bps |
+| 2026-07-24T00:00:00+00:00 | HYPE/USDT:USDT | 7d | up | 60.458109 | no_trade | evaluated | 55.834 | no | yes | 804.7 bps |
 | 2026-07-26T12:00:00+00:00 | BTC/USDT:USDT | 24h | down | 64065.765 | no_trade | evaluated | 65081.9 | no | no | 157.6 bps |
 | 2026-07-26T12:00:00+00:00 | ETH/USDT:USDT | 24h | down | 1881.6712 | no_trade | evaluated | 1958.8 | no | yes | 409.2 bps |
 | 2026-07-26T12:00:00+00:00 | SOL/USDT:USDT | 24h | down | 74.729624 | no_trade | evaluated | 76.47 | no | yes | 232.3 bps |
 | 2026-07-26T12:00:00+00:00 | XRP/USDT:USDT | 24h | down | 1.0978914 | no_trade | evaluated | 1.1047 | no | yes | 61.9 bps |
 | 2026-07-26T12:00:00+00:00 | BNB/USDT:USDT | 24h | down | 568.9935 | no_trade | evaluated | 572.8 | no | no | 66.7 bps |
 | 2026-07-26T12:00:00+00:00 | DOGE/USDT:USDT | 24h | down | 0.072780244 | no_trade | evaluated | 0.07253 | yes | yes | 34.2 bps |
-| 2026-07-26T00:00:00+00:00 | BTC/USDT:USDT | 7d | up | 65077.504 | no_trade | pending |  |  |  |  |
-| 2026-07-26T00:00:00+00:00 | ETH/USDT:USDT | 7d | up | 1913.8296 | no_trade | pending |  |  |  |  |
-| 2026-07-26T00:00:00+00:00 | SOL/USDT:USDT | 7d | down | 74.149964 | no_trade | pending |  |  |  |  |
-| 2026-07-26T00:00:00+00:00 | XRP/USDT:USDT | 7d | down | 1.0711999 | no_trade | pending |  |  |  |  |
-| 2026-07-26T00:00:00+00:00 | BNB/USDT:USDT | 7d | down | 566.69464 | no_trade | pending |  |  |  |  |
-| 2026-07-26T00:00:00+00:00 | DOGE/USDT:USDT | 7d | down | 0.070267378 | no_trade | pending |  |  |  |  |
-| 2026-07-30T08:00:00+00:00 | BTC/USDT:USDT | 24h | down | 63731.287 | no_trade | pending |  |  |  |  |
-| 2026-07-30T08:00:00+00:00 | ETH/USDT:USDT | 24h | down | 1893.1206 | no_trade | pending |  |  |  |  |
-| 2026-07-30T08:00:00+00:00 | SOL/USDT:USDT | 24h | down | 73.268034 | no_trade | pending |  |  |  |  |
-| 2026-07-30T08:00:00+00:00 | GRAM/USDT:USDT | 24h | down | 1.4073754 | no_trade | pending |  |  |  |  |
+| 2026-07-26T00:00:00+00:00 | BTC/USDT:USDT | 7d | up | 65077.504 | no_trade | evaluated | 62788.9 | no | yes | 355.7 bps |
+| 2026-07-26T00:00:00+00:00 | ETH/USDT:USDT | 7d | up | 1913.8296 | no_trade | evaluated | 1844.06 | no | yes | 372.3 bps |
+| 2026-07-26T00:00:00+00:00 | SOL/USDT:USDT | 7d | down | 74.149964 | no_trade | evaluated | 71.9 | yes | yes | 302.1 bps |
+| 2026-07-26T00:00:00+00:00 | XRP/USDT:USDT | 7d | down | 1.0711999 | no_trade | evaluated | 1.0599 | yes | yes | 103.0 bps |
+| 2026-07-26T00:00:00+00:00 | BNB/USDT:USDT | 7d | down | 566.69464 | no_trade | evaluated | 574.9 | no | yes | 144.3 bps |
+| 2026-07-26T00:00:00+00:00 | DOGE/USDT:USDT | 7d | down | 0.070267378 | no_trade | evaluated | 0.06909 | yes | yes | 164.3 bps |
+| 2026-07-30T08:00:00+00:00 | BTC/USDT:USDT | 24h | down | 63731.287 | no_trade | evaluated | 63903.7 | yes | no | 26.9 bps |
+| 2026-07-30T08:00:00+00:00 | ETH/USDT:USDT | 24h | down | 1893.1206 | no_trade | evaluated | 1889.11 | yes | yes | 21.1 bps |
+| 2026-07-30T08:00:00+00:00 | SOL/USDT:USDT | 24h | down | 73.268034 | no_trade | evaluated | 73.62 | no | yes | 48.0 bps |
+| 2026-07-30T08:00:00+00:00 | GRAM/USDT:USDT | 24h | down | 1.4073754 | no_trade | evaluated | 1.401 | yes | yes | 45.0 bps |
 | 2026-07-30T00:00:00+00:00 | BTC/USDT:USDT | 7d | up | 64434.981 | no_trade | pending |  |  |  |  |
 | 2026-07-30T00:00:00+00:00 | ETH/USDT:USDT | 7d | down | 1894.3027 | no_trade | pending |  |  |  |  |
 | 2026-07-30T00:00:00+00:00 | SOL/USDT:USDT | 7d | down | 72.882082 | no_trade | pending |  |  |  |  |
 | 2026-07-30T00:00:00+00:00 | GRAM/USDT:USDT | 7d | up | 1.405538 | no_trade | pending |  |  |  |  |
+| 2026-07-30T12:00:00+00:00 | BTC/USDT:USDT | 24h | uncertain |  | no_trade | evaluated | 63778.5 |  |  |  |
+| 2026-07-30T12:00:00+00:00 | ETH/USDT:USDT | 24h | uncertain |  | no_trade | evaluated | 1883.71 |  |  |  |
+| 2026-07-30T12:00:00+00:00 | SOL/USDT:USDT | 24h | uncertain |  | no_trade | evaluated | 73.52 |  |  |  |
+| 2026-07-30T12:00:00+00:00 | GRAM/USDT:USDT | 24h | uncertain |  | no_trade | evaluated | 1.389 |  |  |  |
+| 2026-07-30T00:00:00+00:00 | BTC/USDT:USDT | 7d | uncertain |  | no_trade | pending |  |  |  |  |
+| 2026-07-30T00:00:00+00:00 | ETH/USDT:USDT | 7d | uncertain |  | no_trade | pending |  |  |  |  |
+| 2026-07-30T00:00:00+00:00 | SOL/USDT:USDT | 7d | uncertain |  | no_trade | pending |  |  |  |  |
+| 2026-07-30T00:00:00+00:00 | GRAM/USDT:USDT | 7d | uncertain |  | no_trade | pending |  |  |  |  |
+| 2026-08-03T20:00:00+00:00 | BTC/USDT:USDT | 24h | uncertain |  | no_trade | pending |  |  |  |  |
+| 2026-08-03T20:00:00+00:00 | ETH/USDT:USDT | 24h | uncertain |  | no_trade | pending |  |  |  |  |
+| 2026-08-03T20:00:00+00:00 | SOL/USDT:USDT | 24h | uncertain |  | no_trade | pending |  |  |  |  |
+| 2026-08-03T20:00:00+00:00 | GRAM/USDT:USDT | 24h | uncertain |  | no_trade | pending |  |  |  |  |
+| 2026-08-03T00:00:00+00:00 | BTC/USDT:USDT | 7d | uncertain |  | no_trade | pending |  |  |  |  |
+| 2026-08-03T00:00:00+00:00 | ETH/USDT:USDT | 7d | uncertain |  | no_trade | pending |  |  |  |  |
+| 2026-08-03T00:00:00+00:00 | SOL/USDT:USDT | 7d | uncertain |  | no_trade | pending |  |  |  |  |
+| 2026-08-03T00:00:00+00:00 | GRAM/USDT:USDT | 7d | uncertain |  | no_trade | pending |  |  |  |  |

@@ -835,35 +835,38 @@ What it does:
 - trains the same `WaveMind timeframe policy` engine used in the walk-forward
   benchmark;
 - queries the latest completed market window;
-- writes a forced up/down market forecast, the safety-layer trade decision,
-  current price, expected return, expected price, evidence strength, filter
-  reason, and the validation profile into JSON/Markdown.
+- publishes a point target only if the safety layer validates a signal;
+- otherwise publishes an adaptive conformal price range calibrated from
+  matured historical errors;
+- keeps the old forced up/down estimate only under `research_forced_*` in JSON
+  for diagnostics.
 
 The forecast has two layers:
 
-- `market forecast` is always `up` or `down` with a target price because a
-  future close is never exactly flat;
-- `trade validation` is the safety layer and may remain `no_trade` when the
-  policy does not find a validated trade-quality signal.
+- `validated forecast` is `up` or `down` with a point target only when the
+  trade-quality gate passes;
+- `uncertain_range_only` means direction and point target are intentionally
+  withheld, while the 80% nominal conformal range is still auditable;
+- `trade validation` remains the safety layer.
 
 Checked-in OKX 24h snapshot generated from completed 4h candles through
-`2026-07-30T08:00:00+00:00`:
+`2026-08-03T20:00:00+00:00`:
 
-| symbol | data end UTC | market forecast | expected move | target price | trade validation | last close | evidence strength | validation reason |
-|---|---|---|---:|---:|---|---:|---:|---|
-| BTC/USDT perpetual | 2026-07-30T08:00:00+00:00 | down | -0.39% | 63731.3 | no_trade | 63980.4 | 0.929 | adaptive_trend_mismatch |
-| ETH/USDT perpetual | 2026-07-30T08:00:00+00:00 | down | -0.49% | 1893.12 | no_trade | 1902.38 | 0.836 | adaptive_trend_mismatch |
-| SOL/USDT perpetual | 2026-07-30T08:00:00+00:00 | down | -0.15% | 73.268 | no_trade | 73.38 | 0.430 | local_regime_negative |
-| GRAM/USDT perpetual | 2026-07-30T08:00:00+00:00 | down | -0.68% | 1.40738 | no_trade | 1.417 | 0.748 | flat_candidate |
+| symbol | status | 80% nominal price range | trade validation | last close | validation reason |
+|---|---|---:|---|---:|---|
+| BTC/USDT perpetual | uncertain | 62737.4 to 64920.2 | no_trade | 63828.8 | adaptive_trend_mismatch |
+| ETH/USDT perpetual | uncertain | 1823.96 to 1914.04 | no_trade | 1869.0 | low_expected_edge |
+| SOL/USDT perpetual | uncertain | 72.1736 to 75.7864 | no_trade | 73.98 | low_expected_edge |
+| GRAM/USDT perpetual | uncertain | 1.38475 to 1.44125 | no_trade | 1.413 | adaptive_trend_mismatch |
 
-The 24h snapshot has a forced directional estimate, but it is still an
-`no_trade` result at the trade-signal layer. The current market did not produce a
-validated trade-quality signal.
+The current market did not produce a validated trade-quality signal. The report
+therefore does not pretend that the old `-0.15%`-style center is a precise
+forecast.
 
-The corresponding 7d forced estimates are BTC `up 0.75%` to `64435`, ETH
-`down 0.81%` to `1894.3`, SOL `down 1.02%` to `72.8821`, and GRAM `up 0.18%`
-to `1.40554`. All four return `no_trade` with `unsupported_timeframe:1d`.
-That is intentional.
+The corresponding 7d ranges are BTC `60571.3 to 66520.1`, ETH
+`1749.71 to 2018.61`, SOL `68.7663 to 78.3937`, and GRAM
+`1.26987 to 1.58413`. All four return `no_trade` with
+`unsupported_timeframe:1d`. That is intentional.
 The policy refuses to produce trade-quality daily/weekly signals until a
 separate 1d profile passes walk-forward validation.
 
@@ -871,21 +874,47 @@ separate 1d profile passes walk-forward validation.
 
 The live ledger remains negative evidence:
 
-- forecasts: `45`;
-- evaluated: `26`;
-- pending: `19`;
-- market direction accuracy: `0.231`;
-- 95% Wilson lower bound: `0.110`;
-- target touch rate: `0.654`;
-- mean absolute target return error: `175.8 bps`;
+- forecasts: `61`;
+- evaluated: `45`;
+- pending: `16`;
+- directional forecasts evaluated: `41`;
+- market direction accuracy: `0.317`;
+- 95% Wilson lower bound: `0.196`;
+- prediction interval coverage: `3/4` (`0.750`);
+- target touch rate: `0.756`;
+- mean absolute target return error: `186.3 bps`;
 - strict 70% live admission: rejected.
 
-The ledger integrity check passes for all 45 rows, including the 15-row legacy
-prefix and 30 hash-chained records. This live result overrules any implication
+The ledger integrity check passes for all 61 rows, including the 15-row legacy
+prefix and 46 hash-chained records. This live result overrules any implication
 that the general forced-forecast model is deployment-ready. The independent
 `0.731` dynamic-transfer result applies only to its rare post-capitulation
 event class; none of BTC, ETH, SOL, or GRAM met that event gate in this
 snapshot.
+
+The first forward interval settlement covered ETH, SOL, and GRAM. BTC closed
+5.6 bps below its lower bound, so the result is recorded as `3/4`, not rounded
+up to the nominal 80%. Four observations are only a smoke check; the historical
+8,640-query benchmark remains the main interval evidence.
+
+### Adaptive conformal interval benchmark
+
+The interval benchmark uses eight real OKX assets, three timeframes, four
+walk-forward folds, and 8,640 OOS queries. The WaveMind risk-field does not
+force direction; it uses analogous matured market states to estimate move
+magnitude, then adaptive conformal calibration turns that scale into a price
+range.
+
+| engine | empirical coverage | mean width | interval score | vs zero |
+|---|---:|---:|---:|---:|
+| zero-return adaptive conformal | 0.786 | 1499.2 bps | 2074.8 bps | baseline |
+| WaveMind directional center | 0.786 | 1561.6 bps | 2157.2 bps | -4.0% |
+| **WaveMind risk-field** | **0.791** | **1333.1 bps** | **1902.3 bps** | **+8.3%** |
+
+The directional center is rejected because it worsens the proper score. The
+risk-field is retained because it narrows ranges by 11.1% while slightly
+improving coverage. Its gain is positive on 4h and 1d but negative on 1h, and
+worst-slice coverage is not yet production-stable.
 
 The metrics are retrieval/research metrics, not a live trading claim:
 
@@ -1280,3 +1309,13 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
     disjoint asset or genuinely forward period. The post-holdout diagnostic
     reaches `0.732` on 332 signals with Wilson low `0.682` and `0.765` episode
     accuracy, but it cannot replace the already evaluated joint-veto primary.
+51. Done, useful but not directional: added an adaptive conformal benchmark on
+    eight real OKX assets, three timeframes, four walk-forward folds, and 8,640
+    OOS queries. The WaveMind risk-field reaches `0.791` coverage at an 80%
+    nominal target, narrows the mean range by `11.1%`, and improves proper
+    interval score by `8.3%` versus a zero-return adaptive conformal baseline.
+    The directional WaveMind center worsens score by `4.0%` and is rejected.
+52. Next: repair 1h and worst-slice interval coverage with causal online
+    recalibration, then freeze the interval policy for a second exchange. Do
+    not restore a point target for `no_trade` rows unless a directional gate
+    passes independent OOS admission.

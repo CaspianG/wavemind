@@ -73,6 +73,41 @@ def evaluate_forecast(
     actual_price = float(future[-1].close)
     actual_return_bps = (actual_price / last_close - 1.0) * 10_000.0
     actual_direction = "up" if actual_return_bps > 0.0 else "down" if actual_return_bps < 0.0 else "flat"
+    interval_lower = forecast.get("prediction_interval_lower_price")
+    interval_upper = forecast.get("prediction_interval_upper_price")
+    interval_covered = (
+        float(interval_lower) <= actual_price <= float(interval_upper)
+        if interval_lower is not None and interval_upper is not None
+        else None
+    )
+    point_target_validated = bool(
+        forecast.get("point_target_validated", "point_target_validated" not in forecast)
+    )
+    trade_decision = str(forecast.get("trade_decision", "no_trade"))
+    common_outcome = {
+        "outcome_status": "evaluated",
+        "actual_price": actual_price,
+        "actual_return_bps": actual_return_bps,
+        "actual_return_pct": actual_return_bps / 100.0,
+        "actual_direction": actual_direction,
+        "prediction_interval_covered": interval_covered,
+        "future_high": max(float(bar.high) for bar in future),
+        "future_low": min(float(bar.low) for bar in future),
+        "evaluated_at_utc": datetime.fromtimestamp(now, tz=timezone.utc).isoformat(),
+    }
+    if not point_target_validated:
+        result.update(
+            common_outcome
+            | {
+                "direction_correct": None,
+                "target_touched": None,
+                "target_price_error": None,
+                "target_abs_return_error_bps": None,
+                "trade_direction_correct": None,
+            }
+        )
+        return result
+
     predicted_direction = str(forecast.get("market_forecast_direction") or forecast.get("direction") or "flat")
     predicted_target = float(
         forecast.get("market_forecast_target_price")
@@ -86,22 +121,14 @@ def evaluate_forecast(
         direction=predicted_direction,
         target_price=predicted_target,
     )
-    trade_decision = str(forecast.get("trade_decision", "no_trade"))
     result.update(
-        {
-            "outcome_status": "evaluated",
-            "actual_price": actual_price,
-            "actual_return_bps": actual_return_bps,
-            "actual_return_pct": actual_return_bps / 100.0,
-            "actual_direction": actual_direction,
+        common_outcome
+        | {
             "direction_correct": direction_correct,
             "target_touched": target_touched,
             "target_price_error": predicted_target - actual_price,
             "target_abs_return_error_bps": abs(predicted_return_bps - actual_return_bps),
             "trade_direction_correct": direction_correct if trade_decision == "trade" else None,
-            "future_high": max(float(bar.high) for bar in future),
-            "future_low": min(float(bar.low) for bar in future),
-            "evaluated_at_utc": datetime.fromtimestamp(now, tz=timezone.utc).isoformat(),
         }
     )
     return result
@@ -119,19 +146,24 @@ def _target_touched(bars: Iterable[OHLCVBar], *, direction: str, target_price: f
 def summarize_outcomes(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
     selected = list(rows)
     evaluated = [row for row in selected if row.get("outcome_status") == "evaluated"]
-    trades = [row for row in evaluated if row.get("trade_decision") == "trade"]
+    directional = [row for row in evaluated if row.get("direction_correct") is not None]
+    interval_evaluated = [row for row in evaluated if row.get("prediction_interval_covered") is not None]
+    target_evaluated = [row for row in evaluated if row.get("target_abs_return_error_bps") is not None]
+    trades = [row for row in directional if row.get("trade_decision") == "trade"]
     pending = [row for row in selected if row.get("outcome_status") == "pending"]
     missing = [row for row in selected if row.get("outcome_status") == "missing_market_data"]
-    by_symbol = summarize_symbol_accuracy(evaluated)
-    direction_hits = sum(bool(row.get("direction_correct")) for row in evaluated)
-    direction_accuracy = _ratio(direction_hits, len(evaluated))
+    by_symbol = summarize_symbol_accuracy(directional)
+    direction_hits = sum(bool(row.get("direction_correct")) for row in directional)
+    direction_accuracy = _ratio(direction_hits, len(directional))
     return {
         "forecasts": len(selected),
         "evaluated": len(evaluated),
+        "direction_evaluated": len(directional),
+        "interval_evaluated": len(interval_evaluated),
         "pending": len(pending),
         "missing_market_data": len(missing),
         "market_direction_accuracy": direction_accuracy,
-        "direction_wilson_low_95": wilson_lower_bound(direction_hits, len(evaluated)),
+        "direction_wilson_low_95": wilson_lower_bound(direction_hits, len(directional)),
         "symbols_evaluated": len(by_symbol),
         "worst_symbol_accuracy": (
             min(float(row["accuracy"]) for row in by_symbol)
@@ -140,18 +172,31 @@ def summarize_outcomes(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
         ),
         "trade_forecasts": len(trades),
         "trade_direction_accuracy": _ratio(sum(bool(row.get("trade_direction_correct")) for row in trades), len(trades)),
-        "target_touch_rate": _ratio(sum(bool(row.get("target_touched")) for row in evaluated), len(evaluated)),
+        "prediction_interval_coverage": _ratio(
+            sum(bool(row.get("prediction_interval_covered")) for row in interval_evaluated),
+            len(interval_evaluated),
+        ),
+        "target_touch_rate": _ratio(
+            sum(bool(row.get("target_touched")) for row in target_evaluated),
+            len(target_evaluated),
+        ),
         "mean_abs_target_error_bps": (
-            sum(float(row["target_abs_return_error_bps"]) for row in evaluated) / len(evaluated)
-            if evaluated
+            sum(float(row["target_abs_return_error_bps"]) for row in target_evaluated)
+            / len(target_evaluated)
+            if target_evaluated
             else None
         ),
-        "admitted_70": live_admission_70(evaluated, by_symbol=by_symbol),
+        "admitted_70": live_admission_70(directional, by_symbol=by_symbol),
     }
 
 
 def model_family(row: Mapping[str, Any]) -> str:
     """Collapse decision explanations into a stable, comparable model version."""
+    if (
+        int(row.get("forecast_schema_version", 1)) >= 3
+        and str(row.get("forecast_status", "")) == "uncertain_range_only"
+    ):
+        return "risk_field_conformal_v1"
     method = str(row.get("directional_method") or "").strip()
     if method.startswith("guarded_state_field_v1"):
         return "guarded_state_field_v1"
@@ -249,12 +294,15 @@ def render_markdown(payload: Mapping[str, Any]) -> str:
         "|---|---:|",
         f"| forecasts | {summary['forecasts']} |",
         f"| evaluated | {summary['evaluated']} |",
+        f"| directional forecasts evaluated | {summary['direction_evaluated']} |",
+        f"| prediction intervals evaluated | {summary['interval_evaluated']} |",
         f"| pending | {summary['pending']} |",
         f"| market direction accuracy | {_format_rate(summary['market_direction_accuracy'])} |",
         f"| direction Wilson low 95% | {_format_rate(summary['direction_wilson_low_95'])} |",
         f"| worst symbol accuracy | {_format_rate(summary['worst_symbol_accuracy'])} |",
         f"| strict 70% admission | {'yes' if summary['admitted_70'] else 'no'} |",
         f"| trade direction accuracy | {_format_rate(summary['trade_direction_accuracy'])} |",
+        f"| prediction interval coverage | {_format_rate(summary['prediction_interval_coverage'])} |",
         f"| target touch rate | {_format_rate(summary['target_touch_rate'])} |",
         f"| mean absolute target error | {_format_bps(summary['mean_abs_target_error_bps'])} |",
         "",
@@ -296,7 +344,7 @@ def render_markdown(payload: Mapping[str, Any]) -> str:
             "| "
             f"{row.get('data_end_utc', '')} | {row.get('symbol', '')} | {row.get('horizon_label', '')} | "
             f"{row.get('market_forecast_direction', row.get('direction', ''))} | "
-            f"{float(row.get('market_forecast_target_price', row.get('expected_price', 0.0))):.8g} | "
+            f"{_format_price(row.get('market_forecast_target_price'))} | "
             f"{row.get('trade_decision', 'no_trade')} | {row.get('outcome_status', '')} | "
             f"{'' if actual_price is None else format(float(actual_price), '.8g')} | "
             f"{_format_bool(row.get('direction_correct'))} | {_format_bool(row.get('target_touched'))} | "
@@ -318,6 +366,10 @@ def _format_bool(value: Any) -> str:
     if value is None:
         return ""
     return "yes" if bool(value) else "no"
+
+
+def _format_price(value: Any) -> str:
+    return "" if value is None else f"{float(value):.8g}"
 
 
 def fetch_bars_for_forecasts(
