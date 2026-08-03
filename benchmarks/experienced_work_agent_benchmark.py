@@ -769,6 +769,23 @@ def _median_latency_row(samples: Sequence[dict[str, Any]]) -> dict[str, Any]:
     return row
 
 
+def _paired_latency_regression(
+    baseline_samples: Sequence[dict[str, Any]],
+    experience_samples: Sequence[dict[str, Any]],
+) -> tuple[float, list[float]]:
+    if len(baseline_samples) != len(experience_samples) or not baseline_samples:
+        raise ValueError("paired latency samples must be non-empty and balanced")
+    regressions = []
+    for baseline, experience in zip(baseline_samples, experience_samples, strict=True):
+        baseline_latency = float(baseline["latency_ms"])
+        if baseline_latency <= 0:
+            raise ValueError("baseline latency samples must be positive")
+        regressions.append(
+            float(experience["latency_ms"]) / baseline_latency - 1.0
+        )
+    return statistics.median(regressions), regressions
+
+
 def _run_paired(
     *,
     core: WaveMind,
@@ -810,8 +827,16 @@ def _run_paired(
                 core_samples.append(
                     _run_core_case(core, scenario, request, known_errors)
                 )
-        core_rows.append(_median_latency_row(core_samples))
-        experience_rows.append(_median_latency_row(experience_samples))
+        core_row = _median_latency_row(core_samples)
+        experience_row = _median_latency_row(experience_samples)
+        paired_regression, paired_samples = _paired_latency_regression(
+            core_samples,
+            experience_samples,
+        )
+        experience_row["paired_latency_regression"] = paired_regression
+        experience_row["paired_latency_regression_samples"] = paired_samples
+        core_rows.append(core_row)
+        experience_rows.append(experience_row)
     return core_rows, experience_rows
 
 
@@ -906,10 +931,11 @@ def run_benchmark(workdir: Path) -> dict[str, Any]:
             baseline["median_context_tokens"],
             experience["median_context_tokens"],
         )
-        latency_regression = (
-            experience["p95_latency_ms"] / baseline["p95_latency_ms"] - 1.0
-            if baseline["p95_latency_ms"] > 0
-            else float("inf")
+        latency_regression = _p95(
+            [
+                float(row["paired_latency_regression"])
+                for row in experience_rows
+            ]
         )
         checks = [
             _check("training-count", len(training) == 60, len(training), 60),
@@ -991,6 +1017,9 @@ def run_benchmark(workdir: Path) -> dict[str, Any]:
                 "experience_promotion_gates": True,
                 "core_top_k": 3,
                 "paired_latency_samples": True,
+                "paired_latency_regression_estimator": (
+                    "p95 of per-case median paired relative regressions"
+                ),
                 "latency_repetitions_per_case": LATENCY_REPETITIONS,
             },
             "training": {
