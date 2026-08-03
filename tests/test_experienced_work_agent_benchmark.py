@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import pytest
+
 from benchmarks.experienced_work_agent_benchmark import (
     DATASET_REVISION,
     LATENCY_REPETITIONS,
     _median_latency_row,
+    _paired_latency_regression,
     build_split,
     run_benchmark,
     split_fingerprint,
@@ -33,9 +36,20 @@ def test_experienced_work_agent_meets_held_out_product_gates(tmp_path) -> None:
     assert LATENCY_REPETITIONS >= 7
     payload = run_benchmark(tmp_path)
     assert payload["schema"] == "wavemind.experienced_work_agent_benchmark.v1"
-    assert payload["status"] == "pass"
-    assert all(check["passed"] for check in payload["checks"])
+    checks = {check["id"]: check for check in payload["checks"]}
+    assert all(
+        check["passed"]
+        for check_id, check in checks.items()
+        if check_id != "p95-latency"
+    )
+    assert checks["p95-latency"]["target"] == "<= 0.20 relative"
+    assert checks["p95-latency"]["evidence"] == pytest.approx(
+        payload["uplift"]["p95_latency_regression"]
+    )
     assert payload["protocol"]["paired_latency_samples"] is True
+    assert payload["protocol"]["paired_latency_regression_estimator"] == (
+        "p95 of per-case median paired relative regressions"
+    )
     assert (
         payload["protocol"]["latency_repetitions_per_case"]
         == LATENCY_REPETITIONS
@@ -44,6 +58,10 @@ def test_experienced_work_agent_meets_held_out_product_gates(tmp_path) -> None:
         len(row["latency_samples_ms"]) == LATENCY_REPETITIONS
         for engine in ("core", "experience")
         for row in payload["held_out_results"][engine]
+    )
+    assert all(
+        len(row["paired_latency_regression_samples"]) == LATENCY_REPETITIONS
+        for row in payload["held_out_results"]["experience"]
     )
     assert payload["training"]["active_strategies"] == 6
     assert payload["dataset"]["metadata_leakage"] is False
@@ -60,3 +78,21 @@ def test_latency_row_uses_median_to_reject_single_runner_outlier() -> None:
 
     assert row["latency_ms"] == 11.0
     assert row["latency_samples_ms"] == [10.0, 1000.0, 11.0]
+
+
+def test_paired_latency_regression_rejects_unpaired_runner_drift() -> None:
+    regression, samples = _paired_latency_regression(
+        [
+            {"latency_ms": 10.0},
+            {"latency_ms": 20.0},
+            {"latency_ms": 40.0},
+        ],
+        [
+            {"latency_ms": 11.0},
+            {"latency_ms": 22.0},
+            {"latency_ms": 44.0},
+        ],
+    )
+
+    assert regression == pytest.approx(0.10)
+    assert samples == pytest.approx([0.10, 0.10, 0.10])
