@@ -841,13 +841,43 @@ What it does:
 - keeps the old forced up/down estimate only under `research_forced_*` in JSON
   for diagnostics.
 
-The forecast has two layers:
+The current-state window and historical memory are different things. With the
+24h defaults, the latest state is a fingerprint of 32 completed 4h candles
+(5 days and 8 hours), while the field is fitted on all matured windows produced
+from the requested `--bars` history. `--bars 720` is about 120 days of 4h
+history; `--bars 2000` is about 333 days. The JSON and Markdown report now state
+the exact state-window size, history size, and history start time. The runner
+does not claim to read an exchange's entire lifetime unless that full history
+was actually supplied.
+
+More history is not treated as automatically better. Relationship estimates
+are recency weighted and validated on a later holdout because old market regimes
+can become harmful. This keeps long memory available without allowing years of
+stale behavior to dominate the current regime.
+
+The forecast has three layers:
 
 - `validated forecast` is `up` or `down` with a point target only when the
   trade-quality gate passes;
 - `uncertain_range_only` means direction and point target are intentionally
   withheld, while the 80% nominal conformal range is still auditable;
+- `opportunity_ranking` always ranks every supplied market and exposes the best
+  available research direction, target, risk boundary, and reward-to-uncertainty
+  ratio even when every strict decision is `no_trade`;
 - `trade validation` remains the safety layer.
+
+`research_candidate` means best available in the scanned universe, not a
+guaranteed profitable trade. This separation avoids the useless user experience
+of showing only `no_trade` while preserving an honest distinction between a
+relative opportunity and an independently validated signal.
+
+The adaptive field also uses separate thresholds for accepting a trade and
+vetoing a contradictory regime. Raising the entry threshold can no longer
+silence a strong opposite-field warning. The historical AVAX snapshot through
+2026-08-04T08:00:00Z is a regression case: the previous continuation candidate
+pointed up while the relationship field pointed down with 0.993 evidence
+strength and 0.989 regime stability. It is now rejected as
+`adaptive_field_opposition` instead of being presented as a clean long.
 
 Checked-in OKX 24h snapshot generated from completed 4h candles through
 `2026-08-03T20:00:00+00:00`:

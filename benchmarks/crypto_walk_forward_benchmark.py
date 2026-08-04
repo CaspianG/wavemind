@@ -162,13 +162,21 @@ class StaticKnnEngine(MarketEngine):
     def query(self, window: OHLCVWindow, *, top_k: int) -> Prediction:
         started = time.perf_counter()
         if not self.records:
-            return Prediction(direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[])
-        query_vector = self.encoder.encode_vector(window_to_text(window, include_outcome=False))
+            return Prediction(
+                direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[]
+            )
+        query_vector = self.encoder.encode_vector(
+            window_to_text(window, include_outcome=False)
+        )
         scores = self.vectors @ query_vector
         order = np.argsort(scores)[::-1][:top_k]
         latency = (time.perf_counter() - started) * 1000.0
         analogues = [
-            _analogue_from_window(self.records[int(index)], self.texts[int(index)], float(scores[int(index)]))
+            _analogue_from_window(
+                self.records[int(index)],
+                self.texts[int(index)],
+                float(scores[int(index)]),
+            )
             for index in order
         ]
         top = analogues[0]
@@ -205,7 +213,9 @@ class WaveMindEngine(MarketEngine):
         lexical_weight: float | None = None,
     ):
         if calibrated:
-            self.name = "WaveMind calibrated" if use_field else "WaveMind field-off calibrated"
+            self.name = (
+                "WaveMind calibrated" if use_field else "WaveMind field-off calibrated"
+            )
         else:
             self.name = "WaveMind field" if use_field else "WaveMind field-off"
         self.namespace = f"crypto:{symbol}:{timeframe}"
@@ -223,16 +233,28 @@ class WaveMindEngine(MarketEngine):
                 db_label = "field" if use_field else "fieldoff"
         if memory_store not in {"disk", "memory"}:
             raise ValueError("memory_store must be 'disk' or 'memory'")
-        db_path = None if memory_store == "memory" else temp_root / f"{symbol.replace('/', '')}_{timeframe}_{db_label}.sqlite3"
+        db_path = (
+            None
+            if memory_store == "memory"
+            else temp_root / f"{symbol.replace('/', '')}_{timeframe}_{db_label}.sqlite3"
+        )
         self.memory = WaveMind(
             db_path=db_path,
             encoder=encoder,
             index_kind="numpy",
             score_threshold=0.0,
-            vector_weight=float(vector_weight) if vector_weight is not None else (0.72 if use_field else 0.94),
-            field_weight=float(field_weight) if field_weight is not None else (0.08 if use_field else 0.0),
-            priority_weight=float(priority_weight) if priority_weight is not None else (0.18 if use_field else 0.0),
-            lexical_weight=float(lexical_weight) if lexical_weight is not None else 0.16,
+            vector_weight=float(vector_weight)
+            if vector_weight is not None
+            else (0.72 if use_field else 0.94),
+            field_weight=float(field_weight)
+            if field_weight is not None
+            else (0.08 if use_field else 0.0),
+            priority_weight=float(priority_weight)
+            if priority_weight is not None
+            else (0.18 if use_field else 0.0),
+            lexical_weight=float(lexical_weight)
+            if lexical_weight is not None
+            else 0.16,
             rerank_k=32,
             persist_access_on_query=False,
             query_feedback_strength=0.0,
@@ -262,9 +284,15 @@ class WaveMindEngine(MarketEngine):
                 score=float(result.score),
                 direction=str(result.metadata.get("direction", "flat")),
                 future_return_bps=float(result.metadata.get("future_return_bps", 0.0)),
-                max_favorable_excursion_bps=float(result.metadata.get("max_favorable_excursion_bps", 0.0)),
-                max_adverse_excursion_bps=float(result.metadata.get("max_adverse_excursion_bps", 0.0)),
-                future_realized_vol_bps=float(result.metadata.get("future_realized_vol_bps", 0.0)),
+                max_favorable_excursion_bps=float(
+                    result.metadata.get("max_favorable_excursion_bps", 0.0)
+                ),
+                max_adverse_excursion_bps=float(
+                    result.metadata.get("max_adverse_excursion_bps", 0.0)
+                ),
+                future_realized_vol_bps=float(
+                    result.metadata.get("future_realized_vol_bps", 0.0)
+                ),
                 start_time=str(result.metadata.get("start_time", "")),
                 end_time=str(result.metadata.get("end_time", "")),
                 text=result.text,
@@ -273,7 +301,12 @@ class WaveMindEngine(MarketEngine):
             for result in results
         ]
         if not analogues:
-            return Prediction(direction="flat", expected_return_bps=0.0, latency_ms=latency, analogues=[])
+            return Prediction(
+                direction="flat",
+                expected_return_bps=0.0,
+                latency_ms=latency,
+                analogues=[],
+            )
         if self.calibrated:
             return _calibrated_prediction(
                 query_window=window,
@@ -293,7 +326,9 @@ class WaveMindEngine(MarketEngine):
             analogues=analogues,
             confidence=_direction_agreement_from_analogues(top.direction, analogues),
             raw_direction=top.direction,
-            analogue_agreement=_direction_agreement_from_analogues(top.direction, analogues),
+            analogue_agreement=_direction_agreement_from_analogues(
+                top.direction, analogues
+            ),
         )
 
     def close(self) -> None:
@@ -343,7 +378,9 @@ class WaveMindRegimeGateEngine(WaveMindEngine):
 
     def query(self, window: OHLCVWindow, *, top_k: int) -> Prediction:
         if not self.records:
-            return Prediction(direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[])
+            return Prediction(
+                direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[]
+            )
         memory_prediction = super().query(window, top_k=top_k)
         latest = self.records[-1]
         candidate_direction = latest.direction
@@ -358,10 +395,20 @@ class WaveMindRegimeGateEngine(WaveMindEngine):
                 filter_reason="flat_candidate",
                 confidence=0.0,
             )
-        selected = [match for match in memory_prediction.analogues if match.direction == candidate_direction]
-        support = _weighted_direction_support(candidate_direction, memory_prediction.analogues)
+        selected = [
+            match
+            for match in memory_prediction.analogues
+            if match.direction == candidate_direction
+        ]
+        support = _weighted_direction_support(
+            candidate_direction, memory_prediction.analogues
+        )
         regime_agreement = _regime_agreement(window, selected)
-        expected_return = _weighted_mean_return(selected) if selected else float(latest.future_return_bps)
+        expected_return = (
+            _weighted_mean_return(selected)
+            if selected
+            else float(latest.future_return_bps)
+        )
         expected_edge = _directional_edge_after_cost_bps(
             candidate_direction,
             expected_return,
@@ -502,7 +549,9 @@ class WaveMindRiskOverlayEngine(WaveMindEngine):
 
     def query(self, window: OHLCVWindow, *, top_k: int) -> Prediction:
         if not self.records:
-            return Prediction(direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[])
+            return Prediction(
+                direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[]
+            )
         memory_prediction = super().query(window, top_k=top_k)
         latest = self.records[-1]
         candidate_direction = latest.direction
@@ -518,8 +567,14 @@ class WaveMindRiskOverlayEngine(WaveMindEngine):
                 confidence=0.0,
             )
         opposite_direction = "down" if candidate_direction == "up" else "up"
-        opposition = _weighted_direction_support(opposite_direction, memory_prediction.analogues)
-        selected = [match for match in memory_prediction.analogues if match.direction == candidate_direction]
+        opposition = _weighted_direction_support(
+            opposite_direction, memory_prediction.analogues
+        )
+        selected = [
+            match
+            for match in memory_prediction.analogues
+            if match.direction == candidate_direction
+        ]
         regime_agreement = _regime_agreement(window, selected) if selected else 0.0
         historical_edge = _rolling_last_regime_edge(
             self.records,
@@ -628,6 +683,7 @@ class WaveMindAdaptiveFieldEngine(WaveMindEngine):
         validation_holdout: float = 0.35,
         min_confidence: float = 0.52,
         min_expected_edge_bps: float = 70.0,
+        opposition_edge_bps: float = 70.0,
         max_opposition: float = 0.62,
         require_trend_alignment: bool = True,
         performance_lookback: int = 8,
@@ -662,6 +718,7 @@ class WaveMindAdaptiveFieldEngine(WaveMindEngine):
         self.validation_holdout = float(validation_holdout)
         self.min_confidence = float(min_confidence)
         self.min_expected_edge_bps = float(min_expected_edge_bps)
+        self.opposition_edge_bps = float(opposition_edge_bps)
         self.max_opposition = float(max_opposition)
         self.require_trend_alignment = bool(require_trend_alignment)
         self.performance_lookback = int(performance_lookback)
@@ -677,12 +734,16 @@ class WaveMindAdaptiveFieldEngine(WaveMindEngine):
                     actual_return_bps=window.future_return_bps,
                     round_trip_cost_bps=self.round_trip_cost_bps,
                 )
-        )
+            )
         index = len(self.records)
         self.records.append(window)
         self.return_history.append(float(window.future_return_bps))
-        for relationship in _relationship_candidates(_regime_signature_from_window(window)):
-            self.relationship_history.setdefault(relationship, []).append((index, float(window.future_return_bps)))
+        for relationship in _relationship_candidates(
+            _regime_signature_from_window(window)
+        ):
+            self.relationship_history.setdefault(relationship, []).append(
+                (index, float(window.future_return_bps))
+            )
         if self.store_vector_memory:
             super().add(window)
 
@@ -703,9 +764,16 @@ class WaveMindAdaptiveFieldEngine(WaveMindEngine):
                 filtered=True,
                 filter_reason="insufficient_field_history",
             )
-        recent_edge = _recent_mean(self.realized_signal_nets, lookback=self.performance_lookback)
-        min_samples = min(max(4, self.performance_lookback // 3), self.performance_lookback)
-        if len(self.realized_signal_nets) >= min_samples and recent_edge < self.min_recent_edge_bps:
+        recent_edge = _recent_mean(
+            self.realized_signal_nets, lookback=self.performance_lookback
+        )
+        min_samples = min(
+            max(4, self.performance_lookback // 3), self.performance_lookback
+        )
+        if (
+            len(self.realized_signal_nets) >= min_samples
+            and recent_edge < self.min_recent_edge_bps
+        ):
             return Prediction(
                 direction="flat",
                 expected_return_bps=0.0,
@@ -740,7 +808,9 @@ class WaveMindAdaptiveFieldEngine(WaveMindEngine):
                 analogue_agreement=0.0,
                 regime_agreement=float(field_signal["stability"]),
             )
-        if self.require_trend_alignment and not _direction_matches_window_trend(candidate_direction, window):
+        if self.require_trend_alignment and not _direction_matches_window_trend(
+            candidate_direction, window
+        ):
             return Prediction(
                 direction="flat",
                 expected_return_bps=0.0,
@@ -761,7 +831,7 @@ class WaveMindAdaptiveFieldEngine(WaveMindEngine):
         if (
             field_direction == opposite_direction
             and field_confidence >= self.min_confidence
-            and field_edge >= self.min_expected_edge_bps
+            and field_edge >= self.opposition_edge_bps
         ):
             return Prediction(
                 direction="flat",
@@ -777,8 +847,13 @@ class WaveMindAdaptiveFieldEngine(WaveMindEngine):
             )
 
         field_return = float(field_signal["expected_return_bps"])
-        if field_direction == candidate_direction and field_confidence >= self.min_confidence:
-            expected_return = 0.62 * field_return + 0.38 * float(latest.future_return_bps)
+        if (
+            field_direction == candidate_direction
+            and field_confidence >= self.min_confidence
+        ):
+            expected_return = 0.62 * field_return + 0.38 * float(
+                latest.future_return_bps
+            )
             confidence = field_confidence
             support = field_confidence
         else:
@@ -867,15 +942,26 @@ class WaveMindMicrostructureEngine(MarketEngine):
         index = len(self.records)
         self.records.append(window)
         self.return_history.append(float(window.future_return_bps))
-        for relationship in _relationship_candidates(_regime_signature_from_window(window)):
-            self.relationship_history.setdefault(relationship, []).append((index, float(window.future_return_bps)))
+        for relationship in _relationship_candidates(
+            _regime_signature_from_window(window)
+        ):
+            self.relationship_history.setdefault(relationship, []).append(
+                (index, float(window.future_return_bps))
+            )
         self.ta.add(window)
 
     def query(self, window: OHLCVWindow, *, top_k: int) -> Prediction:
         started = time.perf_counter()
-        recent_edge = _recent_mean(self.realized_signal_nets, lookback=self.performance_lookback)
-        min_samples = min(max(4, self.performance_lookback // 3), self.performance_lookback)
-        if len(self.realized_signal_nets) >= min_samples and recent_edge < self.min_recent_edge_bps:
+        recent_edge = _recent_mean(
+            self.realized_signal_nets, lookback=self.performance_lookback
+        )
+        min_samples = min(
+            max(4, self.performance_lookback // 3), self.performance_lookback
+        )
+        if (
+            len(self.realized_signal_nets) >= min_samples
+            and recent_edge < self.min_recent_edge_bps
+        ):
             return Prediction(
                 direction="flat",
                 expected_return_bps=0.0,
@@ -920,8 +1006,14 @@ class WaveMindMicrostructureEngine(MarketEngine):
             and field_edge >= self.opposition_edge_bps
         ):
             reasons.append("field_opposition")
-        if field_direction == candidate_direction and field_confidence >= self.boost_confidence:
-            expected_return = 0.60 * float(field_signal["expected_return_bps"]) + 0.40 * base.expected_return_bps
+        if (
+            field_direction == candidate_direction
+            and field_confidence >= self.boost_confidence
+        ):
+            expected_return = (
+                0.60 * float(field_signal["expected_return_bps"])
+                + 0.40 * base.expected_return_bps
+            )
             confidence = max(float(base.confidence), field_confidence)
         else:
             expected_return = base.expected_return_bps
@@ -979,7 +1071,9 @@ class WaveMindPerpTrendFieldEngine(MarketEngine):
         self.return_history: list[float] = []
         self.relationship_history: dict[tuple[str, ...], list[tuple[int, float]]] = {}
         self.signal_relationship_history: dict[tuple[str, ...], list[float]] = {}
-        self.pending_predictions: dict[str, tuple[str, tuple[tuple[str, ...], ...]]] = {}
+        self.pending_predictions: dict[
+            str, tuple[str, tuple[tuple[str, ...], ...]]
+        ] = {}
         self.realized_signal_nets: list[float] = []
         self.min_support = int(min_support)
         self.min_test_support = int(min_test_support)
@@ -1001,16 +1095,25 @@ class WaveMindPerpTrendFieldEngine(MarketEngine):
             )
             self.realized_signal_nets.append(realized_net)
             for relationship in relationships:
-                self.signal_relationship_history.setdefault(relationship, []).append(realized_net)
+                self.signal_relationship_history.setdefault(relationship, []).append(
+                    realized_net
+                )
         index = len(self.records)
         self.records.append(window)
         self.return_history.append(float(window.future_return_bps))
-        for relationship in _relationship_candidates(_regime_signature_from_window(window)):
-            self.relationship_history.setdefault(relationship, []).append((index, float(window.future_return_bps)))
+        for relationship in _relationship_candidates(
+            _regime_signature_from_window(window)
+        ):
+            self.relationship_history.setdefault(relationship, []).append(
+                (index, float(window.future_return_bps))
+            )
         self.base.add(window)
 
     def query(self, window: OHLCVWindow, *, top_k: int) -> Prediction:
-        if self.max_drawdown_bps > 0.0 and _max_drawdown_bps(self.realized_signal_nets) >= self.max_drawdown_bps:
+        if (
+            self.max_drawdown_bps > 0.0
+            and _max_drawdown_bps(self.realized_signal_nets) >= self.max_drawdown_bps
+        ):
             return Prediction(
                 direction="flat",
                 expected_return_bps=0.0,
@@ -1056,10 +1159,19 @@ class WaveMindPerpTrendFieldEngine(MarketEngine):
             )
 
         expected_return = base.expected_return_bps
-        confidence = max(0.35, min(1.0, signal_memory["hit_rate"] if signal_memory["support"] else 0.5))
-        if signal_memory["support"] >= max(10, self.min_test_support) and signal_memory["avg_net_bps"] > 0.0:
+        confidence = max(
+            0.35,
+            min(1.0, signal_memory["hit_rate"] if signal_memory["support"] else 0.5),
+        )
+        if (
+            signal_memory["support"] >= max(10, self.min_test_support)
+            and signal_memory["avg_net_bps"] > 0.0
+        ):
             expected_return = math.copysign(
-                max(abs(base.expected_return_bps), signal_memory["avg_net_bps"] + self.round_trip_cost_bps),
+                max(
+                    abs(base.expected_return_bps),
+                    signal_memory["avg_net_bps"] + self.round_trip_cost_bps,
+                ),
                 base.expected_return_bps,
             )
             confidence = max(float(base.confidence), signal_memory["hit_rate"])
@@ -1144,8 +1256,12 @@ class WaveMindDailyTrendMemoryEngine(MarketEngine):
         index = len(self.records)
         self.records.append(window)
         self.return_history.append(float(window.future_return_bps))
-        for relationship in _relationship_candidates(_regime_signature_from_window(window)):
-            self.relationship_history.setdefault(relationship, []).append((index, float(window.future_return_bps)))
+        for relationship in _relationship_candidates(
+            _regime_signature_from_window(window)
+        ):
+            self.relationship_history.setdefault(relationship, []).append(
+                (index, float(window.future_return_bps))
+            )
         self.base.add(window)
 
     def query(self, window: OHLCVWindow, *, top_k: int) -> Prediction:
@@ -1161,9 +1277,16 @@ class WaveMindDailyTrendMemoryEngine(MarketEngine):
                 filtered=True,
                 filter_reason="insufficient_daily_history",
             )
-        recent_edge = _recent_mean(self.realized_signal_nets, lookback=self.performance_lookback)
-        min_samples = min(max(3, self.performance_lookback // 2), self.performance_lookback)
-        if len(self.realized_signal_nets) >= min_samples and recent_edge < self.min_recent_edge_bps:
+        recent_edge = _recent_mean(
+            self.realized_signal_nets, lookback=self.performance_lookback
+        )
+        min_samples = min(
+            max(3, self.performance_lookback // 2), self.performance_lookback
+        )
+        if (
+            len(self.realized_signal_nets) >= min_samples
+            and recent_edge < self.min_recent_edge_bps
+        ):
             return Prediction(
                 direction="flat",
                 expected_return_bps=0.0,
@@ -1259,10 +1382,7 @@ class WaveMindDailyTrendMemoryEngine(MarketEngine):
         )
         if reliability["support"] >= self.local_reliability_support and (
             reliability["avg_net_bps"] < -35.0
-            or (
-                reliability["hit_rate"] < 0.42
-                and reliability["avg_net_bps"] < 0.0
-            )
+            or (reliability["hit_rate"] < 0.42 and reliability["avg_net_bps"] < 0.0)
         ):
             return Prediction(
                 direction="flat",
@@ -1282,8 +1402,14 @@ class WaveMindDailyTrendMemoryEngine(MarketEngine):
                 regime_agreement=field_stability,
             )
 
-        if field_direction == candidate_direction and field_confidence >= self.boost_confidence:
-            expected_return = 0.52 * float(field_signal["expected_return_bps"]) + 0.48 * base.expected_return_bps
+        if (
+            field_direction == candidate_direction
+            and field_confidence >= self.boost_confidence
+        ):
+            expected_return = (
+                0.52 * float(field_signal["expected_return_bps"])
+                + 0.48 * base.expected_return_bps
+            )
             confidence = max(0.55, min(1.0, field_confidence))
         else:
             expected_return = base.expected_return_bps
@@ -1418,7 +1544,9 @@ class WaveMindTimeframePolicyEngine(MarketEngine):
             )
         if self.child is not None:
             prediction = self.child.query(window, top_k=top_k)
-            ta_prediction = self.ta.query(window, top_k=top_k) if self.apply_policy_veto else None
+            ta_prediction = (
+                self.ta.query(window, top_k=top_k) if self.apply_policy_veto else None
+            )
             if (
                 ta_prediction is not None
                 and prediction.direction in {"up", "down"}
@@ -1439,7 +1567,11 @@ class WaveMindTimeframePolicyEngine(MarketEngine):
                     analogue_agreement=prediction.analogue_agreement,
                     regime_agreement=prediction.regime_agreement,
                 )
-            if self.timeframe == "4h" and self.apply_policy_veto and prediction.direction in {"up", "down"}:
+            if (
+                self.timeframe == "4h"
+                and self.apply_policy_veto
+                and prediction.direction in {"up", "down"}
+            ):
                 reliability = _local_regime_reliability(
                     self.records,
                     window,
@@ -1452,17 +1584,17 @@ class WaveMindTimeframePolicyEngine(MarketEngine):
                         reliability["hit_rate"] < 0.35
                         and reliability["avg_net_bps"] < -5.0
                     )
-                    or (
-                        prediction.confidence < 0.60
-                        and reliability["hit_rate"] < 0.45
-                    )
+                    or (prediction.confidence < 0.60 and reliability["hit_rate"] < 0.45)
                 ):
                     return Prediction(
                         direction="flat",
                         expected_return_bps=0.0,
-                        latency_ms=prediction.latency_ms + (ta_prediction.latency_ms if ta_prediction else 0.0),
+                        latency_ms=prediction.latency_ms
+                        + (ta_prediction.latency_ms if ta_prediction else 0.0),
                         analogues=prediction.analogues,
-                        confidence=min(prediction.confidence, max(0.0, reliability["hit_rate"])),
+                        confidence=min(
+                            prediction.confidence, max(0.0, reliability["hit_rate"])
+                        ),
                         raw_direction=prediction.raw_direction or prediction.direction,
                         candidate_direction=prediction.direction,
                         candidate_expected_return_bps=prediction.expected_return_bps,
@@ -1488,7 +1620,10 @@ class WaveMindTimeframePolicyEngine(MarketEngine):
                     and 0.60 <= prediction.confidence < 0.999
                 ):
                     guard_reason = "short_squeeze_guard"
-                elif use_intraday_confidence_guard and 0.60 <= prediction.confidence < 0.999:
+                elif (
+                    use_intraday_confidence_guard
+                    and 0.60 <= prediction.confidence < 0.999
+                ):
                     guard_reason = "unstable_mid_confidence"
                 if (
                     self.timeframe == "1h"
@@ -1623,7 +1758,8 @@ class WaveMindTimeframePolicyEngine(MarketEngine):
                     return Prediction(
                         direction="flat",
                         expected_return_bps=0.0,
-                        latency_ms=prediction.latency_ms + (ta_prediction.latency_ms if ta_prediction else 0.0),
+                        latency_ms=prediction.latency_ms
+                        + (ta_prediction.latency_ms if ta_prediction else 0.0),
                         analogues=prediction.analogues,
                         confidence=prediction.confidence,
                         raw_direction=prediction.raw_direction or prediction.direction,
@@ -1639,7 +1775,8 @@ class WaveMindTimeframePolicyEngine(MarketEngine):
             return Prediction(
                 direction=prediction.direction,
                 expected_return_bps=prediction.expected_return_bps,
-                latency_ms=prediction.latency_ms + (ta_prediction.latency_ms if ta_prediction else 0.0),
+                latency_ms=prediction.latency_ms
+                + (ta_prediction.latency_ms if ta_prediction else 0.0),
                 analogues=prediction.analogues,
                 confidence=prediction.confidence,
                 raw_direction=prediction.raw_direction,
@@ -1690,9 +1827,14 @@ class DtwKnnEngine(MarketEngine):
     def query(self, window: OHLCVWindow, *, top_k: int) -> Prediction:
         started = time.perf_counter()
         if not self.records:
-            return Prediction(direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[])
+            return Prediction(
+                direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[]
+            )
         query_series = _window_dtw_series(window)
-        distances = np.asarray([_dtw_distance(query_series, item) for item in self.series], dtype=np.float64)
+        distances = np.asarray(
+            [_dtw_distance(query_series, item) for item in self.series],
+            dtype=np.float64,
+        )
         order = np.argsort(distances)[:top_k]
         latency = (time.perf_counter() - started) * 1000.0
         analogues = [
@@ -1732,7 +1874,9 @@ class ShapeKnnEngine(MarketEngine):
     def query(self, window: OHLCVWindow, *, top_k: int) -> Prediction:
         started = time.perf_counter()
         if not self.records:
-            return Prediction(direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[])
+            return Prediction(
+                direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[]
+            )
         query_vector = _window_shape_vector(window)
         distances = np.linalg.norm(self.vectors - query_vector.reshape(1, -1), axis=1)
         order = np.argsort(distances)[:top_k]
@@ -1766,10 +1910,14 @@ class NaiveEngine(MarketEngine):
     def query(self, window: OHLCVWindow, *, top_k: int) -> Prediction:
         started = time.perf_counter()
         if not self.records:
-            return Prediction(direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[])
+            return Prediction(
+                direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[]
+            )
         latest = self.records[-1]
         latency = (time.perf_counter() - started) * 1000.0
-        analogue = _analogue_from_window(latest, window_to_text(latest, include_outcome=False), score=1.0)
+        analogue = _analogue_from_window(
+            latest, window_to_text(latest, include_outcome=False), score=1.0
+        )
         return Prediction(
             direction=latest.direction,
             expected_return_bps=latest.future_return_bps,
@@ -1848,8 +1996,12 @@ class ChromaEngine(StaticKnnEngine):
             import chromadb  # type: ignore
             from chromadb.config import Settings  # type: ignore
         except ImportError as exc:
-            raise RuntimeError("chromadb is not installed; install the bench extra") from exc
-        self.client = chromadb.Client(Settings(anonymized_telemetry=False, allow_reset=True, is_persistent=False))
+            raise RuntimeError(
+                "chromadb is not installed; install the bench extra"
+            ) from exc
+        self.client = chromadb.Client(
+            Settings(anonymized_telemetry=False, allow_reset=True, is_persistent=False)
+        )
         self.collection = self.client.create_collection(
             name=f"wmcrypto{uuid.uuid4().hex[:12]}",
             metadata={"hnsw:space": "cosine"},
@@ -1869,8 +2021,12 @@ class ChromaEngine(StaticKnnEngine):
     def query(self, window: OHLCVWindow, *, top_k: int) -> Prediction:
         started = time.perf_counter()
         if not self.records_by_id:
-            return Prediction(direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[])
-        query_vector = self.encoder.encode_vector(window_to_text(window, include_outcome=False))
+            return Prediction(
+                direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[]
+            )
+        query_vector = self.encoder.encode_vector(
+            window_to_text(window, include_outcome=False)
+        )
         response = self.collection.query(
             query_embeddings=[query_vector.astype(float).tolist()],
             n_results=top_k,
@@ -1881,9 +2037,16 @@ class ChromaEngine(StaticKnnEngine):
         analogues = []
         for item_id, distance in zip(ids, distances):
             record, text = self.records_by_id[str(item_id)]
-            analogues.append(_analogue_from_window(record, text, score=1.0 - float(distance)))
+            analogues.append(
+                _analogue_from_window(record, text, score=1.0 - float(distance))
+            )
         if not analogues:
-            return Prediction(direction="flat", expected_return_bps=0.0, latency_ms=latency, analogues=[])
+            return Prediction(
+                direction="flat",
+                expected_return_bps=0.0,
+                latency_ms=latency,
+                analogues=[],
+            )
         top = analogues[0]
         return Prediction(top.direction, top.future_return_bps, latency, analogues)
 
@@ -1899,12 +2062,16 @@ class QdrantEngine(StaticKnnEngine):
         try:
             from qdrant_client import QdrantClient, models  # type: ignore
         except ImportError as exc:
-            raise RuntimeError("qdrant-client is not installed; install the bench extra") from exc
+            raise RuntimeError(
+                "qdrant-client is not installed; install the bench extra"
+            ) from exc
         self.models = models
         self.client = QdrantClient(":memory:")
         self.client.create_collection(
             collection_name=self.collection_name,
-            vectors_config=models.VectorParams(size=encoder.vector_dim, distance=models.Distance.COSINE),
+            vectors_config=models.VectorParams(
+                size=encoder.vector_dim, distance=models.Distance.COSINE
+            ),
         )
 
     def add(self, window: OHLCVWindow) -> None:
@@ -1927,8 +2094,14 @@ class QdrantEngine(StaticKnnEngine):
     def query(self, window: OHLCVWindow, *, top_k: int) -> Prediction:
         started = time.perf_counter()
         if not self.records_by_point:
-            return Prediction(direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[])
-        query_vector = self.encoder.encode_vector(window_to_text(window, include_outcome=False)).astype(float).tolist()
+            return Prediction(
+                direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[]
+            )
+        query_vector = (
+            self.encoder.encode_vector(window_to_text(window, include_outcome=False))
+            .astype(float)
+            .tolist()
+        )
         if hasattr(self.client, "query_points"):
             response = self.client.query_points(
                 collection_name=self.collection_name,
@@ -1947,9 +2120,16 @@ class QdrantEngine(StaticKnnEngine):
         for point in points:
             point_id = int(point.id)
             record, text = self.records_by_point[point_id]
-            analogues.append(_analogue_from_window(record, text, score=float(point.score)))
+            analogues.append(
+                _analogue_from_window(record, text, score=float(point.score))
+            )
         if not analogues:
-            return Prediction(direction="flat", expected_return_bps=0.0, latency_ms=latency, analogues=[])
+            return Prediction(
+                direction="flat",
+                expected_return_bps=0.0,
+                latency_ms=latency,
+                analogues=[],
+            )
         top = analogues[0]
         return Prediction(top.direction, top.future_return_bps, latency, analogues)
 
@@ -2080,9 +2260,14 @@ def run_walk_forward(
                                 position_sizing=position_sizing,
                             )
                             market_events.append(event)
-                            if len(analogue_samples) < analogue_limit and prediction.analogues:
+                            if (
+                                len(analogue_samples) < analogue_limit
+                                and prediction.analogues
+                            ):
                                 analogue_samples.append(
-                                    _analogue_sample(engine.name, query_window, prediction)
+                                    _analogue_sample(
+                                        engine.name, query_window, prediction
+                                    )
                                 )
                         engine_events.extend(market_events)
                         if include_event_metrics:
@@ -2114,7 +2299,9 @@ def run_walk_forward(
                     }
                 )
             else:
-                all_results.append(_summarize_events(_engine_display_name(engine_key), engine_events))
+                all_results.append(
+                    _summarize_events(_engine_display_name(engine_key), engine_events)
+                )
 
     _attach_slice_robustness(all_results, by_market)
 
@@ -2181,11 +2368,15 @@ def run_walk_forward(
 
 def load_markets_from_args(args: argparse.Namespace) -> list[MarketDataset]:
     markets: list[MarketDataset] = []
-    direction_threshold = max(15.0, 2.0 * (float(args.fee_bps) + float(args.slippage_bps)))
+    direction_threshold = max(
+        15.0, 2.0 * (float(args.fee_bps) + float(args.slippage_bps))
+    )
     if args.dataset == "synthetic":
         for symbol in args.symbols:
             for timeframe in args.timeframes:
-                bars = generate_synthetic_ohlcv(symbol=symbol, timeframe=timeframe, bars=args.bars, seed=args.seed)
+                bars = generate_synthetic_ohlcv(
+                    symbol=symbol, timeframe=timeframe, bars=args.bars, seed=args.seed
+                )
                 windows = make_ohlcv_windows(
                     bars,
                     symbol=symbol,
@@ -2208,7 +2399,9 @@ def load_markets_from_args(args: argparse.Namespace) -> list[MarketDataset]:
         if args.csv is None:
             raise ValueError("--csv is required for --dataset csv")
         if len(args.symbols) != 1 or len(args.timeframes) != 1:
-            raise ValueError("--dataset csv expects one --symbols value and one --timeframes value")
+            raise ValueError(
+                "--dataset csv expects one --symbols value and one --timeframes value"
+            )
         bars = load_ohlcv_csv(args.csv)
         windows = make_ohlcv_windows(
             bars,
@@ -2233,8 +2426,14 @@ def load_markets_from_args(args: argparse.Namespace) -> list[MarketDataset]:
             raise ValueError("--exchange is required for --dataset ccxt")
         for symbol in args.symbols:
             for timeframe in args.timeframes:
-                cache_path = _ccxt_cache_path(args.cache_dir, args.exchange, symbol, timeframe)
-                if cache_path is not None and cache_path.exists() and not args.refresh_cache:
+                cache_path = _ccxt_cache_path(
+                    args.cache_dir, args.exchange, symbol, timeframe
+                )
+                if (
+                    cache_path is not None
+                    and cache_path.exists()
+                    and not args.refresh_cache
+                ):
                     cached_bars = load_ohlcv_csv(cache_path)
                     if len(cached_bars) >= args.bars:
                         bars = cached_bars[-args.bars :]
@@ -2284,7 +2483,9 @@ def load_markets_from_args(args: argparse.Namespace) -> list[MarketDataset]:
     raise ValueError(f"Unknown dataset: {args.dataset}")
 
 
-def _ccxt_cache_path(cache_dir: Path | None, exchange: str, symbol: str, timeframe: str) -> Path | None:
+def _ccxt_cache_path(
+    cache_dir: Path | None, exchange: str, symbol: str, timeframe: str
+) -> Path | None:
     if cache_dir is None:
         return None
     safe_symbol = symbol.replace("/", "_").replace(":", "_")
@@ -2375,7 +2576,9 @@ def print_table(payload: Mapping[str, object]) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", choices=["synthetic", "csv", "ccxt"], default="synthetic")
+    parser.add_argument(
+        "--dataset", choices=["synthetic", "csv", "ccxt"], default="synthetic"
+    )
     parser.add_argument("--csv", type=Path)
     parser.add_argument("--exchange")
     parser.add_argument("--cache-dir", type=Path)
@@ -2408,7 +2611,9 @@ def main() -> int:
     parser.add_argument("--fee-bps", type=float, default=10.0)
     parser.add_argument("--slippage-bps", type=float, default=5.0)
     parser.add_argument("--large-move-bps", type=float, default=75.0)
-    parser.add_argument("--position-sizing", choices=["fixed", "confidence"], default="fixed")
+    parser.add_argument(
+        "--position-sizing", choices=["fixed", "confidence"], default="fixed"
+    )
     parser.add_argument("--confidence-threshold", type=float, default=0.65)
     parser.add_argument("--min-analogue-agreement", type=float, default=0.6)
     parser.add_argument("--min-expected-edge-bps", type=float, default=0.0)
@@ -2437,8 +2642,16 @@ def main() -> int:
         action="store_true",
         help="Include per-query event metrics in the JSON output for regime diagnostics.",
     )
-    parser.add_argument("--output", type=Path, default=Path("benchmarks/crypto_walk_forward_results.json"))
-    parser.add_argument("--analogue-html", type=Path, default=Path("benchmarks/crypto_analogue_explorer.html"))
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path("benchmarks/crypto_walk_forward_results.json"),
+    )
+    parser.add_argument(
+        "--analogue-html",
+        type=Path,
+        default=Path("benchmarks/crypto_analogue_explorer.html"),
+    )
     args = parser.parse_args()
 
     markets = load_markets_from_args(args)
@@ -2479,7 +2692,9 @@ def main() -> int:
         include_event_metrics=args.include_event_metrics,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    args.output.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
     write_analogue_html(payload, args.analogue_html)
     print_table(payload)
     print(f"\nWrote {args.output}")
@@ -2664,7 +2879,11 @@ def _create_engine(
             min_expected_edge_bps=min_expected_edge_bps,
             memory_store=memory_store,
         )
-    if engine_key in {"field-off-calibrated", "calibrated-field-off", "wavemind-field-off-calibrated"}:
+    if engine_key in {
+        "field-off-calibrated",
+        "calibrated-field-off",
+        "wavemind-field-off-calibrated",
+    }:
         return WaveMindEngine(
             encoder,
             symbol=market.symbol,
@@ -2751,7 +2970,11 @@ def _create_engine(
             validation_holdout=adaptive_validation_holdout,
             round_trip_cost_bps=round_trip_cost_bps,
         )
-    if engine_key in {"daily-trend-memory", "wavemind-daily-trend-memory", "daily-memory"}:
+    if engine_key in {
+        "daily-trend-memory",
+        "wavemind-daily-trend-memory",
+        "daily-memory",
+    }:
         return WaveMindDailyTrendMemoryEngine(
             min_support=max(18, int(adaptive_min_support * 0.75)),
             min_test_support=max(6, int(adaptive_min_test_support * 0.75)),
@@ -2935,7 +3158,9 @@ def _fold_starts(
 
 
 def _safe_path_part(value: str) -> str:
-    return "".join(char if char.isalnum() else "_" for char in value).strip("_") or "item"
+    return (
+        "".join(char if char.isalnum() else "_" for char in value).strip("_") or "item"
+    )
 
 
 def _add_mature_history(
@@ -2980,10 +3205,24 @@ def _event_metric(
         mode=position_sizing,
     )
     top = prediction.analogues[0] if prediction.analogues else None
-    predicted_mfe = float(top.max_favorable_excursion_bps) if top else max(0.0, prediction.expected_return_bps)
-    predicted_mae = float(top.max_adverse_excursion_bps) if top else min(0.0, prediction.expected_return_bps)
-    predicted_vol = float(top.future_realized_vol_bps) if top else abs(prediction.expected_return_bps)
-    predicted_large = abs(float(prediction.expected_return_bps)) >= float(large_move_bps)
+    predicted_mfe = (
+        float(top.max_favorable_excursion_bps)
+        if top
+        else max(0.0, prediction.expected_return_bps)
+    )
+    predicted_mae = (
+        float(top.max_adverse_excursion_bps)
+        if top
+        else min(0.0, prediction.expected_return_bps)
+    )
+    predicted_vol = (
+        float(top.future_realized_vol_bps)
+        if top
+        else abs(prediction.expected_return_bps)
+    )
+    predicted_large = abs(float(prediction.expected_return_bps)) >= float(
+        large_move_bps
+    )
     actual_large = abs(float(window.future_return_bps)) >= float(large_move_bps)
     return EventMetric(
         engine=engine_name,
@@ -3002,10 +3241,16 @@ def _event_metric(
         predicted_future_vol_bps=predicted_vol,
         direction_at_1=direction_at_1,
         direction_at_3=direction_at_3,
-        abs_return_error_bps=abs(float(prediction.expected_return_bps) - float(window.future_return_bps)),
-        abs_mfe_error_bps=abs(predicted_mfe - float(window.max_favorable_excursion_bps)),
+        abs_return_error_bps=abs(
+            float(prediction.expected_return_bps) - float(window.future_return_bps)
+        ),
+        abs_mfe_error_bps=abs(
+            predicted_mfe - float(window.max_favorable_excursion_bps)
+        ),
         abs_mae_error_bps=abs(predicted_mae - float(window.max_adverse_excursion_bps)),
-        abs_future_vol_error_bps=abs(predicted_vol - float(window.future_realized_vol_bps)),
+        abs_future_vol_error_bps=abs(
+            predicted_vol - float(window.future_realized_vol_bps)
+        ),
         predicted_large_move=1.0 if predicted_large else 0.0,
         actual_large_move=1.0 if actual_large else 0.0,
         large_move_true_positive=1.0 if predicted_large and actual_large else 0.0,
@@ -3093,8 +3338,12 @@ def _adaptive_relationship_field_signal(
     return_history = [float(record.future_return_bps) for record in records]
     relationship_history: dict[tuple[str, ...], list[tuple[int, float]]] = {}
     for index, record in enumerate(records):
-        for relationship in _relationship_candidates(_regime_signature_from_window(record)):
-            relationship_history.setdefault(relationship, []).append((index, float(record.future_return_bps)))
+        for relationship in _relationship_candidates(
+            _regime_signature_from_window(record)
+        ):
+            relationship_history.setdefault(relationship, []).append(
+                (index, float(record.future_return_bps))
+            )
     return _adaptive_relationship_field_signal_from_index(
         return_history,
         relationship_history,
@@ -3125,13 +3374,20 @@ def _adaptive_relationship_field_signal_from_index(
         validation_holdout=validation_holdout,
         min_test_support=min_test_support,
     )
-    train_returns = [(index, value) for index, value in enumerate(return_history[:split])]
-    holdout_returns = [(index, value) for index, value in enumerate(return_history[split:], start=split)]
+    train_returns = [
+        (index, value) for index, value in enumerate(return_history[:split])
+    ]
+    holdout_returns = [
+        (index, value)
+        for index, value in enumerate(return_history[split:], start=split)
+    ]
     if len(train_returns) < min_support or len(holdout_returns) < min_test_support:
         return _flat_adaptive_signal("insufficient_validation_history")
 
     train_global = _recency_weighted_mean_indexed(train_returns, max_index=split - 1)
-    holdout_global = _recency_weighted_mean_indexed(holdout_returns, max_index=len(return_history) - 1)
+    holdout_global = _recency_weighted_mean_indexed(
+        holdout_returns, max_index=len(return_history) - 1
+    )
     scored = []
     for candidate in candidates:
         candidate_history = relationship_history.get(candidate, [])
@@ -3140,7 +3396,9 @@ def _adaptive_relationship_field_signal_from_index(
         if len(train_group) < min_support or len(holdout_group) < min_test_support:
             continue
         train_avg = _recency_weighted_mean_indexed(train_group, max_index=split - 1)
-        holdout_avg = _recency_weighted_mean_indexed(holdout_group, max_index=len(return_history) - 1)
+        holdout_avg = _recency_weighted_mean_indexed(
+            holdout_group, max_index=len(return_history) - 1
+        )
         train_lift = train_avg - train_global
         holdout_lift = holdout_avg - holdout_global
         if abs(train_lift) < 1e-9:
@@ -3150,7 +3408,13 @@ def _adaptive_relationship_field_signal_from_index(
         if signed_holdout_lift <= 0.0:
             continue
         expected_return = 0.35 * train_avg + 0.65 * holdout_avg
-        direction = "up" if expected_return > 0.0 else "down" if expected_return < 0.0 else "flat"
+        direction = (
+            "up"
+            if expected_return > 0.0
+            else "down"
+            if expected_return < 0.0
+            else "flat"
+        )
         edge = _directional_edge_after_cost_bps(
             direction,
             expected_return,
@@ -3179,24 +3443,46 @@ def _adaptive_relationship_field_signal_from_index(
 
     totals = {
         "up": sum(float(item["score"]) for item in scored if item["direction"] == "up"),
-        "down": sum(float(item["score"]) for item in scored if item["direction"] == "down"),
+        "down": sum(
+            float(item["score"]) for item in scored if item["direction"] == "down"
+        ),
     }
     direction = "up" if totals["up"] >= totals["down"] else "down"
     selected = [item for item in scored if item["direction"] == direction]
     total_score = max(sum(float(item["score"]) for item in selected), 1e-12)
-    expected_return = sum(float(item["expected_return_bps"]) * float(item["score"]) for item in selected) / total_score
+    expected_return = (
+        sum(
+            float(item["expected_return_bps"]) * float(item["score"])
+            for item in selected
+        )
+        / total_score
+    )
     total_all = max(totals["up"] + totals["down"], 1e-12)
     dominance = totals[direction] / total_all
     total_support = sum(int(item["support"]) for item in selected)
     support_factor = min(1.0, total_support / max(float(min_support * 5), 1.0))
-    stability = sum(float(item["stability"]) * float(item["score"]) for item in selected) / total_score
+    stability = (
+        sum(float(item["stability"]) * float(item["score"]) for item in selected)
+        / total_score
+    )
     edge = _directional_edge_after_cost_bps(
         direction,
         expected_return,
         round_trip_cost_bps=round_trip_cost_bps,
     )
     edge_factor = min(1.0, max(0.0, edge / max(float(round_trip_cost_bps) * 2.0, 1.0)))
-    confidence = float(max(0.0, min(1.0, dominance * (0.25 + 0.30 * support_factor + 0.30 * stability + 0.15 * edge_factor))))
+    confidence = float(
+        max(
+            0.0,
+            min(
+                1.0,
+                dominance
+                * (
+                    0.25 + 0.30 * support_factor + 0.30 * stability + 0.15 * edge_factor
+                ),
+            ),
+        )
+    )
     return {
         "direction": direction,
         "expected_return_bps": float(expected_return),
@@ -3230,7 +3516,9 @@ def _relationship_signal_memory(
         return {"support": float(len(values)), "hit_rate": 0.0, "avg_net_bps": 0.0}
     return {
         "support": float(len(values)),
-        "hit_rate": float(statistics.mean(1.0 if value > 0.0 else 0.0 for value in values)),
+        "hit_rate": float(
+            statistics.mean(1.0 if value > 0.0 else 0.0 for value in values)
+        ),
         "avg_net_bps": float(statistics.mean(values)),
     }
 
@@ -3313,7 +3601,10 @@ def _adaptive_split_index_from_length(
     validation_holdout: float,
     min_test_support: int,
 ) -> int:
-    holdout = max(int(round(length * max(0.05, min(0.80, validation_holdout)))), int(min_test_support))
+    holdout = max(
+        int(round(length * max(0.05, min(0.80, validation_holdout)))),
+        int(min_test_support),
+    )
     holdout = min(max(holdout, int(min_test_support)), max(1, length - 1))
     return length - holdout
 
@@ -3327,22 +3618,35 @@ def _recency_weighted_mean_return(records: list[OHLCVWindow]) -> float:
     if not records:
         return 0.0
     half_life = max(6.0, len(records) / 3.0)
-    weights = [math.exp(-float(len(records) - index - 1) / half_life) for index, _ in enumerate(records)]
+    weights = [
+        math.exp(-float(len(records) - index - 1) / half_life)
+        for index, _ in enumerate(records)
+    ]
     denominator = max(sum(weights), 1e-12)
     return float(
-        sum(float(record.future_return_bps) * weight for record, weight in zip(records, weights, strict=False))
+        sum(
+            float(record.future_return_bps) * weight
+            for record, weight in zip(records, weights, strict=False)
+        )
         / denominator
     )
 
 
-def _recency_weighted_mean_indexed(records: list[tuple[int, float]], *, max_index: int) -> float:
+def _recency_weighted_mean_indexed(
+    records: list[tuple[int, float]], *, max_index: int
+) -> float:
     if not records:
         return 0.0
     span = max(1, max_index - min(index for index, _ in records) + 1)
     half_life = max(6.0, span / 3.0)
     weights = [math.exp(-float(max_index - index) / half_life) for index, _ in records]
     denominator = max(sum(weights), 1e-12)
-    return float(sum(value * weight for (_, value), weight in zip(records, weights, strict=False)) / denominator)
+    return float(
+        sum(
+            value * weight for (_, value), weight in zip(records, weights, strict=False)
+        )
+        / denominator
+    )
 
 
 def _summarize_events(
@@ -3396,12 +3700,24 @@ def _summarize_events(
     payload = {
         "engine": engine_name,
         "queries": len(events),
-        "direction_accuracy_at_1": statistics.mean(event.direction_at_1 for event in events),
-        "direction_accuracy_at_3": statistics.mean(event.direction_at_3 for event in events),
-        "mean_abs_return_error_bps": statistics.mean(event.abs_return_error_bps for event in events),
-        "mean_abs_mfe_error_bps": statistics.mean(event.abs_mfe_error_bps for event in events),
-        "mean_abs_mae_error_bps": statistics.mean(event.abs_mae_error_bps for event in events),
-        "mean_abs_future_vol_error_bps": statistics.mean(event.abs_future_vol_error_bps for event in events),
+        "direction_accuracy_at_1": statistics.mean(
+            event.direction_at_1 for event in events
+        ),
+        "direction_accuracy_at_3": statistics.mean(
+            event.direction_at_3 for event in events
+        ),
+        "mean_abs_return_error_bps": statistics.mean(
+            event.abs_return_error_bps for event in events
+        ),
+        "mean_abs_mfe_error_bps": statistics.mean(
+            event.abs_mfe_error_bps for event in events
+        ),
+        "mean_abs_mae_error_bps": statistics.mean(
+            event.abs_mae_error_bps for event in events
+        ),
+        "mean_abs_future_vol_error_bps": statistics.mean(
+            event.abs_future_vol_error_bps for event in events
+        ),
         "large_move_precision": _safe_ratio(
             sum(event.large_move_true_positive for event in events),
             sum(event.predicted_large_move for event in events),
@@ -3415,22 +3731,38 @@ def _summarize_events(
         "filtered_rate": statistics.mean(event.filtered for event in events),
         "signal_rate": len(signal_events) / len(events),
         "active_direction_accuracy": (
-            statistics.mean(event.direction_at_1 for event in signal_events) if signal_events else 0.0
+            statistics.mean(event.direction_at_1 for event in signal_events)
+            if signal_events
+            else 0.0
         ),
         "active_avg_net_return_bps": (
-            statistics.mean(event.net_return_bps for event in signal_events) if signal_events else 0.0
+            statistics.mean(event.net_return_bps for event in signal_events)
+            if signal_events
+            else 0.0
         ),
         "active_avg_sized_net_return_bps": (
-            statistics.mean(event.sized_net_return_bps for event in signal_events) if signal_events else 0.0
+            statistics.mean(event.sized_net_return_bps for event in signal_events)
+            if signal_events
+            else 0.0
         ),
         "avg_net_return_bps": statistics.mean(event.net_return_bps for event in events),
-        "avg_sized_net_return_bps": statistics.mean(event.sized_net_return_bps for event in events),
+        "avg_sized_net_return_bps": statistics.mean(
+            event.sized_net_return_bps for event in events
+        ),
         "profit_factor": _profit_factor(event.net_return_bps for event in events),
-        "sized_profit_factor": _profit_factor(event.sized_net_return_bps for event in events),
+        "sized_profit_factor": _profit_factor(
+            event.sized_net_return_bps for event in events
+        ),
         "max_drawdown_bps": _max_drawdown_bps(event.net_return_bps for event in events),
-        "sized_max_drawdown_bps": _max_drawdown_bps(event.sized_net_return_bps for event in events),
-        "hit_rate_after_costs": statistics.mean(1.0 if event.net_return_bps > 0 else 0.0 for event in events),
-        "sized_hit_rate_after_costs": statistics.mean(1.0 if event.sized_net_return_bps > 0 else 0.0 for event in events),
+        "sized_max_drawdown_bps": _max_drawdown_bps(
+            event.sized_net_return_bps for event in events
+        ),
+        "hit_rate_after_costs": statistics.mean(
+            1.0 if event.net_return_bps > 0 else 0.0 for event in events
+        ),
+        "sized_hit_rate_after_costs": statistics.mean(
+            1.0 if event.sized_net_return_bps > 0 else 0.0 for event in events
+        ),
         "avg_latency_ms": statistics.mean(event.latency_ms for event in events),
         "p95_latency_ms": latencies[p95_index],
     }
@@ -3470,10 +3802,14 @@ def _attach_slice_robustness(results: list[dict], by_market: list[dict]) -> None
         result["positive_market_slices"] = int(positive)
         result["slice_positive_rate"] = float(positive / len(slice_returns))
         result["worst_market_slice_sized_net_bps"] = float(min(slice_returns))
-        result["median_market_slice_sized_net_bps"] = float(statistics.median(slice_returns))
+        result["median_market_slice_sized_net_bps"] = float(
+            statistics.median(slice_returns)
+        )
 
 
-def _analogue_from_window(window: OHLCVWindow, text: str, score: float) -> AnalogueMatch:
+def _analogue_from_window(
+    window: OHLCVWindow, text: str, score: float
+) -> AnalogueMatch:
     return AnalogueMatch(
         id=window.id,
         score=float(score),
@@ -3516,9 +3852,13 @@ def _calibrated_prediction(
 
     selected = [match for match in analogues if match.direction == direction]
     expected_return = _weighted_mean_return(selected)
-    regime_agreement = _regime_agreement(query_window, selected) if regime_filter else 1.0
+    regime_agreement = (
+        _regime_agreement(query_window, selected) if regime_filter else 1.0
+    )
     move_agreement = _move_agreement(direction, selected, large_move_bps=large_move_bps)
-    confidence = float(direction_agreement * (0.45 + 0.55 * regime_agreement) * move_agreement)
+    confidence = float(
+        direction_agreement * (0.45 + 0.55 * regime_agreement) * move_agreement
+    )
 
     filter_reasons = []
     if direction_agreement < min_analogue_agreement:
@@ -3568,7 +3908,9 @@ def _weighted_direction_vote(analogues: list[AnalogueMatch]) -> tuple[str, float
     return direction, float(totals[direction] / denominator)
 
 
-def _weighted_direction_support(direction: str, analogues: list[AnalogueMatch]) -> float:
+def _weighted_direction_support(
+    direction: str, analogues: list[AnalogueMatch]
+) -> float:
     if not analogues:
         return 0.0
     weights = _rank_weights(analogues)
@@ -3585,7 +3927,13 @@ def _weighted_mean_return(analogues: list[AnalogueMatch]) -> float:
         return 0.0
     weights = _rank_weights(analogues)
     denominator = max(sum(weights), 1e-12)
-    return float(sum(match.future_return_bps * weight for match, weight in zip(analogues, weights, strict=False)) / denominator)
+    return float(
+        sum(
+            match.future_return_bps * weight
+            for match, weight in zip(analogues, weights, strict=False)
+        )
+        / denominator
+    )
 
 
 def _rank_weights(analogues: list[AnalogueMatch]) -> list[float]:
@@ -3595,7 +3943,9 @@ def _rank_weights(analogues: list[AnalogueMatch]) -> list[float]:
     ]
 
 
-def _move_agreement(direction: str, analogues: list[AnalogueMatch], *, large_move_bps: float) -> float:
+def _move_agreement(
+    direction: str, analogues: list[AnalogueMatch], *, large_move_bps: float
+) -> float:
     if not analogues:
         return 0.0
     if direction == "flat":
@@ -3604,12 +3954,15 @@ def _move_agreement(direction: str, analogues: list[AnalogueMatch], *, large_mov
     strong = [
         match
         for match in analogues
-        if abs(float(match.future_return_bps)) >= threshold and match.direction == direction
+        if abs(float(match.future_return_bps)) >= threshold
+        and match.direction == direction
     ]
     return float(max(0.35, len(strong) / len(analogues)))
 
 
-def _regime_agreement(query_window: OHLCVWindow, analogues: list[AnalogueMatch]) -> float:
+def _regime_agreement(
+    query_window: OHLCVWindow, analogues: list[AnalogueMatch]
+) -> float:
     query_signature = set(_regime_signature_from_window(query_window))
     if not query_signature or not analogues:
         return 1.0
@@ -3642,7 +3995,13 @@ def _regime_signature_from_metadata(metadata: Mapping[str, object]) -> tuple[str
 def _window_dtw_series(window: OHLCVWindow) -> np.ndarray:
     closes = np.asarray([bar.close for bar in window.bars], dtype=np.float64)
     volumes = np.asarray([bar.volume for bar in window.bars], dtype=np.float64)
-    returns = np.diff(np.log(np.maximum(closes, 1e-12)), prepend=np.log(max(float(closes[0]), 1e-12))) * 10_000.0
+    returns = (
+        np.diff(
+            np.log(np.maximum(closes, 1e-12)),
+            prepend=np.log(max(float(closes[0]), 1e-12)),
+        )
+        * 10_000.0
+    )
     volume_ratio = volumes / max(float(np.mean(volumes)), 1e-12)
     stacked = np.column_stack([returns, volume_ratio])
     mean = stacked.mean(axis=0, keepdims=True)
@@ -3704,7 +4063,9 @@ def _window_metadata(window: OHLCVWindow) -> dict[str, str | int | float]:
     return metadata
 
 
-def _analogue_sample(engine_name: str, window: OHLCVWindow, prediction: Prediction) -> dict:
+def _analogue_sample(
+    engine_name: str, window: OHLCVWindow, prediction: Prediction
+) -> dict:
     return {
         "engine": engine_name,
         "query": {
@@ -3779,18 +4140,26 @@ def _position_size(
         return 1.0
     if mode != "confidence":
         raise ValueError(f"Unknown position sizing mode: {mode}")
-    direction_agreement = min(float(prediction.confidence), _direction_agreement(prediction))
-    move_strength = min(1.0, abs(prediction.expected_return_bps) / max(float(large_move_bps), 1e-12))
+    direction_agreement = min(
+        float(prediction.confidence), _direction_agreement(prediction)
+    )
+    move_strength = min(
+        1.0, abs(prediction.expected_return_bps) / max(float(large_move_bps), 1e-12)
+    )
     return float(max(0.0, min(1.0, 0.35 * move_strength + 0.65 * direction_agreement)))
 
 
 def _direction_agreement(prediction: Prediction) -> float:
     if not prediction.analogues:
         return 1.0 if prediction.direction != "flat" else 0.0
-    return _direction_agreement_from_analogues(prediction.direction, prediction.analogues)
+    return _direction_agreement_from_analogues(
+        prediction.direction, prediction.analogues
+    )
 
 
-def _direction_agreement_from_analogues(direction: str, analogues: list[AnalogueMatch]) -> float:
+def _direction_agreement_from_analogues(
+    direction: str, analogues: list[AnalogueMatch]
+) -> float:
     if not analogues:
         return 0.0
     matching = sum(1 for match in analogues if match.direction == direction)

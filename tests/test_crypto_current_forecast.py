@@ -27,10 +27,15 @@ def test_completed_bars_excludes_incomplete_candle():
 
 
 def test_forecast_from_bars_computes_expected_price():
-    from benchmarks.crypto_current_forecast import forecast_from_bars
+    from benchmarks.crypto_current_forecast import (
+        forecast_from_bars,
+        rank_opportunities,
+    )
     from benchmarks.crypto_ohlcv import generate_synthetic_ohlcv
 
-    bars = generate_synthetic_ohlcv(symbol="BTC/USDT", timeframe="4h", bars=140, seed=23)
+    bars = generate_synthetic_ohlcv(
+        symbol="BTC/USDT", timeframe="4h", bars=140, seed=23
+    )
     result = forecast_from_bars(
         bars,
         symbol="BTC/USDT",
@@ -75,9 +80,13 @@ def test_forecast_from_bars_computes_expected_price():
     assert result.directional_method
     assert result.directional_support >= 0
     assert math.isclose(result.expected_price, expected_price)
-    candidate_expected_price = result.last_close * (1.0 + result.candidate_expected_return_bps / 10_000.0)
+    candidate_expected_price = result.last_close * (
+        1.0 + result.candidate_expected_return_bps / 10_000.0
+    )
     assert math.isclose(result.candidate_expected_price, candidate_expected_price)
-    directional_expected_price = result.last_close * (1.0 + result.directional_expected_return_bps / 10_000.0)
+    directional_expected_price = result.last_close * (
+        1.0 + result.directional_expected_return_bps / 10_000.0
+    )
     assert math.isclose(result.directional_expected_price, directional_expected_price)
     assert math.isclose(result.evidence_strength, result.confidence)
     assert result.confidence_is_probability is False
@@ -89,10 +98,25 @@ def test_forecast_from_bars_computes_expected_price():
     assert result.calibration_bucket["direction_hit_rate"] == 0.65
     assert result.calibrated_probability is None
     assert result.probability_kind == "none"
+    assert result.history_bars == 140
+    assert result.state_window_bars == 16
+    assert result.history_start_utc == bars[0].iso_time
+
+    opportunities = rank_opportunities([result])
+    assert len(opportunities) == 1
+    assert opportunities[0]["rank"] == 1
+    assert opportunities[0]["symbol"] == "BTC/USDT"
+    assert opportunities[0]["direction"] in {"up", "down"}
+    assert opportunities[0]["status"] in {"validated_trade", "research_candidate"}
+    assert opportunities[0]["target_price"] > 0.0
+    assert opportunities[0]["reward_to_uncertainty"] >= 0.0
 
 
 def test_calibration_bucket_for_evidence_finds_matching_range():
-    from benchmarks.crypto_current_forecast import calibration_bucket_for_evidence, calibrated_probability_for_evidence
+    from benchmarks.crypto_current_forecast import (
+        calibration_bucket_for_evidence,
+        calibrated_probability_for_evidence,
+    )
 
     profile = {
         "calibration": [
@@ -100,7 +124,10 @@ def test_calibration_bucket_for_evidence_finds_matching_range():
                 "engine": "WaveMind timeframe policy",
                 "probability_ready": True,
                 "probability_kind": "base_rate",
-                "base_rate_calibration": {"probability_ready": True, "base_rate_probability": 0.61},
+                "base_rate_calibration": {
+                    "probability_ready": True,
+                    "base_rate_probability": 0.61,
+                },
                 "monotonic_calibration": {
                     "blocks": [{"range": [0.5, 1.0], "calibrated_probability": 0.68}]
                 },
@@ -162,11 +189,15 @@ def test_calibrated_probability_prefers_ready_monotonic_blocks():
 def test_guarded_state_direction_uses_downtrend_and_rsi_extremes():
     from benchmarks.crypto_current_forecast import guarded_state_direction
 
-    assert guarded_state_direction({"trend": "down", "rsi": 20.0}, fallback_direction="up") == (
+    assert guarded_state_direction(
+        {"trend": "down", "rsi": 20.0}, fallback_direction="up"
+    ) == (
         "down",
         "established_downtrend",
     )
-    assert guarded_state_direction({"trend": "up", "rsi": 72.0}, fallback_direction="up") == (
+    assert guarded_state_direction(
+        {"trend": "up", "rsi": 72.0}, fallback_direction="up"
+    ) == (
         "down",
         "overbought_reversion",
     )
@@ -199,7 +230,9 @@ def test_fetch_latest_completed_bars_uses_since_slack(monkeypatch):
 
     monkeypatch.setattr(forecast, "fetch_ohlcv_ccxt", fake_fetch_ohlcv_ccxt)
 
-    bars = forecast.fetch_latest_completed_bars(exchange_id="okx", symbol="BTC/USDT", timeframe="1h", limit=5)
+    bars = forecast.fetch_latest_completed_bars(
+        exchange_id="okx", symbol="BTC/USDT", timeframe="1h", limit=5
+    )
 
     assert len(bars) == 5
     assert calls[0]["since"] is not None
@@ -393,6 +426,7 @@ def test_render_markdown_contains_price_target():
     assert "validated forecast" in markdown
     assert "trade validation" in markdown
     assert "calibrated price range" in markdown
+    assert "Best Available Opportunity Ranking" in markdown
     assert "BTC/USDT" in markdown
     assert "101200" in markdown
     assert "97000 to 103000" in markdown
@@ -413,11 +447,11 @@ def test_crypto_current_forecast_cli_writes_json_and_markdown(tmp_path):
             [
                 "import json",
                 "from pathlib import Path",
-                "from benchmarks.crypto_current_forecast import forecast_from_bars, forecast_to_dict, render_markdown",
+                "from benchmarks.crypto_current_forecast import forecast_from_bars, forecast_to_dict, rank_opportunities, render_markdown",
                 "from benchmarks.crypto_ohlcv import generate_synthetic_ohlcv",
                 "bars = generate_synthetic_ohlcv(symbol='ETH/USDT', timeframe='4h', bars=120, seed=31)",
                 "result = forecast_from_bars(bars, symbol='ETH/USDT', exchange='synthetic', horizon_label='24h', timeframe='4h', horizon=6, engine_key='timeframe-policy', window=16, top_k=3)",
-                f"Path({str(output)!r}).write_text(json.dumps({{'results': [forecast_to_dict(result)]}}, indent=2) + '\\n', encoding='utf-8')",
+                f"Path({str(output)!r}).write_text(json.dumps({{'results': [forecast_to_dict(result)], 'opportunity_ranking': rank_opportunities([result])}}, indent=2) + '\\n', encoding='utf-8')",
                 f"Path({str(report)!r}).write_text(render_markdown([result]), encoding='utf-8')",
             ]
         ),
@@ -453,11 +487,18 @@ def test_crypto_current_forecast_cli_writes_json_and_markdown(tmp_path):
     assert payload["results"][0]["candidate_direction"] in {"up", "down", "flat"}
     assert payload["results"][0]["confidence_is_probability"] is False
     assert "not a calibrated probability" in payload["results"][0]["confidence_note"]
-    assert payload["results"][0]["evidence_strength"] == payload["results"][0]["confidence"]
+    assert (
+        payload["results"][0]["evidence_strength"]
+        == payload["results"][0]["confidence"]
+    )
     assert payload["results"][0]["probability_kind"] == "none"
     assert payload["results"][0]["calibrated_probability"] is None
     assert len(payload["results"][0]["input_snapshot_sha256"]) == 64
     assert len(payload["results"][0]["model_source_sha256"]) == 64
-    assert payload["results"][0]["forecast_schema_version"] == 3
+    assert payload["results"][0]["forecast_schema_version"] == 4
+    assert payload["opportunity_ranking"]
+    assert payload["opportunity_ranking"][0]["rank"] == 1
+    assert payload["results"][0]["history_bars"] == 120
+    assert payload["results"][0]["state_window_bars"] == 16
     assert "ETH/USDT" in report.read_text(encoding="utf-8")
     assert not bars_path.exists()

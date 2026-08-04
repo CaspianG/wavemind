@@ -7,12 +7,20 @@ from pathlib import Path
 
 def test_crypto_walk_forward_runs_core_engines(tmp_path):
     from benchmarks.crypto_ohlcv import generate_synthetic_ohlcv, make_ohlcv_windows
-    from benchmarks.crypto_walk_forward_benchmark import MarketDataset, run_walk_forward, write_analogue_html
+    from benchmarks.crypto_walk_forward_benchmark import (
+        MarketDataset,
+        run_walk_forward,
+        write_analogue_html,
+    )
 
     bars = generate_synthetic_ohlcv(symbol="BTC", timeframe="1h", bars=140, seed=4)
-    windows = make_ohlcv_windows(bars, symbol="BTC", timeframe="1h", window=16, horizon=3)
+    windows = make_ohlcv_windows(
+        bars, symbol="BTC", timeframe="1h", window=16, horizon=3
+    )
     payload = run_walk_forward(
-        markets=[MarketDataset(symbol="BTC", timeframe="1h", bars=bars, windows=windows)],
+        markets=[
+            MarketDataset(symbol="BTC", timeframe="1h", bars=bars, windows=windows)
+        ],
         engines=[
             "wavemind",
             "market-field",
@@ -96,7 +104,10 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
     assert "sized_max_drawdown_bps" in result_by_engine["WaveMind adaptive-field"]
     assert "positive_market_slices" in result_by_engine["WaveMind adaptive-field"]
     assert "slice_positive_rate" in result_by_engine["WaveMind adaptive-field"]
-    assert "worst_market_slice_sized_net_bps" in result_by_engine["WaveMind adaptive-field"]
+    assert (
+        "worst_market_slice_sized_net_bps"
+        in result_by_engine["WaveMind adaptive-field"]
+    )
     assert 0.0 <= result_by_engine["WaveMind microstructure"]["signal_rate"] <= 1.0
     assert 0.0 <= result_by_engine["WaveMind perp trend-field"]["signal_rate"] <= 1.0
     assert 0.0 <= result_by_engine["WaveMind timeframe policy"]["signal_rate"] <= 1.0
@@ -128,7 +139,10 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
     assert payload["analogue_samples"]
     assert "max_favorable_excursion_bps" in payload["analogue_samples"][0]["query"]
     assert "max_adverse_excursion_bps" in payload["analogue_samples"][0]["analogues"][0]
-    assert "future_return_bps" not in payload["analogue_samples"][0]["analogues"][0]["text"]
+    assert (
+        "future_return_bps"
+        not in payload["analogue_samples"][0]["analogues"][0]["text"]
+    )
 
     html_path = tmp_path / "analogues.html"
     write_analogue_html(payload, html_path)
@@ -142,7 +156,9 @@ def test_wavemind_engine_metrics_are_isolated_from_profile_engine(tmp_path):
     from benchmarks.crypto_walk_forward_benchmark import MarketDataset, run_walk_forward
 
     bars = generate_synthetic_ohlcv(symbol="BTC", timeframe="4h", bars=150, seed=8)
-    windows = make_ohlcv_windows(bars, symbol="BTC", timeframe="4h", window=16, horizon=3)
+    windows = make_ohlcv_windows(
+        bars, symbol="BTC", timeframe="4h", window=16, horizon=3
+    )
     market = MarketDataset(symbol="BTC", timeframe="4h", bars=bars, windows=windows)
 
     solo = run_walk_forward(
@@ -160,8 +176,12 @@ def test_wavemind_engine_metrics_are_isolated_from_profile_engine(tmp_path):
         top_k=3,
     )
 
-    solo_field = next(result for result in solo["results"] if result["engine"] == "WaveMind field")
-    mixed_field = next(result for result in mixed["results"] if result["engine"] == "WaveMind field")
+    solo_field = next(
+        result for result in solo["results"] if result["engine"] == "WaveMind field"
+    )
+    mixed_field = next(
+        result for result in mixed["results"] if result["engine"] == "WaveMind field"
+    )
     stable_keys = [
         "queries",
         "direction_accuracy_at_1",
@@ -217,7 +237,10 @@ def test_daily_trend_memory_available_as_standalone_engine(tmp_path):
 
 def test_daily_trend_memory_vetoes_field_opposition(monkeypatch):
     import benchmarks.crypto_walk_forward_benchmark as benchmark
-    from benchmarks.crypto_walk_forward_benchmark import Prediction, WaveMindDailyTrendMemoryEngine
+    from benchmarks.crypto_walk_forward_benchmark import (
+        Prediction,
+        WaveMindDailyTrendMemoryEngine,
+    )
 
     class BaseEngine:
         def query(self, window, *, top_k):
@@ -246,7 +269,9 @@ def test_daily_trend_memory_vetoes_field_opposition(monkeypatch):
             "reason": "",
         }
 
-    monkeypatch.setattr(benchmark, "_adaptive_relationship_field_signal_from_index", field_opposition)
+    monkeypatch.setattr(
+        benchmark, "_adaptive_relationship_field_signal_from_index", field_opposition
+    )
 
     engine = object.__new__(WaveMindDailyTrendMemoryEngine)
     engine.base = BaseEngine()
@@ -277,7 +302,10 @@ def test_daily_trend_memory_vetoes_field_opposition(monkeypatch):
 
 def test_daily_trend_memory_vetoes_expanded_volume_trap(monkeypatch):
     import benchmarks.crypto_walk_forward_benchmark as benchmark
-    from benchmarks.crypto_walk_forward_benchmark import Prediction, WaveMindDailyTrendMemoryEngine
+    from benchmarks.crypto_walk_forward_benchmark import (
+        Prediction,
+        WaveMindDailyTrendMemoryEngine,
+    )
 
     class BaseEngine:
         def query(self, window, *, top_k):
@@ -302,7 +330,9 @@ def test_daily_trend_memory_vetoes_expanded_volume_trap(monkeypatch):
     def unused_field_signal(*args, **kwargs):
         raise AssertionError("daily guard should run before field scoring")
 
-    monkeypatch.setattr(benchmark, "_adaptive_relationship_field_signal_from_index", unused_field_signal)
+    monkeypatch.setattr(
+        benchmark, "_adaptive_relationship_field_signal_from_index", unused_field_signal
+    )
 
     engine = object.__new__(WaveMindDailyTrendMemoryEngine)
     engine.base = BaseEngine()
@@ -335,9 +365,13 @@ def test_crypto_walk_forward_supports_multiple_isolated_folds(tmp_path):
     from benchmarks.crypto_walk_forward_benchmark import MarketDataset, run_walk_forward
 
     bars = generate_synthetic_ohlcv(symbol="BTC", timeframe="4h", bars=160, seed=12)
-    windows = make_ohlcv_windows(bars, symbol="BTC", timeframe="4h", window=16, horizon=3)
+    windows = make_ohlcv_windows(
+        bars, symbol="BTC", timeframe="4h", window=16, horizon=3
+    )
     payload = run_walk_forward(
-        markets=[MarketDataset(symbol="BTC", timeframe="4h", bars=bars, windows=windows)],
+        markets=[
+            MarketDataset(symbol="BTC", timeframe="4h", bars=bars, windows=windows)
+        ],
         engines=["4h-profile", "wavemind", "naive"],
         train_windows=45,
         test_windows=8,
@@ -447,18 +481,26 @@ def test_walk_forward_skips_optional_vector_dbs_when_missing(monkeypatch):
     from benchmarks import crypto_walk_forward_benchmark as bench
 
     bars = generate_synthetic_ohlcv(symbol="BTC", timeframe="1h", bars=90, seed=4)
-    windows = make_ohlcv_windows(bars, symbol="BTC", timeframe="1h", window=12, horizon=3)
+    windows = make_ohlcv_windows(
+        bars, symbol="BTC", timeframe="1h", window=12, horizon=3
+    )
     original_create_engine = bench._create_engine
 
     def fail_create(engine_key, encoder, *, market, temp_root, **kwargs):
         if engine_key == "chroma":
             raise RuntimeError("chromadb is not installed; install the bench extra")
-        return original_create_engine(engine_key, encoder, market=market, temp_root=temp_root, **kwargs)
+        return original_create_engine(
+            engine_key, encoder, market=market, temp_root=temp_root, **kwargs
+        )
 
     monkeypatch.setattr(bench, "_create_engine", fail_create)
 
     payload = bench.run_walk_forward(
-        markets=[bench.MarketDataset(symbol="BTC", timeframe="1h", bars=bars, windows=windows)],
+        markets=[
+            bench.MarketDataset(
+                symbol="BTC", timeframe="1h", bars=bars, windows=windows
+            )
+        ],
         engines=["chroma"],
         train_windows=25,
         test_windows=5,
@@ -470,7 +512,9 @@ def test_walk_forward_skips_optional_vector_dbs_when_missing(monkeypatch):
 
 def test_adaptive_relationship_field_uses_past_holdout_signal():
     from benchmarks.crypto_ohlcv import OHLCVWindow
-    from benchmarks.crypto_walk_forward_benchmark import _adaptive_relationship_field_signal_from_index
+    from benchmarks.crypto_walk_forward_benchmark import (
+        _adaptive_relationship_field_signal_from_index,
+    )
 
     query = OHLCVWindow(
         id="query",
@@ -525,6 +569,53 @@ def test_adaptive_field_can_skip_vector_memory_initialization(tmp_path):
     engine.close()
 
 
+def test_adaptive_field_opposition_threshold_is_independent_from_entry_threshold(
+    monkeypatch,
+):
+    from types import SimpleNamespace
+
+    from benchmarks import crypto_walk_forward_benchmark as bench
+
+    engine = object.__new__(bench.WaveMindAdaptiveFieldEngine)
+    engine.records = [SimpleNamespace(direction="up", future_return_bps=250.0)]
+    engine.return_history = [250.0]
+    engine.relationship_history = {}
+    engine.realized_signal_nets = []
+    engine.pending_predictions = {}
+    engine.min_support = 1
+    engine.min_test_support = 1
+    engine.validation_holdout = 0.35
+    engine.min_confidence = 0.50
+    engine.min_expected_edge_bps = 120.0
+    engine.opposition_edge_bps = 70.0
+    engine.require_trend_alignment = False
+    engine.performance_lookback = 8
+    engine.min_recent_edge_bps = 20.0
+    engine.round_trip_cost_bps = 30.0
+
+    monkeypatch.setattr(
+        bench,
+        "_adaptive_relationship_field_signal_from_index",
+        lambda *args, **kwargs: {
+            "direction": "down",
+            "expected_return_bps": -110.0,
+            "edge_bps": 80.0,
+            "confidence": 0.90,
+            "stability": 0.85,
+            "support": 40,
+            "relationships": 4,
+            "reason": "",
+        },
+    )
+
+    prediction = engine.query(SimpleNamespace(id="query"), top_k=3)
+
+    assert prediction.direction == "flat"
+    assert prediction.filtered is True
+    assert prediction.filter_reason == "adaptive_field_opposition"
+    assert prediction.raw_direction == "up"
+
+
 def test_load_markets_from_ccxt_cache_without_network(tmp_path, monkeypatch):
     from argparse import Namespace
     from benchmarks.crypto_ohlcv import OHLCVBar, save_ohlcv_csv
@@ -533,7 +624,14 @@ def test_load_markets_from_ccxt_cache_without_network(tmp_path, monkeypatch):
     cache_dir = tmp_path / "ccxt-cache"
     cache_path = cache_dir / "okx" / "BTC_USDT_1h.csv"
     bars = [
-        OHLCVBar(timestamp=1_700_000_000 + index * 3600, open=100 + index, high=101 + index, low=99 + index, close=100.5 + index, volume=10 + index)
+        OHLCVBar(
+            timestamp=1_700_000_000 + index * 3600,
+            open=100 + index,
+            high=101 + index,
+            low=99 + index,
+            close=100.5 + index,
+            volume=10 + index,
+        )
         for index in range(70)
     ]
     save_ohlcv_csv(cache_path, bars)
@@ -587,7 +685,9 @@ def test_load_markets_from_ccxt_cache_honors_bars_limit(tmp_path, monkeypatch):
     save_ohlcv_csv(cache_path, bars)
 
     def fail_fetch(**kwargs):
-        raise AssertionError("network fetch should not be called when cache is long enough")
+        raise AssertionError(
+            "network fetch should not be called when cache is long enough"
+        )
 
     monkeypatch.setattr(bench, "fetch_ohlcv_ccxt", fail_fetch)
 
@@ -615,7 +715,10 @@ def test_load_markets_from_ccxt_cache_honors_bars_limit(tmp_path, monkeypatch):
 
 
 def test_timeframe_policy_vetoes_ta_conflict():
-    from benchmarks.crypto_walk_forward_benchmark import Prediction, WaveMindTimeframePolicyEngine
+    from benchmarks.crypto_walk_forward_benchmark import (
+        Prediction,
+        WaveMindTimeframePolicyEngine,
+    )
 
     class ChildEngine:
         def query(self, window, *, top_k):
@@ -632,7 +735,12 @@ def test_timeframe_policy_vetoes_ta_conflict():
 
     class TaEngine:
         def query(self, window, *, top_k):
-            return Prediction(direction="down", expected_return_bps=-80.0, latency_ms=0.1, analogues=[])
+            return Prediction(
+                direction="down",
+                expected_return_bps=-80.0,
+                latency_ms=0.1,
+                analogues=[],
+            )
 
     engine = object.__new__(WaveMindTimeframePolicyEngine)
     engine.timeframe = "4h"
@@ -654,7 +762,10 @@ def test_timeframe_policy_vetoes_ta_conflict():
 
 
 def test_timeframe_policy_uses_perp_trend_field_for_one_hour_perpetuals(tmp_path):
-    from benchmarks.crypto_walk_forward_benchmark import WaveMindPerpTrendFieldEngine, WaveMindTimeframePolicyEngine
+    from benchmarks.crypto_walk_forward_benchmark import (
+        WaveMindPerpTrendFieldEngine,
+        WaveMindTimeframePolicyEngine,
+    )
     from wavemind.encoders import create_text_encoder
 
     engine = WaveMindTimeframePolicyEngine(
@@ -673,7 +784,9 @@ def test_timeframe_policy_drawdown_circuit_breaker_skips_child():
 
     class ChildEngine:
         def query(self, window, *, top_k):
-            raise AssertionError("child should not be queried after policy drawdown circuit breaker trips")
+            raise AssertionError(
+                "child should not be queried after policy drawdown circuit breaker trips"
+            )
 
     engine = object.__new__(WaveMindTimeframePolicyEngine)
     engine.child = ChildEngine()
@@ -688,7 +801,10 @@ def test_timeframe_policy_drawdown_circuit_breaker_skips_child():
 
 
 def test_timeframe_policy_vetoes_unstable_one_hour_setups():
-    from benchmarks.crypto_walk_forward_benchmark import Prediction, WaveMindTimeframePolicyEngine
+    from benchmarks.crypto_walk_forward_benchmark import (
+        Prediction,
+        WaveMindTimeframePolicyEngine,
+    )
 
     class ChildEngine:
         def __init__(self, prediction):
@@ -699,7 +815,9 @@ def test_timeframe_policy_vetoes_unstable_one_hour_setups():
 
     class FlatTaEngine:
         def query(self, window, *, top_k):
-            return Prediction(direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[])
+            return Prediction(
+                direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[]
+            )
 
     class Window:
         def __init__(self, features):
@@ -913,25 +1031,38 @@ def test_timeframe_policy_vetoes_unstable_one_hour_setups():
     assert squeeze_short.filter_reason == "one_hour_short_squeeze_guard"
     assert squeeze_short.candidate_direction == "down"
     assert normal_volume_breakdown.direction == "flat"
-    assert normal_volume_breakdown.filter_reason == "one_hour_normal_volume_breakdown_exhaustion"
+    assert (
+        normal_volume_breakdown.filter_reason
+        == "one_hour_normal_volume_breakdown_exhaustion"
+    )
     assert normal_volume_breakdown.candidate_direction == "down"
     assert expanded_volume_breakdown.direction == "flat"
-    assert expanded_volume_breakdown.filter_reason == "one_hour_expanded_volume_breakdown_exhaustion"
+    assert (
+        expanded_volume_breakdown.filter_reason
+        == "one_hour_expanded_volume_breakdown_exhaustion"
+    )
     assert expanded_volume_breakdown.candidate_direction == "down"
     assert breakout_short.direction == "flat"
     assert breakout_short.filter_reason == "one_hour_breakout_short_guard"
     assert breakout_short.candidate_direction == "down"
     assert stalled_lower_band_bounce.direction == "flat"
-    assert stalled_lower_band_bounce.filter_reason == "one_hour_stalled_lower_band_bounce"
+    assert (
+        stalled_lower_band_bounce.filter_reason == "one_hour_stalled_lower_band_bounce"
+    )
     assert stalled_lower_band_bounce.candidate_direction == "up"
     assert unconfirmed_falling_knife.direction == "flat"
-    assert unconfirmed_falling_knife.filter_reason == "one_hour_unconfirmed_falling_knife_reversal"
+    assert (
+        unconfirmed_falling_knife.filter_reason
+        == "one_hour_unconfirmed_falling_knife_reversal"
+    )
     assert unconfirmed_falling_knife.candidate_direction == "up"
     assert late_breakout.direction == "flat"
     assert late_breakout.filter_reason == "one_hour_expanded_mid_band_late_breakout"
     assert late_breakout.candidate_direction == "up"
     assert mid_rsi_falling_knife.direction == "flat"
-    assert mid_rsi_falling_knife.filter_reason == "one_hour_mid_rsi_falling_knife_reversal"
+    assert (
+        mid_rsi_falling_knife.filter_reason == "one_hour_mid_rsi_falling_knife_reversal"
+    )
     assert mid_rsi_falling_knife.candidate_direction == "up"
     assert unstable_mid.direction == "flat"
     assert unstable_mid.filter_reason == "unstable_mid_confidence"
@@ -939,7 +1070,10 @@ def test_timeframe_policy_vetoes_unstable_one_hour_setups():
 
 
 def test_timeframe_policy_vetoes_quiet_four_hour_upper_band_long():
-    from benchmarks.crypto_walk_forward_benchmark import Prediction, WaveMindTimeframePolicyEngine
+    from benchmarks.crypto_walk_forward_benchmark import (
+        Prediction,
+        WaveMindTimeframePolicyEngine,
+    )
 
     class ChildEngine:
         def query(self, window, *, top_k):
@@ -954,7 +1088,9 @@ def test_timeframe_policy_vetoes_quiet_four_hour_upper_band_long():
 
     class FlatTaEngine:
         def query(self, window, *, top_k):
-            return Prediction(direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[])
+            return Prediction(
+                direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[]
+            )
 
     class Window:
         features = {
@@ -981,7 +1117,10 @@ def test_timeframe_policy_vetoes_quiet_four_hour_upper_band_long():
 
 
 def test_timeframe_policy_vetoes_four_hour_near_high_long_exhaustion():
-    from benchmarks.crypto_walk_forward_benchmark import Prediction, WaveMindTimeframePolicyEngine
+    from benchmarks.crypto_walk_forward_benchmark import (
+        Prediction,
+        WaveMindTimeframePolicyEngine,
+    )
 
     class ChildEngine:
         def query(self, window, *, top_k):
@@ -996,7 +1135,9 @@ def test_timeframe_policy_vetoes_four_hour_near_high_long_exhaustion():
 
     class FlatTaEngine:
         def query(self, window, *, top_k):
-            return Prediction(direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[])
+            return Prediction(
+                direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[]
+            )
 
     def make_prediction(features):
         class Window:
@@ -1057,15 +1198,23 @@ def test_timeframe_policy_vetoes_four_hour_near_high_long_exhaustion():
     assert quiet_near_high.filter_reason == "four_hour_quiet_near_high_long_exhaustion"
     assert quiet_near_high.candidate_direction == "up"
     assert expanded_upper.direction == "flat"
-    assert expanded_upper.filter_reason == "four_hour_expanded_upper_near_high_long_exhaustion"
+    assert (
+        expanded_upper.filter_reason
+        == "four_hour_expanded_upper_near_high_long_exhaustion"
+    )
     assert expanded_upper.candidate_direction == "up"
     assert high_vol_upper.direction == "flat"
-    assert high_vol_upper.filter_reason == "four_hour_high_vol_upper_band_long_exhaustion"
+    assert (
+        high_vol_upper.filter_reason == "four_hour_high_vol_upper_band_long_exhaustion"
+    )
     assert high_vol_upper.candidate_direction == "up"
 
 
 def test_timeframe_policy_vetoes_four_hour_midrange_continuation_trap():
-    from benchmarks.crypto_walk_forward_benchmark import Prediction, WaveMindTimeframePolicyEngine
+    from benchmarks.crypto_walk_forward_benchmark import (
+        Prediction,
+        WaveMindTimeframePolicyEngine,
+    )
 
     class ChildEngine:
         def query(self, window, *, top_k):
@@ -1080,7 +1229,9 @@ def test_timeframe_policy_vetoes_four_hour_midrange_continuation_trap():
 
     class FlatTaEngine:
         def query(self, window, *, top_k):
-            return Prediction(direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[])
+            return Prediction(
+                direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[]
+            )
 
     class Window:
         features = {
@@ -1108,7 +1259,10 @@ def test_timeframe_policy_vetoes_four_hour_midrange_continuation_trap():
 
 
 def test_timeframe_policy_blocks_high_confidence_falling_knife_after_losses():
-    from benchmarks.crypto_walk_forward_benchmark import Prediction, WaveMindTimeframePolicyEngine
+    from benchmarks.crypto_walk_forward_benchmark import (
+        Prediction,
+        WaveMindTimeframePolicyEngine,
+    )
 
     class ChildEngine:
         def query(self, window, *, top_k):
@@ -1123,7 +1277,9 @@ def test_timeframe_policy_blocks_high_confidence_falling_knife_after_losses():
 
     class FlatTaEngine:
         def query(self, window, *, top_k):
-            return Prediction(direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[])
+            return Prediction(
+                direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[]
+            )
 
     class Window:
         features = {"trend": "down", "rsi_bucket": "oversold"}

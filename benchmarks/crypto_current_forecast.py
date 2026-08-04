@@ -40,8 +40,10 @@ HORIZON_PRESETS = {
     "7d": {"timeframe": "1d", "horizon": 7, "engine": "timeframe-policy"},
 }
 
-CONFIDENCE_NOTE = "evidence strength from analogue/regime agreement; not a calibrated probability"
-FORECAST_SCHEMA_VERSION = 3
+CONFIDENCE_NOTE = (
+    "evidence strength from analogue/regime agreement; not a calibrated probability"
+)
+FORECAST_SCHEMA_VERSION = 4
 
 
 @dataclass(frozen=True)
@@ -98,6 +100,9 @@ class ForecastResult:
     prediction_interval_calibration_samples: int = 0
     prediction_interval_calibration_coverage: float = 0.0
     prediction_interval_note: str = ""
+    history_bars: int = 0
+    history_start_utc: str = ""
+    state_window_bars: int = 0
 
 
 @dataclass(frozen=True)
@@ -120,7 +125,9 @@ class SymbolMigration:
 def parse_symbol_migration(value: str) -> SymbolMigration:
     try:
         target_symbol, source = value.split("=", maxsplit=1)
-        predecessor_exchange, predecessor_symbol, current_start = source.split("|", maxsplit=2)
+        predecessor_exchange, predecessor_symbol, current_start = source.split(
+            "|", maxsplit=2
+        )
     except ValueError as exc:
         raise argparse.ArgumentTypeError(
             "migration must be TARGET=EXCHANGE|PREDECESSOR|CURRENT_START_UTC"
@@ -131,7 +138,9 @@ def parse_symbol_migration(value: str) -> SymbolMigration:
     try:
         start = datetime.fromisoformat(current_start.replace("Z", "+00:00"))
     except ValueError as exc:
-        raise argparse.ArgumentTypeError("migration start must be an ISO-8601 datetime or date") from exc
+        raise argparse.ArgumentTypeError(
+            "migration start must be an ISO-8601 datetime or date"
+        ) from exc
     if start.tzinfo is None:
         start = start.replace(tzinfo=timezone.utc)
     return SymbolMigration(
@@ -142,7 +151,9 @@ def parse_symbol_migration(value: str) -> SymbolMigration:
     )
 
 
-def completed_bars(rows: Iterable[Iterable[Any]], *, timeframe: str, now_ts: int | None = None) -> list[OHLCVBar]:
+def completed_bars(
+    rows: Iterable[Iterable[Any]], *, timeframe: str, now_ts: int | None = None
+) -> list[OHLCVBar]:
     now = int(now_ts if now_ts is not None else datetime.now(timezone.utc).timestamp())
     seconds = timeframe_to_seconds(timeframe)
     bars = [
@@ -180,7 +191,9 @@ def fetch_latest_completed_bars(
     )
     bars = [bar for bar in fetched if bar.timestamp + seconds <= now]
     if len(bars) < limit:
-        raise ValueError(f"Only {len(bars)} completed bars fetched for {symbol} {timeframe}; need {limit}")
+        raise ValueError(
+            f"Only {len(bars)} completed bars fetched for {symbol} {timeframe}; need {limit}"
+        )
     selected = bars[-limit:]
     data_age_seconds = now - (selected[-1].timestamp + seconds)
     if data_age_seconds > seconds * int(max_data_age_bars):
@@ -228,11 +241,7 @@ def fetch_latest_completed_bars_with_migration(
         if bar.volume > 0.0 and bar.timestamp + seconds <= now
     }
     merged.update(
-        {
-            bar.timestamp: bar
-            for bar in current
-            if bar.timestamp + seconds <= now
-        }
+        {bar.timestamp: bar for bar in current if bar.timestamp + seconds <= now}
     )
     bars = [merged[timestamp] for timestamp in sorted(merged)]
     if len(bars) < limit:
@@ -373,7 +382,9 @@ def forced_directional_forecast(
     )
 
 
-def guarded_state_direction(features: Mapping[str, Any], *, fallback_direction: str) -> tuple[str, str]:
+def guarded_state_direction(
+    features: Mapping[str, Any], *, fallback_direction: str
+) -> tuple[str, str]:
     """Choose a 4h direction from observable state without future information."""
     trend = str(features.get("trend", ""))
     recent_trend = str(features.get("recent_trend", ""))
@@ -398,8 +409,12 @@ def guarded_state_field_forecast(
     base = forced_directional_forecast(windows, query, horizon=horizon)
     if query.timeframe != "4h":
         return base
-    direction, reason = guarded_state_direction(query.features, fallback_direction=base.direction)
-    expected_return = math.copysign(abs(base.expected_return_bps), 1.0 if direction == "up" else -1.0)
+    direction, reason = guarded_state_direction(
+        query.features, fallback_direction=base.direction
+    )
+    expected_return = math.copysign(
+        abs(base.expected_return_bps), 1.0 if direction == "up" else -1.0
+    )
     return DirectionalForecast(
         direction=direction,
         expected_return_bps=float(expected_return),
@@ -415,10 +430,16 @@ def guarded_state_field_forecast(
 def _weighted_future_return(scored_windows: list[tuple[float, OHLCVWindow]]) -> float:
     if not scored_windows:
         return 0.0
-    weights = [math.exp(-float(index) / max(6.0, len(scored_windows) / 3.0)) for index, _ in enumerate(scored_windows)]
+    weights = [
+        math.exp(-float(index) / max(6.0, len(scored_windows) / 3.0))
+        for index, _ in enumerate(scored_windows)
+    ]
     denominator = max(sum(weights), 1e-12)
     return float(
-        sum(float(window.future_return_bps) * weight for (_, window), weight in zip(scored_windows, weights, strict=False))
+        sum(
+            float(window.future_return_bps) * weight
+            for (_, window), weight in zip(scored_windows, weights, strict=False)
+        )
         / denominator
     )
 
@@ -440,7 +461,9 @@ def _momentum_directional_return(query: OHLCVWindow, *, horizon: int) -> float:
         reversion += abs(bollinger_position + 1.0) * 18.0
     elif bollinger_position > 1.0:
         reversion -= abs(bollinger_position - 1.0) * 18.0
-    return float(0.30 * recent + 0.45 * trend_slope * horizon_scale + 0.35 * macd + reversion)
+    return float(
+        0.30 * recent + 0.45 * trend_slope * horizon_scale + 0.35 * macd + reversion
+    )
 
 
 def _last_bar_directional_return(query: OHLCVWindow) -> float:
@@ -488,10 +511,18 @@ def forecast_from_bars(
         horizon=horizon,
         direction_threshold_bps=direction_threshold,
     )
-    market = MarketDataset(symbol=symbol, timeframe=timeframe, bars=ordered, windows=windows, source=exchange)
+    market = MarketDataset(
+        symbol=symbol,
+        timeframe=timeframe,
+        bars=ordered,
+        windows=windows,
+        source=exchange,
+    )
     encoder = create_text_encoder("hash", vector_dim=384)
     round_trip_cost_bps = 2.0 * (float(fee_bps) + float(slippage_bps))
-    query = make_latest_query_window(ordered, symbol=symbol, timeframe=timeframe, window=window, horizon=horizon)
+    query = make_latest_query_window(
+        ordered, symbol=symbol, timeframe=timeframe, window=window, horizon=horizon
+    )
     with tempfile.TemporaryDirectory(prefix="wavemind_crypto_forecast_") as temp_dir:
         engine = _create_engine(
             engine_key,
@@ -509,7 +540,9 @@ def forecast_from_bars(
             engine.close()
     last_close = float(query.bars[-1].close)
     directional = guarded_state_field_forecast(windows, query, horizon=horizon)
-    decision = "abstain" if prediction.filtered or prediction.direction == "flat" else "signal"
+    decision = (
+        "abstain" if prediction.filtered or prediction.direction == "flat" else "signal"
+    )
     interval = fit_prediction_interval(
         windows,
         query,
@@ -519,20 +552,34 @@ def forecast_from_bars(
         nominal_coverage=0.80,
         calibration_windows=120,
     )
-    candidate_direction = prediction.candidate_direction or prediction.raw_direction or prediction.direction
+    candidate_direction = (
+        prediction.candidate_direction
+        or prediction.raw_direction
+        or prediction.direction
+    )
     candidate_expected_return_bps = (
         float(prediction.candidate_expected_return_bps)
         if prediction.candidate_expected_return_bps
         else float(prediction.expected_return_bps)
     )
-    expected_price = last_close * (1.0 + float(prediction.expected_return_bps) / 10_000.0)
-    candidate_expected_price = last_close * (1.0 + candidate_expected_return_bps / 10_000.0)
-    directional_expected_price = last_close * (1.0 + directional.expected_return_bps / 10_000.0)
+    expected_price = last_close * (
+        1.0 + float(prediction.expected_return_bps) / 10_000.0
+    )
+    candidate_expected_price = last_close * (
+        1.0 + candidate_expected_return_bps / 10_000.0
+    )
+    directional_expected_price = last_close * (
+        1.0 + directional.expected_return_bps / 10_000.0
+    )
     interval_lower_return_bps = (
-        float(interval.lower_return_bps) if math.isfinite(interval.lower_return_bps) else None
+        float(interval.lower_return_bps)
+        if math.isfinite(interval.lower_return_bps)
+        else None
     )
     interval_upper_return_bps = (
-        float(interval.upper_return_bps) if math.isfinite(interval.upper_return_bps) else None
+        float(interval.upper_return_bps)
+        if math.isfinite(interval.upper_return_bps)
+        else None
     )
     interval_lower_price = (
         last_close * (1.0 + interval_lower_return_bps / 10_000.0)
@@ -597,7 +644,9 @@ def forecast_from_bars(
         probability_kind=probability_kind,
         input_snapshot_sha256=input_snapshot_sha256,
         model_source_sha256=model_source_sha256,
-        forecast_status="validated_signal" if decision == "signal" else "uncertain_range_only",
+        forecast_status="validated_signal"
+        if decision == "signal"
+        else "uncertain_range_only",
         point_target_validated=decision == "signal",
         prediction_interval_status=interval.status,
         prediction_interval_nominal_coverage=interval.nominal_coverage,
@@ -608,10 +657,85 @@ def forecast_from_bars(
         prediction_interval_calibration_samples=interval.calibration_samples,
         prediction_interval_calibration_coverage=interval.calibration_coverage,
         prediction_interval_note=interval.note,
+        history_bars=len(ordered),
+        history_start_utc=datetime.fromtimestamp(
+            ordered[0].timestamp, tz=timezone.utc
+        ).isoformat(),
+        state_window_bars=int(window),
     )
 
 
-def validation_by_engine(path: str | Path | None, *, engine_name: str) -> dict[str, Any]:
+def rank_opportunities(results: Iterable[ForecastResult]) -> list[dict[str, Any]]:
+    """Rank every market while keeping trade admission as a separate decision."""
+    ranked: list[dict[str, Any]] = []
+    for result in results:
+        validated = bool(result.point_target_validated)
+        direction = result.direction if validated else result.directional_direction
+        expected_return_bps = (
+            float(result.expected_return_bps)
+            if validated
+            else float(result.directional_expected_return_bps)
+        )
+        target_price = (
+            float(result.expected_price)
+            if validated
+            else float(result.directional_expected_price)
+        )
+        if direction not in {"up", "down"}:
+            continue
+
+        lower_return = result.prediction_interval_lower_return_bps
+        upper_return = result.prediction_interval_upper_return_bps
+        if direction == "up" and lower_return is not None:
+            adverse_bps = max(10.0, -float(lower_return))
+            risk_boundary_price = result.prediction_interval_lower_price
+        elif direction == "down" and upper_return is not None:
+            adverse_bps = max(10.0, float(upper_return))
+            risk_boundary_price = result.prediction_interval_upper_price
+        else:
+            adverse_bps = max(10.0, abs(expected_return_bps))
+            risk_boundary_price = None
+
+        reward_to_uncertainty = abs(expected_return_bps) / adverse_bps
+        evidence = max(0.0, min(1.0, float(result.evidence_strength)))
+        stability = max(0.0, min(1.0, float(result.regime_agreement)))
+        evidence_weight = 0.35 + 0.35 * evidence + 0.30 * stability
+        validation_bonus = 1.20 if validated else 1.0
+        score = reward_to_uncertainty * evidence_weight * validation_bonus
+        ranked.append(
+            {
+                "symbol": result.symbol,
+                "horizon": result.horizon_label,
+                "direction": direction,
+                "expected_return_bps": expected_return_bps,
+                "expected_return_pct": expected_return_bps / 100.0,
+                "target_price": target_price,
+                "risk_boundary_price": risk_boundary_price,
+                "reward_to_uncertainty": reward_to_uncertainty,
+                "score": score,
+                "status": "validated_trade" if validated else "research_candidate",
+                "method": result.engine if validated else result.directional_method,
+                "strict_trade_decision": "trade" if validated else "no_trade",
+            }
+        )
+
+    ranked.sort(
+        key=lambda item: (
+            item["status"] == "validated_trade",
+            float(item["score"]),
+            abs(float(item["expected_return_bps"])),
+            str(item["symbol"]),
+        ),
+        reverse=True,
+    )
+    for index, item in enumerate(ranked, start=1):
+        item["rank"] = index
+    return ranked
+
+
+def validation_by_engine(
+    path: str | Path | None, *, engine_name: str
+) -> dict[str, Any]:
     if path is None:
         return {}
     payload = json.loads(Path(path).read_text(encoding="utf-8"))
@@ -655,26 +779,42 @@ def calibration_bucket_for_evidence(
             continue
         base_rate = engine.get("base_rate_calibration", {})
         monotonic = engine.get("monotonic_calibration", {})
-        monotonic_block = _monotonic_block_for_evidence(monotonic, evidence_strength=evidence_strength)
+        monotonic_block = _monotonic_block_for_evidence(
+            monotonic, evidence_strength=evidence_strength
+        )
         for bucket in engine.get("buckets", []):
             low, high = bucket.get("range", [0.0, 1.0])
             evidence = float(evidence_strength)
-            if float(low) <= evidence < float(high) or (math.isclose(evidence, 1.0) and float(high) >= 1.0):
+            if float(low) <= evidence < float(high) or (
+                math.isclose(evidence, 1.0) and float(high) >= 1.0
+            ):
                 if int(bucket.get("count", 0)) <= 0:
                     return None
                 return {
                     "range": [float(low), float(high)],
                     "count": int(bucket.get("count", 0)),
-                    "avg_evidence_strength": float(bucket.get("avg_evidence_strength", 0.0)),
+                    "avg_evidence_strength": float(
+                        bucket.get("avg_evidence_strength", 0.0)
+                    ),
                     "direction_hit_rate": float(bucket.get("direction_hit_rate", 0.0)),
                     "calibration_error": float(bucket.get("calibration_error", 0.0)),
                     "avg_net_return_bps": float(bucket.get("avg_net_return_bps", 0.0)),
                     "probability_ready": bool(engine.get("probability_ready", False)),
                     "probability_kind": str(engine.get("probability_kind", "none")),
-                    "base_rate_probability": float(base_rate.get("base_rate_probability", 0.0)) if base_rate else 0.0,
-                    "base_rate_probability_ready": bool(base_rate.get("probability_ready", False)) if base_rate else False,
+                    "base_rate_probability": float(
+                        base_rate.get("base_rate_probability", 0.0)
+                    )
+                    if base_rate
+                    else 0.0,
+                    "base_rate_probability_ready": bool(
+                        base_rate.get("probability_ready", False)
+                    )
+                    if base_rate
+                    else False,
                     "monotonic_calibrated_probability": (
-                        float(monotonic_block.get("calibrated_probability", 0.0)) if monotonic_block else 0.0
+                        float(monotonic_block.get("calibrated_probability", 0.0))
+                        if monotonic_block
+                        else 0.0
                     ),
                 }
         return None
@@ -694,7 +834,9 @@ def _monotonic_block_for_evidence(
     evidence = float(evidence_strength)
     for block in blocks:
         low, high = block.get("range", [0.0, 1.0])
-        if float(low) <= evidence < float(high) or (math.isclose(evidence, 1.0) and float(high) >= 1.0):
+        if float(low) <= evidence < float(high) or (
+            math.isclose(evidence, 1.0) and float(high) >= 1.0
+        ):
             return dict(block)
     if evidence < float(blocks[0].get("range", [0.0, 1.0])[0]):
         return dict(blocks[0])
@@ -806,6 +948,9 @@ def forecast_to_dict(result: ForecastResult) -> dict[str, Any]:
         "forecast_schema_version": result.forecast_schema_version,
         "input_snapshot_sha256": result.input_snapshot_sha256,
         "model_source_sha256": result.model_source_sha256,
+        "history_bars": result.history_bars,
+        "history_start_utc": result.history_start_utc,
+        "state_window_bars": result.state_window_bars,
     }
     payload["forecast_id"] = forecast_id(payload)
     return payload
@@ -867,11 +1012,16 @@ def append_forecast_ledger(path: str | Path, payload: Mapping[str, Any]) -> int:
     ledger_path.parent.mkdir(parents=True, exist_ok=True)
     with ledger_path.open("a", encoding="utf-8", newline="\n") as handle:
         for row in rows:
-            handle.write(json.dumps(row, ensure_ascii=False, separators=(",", ":")) + "\n")
+            handle.write(
+                json.dumps(row, ensure_ascii=False, separators=(",", ":")) + "\n"
+            )
     return len(rows)
 
 
-def render_markdown(results: list[ForecastResult]) -> str:
+def render_markdown(
+    results: list[ForecastResult],
+    opportunities: list[Mapping[str, Any]] | None = None,
+) -> str:
     lines = [
         "# WaveMind Crypto Current Forecast",
         "",
@@ -911,6 +1061,49 @@ def render_markdown(results: list[ForecastResult]) -> str:
             f"{result.last_close:.6g} | {result.evidence_strength:.3f} | {filter_text} |"
         )
     lines.append("")
+    if results and results[0].history_bars > 0:
+        first = results[0]
+        lines.extend(
+            [
+                (
+                    f"Current-state fingerprint: {first.state_window_bars} "
+                    f"completed {first.timeframe} candles. Historical memory: "
+                    f"{first.history_bars} candles beginning {first.history_start_utc}."
+                ),
+                "",
+            ]
+        )
+    ranked = (
+        list(opportunities)
+        if opportunities is not None
+        else rank_opportunities(results)
+    )
+    if ranked:
+        lines.extend(
+            [
+                "## Best Available Opportunity Ranking",
+                "",
+                (
+                    "This section always ranks the supplied markets. `research_candidate` "
+                    "means best available, not independently validated or guaranteed profitable."
+                ),
+                "",
+                "| rank | symbol | direction | research move | target | risk boundary | reward / uncertainty | strict status |",
+                "|---:|---|---|---:|---:|---:|---:|---|",
+            ]
+        )
+        for item in ranked:
+            risk_boundary = item.get("risk_boundary_price")
+            risk_text = (
+                f"{float(risk_boundary):.6g}" if risk_boundary is not None else "n/a"
+            )
+            lines.append(
+                f"| {item['rank']} | {item['symbol']} | {item['direction']} | "
+                f"{float(item['expected_return_pct']):+.2f}% | "
+                f"{float(item['target_price']):.6g} | {risk_text} | "
+                f"{float(item['reward_to_uncertainty']):.2f} | {item['status']} |"
+            )
+        lines.append("")
     validation = dict(results[0].validation) if results else {}
     if validation:
         active_accuracy = validation.get("active_direction_accuracy")
@@ -935,25 +1128,47 @@ def render_markdown(results: list[ForecastResult]) -> str:
         "The JSON keeps the old forced up/down estimate under `research_forced_*` for diagnostics; "
         "it is not a validated market forecast."
     )
-    lines.append("Calibrated probability is profile-level and still not financial advice.")
+    lines.append(
+        "Calibrated probability is profile-level and still not financial advice."
+    )
     lines.append("")
     return "\n".join(lines)
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Generate current WaveMind crypto research forecasts.")
+    parser = argparse.ArgumentParser(
+        description="Generate current WaveMind crypto research forecasts."
+    )
     parser.add_argument("--exchange", default="okx")
-    parser.add_argument("--symbols", nargs="+", default=["BTC/USDT", "ETH/USDT", "SOL/USDT"])
+    parser.add_argument(
+        "--symbols", nargs="+", default=["BTC/USDT", "ETH/USDT", "SOL/USDT"]
+    )
     parser.add_argument("--horizon", choices=sorted(HORIZON_PRESETS), default="24h")
     parser.add_argument("--bars", type=int, default=720)
     parser.add_argument("--window", type=int, default=32)
     parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument("--fee-bps", type=float, default=10.0)
     parser.add_argument("--slippage-bps", type=float, default=5.0)
-    parser.add_argument("--profile-json", type=Path, default=Path("benchmarks/crypto_walk_forward_okx_timeframe_policy_results.json"))
-    parser.add_argument("--calibration-json", type=Path, default=Path("benchmarks/crypto_confidence_calibration_okx_timeframe_policy_results.json"))
-    parser.add_argument("--output", type=Path, default=Path("benchmarks/crypto_current_forecast.json"))
-    parser.add_argument("--report", type=Path, default=Path("benchmarks/crypto_current_forecast.md"))
+    parser.add_argument(
+        "--profile-json",
+        type=Path,
+        default=Path(
+            "benchmarks/crypto_walk_forward_okx_timeframe_policy_results.json"
+        ),
+    )
+    parser.add_argument(
+        "--calibration-json",
+        type=Path,
+        default=Path(
+            "benchmarks/crypto_confidence_calibration_okx_timeframe_policy_results.json"
+        ),
+    )
+    parser.add_argument(
+        "--output", type=Path, default=Path("benchmarks/crypto_current_forecast.json")
+    )
+    parser.add_argument(
+        "--report", type=Path, default=Path("benchmarks/crypto_current_forecast.md")
+    )
     parser.add_argument(
         "--migration",
         action="append",
@@ -974,7 +1189,9 @@ def main() -> int:
     args = parser.parse_args()
 
     preset = HORIZON_PRESETS[args.horizon]
-    validation = validation_by_engine(args.profile_json, engine_name="WaveMind timeframe policy")
+    validation = validation_by_engine(
+        args.profile_json, engine_name="WaveMind timeframe policy"
+    )
     calibration_profile = load_calibration_profile(args.calibration_json)
     migrations = {migration.target_symbol: migration for migration in args.migration}
     if len(migrations) != len(args.migration):
@@ -1015,6 +1232,7 @@ def main() -> int:
             )
         )
 
+    opportunities = rank_opportunities(results)
     payload = {
         "generated_utc": datetime.now(timezone.utc).isoformat(),
         "closed_candles_only": True,
@@ -1029,13 +1247,18 @@ def main() -> int:
             for migration in args.migration
         ],
         "results": [forecast_to_dict(result) for result in results],
+        "opportunity_ranking": opportunities,
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.report.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    args.report.write_text(render_markdown(results), encoding="utf-8")
-    ledger_rows = append_forecast_ledger(args.ledger, payload) if args.ledger is not None else 0
-    print(render_markdown(results))
+    args.output.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    args.report.write_text(render_markdown(results, opportunities), encoding="utf-8")
+    ledger_rows = (
+        append_forecast_ledger(args.ledger, payload) if args.ledger is not None else 0
+    )
+    print(render_markdown(results, opportunities))
     print(f"Wrote {args.output}")
     print(f"Wrote {args.report}")
     if args.ledger is not None:
