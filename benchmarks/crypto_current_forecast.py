@@ -122,6 +122,33 @@ class SymbolMigration:
     current_start_utc: datetime
 
 
+@dataclass(frozen=True)
+class OpenPosition:
+    symbol: str
+    side: str
+    entry_price: float
+
+
+def parse_open_position(value: str) -> OpenPosition:
+    try:
+        symbol, position = value.split("=", maxsplit=1)
+        side, entry_price_text = position.split("|", maxsplit=1)
+        entry_price = float(entry_price_text)
+    except (TypeError, ValueError) as exc:
+        raise argparse.ArgumentTypeError(
+            "position must be SYMBOL=long|ENTRY_PRICE or SYMBOL=short|ENTRY_PRICE"
+        ) from exc
+    symbol = symbol.strip()
+    side = side.strip().lower()
+    if not symbol:
+        raise argparse.ArgumentTypeError("position symbol must not be empty")
+    if side not in {"long", "short"}:
+        raise argparse.ArgumentTypeError("position side must be long or short")
+    if not math.isfinite(entry_price) or entry_price <= 0.0:
+        raise argparse.ArgumentTypeError("position entry price must be positive")
+    return OpenPosition(symbol=symbol, side=side, entry_price=entry_price)
+
+
 def parse_symbol_migration(value: str) -> SymbolMigration:
     try:
         target_symbol, source = value.split("=", maxsplit=1)
@@ -733,6 +760,69 @@ def rank_opportunities(results: Iterable[ForecastResult]) -> list[dict[str, Any]
     return ranked
 
 
+def evaluate_open_positions(
+    results: Iterable[ForecastResult],
+    positions: Iterable[OpenPosition],
+) -> list[dict[str, Any]]:
+    """Describe existing positions without turning the new-entry gate into advice."""
+    result_by_symbol = {result.symbol: result for result in results}
+    contexts: list[dict[str, Any]] = []
+    for position in positions:
+        result = result_by_symbol.get(position.symbol)
+        if result is None:
+            raise ValueError(
+                f"position symbol {position.symbol!r} is not present in --symbols"
+            )
+        current_price = float(result.last_close)
+        raw_return_pct = (current_price / position.entry_price - 1.0) * 100.0
+        position_return_pct = (
+            raw_return_pct if position.side == "long" else -raw_return_pct
+        )
+        research_direction = result.directional_direction
+        expected_direction = "up" if position.side == "long" else "down"
+        if research_direction not in {"up", "down"}:
+            alignment = "uncertain"
+        elif research_direction == expected_direction:
+            alignment = "aligned"
+        else:
+            alignment = "opposed"
+
+        lower = result.prediction_interval_lower_price
+        upper = result.prediction_interval_upper_price
+        if lower is None or upper is None:
+            range_status = "unavailable"
+        elif current_price < float(lower):
+            range_status = "below_calibrated_range"
+        elif current_price > float(upper):
+            range_status = "above_calibrated_range"
+        else:
+            range_status = "inside_calibrated_range"
+        adverse_boundary = lower if position.side == "long" else upper
+        favorable_boundary = upper if position.side == "long" else lower
+        contexts.append(
+            {
+                "symbol": position.symbol,
+                "side": position.side,
+                "entry_price": position.entry_price,
+                "completed_candle_price": current_price,
+                "position_return_pct_before_costs": position_return_pct,
+                "research_direction": research_direction,
+                "research_alignment": alignment,
+                "adverse_boundary_price": adverse_boundary,
+                "favorable_boundary_price": favorable_boundary,
+                "range_status": range_status,
+                "new_entry_gate": (
+                    "trade" if result.point_target_validated else "no_trade"
+                ),
+                "note": (
+                    "new_entry_gate evaluates a fresh entry only; it is not an "
+                    "instruction to close an existing position"
+                ),
+            }
+        )
+    return contexts
+
+
 def validation_by_engine(
     path: str | Path | None, *, engine_name: str
 ) -> dict[str, Any]:
@@ -1021,6 +1111,7 @@ def append_forecast_ledger(path: str | Path, payload: Mapping[str, Any]) -> int:
 def render_markdown(
     results: list[ForecastResult],
     opportunities: list[Mapping[str, Any]] | None = None,
+    position_contexts: list[Mapping[str, Any]] | None = None,
 ) -> str:
     lines = [
         "# WaveMind Crypto Current Forecast",
@@ -1028,9 +1119,10 @@ def render_markdown(
         "Research forecast from completed candles only. Not financial advice.",
         "Evidence strength is analogue/regime agreement, not a calibrated probability.",
         "A point target is published only when the trade-quality policy validates a signal.",
-        "When validation returns `no_trade`, the report shows an adaptive conformal price range instead of a false-precision target.",
+        "`no_trade` is a new-entry gate, not an instruction to close an existing position.",
+        "When entry validation returns `no_trade`, the report shows an adaptive conformal price range instead of a false-precision target.",
         "",
-        "| symbol | horizon | data end UTC | status | validated forecast | target price | calibrated price range | trade validation | last close | evidence strength | validation reason |",
+        "| symbol | horizon | data end UTC | status | validated forecast | target price | calibrated price range | new-entry validation | last close | evidence strength | validation reason |",
         "|---|---:|---|---|---|---:|---|---|---:|---:|---|",
     ]
     for result in results:
@@ -1104,6 +1196,43 @@ def render_markdown(
                 f"{float(item['reward_to_uncertainty']):.2f} | {item['status']} |"
             )
         lines.append("")
+    if position_contexts:
+        lines.extend(
+            [
+                "## Existing Position Context",
+                "",
+                (
+                    "This section evaluates an already-open position at the latest "
+                    "completed candle. It does not reinterpret `no_trade` as a close signal."
+                ),
+                "",
+                "| symbol | side | entry | completed-candle price | return before costs | current research | alignment | adverse boundary | favorable boundary | range state | new-entry gate |",
+                "|---|---|---:|---:|---:|---|---|---:|---:|---|---|",
+            ]
+        )
+        for item in position_contexts:
+            adverse = item.get("adverse_boundary_price")
+            favorable = item.get("favorable_boundary_price")
+            adverse_text = f"{float(adverse):.6g}" if adverse is not None else "n/a"
+            favorable_text = (
+                f"{float(favorable):.6g}" if favorable is not None else "n/a"
+            )
+            lines.append(
+                f"| {item['symbol']} | {item['side']} | "
+                f"{float(item['entry_price']):.6g} | "
+                f"{float(item['completed_candle_price']):.6g} | "
+                f"{float(item['position_return_pct_before_costs']):+.2f}% | "
+                f"{item['research_direction']} | {item['research_alignment']} | "
+                f"{adverse_text} | {favorable_text} | {item['range_status']} | "
+                f"{item['new_entry_gate']} |"
+            )
+        lines.extend(
+            [
+                "",
+                "Returns exclude fees, funding, slippage, leverage, and liquidation mechanics.",
+                "",
+            ]
+        )
     validation = dict(results[0].validation) if results else {}
     if validation:
         active_accuracy = validation.get("active_direction_accuracy")
@@ -1186,6 +1315,17 @@ def main() -> int:
         default=None,
         help="Optional JSONL ledger. Unseen forecasts are appended for later outcome auditing.",
     )
+    parser.add_argument(
+        "--position",
+        action="append",
+        type=parse_open_position,
+        default=[],
+        metavar="SYMBOL=SIDE|ENTRY_PRICE",
+        help=(
+            "Add context for an existing position, for example "
+            "AVAX/USDT:USDT=long|6.806. This does not turn the forecast into advice."
+        ),
+    )
     args = parser.parse_args()
 
     preset = HORIZON_PRESETS[args.horizon]
@@ -1233,6 +1373,10 @@ def main() -> int:
         )
 
     opportunities = rank_opportunities(results)
+    try:
+        position_contexts = evaluate_open_positions(results, args.position)
+    except ValueError as exc:
+        parser.error(str(exc))
     payload = {
         "generated_utc": datetime.now(timezone.utc).isoformat(),
         "closed_candles_only": True,
@@ -1248,17 +1392,20 @@ def main() -> int:
         ],
         "results": [forecast_to_dict(result) for result in results],
         "opportunity_ranking": opportunities,
+        "open_position_context": position_contexts,
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
-    args.report.write_text(render_markdown(results, opportunities), encoding="utf-8")
+    args.report.write_text(
+        render_markdown(results, opportunities, position_contexts), encoding="utf-8"
+    )
     ledger_rows = (
         append_forecast_ledger(args.ledger, payload) if args.ledger is not None else 0
     )
-    print(render_markdown(results, opportunities))
+    print(render_markdown(results, opportunities, position_contexts))
     print(f"Wrote {args.output}")
     print(f"Wrote {args.report}")
     if args.ledger is not None:

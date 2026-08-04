@@ -864,12 +864,29 @@ The forecast has three layers:
 - `opportunity_ranking` always ranks every supplied market and exposes the best
   available research direction, target, risk boundary, and reward-to-uncertainty
   ratio even when every strict decision is `no_trade`;
-- `trade validation` remains the safety layer.
+- `new-entry validation` remains the safety layer. `no_trade` means that a
+  fresh entry was not validated; it is not an instruction to close an existing
+  position.
 
 `research_candidate` means best available in the scanned universe, not a
 guaranteed profitable trade. This separation avoids the useless user experience
 of showing only `no_trade` while preserving an honest distinction between a
 relative opportunity and an independently validated signal.
+
+An existing position can be evaluated separately from the new-entry gate:
+
+```powershell
+python benchmarks/crypto_current_forecast.py `
+  --symbols AVAX/USDT:USDT `
+  --position "AVAX/USDT:USDT=long|6.806"
+```
+
+The resulting `open_position_context` reports completed-candle return before
+costs, whether the current research direction is aligned or opposed, the
+calibrated adverse and favorable range boundaries, and the current new-entry
+gate. It deliberately does not convert those diagnostics into a hold/close
+instruction because leverage, liquidation price, fees, funding, and the user's
+position size are not part of a public market snapshot.
 
 The adaptive field also uses separate thresholds for accepting a trade and
 vetoing a contradictory regime. Raising the entry threshold can no longer

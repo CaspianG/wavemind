@@ -112,6 +112,69 @@ def test_forecast_from_bars_computes_expected_price():
     assert opportunities[0]["reward_to_uncertainty"] >= 0.0
 
 
+def test_open_position_context_keeps_new_entry_gate_separate():
+    from benchmarks.crypto_current_forecast import (
+        OpenPosition,
+        evaluate_open_positions,
+        forecast_from_bars,
+        render_markdown,
+    )
+    from benchmarks.crypto_ohlcv import generate_synthetic_ohlcv
+
+    result = forecast_from_bars(
+        generate_synthetic_ohlcv(
+            symbol="AVAX/USDT:USDT", timeframe="4h", bars=140, seed=73
+        ),
+        symbol="AVAX/USDT:USDT",
+        exchange="synthetic",
+        horizon_label="24h",
+        timeframe="4h",
+        horizon=6,
+        engine_key="timeframe-policy",
+        window=16,
+        top_k=3,
+    )
+    contexts = evaluate_open_positions(
+        [result],
+        [OpenPosition("AVAX/USDT:USDT", "long", result.last_close * 0.99)],
+    )
+
+    assert contexts[0]["position_return_pct_before_costs"] > 0.0
+    assert contexts[0]["new_entry_gate"] in {"trade", "no_trade"}
+    assert contexts[0]["research_alignment"] in {"aligned", "opposed", "uncertain"}
+    assert "not an instruction to close" in contexts[0]["note"]
+    markdown = render_markdown([result], position_contexts=contexts)
+    assert "Existing Position Context" in markdown
+    assert "not an instruction to close" in markdown
+
+
+@pytest.mark.parametrize(
+    ("raw", "side", "entry"),
+    [
+        ("AVAX/USDT:USDT=long|6.806", "long", 6.806),
+        ("BTC/USDT:USDT=SHORT|64000", "short", 64_000.0),
+    ],
+)
+def test_parse_open_position(raw, side, entry):
+    from benchmarks.crypto_current_forecast import parse_open_position
+
+    position = parse_open_position(raw)
+
+    assert position.side == side
+    assert position.entry_price == entry
+
+
+@pytest.mark.parametrize(
+    "raw",
+    ["AVAX/USDT:USDT", "AVAX/USDT:USDT=hold|6.8", "AVAX/USDT:USDT=long|0"],
+)
+def test_parse_open_position_rejects_invalid_values(raw):
+    from benchmarks.crypto_current_forecast import parse_open_position
+
+    with pytest.raises(Exception):
+        parse_open_position(raw)
+
+
 def test_calibration_bucket_for_evidence_finds_matching_range():
     from benchmarks.crypto_current_forecast import (
         calibration_bucket_for_evidence,
@@ -424,7 +487,8 @@ def test_render_markdown_contains_price_target():
     assert "Research forecast from completed candles only" in markdown
     assert "Evidence strength is analogue/regime agreement" in markdown
     assert "validated forecast" in markdown
-    assert "trade validation" in markdown
+    assert "new-entry validation" in markdown
+    assert "not an instruction to close" in markdown
     assert "calibrated price range" in markdown
     assert "Best Available Opportunity Ranking" in markdown
     assert "BTC/USDT" in markdown
@@ -447,12 +511,13 @@ def test_crypto_current_forecast_cli_writes_json_and_markdown(tmp_path):
             [
                 "import json",
                 "from pathlib import Path",
-                "from benchmarks.crypto_current_forecast import forecast_from_bars, forecast_to_dict, rank_opportunities, render_markdown",
+                "from benchmarks.crypto_current_forecast import OpenPosition, evaluate_open_positions, forecast_from_bars, forecast_to_dict, rank_opportunities, render_markdown",
                 "from benchmarks.crypto_ohlcv import generate_synthetic_ohlcv",
                 "bars = generate_synthetic_ohlcv(symbol='ETH/USDT', timeframe='4h', bars=120, seed=31)",
                 "result = forecast_from_bars(bars, symbol='ETH/USDT', exchange='synthetic', horizon_label='24h', timeframe='4h', horizon=6, engine_key='timeframe-policy', window=16, top_k=3)",
-                f"Path({str(output)!r}).write_text(json.dumps({{'results': [forecast_to_dict(result)], 'opportunity_ranking': rank_opportunities([result])}}, indent=2) + '\\n', encoding='utf-8')",
-                f"Path({str(report)!r}).write_text(render_markdown([result]), encoding='utf-8')",
+                "positions = evaluate_open_positions([result], [OpenPosition('ETH/USDT', 'long', result.last_close)])",
+                f"Path({str(output)!r}).write_text(json.dumps({{'results': [forecast_to_dict(result)], 'opportunity_ranking': rank_opportunities([result]), 'open_position_context': positions}}, indent=2) + '\\n', encoding='utf-8')",
+                f"Path({str(report)!r}).write_text(render_markdown([result], position_contexts=positions), encoding='utf-8')",
             ]
         ),
         encoding="utf-8",
@@ -498,6 +563,7 @@ def test_crypto_current_forecast_cli_writes_json_and_markdown(tmp_path):
     assert payload["results"][0]["forecast_schema_version"] == 4
     assert payload["opportunity_ranking"]
     assert payload["opportunity_ranking"][0]["rank"] == 1
+    assert payload["open_position_context"][0]["symbol"] == "ETH/USDT"
     assert payload["results"][0]["history_bars"] == 120
     assert payload["results"][0]["state_window_bars"] == 16
     assert "ETH/USDT" in report.read_text(encoding="utf-8")
