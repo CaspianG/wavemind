@@ -34,7 +34,7 @@ jobs:
       WAVEMIND_API_KEY: ${{ secrets.WAVEMIND_API_KEY }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Verify evidence runtime
         run: |
@@ -97,7 +97,7 @@ jobs:
 
       - name: Upload evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: memory-os-remote-worker-evidence-${{ github.run_id }}
           path: evidence/
