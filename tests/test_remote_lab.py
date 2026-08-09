@@ -171,6 +171,8 @@ def test_remote_compose_uses_all_production_backends():
     assert "WAVEMIND_QDRANT_URL" in compose
     assert "WAVEMIND_REDIS_URL" in compose
     assert "WAVEMIND_API_KEYS" in compose
+    assert 'command: ["wavemind", "serve", "--host", "0.0.0.0"' in compose
+    assert '"--allow-public"' in compose
 
 
 def test_remote_lab_plan_cli_is_offline_and_secret_free(tmp_path):
