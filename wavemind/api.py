@@ -889,6 +889,27 @@ class BackupResponse(BaseModel):
     path: str
 
 
+def _resolve_http_import_path(raw_path: str) -> Path:
+    configured_root = os.environ.get("WAVEMIND_IMPORT_ROOT", "").strip()
+    if not configured_root:
+        raise HTTPException(
+            status_code=403,
+            detail="HTTP import is disabled; configure WAVEMIND_IMPORT_ROOT",
+        )
+    root = Path(configured_root).expanduser().resolve()
+    if not root.is_dir():
+        raise HTTPException(status_code=503, detail="Configured import root is unavailable")
+    requested = Path(raw_path).expanduser()
+    candidate = (root / requested).resolve() if not requested.is_absolute() else requested.resolve()
+    try:
+        candidate.relative_to(root)
+    except ValueError as exc:
+        raise HTTPException(status_code=403, detail="Import path is outside the configured root") from exc
+    if not candidate.exists():
+        raise HTTPException(status_code=404, detail="Import path does not exist")
+    return candidate
+
+
 class MemoryExportRequest(BaseModel):
     namespace: str
     limit: int = Field(default=1000, ge=0, le=100000)
@@ -3002,9 +3023,10 @@ def create_app(
 
     @app.post("/import", response_model=ImportResponse, dependencies=[Depends(require_role("write"))])
     def batch_import(request: ImportRequest) -> ImportResponse:
+        source_path = _resolve_http_import_path(request.path)
         with _api_operation(app, "import"):
             ids = import_path(
-                request.path,
+                source_path,
                 app.state.mind,
                 namespace=request.namespace,
                 tags=request.tags,

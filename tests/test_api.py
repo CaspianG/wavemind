@@ -1934,6 +1934,57 @@ def test_fastapi_remember_idempotency_survives_reopen(tmp_path, monkeypatch):
             mind.close()
 
 
+def test_fastapi_http_import_is_disabled_without_configured_root(tmp_path, monkeypatch):
+    monkeypatch.delenv("WAVEMIND_IMPORT_ROOT", raising=False)
+    source = tmp_path / "private.txt"
+    source.write_text("must not be readable through the API", encoding="utf-8")
+    mind = WaveMind(db_path=tmp_path / "import-disabled.sqlite3")
+    try:
+        with TestClient(create_app(mind=mind)) as client:
+            response = client.post(
+                "/import",
+                json={"path": str(source), "namespace": "tenant:import"},
+            )
+        assert response.status_code == 403
+        assert response.json() == {
+            "detail": "HTTP import is disabled; configure WAVEMIND_IMPORT_ROOT"
+        }
+    finally:
+        mind.close()
+
+
+def test_fastapi_http_import_is_confined_to_configured_root(tmp_path, monkeypatch):
+    import_root = tmp_path / "imports"
+    import_root.mkdir()
+    allowed = import_root / "allowed.txt"
+    allowed.write_text("allowed import document", encoding="utf-8")
+    outside = tmp_path / "outside.txt"
+    outside.write_text("outside secret", encoding="utf-8")
+    monkeypatch.setenv("WAVEMIND_IMPORT_ROOT", str(import_root))
+    mind = WaveMind(db_path=tmp_path / "import-confined.sqlite3")
+    try:
+        with TestClient(create_app(mind=mind)) as client:
+            imported = client.post(
+                "/import",
+                json={"path": "allowed.txt", "namespace": "tenant:import"},
+            )
+            escaped = client.post(
+                "/import",
+                json={"path": "../outside.txt", "namespace": "tenant:import"},
+            )
+            absolute = client.post(
+                "/import",
+                json={"path": str(outside), "namespace": "tenant:import"},
+            )
+        assert imported.status_code == 200
+        assert len(imported.json()["ids"]) == 1
+        assert escaped.status_code == 403
+        assert absolute.status_code == 403
+        assert mind.stats(namespace="tenant:import")["active_memories"] == 1
+    finally:
+        mind.close()
+
+
 def test_fastapi_rate_limit_is_opt_in(tmp_path, monkeypatch):
     monkeypatch.delenv("WAVEMIND_READ_KEYS", raising=False)
     monkeypatch.delenv("WAVEMIND_WRITE_KEYS", raising=False)
