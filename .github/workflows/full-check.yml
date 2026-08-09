@@ -509,7 +509,8 @@ jobs:
           PY
           cd /tmp/wavemind-docker-starter
           trap 'docker compose down --volumes --remove-orphans' EXIT
-          WAVEMIND_PORT=18081 docker compose up -d --build --wait
+          WAVEMIND_PORT=18081 docker compose up -d --build --wait wavemind
+          WAVEMIND_PORT=18081 docker compose run --rm verify
           curl -fsS 'http://127.0.0.1:18081/stats?namespace=wavemind-docker-starter' \
             -H "Authorization: Bearer local-quickstart-key"
 

@@ -138,6 +138,8 @@ def test_full_check_container_smoke_uses_authenticated_explicit_public_bind():
     assert "WAVEMIND_ADMIN_KEYS=ci-api-key" in smoke
     assert "Authorization: Bearer local-quickstart-key" in starter_smoke
     assert "stats?namespace=wavemind-docker-starter" in starter_smoke
+    assert "docker compose up -d --build --wait wavemind" in starter_smoke
+    assert "docker compose run --rm verify" in starter_smoke
     assert "--host 0.0.0.0 --port 8000 --allow-public" in smoke
     assert "X-API-Key: ci-api-key" in smoke
     assert "= \"401\"" in smoke
