@@ -276,6 +276,7 @@ def _backup_restore_rollback_check() -> dict[str, Any]:
                     promoted.id,
                     reason="safe product rollback proof",
                 )
+                rollback_target = store.get(promoted.id)
                 core_after_rollback = mind.store.get(memory_id) is not None
         finally:
             mind.close()
@@ -297,7 +298,8 @@ def _backup_restore_rollback_check() -> dict[str, Any]:
         with SQLiteExperienceStore(restored_experience) as store:
             restored = store.get(promoted.id)
     return {
-        "rollback_status": rolled_back.status.value,
+        "rollback_status": rollback_target.status.value,
+        "restored_status": rolled_back.status.value,
         "core_survived_rollback": core_after_rollback,
         "core_restored": core_restored,
         "experience_restored": restored is not None,

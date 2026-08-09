@@ -7,6 +7,7 @@ from wavemind.evidence import attach_artifact_integrity, build_source_manifest
 from wavemind.safe_product_admission import (
     EXPECTED_CHECKS,
     SCHEMA,
+    _backup_restore_rollback_check,
     render_safe_product_markdown,
     validate_safe_product_artifact,
 )
@@ -66,3 +67,13 @@ def test_safe_product_markdown_lists_machine_checks():
     assert "# Safe Product Admission" in markdown
     assert f"Checks: **{len(EXPECTED_CHECKS)}/{len(EXPECTED_CHECKS)}**" in markdown
     assert "`public-bind-fail-closed`" in markdown
+
+
+def test_backup_restore_rollback_proves_both_sides_of_version_chain():
+    evidence = _backup_restore_rollback_check()
+
+    assert evidence["rollback_status"] == "rolled_back"
+    assert evidence["restored_status"] == "active"
+    assert evidence["core_survived_rollback"] is True
+    assert evidence["core_restored"] is True
+    assert evidence["experience_restored"] is True
