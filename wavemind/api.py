@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
 import os
 import time
@@ -68,6 +69,20 @@ ROLE_LEVELS = {"read": 1, "write": 2, "admin": 3}
 
 
 @dataclass(frozen=True)
+class APIPrincipal:
+    identity: str
+    role: str
+    namespace_prefixes: tuple[str, ...]
+
+    def allows_namespace(self, namespace: str) -> bool:
+        selected = namespace.strip()
+        return any(
+            prefix == "*" or selected.startswith(prefix.removesuffix("*"))
+            for prefix in self.namespace_prefixes
+        )
+
+
+@dataclass(frozen=True)
 class RateLimitStats:
     allowed: int
     limited: int
@@ -80,12 +95,36 @@ class RateLimitStats:
 
 
 class APIAuth:
-    def __init__(self, keys: dict[str, str]):
-        self.keys = keys
+    def __init__(self, principals: dict[str, APIPrincipal]):
+        self.principals = principals
 
     @classmethod
     def from_env(cls) -> "APIAuth":
-        keys: dict[str, str] = {}
+        principals: dict[str, APIPrincipal] = {}
+        raw_principals = os.environ.get("WAVEMIND_API_PRINCIPALS", "").strip()
+        if raw_principals:
+            try:
+                payload = json.loads(raw_principals)
+            except json.JSONDecodeError as exc:
+                raise ValueError("WAVEMIND_API_PRINCIPALS must be valid JSON") from exc
+            if not isinstance(payload, dict):
+                raise ValueError("WAVEMIND_API_PRINCIPALS must be a JSON object")
+            for key, raw in payload.items():
+                if not isinstance(key, str) or not key.strip() or not isinstance(raw, dict):
+                    raise ValueError("WAVEMIND_API_PRINCIPALS entries must map keys to objects")
+                identity = str(raw.get("identity") or "").strip()
+                role = str(raw.get("role") or "").strip().lower()
+                prefixes = raw.get("namespace_prefixes")
+                if not identity or role not in ROLE_LEVELS:
+                    raise ValueError("API principals require identity and a valid role")
+                if not isinstance(prefixes, list) or not prefixes:
+                    raise ValueError("API principals require namespace_prefixes")
+                normalized = tuple(
+                    str(prefix).strip() for prefix in prefixes if str(prefix).strip()
+                )
+                if not normalized:
+                    raise ValueError("API principal namespace_prefixes must not be empty")
+                principals[key] = APIPrincipal(identity, role, normalized)
         for env_name, role in (
             ("WAVEMIND_READ_KEYS", "read"),
             ("WAVEMIND_WRITE_KEYS", "write"),
@@ -93,30 +132,53 @@ class APIAuth:
             ("WAVEMIND_ADMIN_KEYS", "admin"),
         ):
             for key in _split_keys(os.environ.get(env_name, "")):
-                keys[key] = role
-        return cls(keys)
+                principals.setdefault(
+                    key,
+                    APIPrincipal(
+                        identity=f"legacy:{role}",
+                        role=role,
+                        namespace_prefixes=("*",),
+                    ),
+                )
+        return cls(principals)
 
     @property
     def enabled(self) -> bool:
-        return bool(self.keys)
+        return bool(self.principals)
 
-    def role_for_request(self, request: Request) -> str | None:
+    def principal_for_request(self, request: Request) -> APIPrincipal | None:
         key = request.headers.get("x-api-key")
         authorization = request.headers.get("authorization", "")
         if authorization.lower().startswith("bearer "):
             key = authorization[7:].strip()
         if not key:
             return None
-        return self.keys.get(key)
+        return self.principals.get(key)
 
-    def check(self, request: Request, required_role: str) -> None:
+    def check(self, request: Request, required_role: str) -> APIPrincipal:
         if not self.enabled:
-            return
-        role = self.role_for_request(request)
-        if role is None:
+            return APIPrincipal("local", "admin", ("*",))
+        principal = self.principal_for_request(request)
+        if principal is None:
             raise HTTPException(status_code=401, detail="Missing or invalid API key")
-        if ROLE_LEVELS[role] < ROLE_LEVELS[required_role]:
+        if ROLE_LEVELS[principal.role] < ROLE_LEVELS[required_role]:
             raise HTTPException(status_code=403, detail="Insufficient API key role")
+        return principal
+
+    def check_namespaces(
+        self,
+        principal: APIPrincipal,
+        namespaces: set[str],
+    ) -> None:
+        if principal.namespace_prefixes == ("*",):
+            return
+        if not namespaces:
+            raise HTTPException(
+                status_code=403,
+                detail="An explicit authorized namespace is required",
+            )
+        if not all(principal.allows_namespace(namespace) for namespace in namespaces):
+            raise HTTPException(status_code=403, detail="Namespace access denied")
 
 
 class InMemoryRateLimiter:
@@ -622,9 +684,41 @@ def _rate_limit_key(request: Request) -> str:
     return f"ip:{client}"
 
 
+def _collect_namespace_values(value: Any, namespaces: set[str]) -> None:
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if key == "namespace" and isinstance(item, str) and item.strip():
+                namespaces.add(item.strip())
+            else:
+                _collect_namespace_values(item, namespaces)
+    elif isinstance(value, list):
+        for item in value:
+            _collect_namespace_values(item, namespaces)
+
+
+async def _request_namespaces(request: Request) -> set[str]:
+    namespaces = {
+        value.strip()
+        for value in request.query_params.getlist("namespace")
+        if value.strip()
+    }
+    if request.method not in {"GET", "HEAD", "OPTIONS"}:
+        content_type = request.headers.get("content-type", "").lower()
+        if "application/json" in content_type:
+            try:
+                payload = await request.json()
+            except (ValueError, json.JSONDecodeError):
+                payload = None
+            _collect_namespace_values(payload, namespaces)
+    return namespaces
+
+
 def require_role(role: str):
-    def dependency(request: Request) -> None:
-        request.app.state.auth.check(request, role)
+    async def dependency(request: Request) -> None:
+        auth = request.app.state.auth
+        principal = auth.check(request, role)
+        auth.check_namespaces(principal, await _request_namespaces(request))
+        request.state.wavemind_principal = principal
 
     return dependency
 

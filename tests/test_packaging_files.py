@@ -167,8 +167,15 @@ def test_dockerfile_copies_readme_before_editable_install():
     assert dockerfile.index(readme_copy) < dockerfile.index(editable_install)
     assert "ARG INSTALL_PRODUCTION=false" in dockerfile
     assert "build-essential" in dockerfile
-    assert 'CMD ["wavemind", "serve", "--host", "0.0.0.0", "--port", "8000"]' in dockerfile
+    assert 'ENV WAVEMIND_EXPERIENCE_DB=/data/wavemind-experience.sqlite3' in dockerfile
+    assert 'CMD ["wavemind", "serve", "--host", "127.0.0.1", "--port", "8000"]' in dockerfile
     assert 'CMD ["uvicorn", "wavemind.api:create_app"' not in dockerfile
+
+    compose = Path("docker-compose.yml").read_text(encoding="utf-8")
+    assert "127.0.0.1:8000:8000" in compose
+    assert "WAVEMIND_API_PRINCIPALS:" in compose
+    assert "WAVEMIND_EXPERIENCE_DB: /data/wavemind-experience.sqlite3" in compose
+    assert '"--allow-public"' in compose
 
 
 def test_github_actions_runs_pytest_on_main_for_python_310_and_311():

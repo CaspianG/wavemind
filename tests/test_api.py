@@ -1,8 +1,10 @@
+import json
 import sys
 import types
 
 from fastapi.testclient import TestClient
 import numpy as np
+import pytest
 
 from wavemind import HashingTextEncoder, ReplicatedWaveMind, WaveMind, __version__
 from wavemind.api import create_app
@@ -1802,6 +1804,93 @@ def test_fastapi_api_keys_enforce_roles(tmp_path, monkeypatch):
                 headers={"X-API-Key": "admin-key"},
             )
             assert deleted.status_code == 200
+    finally:
+        mind.close()
+
+
+def test_fastapi_principals_enforce_namespace_prefixes(tmp_path, monkeypatch):
+    monkeypatch.setenv(
+        "WAVEMIND_API_PRINCIPALS",
+        json.dumps(
+            {
+                "tenant-a-key": {
+                    "identity": "service-a",
+                    "role": "write",
+                    "namespace_prefixes": ["tenant:a:"],
+                },
+                "tenant-b-key": {
+                    "identity": "service-b",
+                    "role": "read",
+                    "namespace_prefixes": ["tenant:b:"],
+                },
+            }
+        ),
+    )
+    mind = WaveMind(
+        db_path=tmp_path / "principal-auth.sqlite3",
+        width=32,
+        height=32,
+        layers=2,
+        encoder=HashingTextEncoder(vector_dim=64),
+    )
+    try:
+        mind.remember("tenant b private memory", namespace="tenant:b:private")
+        with TestClient(create_app(mind=mind)) as client:
+            own_write = client.post(
+                "/remember",
+                json={"text": "tenant a memory", "namespace": "tenant:a:main"},
+                headers={"Authorization": "Bearer tenant-a-key"},
+            )
+            assert own_write.status_code == 200
+
+            cross_tenant_read = client.post(
+                "/query",
+                json={"text": "private memory", "namespace": "tenant:b:private"},
+                headers={"Authorization": "Bearer tenant-a-key"},
+            )
+            assert cross_tenant_read.status_code == 403
+            assert cross_tenant_read.json() == {"detail": "Namespace access denied"}
+
+            cross_tenant_write = client.post(
+                "/remember",
+                json={"text": "injection", "namespace": "tenant:b:private"},
+                headers={"X-API-Key": "tenant-a-key"},
+            )
+            assert cross_tenant_write.status_code == 403
+
+            implicit_global = client.get(
+                "/stats",
+                headers={"X-API-Key": "tenant-b-key"},
+            )
+            assert implicit_global.status_code == 403
+            assert "explicit authorized namespace" in implicit_global.json()["detail"]
+
+            own_read = client.post(
+                "/query",
+                json={"text": "private memory", "namespace": "tenant:b:private"},
+                headers={"X-API-Key": "tenant-b-key"},
+            )
+            assert own_read.status_code == 200
+            assert own_read.json()["results"][0]["text"] == "tenant b private memory"
+    finally:
+        mind.close()
+
+
+def test_fastapi_rejects_invalid_principal_configuration(tmp_path, monkeypatch):
+    monkeypatch.setenv(
+        "WAVEMIND_API_PRINCIPALS",
+        '{"key":{"identity":"tenant","role":"write","namespace_prefixes":[]}}',
+    )
+    mind = WaveMind(
+        db_path=tmp_path / "invalid-principals.sqlite3",
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=16),
+    )
+    try:
+        with pytest.raises(ValueError, match="namespace_prefixes"):
+            create_app(mind=mind)
     finally:
         mind.close()
 

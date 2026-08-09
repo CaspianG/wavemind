@@ -442,6 +442,44 @@ def test_cli_serve_honors_shared_store_refresh_environment(tmp_path, monkeypatch
         mind.close()
 
 
+def test_cli_serve_defaults_to_loopback(monkeypatch):
+    captured = {}
+
+    def fake_run(app, *, host, port):
+        captured.update(host=host, port=port)
+        app.state.mind.close()
+
+    monkeypatch.setitem(sys.modules, "uvicorn", types.SimpleNamespace(run=fake_run))
+
+    assert cli.main(["serve"]) == 0
+    assert captured == {"host": "127.0.0.1", "port": 8000}
+
+
+def test_cli_serve_public_bind_is_explicit_and_authenticated(monkeypatch, capsys):
+    calls = []
+
+    def fake_run(app, *, host, port):
+        calls.append((host, port))
+        app.state.mind.close()
+
+    monkeypatch.setitem(sys.modules, "uvicorn", types.SimpleNamespace(run=fake_run))
+    monkeypatch.delenv("WAVEMIND_API_PRINCIPALS", raising=False)
+    monkeypatch.delenv("WAVEMIND_API_KEYS", raising=False)
+    monkeypatch.delenv("WAVEMIND_ADMIN_KEYS", raising=False)
+
+    assert cli.main(["serve", "--host", "0.0.0.0"]) == 2
+    assert "pass --allow-public" in capsys.readouterr().err
+    assert calls == []
+
+    assert cli.main(["serve", "--host", "0.0.0.0", "--allow-public"]) == 2
+    assert "configure authenticated API" in capsys.readouterr().err
+    assert calls == []
+
+    monkeypatch.setenv("WAVEMIND_ADMIN_KEYS", "production-key")
+    assert cli.main(["serve", "--host", "0.0.0.0", "--allow-public"]) == 0
+    assert calls == [("0.0.0.0", 8000)]
+
+
 def test_cli_maintenance_runs_one_job(tmp_path):
     db_path = tmp_path / "maintenance.sqlite3"
     run_cli(

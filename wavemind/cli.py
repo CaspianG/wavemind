@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import ipaddress
 import json
 import os
 import sys
@@ -1788,8 +1789,14 @@ def build_parser() -> argparse.ArgumentParser:
     bench.add_argument("--top-k", type=int, default=1)
 
     serve = sub.add_parser("serve", help="Run FastAPI daemon")
-    serve.add_argument("--host", default="0.0.0.0")
+    serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", type=int, default=8000)
+    serve.add_argument(
+        "--allow-public",
+        action="store_true",
+        default=_env_flag("WAVEMIND_ALLOW_PUBLIC_BIND"),
+        help="Explicitly allow a non-loopback bind. Authentication must also be configured.",
+    )
     serve.add_argument(
         "--replicated-root",
         dest="root",
@@ -1908,6 +1915,42 @@ def _env_int(name: str, *, default: int = 0) -> int:
     if raw is None or raw.strip() == "":
         return default
     return int(raw)
+
+
+def _is_loopback_host(host: str) -> bool:
+    selected = host.strip().strip("[]").lower()
+    if selected == "localhost":
+        return True
+    try:
+        return ipaddress.ip_address(selected).is_loopback
+    except ValueError:
+        return False
+
+
+def enforce_safe_serve_bind(args) -> int:
+    host = str(getattr(args, "host", "127.0.0.1"))
+    if _is_loopback_host(host):
+        return 0
+    if not getattr(args, "allow_public", False):
+        print(
+            "public bind blocked: pass --allow-public to acknowledge network exposure",
+            file=sys.stderr,
+        )
+        return 2
+    auth_names = (
+        "WAVEMIND_API_PRINCIPALS",
+        "WAVEMIND_READ_KEYS",
+        "WAVEMIND_WRITE_KEYS",
+        "WAVEMIND_API_KEYS",
+        "WAVEMIND_ADMIN_KEYS",
+    )
+    if not any(os.environ.get(name, "").strip() for name in auth_names):
+        print(
+            "public bind blocked: configure authenticated API principals or keys",
+            file=sys.stderr,
+        )
+        return 2
+    return 0
 
 
 def enforce_serve_production_admission(args) -> int:
@@ -2833,6 +2876,9 @@ def main(argv: list[str] | None = None) -> int:
 
         from .api import create_app
 
+        guard_status = enforce_safe_serve_bind(args)
+        if guard_status != 0:
+            return guard_status
         guard_status = enforce_serve_production_admission(args)
         if guard_status != 0:
             return guard_status
