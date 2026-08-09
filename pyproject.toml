@@ -114,6 +114,7 @@ dev = [
   "langchain-classic>=1.0",
   "mcp>=1.28,<2",
   "ruff==0.15.22",
+  "tomli>=2.0.1; python_version < '3.11'",
 ]
 
 [project.scripts]
