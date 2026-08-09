@@ -8,6 +8,7 @@ from wavemind.safe_product_admission import (
     EXPECTED_CHECKS,
     SCHEMA,
     _backup_restore_rollback_check,
+    _canonical_product_status_check,
     render_safe_product_markdown,
     validate_safe_product_artifact,
 )
@@ -77,3 +78,11 @@ def test_backup_restore_rollback_proves_both_sides_of_version_chain():
     assert evidence["core_survived_rollback"] is True
     assert evidence["core_restored"] is True
     assert evidence["experience_restored"] is True
+
+
+def test_safe_product_reads_the_canonical_public_status():
+    evidence = _canonical_product_status_check(Path.cwd())
+
+    assert evidence["status_schema"] == "wavemind.product_status.v1"
+    assert evidence["expected_version"] == "2.10.0"
+    assert evidence["errors"] == []

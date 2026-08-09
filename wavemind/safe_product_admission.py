@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import tempfile
 from contextlib import contextmanager, redirect_stderr
 from datetime import datetime, timedelta, timezone
@@ -56,6 +57,7 @@ EXPECTED_CHECKS = {
     "typescript-quickstart",
     "supported-python-matrix",
     "repository-sast",
+    "canonical-product-status",
     "exact-source-manifest",
 }
 
@@ -335,6 +337,63 @@ def _repository_confidence(
     return matrix, sast
 
 
+def _canonical_product_status_check(root: Path) -> dict[str, Any]:
+    status = _load_json(root / "docs/data/product-status.json")
+    release = status.get("stable_release") or {}
+    safe = status.get("safe_product") or {}
+    typescript_status = status.get("typescript") or {}
+    expected = str(release.get("version", ""))
+
+    def capture(path: str, pattern: str) -> str:
+        text = (root / path).read_text(encoding="utf-8")
+        match = re.search(pattern, text, flags=re.MULTILINE)
+        return match.group(1) if match else "missing"
+
+    observed = {
+        "pyproject.toml": capture("pyproject.toml", r'^version\s*=\s*"([^"]+)"'),
+        "wavemind/__init__.py": capture(
+            "wavemind/__init__.py", r'__version__\s*=\s*"([^"]+)"'
+        ),
+        "deploy/helm/wavemind/Chart.yaml": capture(
+            "deploy/helm/wavemind/Chart.yaml", r'appVersion:\s*"([^"]+)"'
+        ),
+        "deploy/helm/wavemind/values.yaml": capture(
+            "deploy/helm/wavemind/values.yaml", r'tag:\s*"([^"]+)"'
+        ),
+    }
+    typescript = _load_json(root / "sdk/typescript/package.json")
+    public_docs = {
+        path: (root / path).read_text(encoding="utf-8")
+        for path in ("README.md", "docs/ROADMAP.md", "docs/LAUNCH_KIT.md")
+    }
+    errors = [
+        f"{path} version mismatch"
+        for path, version in observed.items()
+        if version != expected
+    ]
+    if typescript.get("name") != typescript_status.get("package_name"):
+        errors.append("TypeScript package name mismatch")
+    if typescript_status.get("npm_published") is not False:
+        errors.append("npm claim must remain disabled")
+    if safe.get("checked_in_status") != "historical":
+        errors.append("checked-in Safe Product evidence must be historical")
+    if safe.get("current_claim_source") != ".github/workflows/safe-product.yml":
+        errors.append("current Safe Product claim source mismatch")
+    for path, text in public_docs.items():
+        if "<!-- product-status:start -->" not in text or expected not in text:
+            errors.append(f"{path} canonical product status block mismatch")
+    return {
+        "status_schema": status.get("schema"),
+        "expected_version": expected,
+        "observed_versions": observed,
+        "typescript_package": typescript.get("name"),
+        "npm_claim": typescript_status.get("npm_published"),
+        "checked_in_evidence_status": safe.get("checked_in_status"),
+        "current_claim_source": safe.get("current_claim_source"),
+        "errors": errors,
+    }
+
+
 def run_safe_product_admission(
     *,
     project_root: str | Path,
@@ -373,6 +432,7 @@ def run_safe_product_admission(
         ci_matrix_passed=ci_matrix_passed,
         sast_passed=sast_passed,
     )
+    product_status = _canonical_product_status_check(root)
     safe_metrics = safe_retrieval.get("metrics") or {}
     persistence_checks = product_persistence.get("checks") or {}
     quickstart_checks = {
@@ -465,6 +525,12 @@ def run_safe_product_admission(
                 python_matrix,
             ),
             _check("repository-sast", all(sast.values()), sast),
+            _check(
+                "canonical-product-status",
+                product_status["status_schema"] == "wavemind.product_status.v1"
+                and not product_status["errors"],
+                product_status,
+            ),
         ]
     )
     manifest = build_source_manifest(
@@ -472,10 +538,14 @@ def run_safe_product_admission(
         [
             ".github/workflows/benchmark-leaderboard.yml",
             ".github/workflows/codeql.yml",
+            ".github/workflows/full-check.yml",
+            ".github/workflows/release.yml",
             ".github/workflows/safe-product.yml",
             ".github/workflows/tests.yml",
             "Dockerfile",
             "docker-compose.yml",
+            "docs/data/product-status.json",
+            "scripts/sync_product_status.py",
             "wavemind/api.py",
             "wavemind/cli.py",
             "wavemind/core.py",
