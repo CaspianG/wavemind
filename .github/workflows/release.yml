@@ -126,21 +126,3 @@ jobs:
           files: |
             dist/*
             safe-product-evidence/*
-
-  pypi:
-    needs: [safe-product, build]
-    runs-on: ubuntu-latest
-    environment: pypi
-    permissions:
-      actions: read
-      id-token: write
-      contents: read
-
-    steps:
-      - uses: actions/download-artifact@v5
-        with:
-          name: python-distributions-${{ github.sha }}
-          path: dist
-
-      - name: Publish the verified release candidate
-        uses: pypa/gh-action-pypi-publish@release/v1
