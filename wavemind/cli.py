@@ -272,12 +272,15 @@ def build_parser() -> argparse.ArgumentParser:
     workspace_review = workspace_sub.add_parser("review", help="List or control runbook candidates")
     workspace_review.add_argument(
         "--action",
-        choices=["list", "approve", "reject", "rollback", "delete"],
+        choices=["list", "approve", "edit-approve", "reject", "rollback", "delete"],
         default="list",
     )
     workspace_review.add_argument("--experience-id")
     workspace_review.add_argument("--evidence-id")
     workspace_review.add_argument("--reason", default="operator review")
+    workspace_review.add_argument("--title")
+    workspace_review.add_argument("--content")
+    workspace_review.add_argument("--content-file", type=Path)
     workspace_review.add_argument("--confirmation")
     workspace_review.add_argument("--json", action="store_true")
     workspace_export = workspace_sub.add_parser("export", help="Export portable workspace experience")
@@ -2945,6 +2948,23 @@ def handle_workspace_command(args: argparse.Namespace) -> int:
                                 evidence_id=args.evidence_id,
                             ),
                         }
+                    elif args.action == "edit-approve":
+                        if not args.evidence_id:
+                            raise ValueError("--evidence-id is required for edit-approve")
+                        content = args.content
+                        if args.content_file is not None:
+                            content = args.content_file.read_text(encoding="utf-8")
+                        if args.title is None and content is None:
+                            raise ValueError(
+                                "--title, --content, or --content-file is required"
+                            )
+                        payload = manager.edit_and_approve(
+                            args.experience_id,
+                            evidence_id=args.evidence_id,
+                            title=args.title,
+                            content=content,
+                            reason=args.reason,
+                        )
                     elif args.action == "reject":
                         payload = manager.reject(args.experience_id, reason=args.reason)
                     elif args.action == "rollback":

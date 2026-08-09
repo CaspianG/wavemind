@@ -6,7 +6,7 @@ import json
 import re
 import subprocess
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -515,6 +515,58 @@ class WorkspaceExperienceManager:
             evidence_id=evidence_id,
             score=score,
         )
+
+    def edit_and_approve(
+        self,
+        experience_id: str,
+        *,
+        evidence_id: str,
+        title: str | None = None,
+        content: str | None = None,
+        reason: str = "operator edited and approved",
+        score: float = 1.0,
+        metadata: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        current = self.store.get(experience_id)
+        if current is None:
+            raise KeyError(experience_id)
+        edited_payload = {
+            "source_id": experience_id,
+            "title": title if title is not None else current.title,
+            "content": content if content is not None else current.content,
+            "metadata": dict(metadata or {}),
+        }
+        edited_id = f"exp_edit_{_sha256(edited_payload)[:24]}"
+        replacement = replace(
+            current,
+            id=edited_id,
+            title=edited_payload["title"],
+            content=edited_payload["content"],
+            trust=TrustClass.VERIFIED_OPERATOR,
+            status=ExperienceStatus.CANARY,
+            metadata={
+                **dict(current.metadata),
+                "operator_edit": True,
+                "edit_reason": reason,
+                **edited_payload["metadata"],
+            },
+        )
+        promoted = self.store.supersede(experience_id, replacement, reason=reason)
+        status = self.approve(promoted.id, evidence_id=evidence_id, score=score)
+        refreshed = self.store.get(promoted.id)
+        return {
+            "schema": "wavemind.workspace_edit_approval.v1",
+            "source_experience_id": experience_id,
+            "experience_id": promoted.id,
+            "status": status,
+            "experience": refreshed.as_dict() if refreshed else promoted.as_dict(),
+            "runbook": runbook_from_experience(
+                refreshed or promoted,
+                evidence_count=self.store.candidate_validation_summary(
+                    promoted.id
+                ).validation_count,
+            ),
+        }
 
     def reject(self, experience_id: str, *, reason: str) -> dict[str, Any]:
         return self.runtime.reject(

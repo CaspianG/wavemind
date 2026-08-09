@@ -167,6 +167,65 @@ def test_workspace_capture_review_packet_restart_and_bundle_parity(tmp_path: Pat
     fresh.close()
 
 
+def test_workspace_edit_approve_supersedes_and_rollback_preserves_provenance(
+    tmp_path: Path,
+) -> None:
+    repo = _make_repo(tmp_path / "repo")
+    config = initialize_workspace(repo, workspace_id="agent", tenant_id="tenant", user_id="user")
+    manager = WorkspaceExperienceManager(config)
+    try:
+        candidate_id = _verified_workspace_run(manager, suffix="edit")
+        edited = manager.edit_and_approve(
+            candidate_id,
+            evidence_id="operator-edit-approve",
+            title="Edited pytest cache recovery",
+            content="When pytest cache permission fails, remove .pytest_cache and rerun pytest.",
+            reason="tighten runbook wording",
+        )
+        edited_id = edited["experience_id"]
+        assert edited["status"] == "active"
+        assert edited["experience"]["supersedes_id"] == candidate_id
+        assert edited["runbook"]["evidence_count"] >= 2
+        original = manager.store.get(candidate_id)
+        assert original is not None
+        assert original.status == ExperienceStatus.SUPERSEDED
+        packet = manager.packet(
+            "pytest cache permission failure",
+            domain="python",
+            task_type="pytest-cache",
+            tools=("remove-cache",),
+        )
+        assert packet["selected_citations"] == [f"experience:{edited_id}@v2"]
+
+        restored = manager.rollback(edited_id, reason="restore original candidate")
+        assert restored["rollback_of_id"] == edited_id
+        assert restored["supersedes_id"] == edited_id
+        assert restored["status"] == "active"
+        rolled_back = manager.store.get(edited_id)
+        assert rolled_back is not None
+        assert rolled_back.status == ExperienceStatus.ROLLED_BACK
+        after_rollback = manager.packet(
+            "pytest cache permission failure",
+            domain="python",
+            task_type="pytest-cache",
+            tools=("remove-cache",),
+        )
+        assert after_rollback["selected_citations"] == [
+            f"experience:{restored['id']}@v3"
+        ]
+        assert any(
+            item["experience_id"] == edited_id and item["status"] == "rolled_back"
+            for item in after_rollback["excluded"]
+        )
+        audit_actions = {
+            event.action
+            for event in manager.store.audit_events(limit=20)
+        }
+        assert {"superseded", "rolled_back"}.issubset(audit_actions)
+    finally:
+        manager.close()
+
+
 def test_workspace_negative_controls_abstain_and_bundle_namespace_mismatch(tmp_path: Path) -> None:
     repo = _make_repo(tmp_path / "repo")
     config = initialize_workspace(repo, workspace_id="agent", tenant_id="tenant", user_id="user")
@@ -356,15 +415,21 @@ def test_workspace_http_capture_review_and_cross_process_replay(tmp_path: Path) 
             assert queue.status_code == 200
             assert queue.json()["items"][0]["experience"]["id"] == candidate_id
             approved = client.post(
-                f"/workspace/runtime/{candidate_id}/approve",
+                f"/workspace/runtime/{candidate_id}/edit-and-approve",
                 json={
                     "root": str(repo),
-                    "evidence_id": "http-operator-approve",
-                    "reason": "verified in HTTP contract test",
+                    "evidence_id": "http-operator-edit-approve",
+                    "reason": "tighten HTTP runbook",
+                    "title": "HTTP pytest cache recovery",
+                    "content": (
+                        "When pytest cache permission fails over HTTP, remove "
+                        ".pytest_cache and rerun pytest."
+                    ),
                 },
             )
             assert approved.status_code == 200
             assert approved.json()["status"] == "active"
+            edited_id = approved.json()["experience_id"]
             packet = client.post(
                 "/workspace/packet",
                 json={
@@ -377,7 +442,7 @@ def test_workspace_http_capture_review_and_cross_process_replay(tmp_path: Path) 
             )
             assert packet.status_code == 200
             assert packet.json()["abstain"] is False
-            assert packet.json()["selected_citations"] == [f"experience:{candidate_id}@v1"]
+            assert packet.json()["selected_citations"] == [f"experience:{edited_id}@v2"]
 
             escaped = dict(call)
             escaped["id"] = "http-escaped"
@@ -419,7 +484,7 @@ def test_workspace_http_capture_review_and_cross_process_replay(tmp_path: Path) 
             task_type="pytest-cache",
             tools=("remove-cache",),
         )
-        assert replayed["selected_citations"] == [f"experience:{candidate_id}@v1"]
+        assert replayed["selected_citations"] == [f"experience:{edited_id}@v2"]
     finally:
         other_process.close()
 

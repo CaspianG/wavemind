@@ -1404,6 +1404,12 @@ class WorkspaceLifecycleRequest(WorkspaceRootRequest):
     confirmation: str | None = None
 
 
+class WorkspaceEditApproveRequest(WorkspaceLifecycleRequest):
+    title: str | None = None
+    content: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
 def _remember_response_id(result: Any) -> int:
     if isinstance(result, int):
         return result
@@ -2573,6 +2579,34 @@ def create_app(
                 }
             except KeyError as exc:
                 raise HTTPException(status_code=404, detail="Experience not found") from exc
+
+    @app.post(
+        "/workspace/runtime/{experience_id}/edit-and-approve",
+        dependencies=[Depends(require_role("admin"))],
+    )
+    def edit_and_approve_workspace_experience(
+        experience_id: str,
+        request: WorkspaceEditApproveRequest,
+    ):
+        if not request.evidence_id:
+            raise HTTPException(status_code=422, detail="evidence_id is required")
+        if request.title is None and request.content is None:
+            raise HTTPException(status_code=422, detail="title or content is required")
+        with _workspace_manager(request.root) as manager:
+            try:
+                return manager.edit_and_approve(
+                    experience_id,
+                    evidence_id=request.evidence_id,
+                    title=request.title,
+                    content=request.content,
+                    reason=request.reason,
+                    score=request.score,
+                    metadata=request.metadata,
+                )
+            except KeyError as exc:
+                raise HTTPException(status_code=404, detail="Experience not found") from exc
+            except ValueError as exc:
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     @app.post(
         "/workspace/runtime/{experience_id}/reject",
