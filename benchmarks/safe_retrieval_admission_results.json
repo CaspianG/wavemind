@@ -1,0 +1,54 @@
+{
+  "schema": "wavemind.safe_retrieval_admission.v1",
+  "status": "admitted",
+  "generated_at": "2026-08-09T14:29:51Z",
+  "source_sha": "33db2b27bc1e7ab5323629e7072907c18a550656",
+  "dataset_revision": "safe-product-retrieval-v2-heldout-frozen-2026-08-09",
+  "thresholds": {
+    "hash_vector": 0.12,
+    "semantic_vector": 0.28,
+    "max_false_memory_injection_rate": 0.02,
+    "min_relevant_recall_ratio_vs_baseline": 0.95
+  },
+  "metrics": {
+    "relevant_queries": 10,
+    "negative_queries": 50,
+    "gated_recall_at_1": 1.0,
+    "baseline_recall_at_1": 1.0,
+    "relevant_recall_ratio": 1.0,
+    "false_memory_injections": 0,
+    "false_memory_injection_rate": 0.0,
+    "namespace_leakage": 0,
+    "unverified_injection": 0
+  },
+  "checks": {
+    "false_memory_injection": true,
+    "relevant_recall": true,
+    "namespace_isolation": true,
+    "unverified_injection": true
+  },
+  "source_manifest": {
+    "schema": "wavemind.source_manifest.v1",
+    "algorithm": "sha256",
+    "files": [
+      {
+        "path": "benchmarks/data/safe_product_retrieval_v2_heldout.json",
+        "sha256": "0c7ce857ae0090aedfdb132740af5962200490d4957aadd616aead54dfd337e2"
+      },
+      {
+        "path": "wavemind/core.py",
+        "sha256": "32bc1576c189a1c050271324a606c21cc5e8cf17a0be56dc82174a54c3c6badb"
+      },
+      {
+        "path": "wavemind/safe_retrieval_admission.py",
+        "sha256": "3ee030cf0b5ad21b2ea0b0524440b1eafd6237bc8efc16aa47857d2c27cc8fe0"
+      }
+    ],
+    "digest": "72a47e61f5cc54ca81b56620e9a7a5de0a259e985f29ac4198b4f371f1383596"
+  },
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "54a532c6d0151bbdaa161ce1ba039eb3515a2ff64340dc59a9cf3fc5e439bec9"
+  }
+}
