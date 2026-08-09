@@ -128,9 +128,15 @@ def test_full_check_container_smoke_uses_authenticated_explicit_public_bind():
     smoke = next(
         step for step in docker_job["steps"] if step.get("name") == "Run Docker API smoke"
     )["run"]
+    starter_smoke = next(
+        step
+        for step in docker_job["steps"]
+        if step.get("name") == "Run generated Docker starter smoke"
+    )["run"]
 
     assert "-p 127.0.0.1:8000:8000" in smoke
     assert "WAVEMIND_ADMIN_KEYS=ci-api-key" in smoke
+    assert "Authorization: Bearer local-quickstart-key" in starter_smoke
     assert "--host 0.0.0.0 --port 8000 --allow-public" in smoke
     assert "X-API-Key: ci-api-key" in smoke
     assert "= \"401\"" in smoke

@@ -89,6 +89,7 @@ def _start_container(
     data_dir: Path,
     port: int,
 ) -> str:
+    (data_dir / "backups").mkdir(parents=True, exist_ok=True)
     principals = json.dumps(
         {
             "persistence-admission-key": {

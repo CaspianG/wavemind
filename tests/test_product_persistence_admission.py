@@ -3,11 +3,33 @@ from __future__ import annotations
 import copy
 from pathlib import Path
 
+import wavemind.product_persistence_admission as persistence_admission
 from wavemind.evidence import attach_artifact_integrity, build_source_manifest
 from wavemind.product_persistence_admission import (
     SCHEMA,
     validate_product_persistence_artifact,
 )
+
+
+def test_container_start_prepares_persistent_backup_directory(tmp_path, monkeypatch):
+    captured = {}
+
+    def fake_require_docker(*args, **kwargs):
+        captured["args"] = args
+        return "container-id"
+
+    monkeypatch.setattr(persistence_admission, "_require_docker", fake_require_docker)
+
+    result = persistence_admission._start_container(
+        name="persistence-test",
+        image="wavemind:test",
+        data_dir=tmp_path / "data",
+        port=18080,
+    )
+
+    assert result == "container-id"
+    assert (tmp_path / "data" / "backups").is_dir()
+    assert "WAVEMIND_BACKUP_ROOT=/data/backups" in captured["args"]
 
 
 def _artifact(project_root, source_sha):
