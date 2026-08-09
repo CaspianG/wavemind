@@ -236,7 +236,14 @@ class WaveMindServerlessSpec:
             "command": ["wavemind"],
             "ports": [{"name": "http1", "containerPort": self.service_port}],
             "env": self.env(),
-            "args": ["serve", "--host", "0.0.0.0", "--port", str(self.service_port)],
+            "args": [
+                "serve",
+                "--host",
+                "0.0.0.0",
+                "--port",
+                str(self.service_port),
+                "--allow-public",
+            ],
             "readinessProbe": {
                 "httpGet": {"path": "/healthz", "port": self.service_port},
                 "periodSeconds": 10,

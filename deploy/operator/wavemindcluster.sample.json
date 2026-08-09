@@ -6,7 +6,7 @@
     "namespace": "wavemind-system"
   },
   "spec": {
-    "image": "ghcr.io/caspiang/wavemind:2.4.24",
+    "image": "ghcr.io/caspiang/wavemind:2.10.0",
     "replicas": 3,
     "replicationFactor": 2,
     "namespaceCount": 4096,
@@ -22,6 +22,10 @@
       "index": "faiss-persisted",
       "scoreThreshold": 0.0,
       "auditQueries": true
+    },
+    "auth": {
+      "secretName": "wavemind-auth",
+      "secretKey": "api-key"
     },
     "cache": {
       "capacity": 512,

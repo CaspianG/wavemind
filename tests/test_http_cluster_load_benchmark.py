@@ -5,6 +5,7 @@ from collections import defaultdict
 import pytest
 
 from benchmarks.http_cluster_load_benchmark import (
+    build_parser,
     load_node_manifest,
     parse_node_specs,
     run_external_batch_query_profile,
@@ -13,6 +14,14 @@ from benchmarks.http_cluster_load_benchmark import (
 )
 from benchmarks.scale_readiness_benchmark import run_sustained_http_cluster_workload
 from wavemind import ClusterNode, QueryResult
+
+
+def test_http_cluster_load_uses_secret_backed_api_key_by_default(monkeypatch):
+    monkeypatch.setenv("WAVEMIND_API_KEY", "cluster-secret")
+
+    args = build_parser().parse_args([])
+
+    assert args.api_key == "cluster-secret"
 
 
 class FakeHTTPClusterClient:

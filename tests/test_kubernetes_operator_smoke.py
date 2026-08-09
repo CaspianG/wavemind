@@ -9,6 +9,14 @@ assert SPEC and SPEC.loader
 SPEC.loader.exec_module(MODULE)
 
 
+def test_kubernetes_operator_stats_probe_requires_the_secret_backed_client_key():
+    script = MODULE._authenticated_stats_script()
+
+    assert "os.environ['WAVEMIND_API_KEY']" in script
+    assert "Authorization" in script
+    assert "Bearer " in script
+
+
 def test_kubernetes_operator_smoke_requires_every_failure_drill_check(monkeypatch):
     monkeypatch.setenv("GITHUB_SHA", "abc123")
     monkeypatch.setenv("GITHUB_RUN_ID", "456")

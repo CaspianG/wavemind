@@ -18,6 +18,7 @@ REGION_ZONES = {
     "region-b": "zone-b",
     "region-c": "zone-c",
 }
+API_KEY = "wavemind-kind-active-active-ci"
 
 
 def _utc_now() -> str:
@@ -90,7 +91,14 @@ def _source_provenance(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def build_region_resources(*, namespace: str, image: str) -> list[dict[str, Any]]:
-    resources: list[dict[str, Any]] = []
+    resources: list[dict[str, Any]] = [
+        {
+            "apiVersion": "v1",
+            "kind": "Secret",
+            "metadata": {"name": "wavemind-region-auth", "namespace": namespace},
+            "stringData": {"api-key": API_KEY},
+        }
+    ]
     for region_id, zone in REGION_ZONES.items():
         labels = {
             "app.kubernetes.io/name": "wavemind",
@@ -124,6 +132,7 @@ def build_region_resources(*, namespace: str, image: str) -> list[dict[str, Any]
             "0.0.0.0",
             "--port",
             "8000",
+            "--allow-public",
             "--replicated-root",
             "/data/replicas",
             "--replication-factor",
@@ -154,12 +163,28 @@ def build_region_resources(*, namespace: str, image: str) -> list[dict[str, Any]
                                     "imagePullPolicy": "IfNotPresent",
                                     "command": ["wavemind"],
                                     "args": args,
-                                    "env": [
-                                        {
-                                            "name": "WAVEMIND_API_SERIALIZE_OPERATIONS",
-                                            "value": "1",
-                                        }
-                                    ],
+                                     "env": [
+                                         {
+                                             "name": "WAVEMIND_API_SERIALIZE_OPERATIONS",
+                                             "value": "1",
+                                        },
+                                        *[
+                                            {
+                                                "name": name,
+                                                "valueFrom": {
+                                                    "secretKeyRef": {
+                                                        "name": "wavemind-region-auth",
+                                                        "key": "api-key",
+                                                    }
+                                                },
+                                            }
+                                            for name in (
+                                                "WAVEMIND_API_KEYS",
+                                                "WAVEMIND_ADMIN_KEYS",
+                                                "WAVEMIND_API_KEY",
+                                            )
+                                        ],
+                                     ],
                                     "ports": [
                                         {"name": "http", "containerPort": 8000}
                                     ],
