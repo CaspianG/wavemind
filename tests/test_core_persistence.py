@@ -375,6 +375,36 @@ def test_query_audit_is_opt_in(tmp_path):
     mind.close()
 
 
+def test_query_and_feedback_audits_redact_secrets(tmp_path):
+    mind = make_mind(tmp_path / "query-audit-secrets.sqlite3", audit_queries=True)
+    try:
+        memory_id = mind.remember("deployment credentials", namespace="audit")
+        mind.query(
+            "deployment api_key=private-value Bearer bearer-value sk-secretvalue",
+            namespace="audit",
+            top_k=1,
+        )
+        mind.feedback(
+            id=memory_id,
+            namespace="audit",
+            useful=True,
+            query="deployment token:private-token",
+            reason="accepted password=private-password",
+        )
+
+        serialized = str(
+            [event.metadata for event in mind.audit_events(namespace="audit", limit=10)]
+        )
+        assert "private-value" not in serialized
+        assert "bearer-value" not in serialized
+        assert "sk-secretvalue" not in serialized
+        assert "private-token" not in serialized
+        assert "private-password" not in serialized
+        assert "[REDACTED]" in serialized
+    finally:
+        mind.close()
+
+
 def test_index_health_and_rebuild_detect_index_drift(tmp_path):
     mind = make_mind(tmp_path / "index-health.sqlite3")
     try:

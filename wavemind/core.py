@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import hashlib
-import time
 import re
+import time
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -31,6 +31,22 @@ from .storage import (
 
 
 LEXICAL_STOPWORDS = DEFAULT_TOKEN_STOPWORDS
+_AUDIT_SECRET_ASSIGNMENT_RE = re.compile(
+    r"(?i)\b(api[_-]?key|access[_-]?token|authorization|password|secret|token)"
+    r"\s*([=:])\s*([^\s&,;]+)"
+)
+_AUDIT_BEARER_RE = re.compile(r"(?i)\bBearer\s+[^\s,;]+")
+_AUDIT_PROVIDER_KEY_RE = re.compile(r"\bsk-[A-Za-z0-9_-]{8,}\b")
+
+
+def _redact_audit_text(value: object) -> str:
+    text = str(value)
+    text = _AUDIT_SECRET_ASSIGNMENT_RE.sub(
+        lambda match: f"{match.group(1)}{match.group(2)}[REDACTED]",
+        text,
+    )
+    text = _AUDIT_BEARER_RE.sub("Bearer [REDACTED]", text)
+    return _AUDIT_PROVIDER_KEY_RE.sub("[REDACTED]", text)
 
 
 class WaveField:
@@ -565,7 +581,7 @@ class WaveMind:
                 "query",
                 namespace=namespace,
                 metadata={
-                    "query": text,
+                    "query": _redact_audit_text(text),
                     "top_k": int(top_k),
                     "result_count": len(selected),
                     "candidate_count": len(candidate_scores),
@@ -827,10 +843,10 @@ class WaveMind:
             "access_count": int(record.access_count),
         }
         if reason:
-            metadata["reason"] = str(reason)
+            metadata["reason"] = _redact_audit_text(reason)
         if query:
             if self.audit_queries:
-                metadata["query"] = str(query)
+                metadata["query"] = _redact_audit_text(query)
             else:
                 metadata["query_length"] = len(str(query))
         if persist:
