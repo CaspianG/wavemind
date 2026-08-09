@@ -1,0 +1,87 @@
+{
+  "schema": "wavemind.quickstart_admission.v1",
+  "status": "admitted",
+  "generated_at": "2026-08-09T15:10:01.060863+00:00",
+  "source_sha": "9845a49e068d44f962e6b4c922430932ce575dfd",
+  "max_first_success_seconds": 300.0,
+  "package_sources": {
+    "python": "repository-local package under test",
+    "mcp": "repository-local package under test",
+    "typescript": "repository-local @wavemind/http package",
+    "docker": "wavemind:goal6-persistence"
+  },
+  "checks": [
+    {
+      "id": "python-quickstart",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "first_seconds": 1.209463599981973,
+        "same_id_after_restart": true
+      }
+    },
+    {
+      "id": "mcp-quickstart",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "first_seconds": 1.8123677000112366,
+        "same_id_after_restart": true
+      }
+    },
+    {
+      "id": "typescript-quickstart",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "first_seconds": 14.250497000000905,
+        "persistence": {
+          "same_memory_id": true,
+          "server_restarted": true
+        }
+      }
+    },
+    {
+      "id": "docker-quickstart",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "first_seconds": 30.83165559999179,
+        "image": "wavemind:goal6-persistence",
+        "error": null
+      }
+    }
+  ],
+  "source_manifest": {
+    "schema": "wavemind.source_manifest.v1",
+    "algorithm": "sha256",
+    "files": [
+      {
+        "path": "Dockerfile",
+        "sha256": "912fd32083cb70ffc9442cc283cae4517176f6a1e394e8f1255a27e19a9b9daf"
+      },
+      {
+        "path": "sdk/typescript/package.json",
+        "sha256": "0be9df4b4510b450b26fddaa3e86e6c0724205205003c8222407575038143de7"
+      },
+      {
+        "path": "sdk/typescript/src/index.ts",
+        "sha256": "026deba20248d70b46f6a93e38d7d27881d2f7a9c4afe28e7f2a142f564f424d"
+      },
+      {
+        "path": "wavemind/onboarding.py",
+        "sha256": "9fad81b79a40088f986b2338b65ff97cdab34d545f6cec5b79d39bc5f79c19bc"
+      },
+      {
+        "path": "wavemind/quickstart_admission.py",
+        "sha256": "33d2787afc132d6ee0bdb9a177dc42a20c2ba0eb832df74ea45b992fadf15036"
+      }
+    ],
+    "digest": "422049126096325eb6ac45ce3856a5d95d0f07541487ff56ae13f71fca404450"
+  },
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "82520aa2b94dd1f59187d800183aabd7cd0e309a03fed9e8ccb5ba0e987f1cbc"
+  }
+}
