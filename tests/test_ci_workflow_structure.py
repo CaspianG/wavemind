@@ -140,6 +140,15 @@ def test_full_check_container_smoke_uses_authenticated_explicit_public_bind():
     assert "stats?namespace=wavemind-docker-starter" in starter_smoke
     assert "docker compose up -d --build --wait wavemind" in starter_smoke
     assert "docker compose run --rm verify" in starter_smoke
+
+    production_smoke = next(
+        step
+        for step in docker_job["steps"]
+        if step.get("name") == "Run PostgreSQL Qdrant Redis production stack"
+    )["run"]
+    assert "wait_for_api()" in production_smoke
+    assert production_smoke.count("wait_for_api") == 3
+    assert "docker compose -f deploy/remote/docker-compose.yml logs api" in production_smoke
     assert "--host 0.0.0.0 --port 8000 --allow-public" in smoke
     assert "X-API-Key: ci-api-key" in smoke
     assert "= \"401\"" in smoke

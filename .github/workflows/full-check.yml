@@ -524,7 +524,18 @@ jobs:
           WAVEMIND_API_KEY: ci-api-key
           WAVEMIND_HTTP_PORT: "18080"
         run: |
+          wait_for_api() {
+            for i in $(seq 1 30); do
+              if curl -fsS http://127.0.0.1:18080/healthz >/tmp/production-health.json; then
+                return 0
+              fi
+              sleep 2
+            done
+            docker compose -f deploy/remote/docker-compose.yml logs api
+            return 1
+          }
           docker compose -f deploy/remote/docker-compose.yml up -d --wait --remove-orphans
+          wait_for_api
           curl -fsS -X POST http://127.0.0.1:18080/remember \
             -H "x-api-key: $WAVEMIND_API_KEY" \
             -H "Content-Type: application/json" \
@@ -537,12 +548,7 @@ jobs:
             | tee /tmp/production-query-before-restart.json
           grep -q "CI production memory" /tmp/production-query-before-restart.json
           docker restart wavemind-production-ci-api-1
-          for i in $(seq 1 30); do
-            if curl -fsS http://127.0.0.1:18080/healthz >/tmp/production-health.json; then
-              break
-            fi
-            sleep 2
-          done
+          wait_for_api
           curl -fsS -X POST http://127.0.0.1:18080/query \
             -H "x-api-key: $WAVEMIND_API_KEY" \
             -H "Content-Type: application/json" \
