@@ -49,6 +49,65 @@ jobs:
       - name: Run tests
         run: pytest -q
 
+  python-compatibility:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install compatibility dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Run focused Python and CLI compatibility tests
+        run: |
+          pytest -q \
+            tests/test_core_persistence.py \
+            tests/test_cli_smoke.py::test_module_cli_remember_query_stats_and_backup \
+            tests/test_cli_smoke.py::test_cli_version_prints_package_version \
+            tests/test_onboarding.py::test_cli_init_and_doctor_json
+
+  windows-install-cli:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install package through the user-facing path
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install .
+
+      - name: Run installed CLI smoke outside the checkout
+        shell: pwsh
+        run: |
+          Set-Location $env:RUNNER_TEMP
+          $db = Join-Path $env:RUNNER_TEMP "wavemind-windows-smoke.sqlite3"
+          $starter = Join-Path $env:RUNNER_TEMP "wavemind-windows-starter"
+          wavemind --version
+          wavemind --db $db remember "Windows CI installation smoke" --namespace ci
+          wavemind --db $db query "installation smoke" --namespace ci
+          wavemind --db $db stats --namespace ci
+          python -m wavemind init $starter --template python --json
+          python (Join-Path $starter "app.py")
+
   typescript-sdk:
     runs-on: ubuntu-latest
 
