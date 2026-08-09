@@ -1,19 +1,19 @@
 {
   "schema": "wavemind.product_persistence_admission.v1",
   "status": "admitted",
-  "generated_at": "2026-08-09T15:01:28.214105+00:00",
-  "source_sha": "3db1fc39f73121be0ae409503b7a0b2f14b9b27f",
+  "generated_at": "2026-08-09T15:30:22.374618+00:00",
+  "source_sha": "92c539d0a0696c2dcb1a02d130a3be3bd5020635",
   "image": {
-    "reference": "wavemind:goal6-persistence",
-    "id": "sha256:03788ba09e5962f1560d5288acb5f478ab49dfa1d50fa60b019a5ca439ac662e"
+    "reference": "wavemind:goal6-92c539d",
+    "id": "sha256:1959492b2ee213f79c71ed011ec5c2cb04ef1fdac82b02d08e662205660f8fef"
   },
   "environment": {
     "platform": "Windows-11-10.0.26200-SP0",
     "docker": "28.3.0"
   },
   "container_ids": [
-    "9efe39a00d6a7baa611a229c8f5ba3e363520afd8e1f7ad90a813169fe164c80",
-    "69bc0bd6dbbe79671b0f0cf48237b9578fc0cd0017b1fb8b4482156130e55315"
+    "bc0597ca3177ad0af3ff5be96780de8fc0c662d3dd7dc76853b17e315c892250",
+    "de0c2e1316795909b83dc6f67aacce95a34cd6b5318f1e99177b000a319e9740"
   ],
   "checks": {
     "distinct_containers": true,
@@ -65,6 +65,6 @@
   "integrity": {
     "schema": "wavemind.artifact_integrity.v1",
     "algorithm": "sha256",
-    "payload_sha256": "7d5a22cc79f5fa864fc43501707723ec86d713c2e12c69aed9887e7fb009e740"
+    "payload_sha256": "fc445fcb1f40e47df71728d0424cde53c870f0de62093a4a4067eb4ec5edbbe2"
   }
 }

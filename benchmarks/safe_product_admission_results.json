@@ -1,0 +1,313 @@
+{
+  "schema": "wavemind.safe_product_admission.v1",
+  "status": "admitted",
+  "admitted": true,
+  "generated_at": "2026-08-09T15:31:21.690722+00:00",
+  "source_sha": "92c539d0a0696c2dcb1a02d130a3be3bd5020635",
+  "summary": {
+    "checks_passed": 18,
+    "checks_total": 18
+  },
+  "checks": [
+    {
+      "id": "evidence-truth",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "claim_status": "historical",
+        "claim_eligible": false,
+        "source_relation": "ancestor",
+        "errors": []
+      }
+    },
+    {
+      "id": "benchmark-freshness-model",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "historical_snapshot_survives_future_clock": true,
+        "weekly_current_claim": true,
+        "requires_current": true,
+        "requires_exact_sha": true
+      }
+    },
+    {
+      "id": "local-safe-api-default",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "default_host": "127.0.0.1",
+        "default_is_loopback": true
+      }
+    },
+    {
+      "id": "public-bind-fail-closed",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "implicit_public_exit": 2,
+        "unauthenticated_public_exit": 2,
+        "diagnostics": [
+          "public bind blocked: pass --allow-public to acknowledge network exposure",
+          "public bind blocked: configure authenticated API principals or keys"
+        ]
+      }
+    },
+    {
+      "id": "identity-namespace-enforcement",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "own_write": 200,
+        "foreign_query": 403,
+        "foreign_explain": 403,
+        "foreign_error": "Namespace access denied"
+      }
+    },
+    {
+      "id": "namespace-leakage-zero",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "validator_errors": [],
+        "count": 0
+      }
+    },
+    {
+      "id": "secret-leakage-zero",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "api": {
+          "query_status": 200,
+          "audit_status": 200,
+          "secret_visible": false,
+          "redaction_present": true
+        },
+        "container": true
+      }
+    },
+    {
+      "id": "container-recreate-persistence",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "validator_errors": [],
+        "checks": {
+          "distinct_containers": true,
+          "core_memory_after_recreate": true,
+          "experience_after_recreate": true,
+          "verification_after_recreate": true,
+          "idempotent_retry_after_recreate": true,
+          "product_backup_persisted": true,
+          "core_database_persisted": true,
+          "experience_database_persisted": true,
+          "secret_leakage_zero": true
+        }
+      }
+    },
+    {
+      "id": "backup-restore-rollback",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "rollback_status": "rolled_back",
+        "restored_status": "active",
+        "core_survived_rollback": true,
+        "core_restored": true,
+        "experience_restored": true,
+        "experience_status": "active",
+        "experience_trust": "verified_operator"
+      }
+    },
+    {
+      "id": "false-memory-injection",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "validator_errors": [],
+        "rate": 0.0
+      }
+    },
+    {
+      "id": "unverified-injection-zero",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "validator_errors": [],
+        "count": 0
+      }
+    },
+    {
+      "id": "python-quickstart",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "validator_errors": [],
+        "component": {
+          "id": "python-quickstart",
+          "passed": true,
+          "status": "pass",
+          "evidence": {
+            "first_seconds": 0.9574219999776687,
+            "same_id_after_restart": true
+          }
+        }
+      }
+    },
+    {
+      "id": "mcp-quickstart",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "validator_errors": [],
+        "component": {
+          "id": "mcp-quickstart",
+          "passed": true,
+          "status": "pass",
+          "evidence": {
+            "first_seconds": 0.9258384999993723,
+            "same_id_after_restart": true
+          }
+        }
+      }
+    },
+    {
+      "id": "docker-quickstart",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "validator_errors": [],
+        "component": {
+          "id": "docker-quickstart",
+          "passed": true,
+          "status": "pass",
+          "evidence": {
+            "first_seconds": 30.192530400003307,
+            "image": "wavemind:goal6-92c539d",
+            "error": null
+          }
+        }
+      }
+    },
+    {
+      "id": "typescript-quickstart",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "validator_errors": [],
+        "component": {
+          "id": "typescript-quickstart",
+          "passed": true,
+          "status": "pass",
+          "evidence": {
+            "first_seconds": 11.065004200005205,
+            "persistence": {
+              "same_memory_id": true,
+              "server_restarted": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "supported-python-matrix",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "configured_versions": {
+          "3.10": true,
+          "3.11": true,
+          "3.12": true,
+          "3.13": true
+        },
+        "windows_configured": true,
+        "dependency_jobs_passed": true
+      }
+    },
+    {
+      "id": "repository-sast",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "workflow_present": true,
+        "codeql_v4": true
+      }
+    },
+    {
+      "id": "exact-source-manifest",
+      "passed": true,
+      "status": "pass",
+      "evidence": {
+        "source_sha": "92c539d0a0696c2dcb1a02d130a3be3bd5020635",
+        "digest": "4962912d1c4414d4d6a005272383eec918de8b376c74e19bcf85ce92853e5914"
+      }
+    }
+  ],
+  "component_artifacts": {
+    "safe_retrieval": "57a311210d6c84737ee4c85362a88e95b7baffb19c6936e1e17d6c3ba48fbca8",
+    "product_persistence": "fc445fcb1f40e47df71728d0424cde53c870f0de62093a4a4067eb4ec5edbbe2",
+    "quickstarts": "403c992a6d6169c976532b0df6d51ea7fad0aab29ab0ad9ccc35c3bea93db296"
+  },
+  "source_manifest": {
+    "schema": "wavemind.source_manifest.v1",
+    "algorithm": "sha256",
+    "files": [
+      {
+        "path": ".github/workflows/benchmark-leaderboard.yml",
+        "sha256": "76b9d744ff6005d29086cbe17194e993836d8396b7a3ac5cceec965c611cd81e"
+      },
+      {
+        "path": ".github/workflows/codeql.yml",
+        "sha256": "f745cf949543c484c2a3bd68c6ae15f30dcf28f9da227d981a6ed0f7187fe25b"
+      },
+      {
+        "path": ".github/workflows/tests.yml",
+        "sha256": "7fc184e17e7c1b2df8a0d03589f39a1e912a9b0ebcabd97ad73f512fd6b68018"
+      },
+      {
+        "path": "Dockerfile",
+        "sha256": "912fd32083cb70ffc9442cc283cae4517176f6a1e394e8f1255a27e19a9b9daf"
+      },
+      {
+        "path": "docker-compose.yml",
+        "sha256": "f499ca33323f64a6296975e72935d725b44f93f204c4353dd90ed66574c11248"
+      },
+      {
+        "path": "wavemind/api.py",
+        "sha256": "94224aa0421c74a41cc4dbb80cba8adbe7009ab22ea54abf72bbb7d85b65afd6"
+      },
+      {
+        "path": "wavemind/cli.py",
+        "sha256": "9389ca7f3ea73d5a6449122a22d6d981c19c985f357ea297b3b69a4481fcb217"
+      },
+      {
+        "path": "wavemind/core.py",
+        "sha256": "0b354f12c94a127b9557d48400cdf98a429cc767ce2c9de765093f5630b0eae2"
+      },
+      {
+        "path": "wavemind/evidence.py",
+        "sha256": "b660bf27eb219d39dfd85f33d3a0c720de860f6c258c7ff6d783c3dc52aacbbc"
+      },
+      {
+        "path": "wavemind/onboarding.py",
+        "sha256": "6760f1f6153218495b06337528912099d14583ffdf2cb46583c3fb16ab0dedfe"
+      },
+      {
+        "path": "wavemind/product_backup.py",
+        "sha256": "0b6776dd62bf3b73ce1e56e10bd50db80b4c01673af811d4487bb0795d6dfc7b"
+      },
+      {
+        "path": "wavemind/safe_product_admission.py",
+        "sha256": "409ec8378e29ec2c4553f5a7cf96477838a162d0761adae6886ea70c3eb992e7"
+      }
+    ],
+    "digest": "4962912d1c4414d4d6a005272383eec918de8b376c74e19bcf85ce92853e5914"
+  },
+  "claim_boundary": "Local and repository-controlled safe-product admission. It does not make remote scale, multi-region, GPU, or npm publication claims.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "8cc34b8f3324a495ee905a7cb729179be9dc614211c694ecda2df8bb05584cfa"
+  }
+}

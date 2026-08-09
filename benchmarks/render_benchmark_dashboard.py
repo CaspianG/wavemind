@@ -136,6 +136,51 @@ def _load_leaderboard_status(root: Path) -> dict[str, Any]:
         return {}
 
 
+def _load_product_status(root: Path) -> dict[str, Any]:
+    path = root / "docs" / "data" / "product-status.json"
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def _safe_product_panel(product: dict[str, Any]) -> str:
+    release = product.get("stable_release", {})
+    safe = product.get("safe_product", {})
+    if not isinstance(release, dict) or not isinstance(safe, dict) or not safe:
+        return ""
+    rows = [
+        ("Public release", f"v{release.get('version', 'unknown')}"),
+        ("Release source", release.get("source_sha", "unknown")),
+        ("Checked-in status", safe.get("checked_in_status", "missing")),
+        (
+            "Checked-in checks",
+            f"{safe.get('checked_in_checks_passed', 0)}/"
+            f"{safe.get('checked_in_checks_total', 0)}",
+        ),
+        ("Snapshot source", safe.get("checked_in_source_sha", "unknown")),
+        ("Current claim source", safe.get("current_claim_source", "missing")),
+    ]
+    table = ['<table class="compact"><tbody>']
+    for label, value in rows:
+        table.append(
+            "<tr>"
+            f"<th>{html.escape(str(label))}</th>"
+            f"<td>{html.escape(str(value))}</td>"
+            "</tr>"
+        )
+    table.append("</tbody></table>")
+    return (
+        '<section class="panel">'
+        "<h2>Safe Product Truth</h2>"
+        f"<p>{html.escape(str(product.get('category_statement', '')))}</p>"
+        f"{''.join(table)}"
+        f"<p>{html.escape(str(safe.get('current_claim_rule', '')))}</p>"
+        '<p><a href="data/product-status.json">Machine product status</a></p>'
+        "</section>"
+    )
+
+
 def _publication_contract_panel(status: dict[str, Any]) -> str:
     contract = status.get("publication_contract", {})
     checks = contract.get("checks", {}) if isinstance(contract, dict) else {}
@@ -582,6 +627,7 @@ def _fmt_metric(value: Any) -> str:
 def render_dashboard(root: Path = PROJECT_ROOT) -> str:
     payload = load_matrix(root)
     status = _load_leaderboard_status(root)
+    product = _load_product_status(root)
     leaderboard = render_leaderboard(root)
     benchmark_table = _markdown_table_to_html(
         _table_lines(
@@ -736,7 +782,7 @@ def render_dashboard(root: Path = PROJECT_ROOT) -> str:
   <header class="hero">
     <div class="eyebrow">Living benchmark dashboard</div>
     <h1>Benchmark evidence</h1>
-    <p>Source-backed retrieval, latency, cost, agent-quality, and production-readiness results. Planned rows are not claimed wins, and external evidence stays visibly separate from verified claims.</p>
+    <p>Source-backed retrieval, latency, cost, agent-quality, and production-readiness results. Checked-in panels are historical snapshots unless an exact-SHA Safe Product workflow artifact marks the current source admitted. Planned rows are not claimed wins, and external evidence stays visibly separate from verified claims.</p>
   </header>
 
   <div class="cards">
@@ -749,6 +795,8 @@ def render_dashboard(root: Path = PROJECT_ROOT) -> str:
   </section>
 
   {_publication_contract_panel(status)}
+
+  {_safe_product_panel(product)}
 
   {_agent_impact_panel(status)}
 

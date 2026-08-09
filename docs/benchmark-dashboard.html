@@ -138,13 +138,13 @@
   <header class="hero">
     <div class="eyebrow">Living benchmark dashboard</div>
     <h1>Benchmark evidence</h1>
-    <p>Source-backed retrieval, latency, cost, agent-quality, and production-readiness results. Planned rows are not claimed wins, and external evidence stays visibly separate from verified claims.</p>
+    <p>Source-backed retrieval, latency, cost, agent-quality, and production-readiness results. Checked-in panels are historical snapshots unless an exact-SHA Safe Product workflow artifact marks the current source admitted. Planned rows are not claimed wins, and external evidence stays visibly separate from verified claims.</p>
   </header>
 
   <div class="cards">
     <section class="metric-card"><h2>Readiness</h2><strong>pass</strong><p>39/39 criteria pass</p></section>
 <section class="metric-card"><h2>Implemented</h2><strong>44</strong><p>4 runner-ready and 5 planned public proof paths</p></section>
-<section class="metric-card"><h2>Refresh</h2><strong>2026-07-29T00:31:45Z</strong><p>source 85f00b41f082</p></section>
+<section class="metric-card"><h2>Refresh</h2><strong>2026-08-09T14:04:53Z</strong><p>source 48e7c0f51f92abfba4ade379ca3a628eccf910ec</p></section>
   </div>
 
   <section class="visual-panel">
@@ -152,7 +152,9 @@
     <img class="summary" src="assets/benchmark-summary.svg" alt="WaveMind benchmark summary">
   </section>
 
-  <section class="panel"><h2>Publication Contract</h2><p>The leaderboard is generated from artifacts, freshness-checked, published to GitHub Pages, and claim-limited until strict production evidence passes.</p><div class="publication-grid"><div><table class="compact"><tbody><tr><th>Status</th><td>pass</td></tr><tr><th>Weekly schedule</th><td>17 4 * * 1</td></tr><tr><th>Refresh profile</th><td>local</td></tr><tr><th>Pages URL</th><td>https://caspiang.github.io/wavemind/</td></tr><tr><th>Source ref</th><td>85f00b41f082</td></tr><tr><th>Workflow run</th><td>local or manual artifact</td></tr></tbody></table></div><div class="check-list"><span class="badge pass">weekly schedule: true</span><span class="badge pass">manual dispatch: true</span><span class="badge pass">github pages upload: true</span><span class="badge pass">github pages deploy: true</span><span class="badge pass">review artifact uploaded: true</span><span class="badge pass">no scheduled bot commit to main: true</span><span class="badge pass">strict freshness gate: true</span><span class="badge pass">machine status published: true</span></div></div></section>
+  <section class="panel"><h2>Publication Contract</h2><p>The leaderboard is generated from artifacts, freshness-checked, published to GitHub Pages, and claim-limited until strict production evidence passes.</p><div class="publication-grid"><div><table class="compact"><tbody><tr><th>Status</th><td>pass</td></tr><tr><th>Weekly schedule</th><td>17 4 * * 1</td></tr><tr><th>Refresh profile</th><td>checked-in-historical</td></tr><tr><th>Pages URL</th><td>https://caspiang.github.io/wavemind/</td></tr><tr><th>Source ref</th><td>48e7c0f51f92abfba4ade379ca3a628eccf910ec</td></tr><tr><th>Workflow run</th><td>local or manual artifact</td></tr></tbody></table></div><div class="check-list"><span class="badge pass">weekly schedule: true</span><span class="badge pass">manual dispatch: true</span><span class="badge pass">github pages upload: true</span><span class="badge pass">github pages deploy: true</span><span class="badge pass">review artifact uploaded: true</span><span class="badge pass">no scheduled bot commit to main: true</span><span class="badge pass">strict freshness gate: true</span><span class="badge pass">machine status published: true</span></div></div></section>
+
+  <section class="panel"><h2>Safe Product Truth</h2><p>WaveMind is the trust layer that lets agents learn from completed work without silently learning incorrect behavior.</p><table class="compact"><tbody><tr><th>Public release</th><td>v2.10.0</td></tr><tr><th>Release source</th><td>4eb23d3c438d12dbef502400f68b93fad704f5d7</td></tr><tr><th>Checked-in status</th><td>historical</td></tr><tr><th>Checked-in checks</th><td>18/18</td></tr><tr><th>Snapshot source</th><td>92c539d0a0696c2dcb1a02d130a3be3bd5020635</td></tr><tr><th>Current claim source</th><td>.github/workflows/safe-product.yml</td></tr></tbody></table><p>Only an admitted exact-SHA workflow artifact may describe the current source as admitted.</p><p><a href="data/product-status.json">Machine product status</a></p></section>
 
   <section class="panel"><h2>Agent Impact</h2><p>Behavioral evidence: task success, stale-fact suppression, context savings, long-memory retrieval, and checked-in answer-quality smoke results.</p><table class="compact"><tbody><tr><th>Status</th><td>pass</td></tr><tr><th>Benchmarks</th><td>8</td></tr><tr><th>WaveMind wins</th><td>8</td></tr><tr><th>Average lift</th><td>0.412</td></tr><tr><th>Context saved</th><td>0.657</td></tr><tr><th>Stale safety</th><td>0.924</td></tr><tr><th>Best profile</th><td>experienced-work-agent-wavemind-experience</td></tr></tbody></table><p><a href="../benchmarks/AGENT_IMPACT.md">Read the agent impact report</a></p></section>
 
@@ -389,8 +391,8 @@
 </tr></thead><tbody>
 <tr>
 <td>Artifact freshness</td>
-<td>local matrix refresh at 2026-07-29T00:31:45Z</td>
-<td>source 85f00b41f082; audit gate enforced by validate_benchmark_artifacts.py</td>
+<td>checked-in-historical matrix refresh at 2026-08-09T14:04:53Z</td>
+<td>source 48e7c0f51f92abfba4ade379ca3a628eccf910ec; audit gate enforced by validate_benchmark_artifacts.py</td>
 <td>Keep weekly refresh green before public claims.</td>
 </tr>
 <tr>

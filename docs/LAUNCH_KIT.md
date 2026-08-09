@@ -4,6 +4,21 @@ This document is the working launch package for WaveMind. It keeps public
 positioning, channel drafts, objections, and execution steps in one place so
 every post points to the same honest story.
 
+<!-- product-status:start -->
+> WaveMind is the trust layer that lets agents learn from completed work without silently learning incorrect behavior.
+>
+> Canonical machine status: `docs/data/product-status.json`.
+
+| Product truth | Status | Evidence |
+|---|---|---|
+| Public release | `v2.10.0` at `4eb23d3c438d` | PyPI package `wavemind` and `ghcr.io/caspiang/wavemind:2.10.0` |
+| Safe Product snapshot | `historical`, 18/18 checks at `92c539d0a069` | [`benchmarks/safe_product_admission_results.json`](../benchmarks/safe_product_admission_results.json) |
+| Current-source admission | Required per exact source SHA | [`.github/workflows/safe-product.yml`](../.github/workflows/safe-product.yml) |
+| TypeScript SDK | `@wavemind/http`, repository-local; npm claim disabled | Repository package only |
+
+> Only an admitted exact-SHA workflow artifact may describe the current source as admitted.
+<!-- product-status:end -->
+
 ## Positioning
 
 ### One Sentence
@@ -24,9 +39,10 @@ small, inspectable context for the agent.
 
 - WaveMind is the memory policy and lifecycle above or beside a vector index,
   not a claim that one database should replace every storage system.
-- Production Memory OS is admitted at 13/13, including a six-hour remote
-  Redis/worker soak with no state corruption.
-- The strongest current proof is adaptive-memory behavior: stale suppression,
+- A historical Production Memory OS snapshot passed 13/13, including a six-hour
+  remote Redis/worker soak with no state corruption. A current release claim
+  still requires an exact-SHA Safe Product workflow artifact.
+- The strongest checked-in proof is adaptive-memory behavior: stale suppression,
   corrections, TTL, namespace isolation, repeated recall, consolidation, and
   safe background maintenance.
 - Public benchmark evidence exists for retrieval on LoCoMo, LongMemEval, and

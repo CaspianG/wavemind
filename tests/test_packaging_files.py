@@ -203,32 +203,28 @@ def test_release_workflow_builds_and_creates_github_release():
     assert "wavemind release-claims" in workflow
     assert "wavemind scale-gap" in workflow
     assert "--fail-on-blocked" in workflow
-    assert "release_claims_results.json" in workflow
+    assert "release-claims.json" in workflow
     assert "RELEASE_CLAIMS.md" in workflow
-    assert "scale_gap_results.json" in workflow
+    assert "scale-gap.json" in workflow
     assert "SCALE_GAP.md" in workflow
     assert "python -m build" in workflow
     assert "python -m twine check dist/*" in workflow
+    assert "python-distributions-${{ github.sha }}" in workflow
+    assert "pypa/gh-action-pypi-publish" in workflow
     assert "softprops/action-gh-release" in workflow
-    assert "Validate release identity" in workflow
+    assert "Validate release identity and canonical product status" in workflow
     assert "workflow_dispatch:" not in workflow
 
 
-def test_pypi_publish_has_one_guarded_release_trigger():
+def test_pypi_recovery_publishes_existing_release_without_rebuilding():
     workflow = Path(".github/workflows/publish.yml").read_text(encoding="utf-8")
 
-    assert 'tags:' in workflow
-    assert '"v*"' in workflow
-    assert "types: [published]" not in workflow
-    assert "workflow_dispatch:" not in workflow
-    assert "Validate release identity" in workflow
-    assert "Validate release claims" in workflow
-    assert "benchmarks/validate_benchmark_artifacts.py" in workflow
-    assert "production_readiness_gate.py" in workflow
-    assert "--fail-on-blocked" in workflow
-    assert workflow.index("Validate release claims") < workflow.index(
-        "Publish to PyPI"
-    )
+    assert "workflow_dispatch:" in workflow
+    assert "tags:" not in workflow
+    assert 'gh release download "${{ inputs.tag }}"' in workflow
+    assert "python -m build" not in workflow
+    assert "python -m twine check dist/*" in workflow
+    assert "pypa/gh-action-pypi-publish" in workflow
     assert "skip-existing: true" in workflow
 
 

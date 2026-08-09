@@ -41,7 +41,26 @@ claim that one vector database should replace every other system.
 
 ## Verified Today
 
-| Proof | Current checked result | Source |
+<!-- product-status:start -->
+> WaveMind is the trust layer that lets agents learn from completed work without silently learning incorrect behavior.
+>
+> Canonical machine status: `docs/data/product-status.json`.
+
+| Product truth | Status | Evidence |
+|---|---|---|
+| Public release | `v2.10.0` at `4eb23d3c438d` | PyPI package `wavemind` and `ghcr.io/caspiang/wavemind:2.10.0` |
+| Safe Product snapshot | `historical`, 18/18 checks at `92c539d0a069` | [`benchmarks/safe_product_admission_results.json`](benchmarks/safe_product_admission_results.json) |
+| Current-source admission | Required per exact source SHA | [`.github/workflows/safe-product.yml`](.github/workflows/safe-product.yml) |
+| TypeScript SDK | `@wavemind/http`, repository-local; npm claim disabled | Repository package only |
+
+> Only an admitted exact-SHA workflow artifact may describe the current source as admitted.
+<!-- product-status:end -->
+
+The rows below are checked-in evidence snapshots. They remain useful and
+auditable, but they do not become evidence for a newer source revision merely
+because the repository moved forward.
+
+| Proof | Checked-in evidence snapshot | Source |
 |---|---|---|
 | Production Memory OS | `admitted`, 13/13 requirements | [`memory_os_admission_results.json`](benchmarks/memory_os_admission_results.json) |
 | Adaptive agent-memory advantage | Controlled adaptive slice passes, but the composite public gate remains `blocked` | [`agent_memory_advantage_admission_results.json`](benchmarks/agent_memory_advantage_admission_results.json) |

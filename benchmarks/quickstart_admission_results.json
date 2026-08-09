@@ -1,14 +1,14 @@
 {
   "schema": "wavemind.quickstart_admission.v1",
   "status": "admitted",
-  "generated_at": "2026-08-09T15:10:01.060863+00:00",
-  "source_sha": "9845a49e068d44f962e6b4c922430932ce575dfd",
+  "generated_at": "2026-08-09T15:31:12.491609+00:00",
+  "source_sha": "92c539d0a0696c2dcb1a02d130a3be3bd5020635",
   "max_first_success_seconds": 300.0,
   "package_sources": {
     "python": "repository-local package under test",
     "mcp": "repository-local package under test",
     "typescript": "repository-local @wavemind/http package",
-    "docker": "wavemind:goal6-persistence"
+    "docker": "wavemind:goal6-92c539d"
   },
   "checks": [
     {
@@ -16,7 +16,7 @@
       "passed": true,
       "status": "pass",
       "evidence": {
-        "first_seconds": 1.209463599981973,
+        "first_seconds": 0.9574219999776687,
         "same_id_after_restart": true
       }
     },
@@ -25,7 +25,7 @@
       "passed": true,
       "status": "pass",
       "evidence": {
-        "first_seconds": 1.8123677000112366,
+        "first_seconds": 0.9258384999993723,
         "same_id_after_restart": true
       }
     },
@@ -34,7 +34,7 @@
       "passed": true,
       "status": "pass",
       "evidence": {
-        "first_seconds": 14.250497000000905,
+        "first_seconds": 11.065004200005205,
         "persistence": {
           "same_memory_id": true,
           "server_restarted": true
@@ -46,8 +46,8 @@
       "passed": true,
       "status": "pass",
       "evidence": {
-        "first_seconds": 30.83165559999179,
-        "image": "wavemind:goal6-persistence",
+        "first_seconds": 30.192530400003307,
+        "image": "wavemind:goal6-92c539d",
         "error": null
       }
     }
@@ -70,18 +70,18 @@
       },
       {
         "path": "wavemind/onboarding.py",
-        "sha256": "9fad81b79a40088f986b2338b65ff97cdab34d545f6cec5b79d39bc5f79c19bc"
+        "sha256": "6760f1f6153218495b06337528912099d14583ffdf2cb46583c3fb16ab0dedfe"
       },
       {
         "path": "wavemind/quickstart_admission.py",
         "sha256": "33d2787afc132d6ee0bdb9a177dc42a20c2ba0eb832df74ea45b992fadf15036"
       }
     ],
-    "digest": "422049126096325eb6ac45ce3856a5d95d0f07541487ff56ae13f71fca404450"
+    "digest": "930d12ca521318d1367e1f74f7e2169ab039188f2360a7f3ac220214e6a79a3e"
   },
   "integrity": {
     "schema": "wavemind.artifact_integrity.v1",
     "algorithm": "sha256",
-    "payload_sha256": "82520aa2b94dd1f59187d800183aabd7cd0e309a03fed9e8ccb5ba0e987f1cbc"
+    "payload_sha256": "403c992a6d6169c976532b0df6d51ea7fad0aab29ab0ad9ccc35c3bea93db296"
   }
 }

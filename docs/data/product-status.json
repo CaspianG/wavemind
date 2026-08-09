@@ -1,0 +1,31 @@
+{
+  "schema": "wavemind.product_status.v1",
+  "category_statement": "WaveMind is the trust layer that lets agents learn from completed work without silently learning incorrect behavior.",
+  "stable_release": {
+    "version": "2.10.0",
+    "source_sha": "4eb23d3c438d12dbef502400f68b93fad704f5d7",
+    "python_package": "wavemind",
+    "container": "ghcr.io/caspiang/wavemind:2.10.0"
+  },
+  "safe_product": {
+    "checked_in_status": "historical",
+    "checked_in_source_sha": "92c539d0a0696c2dcb1a02d130a3be3bd5020635",
+    "checked_in_checks_passed": 18,
+    "checked_in_checks_total": 18,
+    "artifact": "benchmarks/safe_product_admission_results.json",
+    "current_claim_source": ".github/workflows/safe-product.yml",
+    "current_claim_rule": "Only an admitted exact-SHA workflow artifact may describe the current source as admitted."
+  },
+  "defaults": {
+    "api_bind": "127.0.0.1",
+    "public_bind": "explicit opt-in plus authentication",
+    "core_database": "wavemind.sqlite3",
+    "experience_database": "wavemind-experience.sqlite3"
+  },
+  "typescript": {
+    "package_name": "@wavemind/http",
+    "distribution": "repository-local",
+    "npm_published": false
+  },
+  "claim_boundary": "Checked-in admission files are historical snapshots after their source commit changes. Current claims require exact source SHA, source manifest, integrity validation, and a successful Safe Product workflow."
+}

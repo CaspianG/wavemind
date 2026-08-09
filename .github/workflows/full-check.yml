@@ -64,6 +64,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install build twine
+          python scripts/sync_product_status.py --check
           python -m build
           python -m twine check dist/*
 

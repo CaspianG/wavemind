@@ -530,6 +530,7 @@ jobs:
           cp benchmarks/memory_os_quality_results.json site/data/memory_os_quality_results.json
           cp benchmarks/memory_os_remote_soak_handoff_results.json site/data/memory_os_remote_soak_handoff_results.json
           cp docs/data/leaderboard-status.json site/data/leaderboard-status.json
+          cp docs/data/product-status.json site/data/product-status.json
 
       - uses: actions/configure-pages@v6
 
