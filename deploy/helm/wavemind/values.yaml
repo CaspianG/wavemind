@@ -3,7 +3,7 @@ replicationFactor: 1
 
 image:
   repository: ghcr.io/caspiang/wavemind
-  tag: "2.10.0"
+  tag: "2.11.0"
   pullPolicy: IfNotPresent
 
 nameOverride: ""

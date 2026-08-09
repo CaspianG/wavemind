@@ -151,7 +151,7 @@ def _safe_product_panel(product: dict[str, Any]) -> str:
         return ""
     rows = [
         ("Public release", f"v{release.get('version', 'unknown')}"),
-        ("Release source", release.get("source_sha", "unknown")),
+        ("Runtime source", release.get("source_sha", "unknown")),
         ("Checked-in status", safe.get("checked_in_status", "missing")),
         (
             "Checked-in checks",

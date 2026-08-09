@@ -2,10 +2,10 @@
   "schema": "wavemind.product_status.v1",
   "category_statement": "WaveMind is the trust layer that lets agents learn from completed work without silently learning incorrect behavior.",
   "stable_release": {
-    "version": "2.10.0",
-    "source_sha": "4eb23d3c438d12dbef502400f68b93fad704f5d7",
+    "version": "2.11.0",
+    "source_sha": "dbf6d9d1e1c983c44c660ded89763c904e674d28",
     "python_package": "wavemind",
-    "container": "ghcr.io/caspiang/wavemind:2.10.0"
+    "container": "ghcr.io/caspiang/wavemind:2.11.0"
   },
   "safe_product": {
     "checked_in_status": "historical",

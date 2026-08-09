@@ -4,6 +4,25 @@ Notable user-facing and operational changes are recorded here. Git tags,
 GitHub Releases, checked evidence artifacts, and package versions remain the
 authoritative release sources.
 
+## [2.11.0] - 2026-08-09
+
+- Added exact-source Safe Product admission with signed manifests, frozen
+  independent retrieval controls, and explicit current-versus-historical
+  evidence boundaries.
+- Made API, Docker, Kubernetes, operator, and serverless entrypoints safe by
+  default, with fail-closed public binding, authenticated identities, and
+  tenant/namespace isolation.
+- Added durable Core and Verified Experience persistence across container
+  recreation, coordinated backup/restore, rollback, and idempotent retry
+  verification.
+- Added production abstention and adversarial negative controls, recording
+  zero false-memory injections across 60 frozen irrelevant queries while
+  preserving 1.0 recall@1 on the frozen positive set.
+- Added executable Python, MCP, Docker, and repository-local TypeScript
+  onboarding, plus Python 3.10-3.13, Windows, container, and CodeQL coverage.
+
+Release: [WaveMind v2.11.0](https://github.com/CaspianG/wavemind/releases/tag/v2.11.0)
+
 ## [2.10.0] - 2026-08-03
 
 - Added the Verified Agent Experience Runtime with independent outcome
@@ -84,6 +103,7 @@ Release: [WaveMind v2.6.3](https://github.com/CaspianG/wavemind/releases/tag/v2.
 
 | Version | Published | Notes |
 |---|---|---|
+| [v2.11.0](https://github.com/CaspianG/wavemind/releases/tag/v2.11.0) | 2026-08-09 | Safe Trusted Product foundation and secure service runtimes |
 | [v2.10.0](https://github.com/CaspianG/wavemind/releases/tag/v2.10.0) | 2026-08-03 | Verified Agent Experience Runtime and honest quality evidence |
 | [v2.9.0](https://github.com/CaspianG/wavemind/releases/tag/v2.9.0) | 2026-07-30 | Trusted agent experience, safety, portability, and SDKs |
 | [v2.8.0](https://github.com/CaspianG/wavemind/releases/tag/v2.8.0) | 2026-07-28 | Adaptive multimodal agent memory and MCP |
@@ -97,6 +117,7 @@ Release: [WaveMind v2.6.3](https://github.com/CaspianG/wavemind/releases/tag/v2.
 See the complete [release archive](https://github.com/CaspianG/wavemind/releases)
 for earlier versions and attached evidence bundles.
 
+[2.11.0]: https://github.com/CaspianG/wavemind/compare/v2.10.0...v2.11.0
 [2.10.0]: https://github.com/CaspianG/wavemind/compare/v2.9.0...v2.10.0
 [2.9.0]: https://github.com/CaspianG/wavemind/compare/v2.8.0...v2.9.0
 [2.8.0]: https://github.com/CaspianG/wavemind/compare/v2.7.0...v2.8.0
