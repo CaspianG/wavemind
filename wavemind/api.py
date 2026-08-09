@@ -731,10 +731,12 @@ class RememberRequest(BaseModel):
     ttl_seconds: float | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
     priority: float = 1.0
+    idempotency_key: str | None = Field(default=None, min_length=1, max_length=255)
 
 
 class RememberResponse(BaseModel):
     id: int
+    idempotent_replay: bool = False
 
 
 class RememberBatchRequest(BaseModel):
@@ -1575,6 +1577,66 @@ def create_app(
             for result in results
         ]
 
+    def _remember_idempotently(request: RememberRequest) -> tuple[int, bool]:
+        metadata = dict(request.metadata)
+        if request.idempotency_key is None:
+            result = app.state.mind.remember(
+                request.text,
+                namespace=request.namespace,
+                tags=request.tags,
+                ttl_seconds=request.ttl_seconds,
+                metadata=metadata,
+                priority=request.priority,
+            )
+            return _remember_response_id(result), False
+        store = getattr(app.state.mind, "store", None)
+        list_records = getattr(store, "list", None)
+        if not callable(list_records):
+            raise HTTPException(
+                status_code=422,
+                detail="Idempotent remember requires a queryable persistent store",
+            )
+        key_digest = hashlib.sha256(request.idempotency_key.encode("utf-8")).hexdigest()
+        payload = {
+            "text": request.text,
+            "namespace": request.namespace,
+            "tags": list(request.tags),
+            "ttl_seconds": request.ttl_seconds,
+            "metadata": metadata,
+            "priority": request.priority,
+        }
+        payload_digest = hashlib.sha256(
+            json.dumps(
+                payload,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        ).hexdigest()
+        for record in list_records(namespace=request.namespace, include_expired=True):
+            internal = record.metadata.get("_wavemind_api", {})
+            if not isinstance(internal, dict) or internal.get("idempotency_key_sha256") != key_digest:
+                continue
+            if internal.get("payload_sha256") != payload_digest:
+                raise HTTPException(
+                    status_code=409,
+                    detail="Idempotency key already exists with a different payload",
+                )
+            return int(record.id), True
+        metadata["_wavemind_api"] = {
+            "idempotency_key_sha256": key_digest,
+            "payload_sha256": payload_digest,
+        }
+        result = app.state.mind.remember(
+            request.text,
+            namespace=request.namespace,
+            tags=request.tags,
+            ttl_seconds=request.ttl_seconds,
+            metadata=metadata,
+            priority=request.priority,
+        )
+        return _remember_response_id(result), False
+
     @app.middleware("http")
     async def rate_limit(request: Request, call_next):
         if request.url.path == "/healthz":
@@ -1703,18 +1765,10 @@ def create_app(
     @app.post("/remember", response_model=RememberResponse, dependencies=[Depends(require_role("write"))])
     def remember(request: RememberRequest) -> RememberResponse:
         with _api_operation(app, "remember"):
-            remember_result = app.state.mind.remember(
-                request.text,
-                namespace=request.namespace,
-                tags=request.tags,
-                ttl_seconds=request.ttl_seconds,
-                metadata=request.metadata,
-                priority=request.priority,
-            )
-            id = _remember_response_id(remember_result)
+            id, replay = _remember_idempotently(request)
             invalidated = _invalidate_cache(app, request.namespace)
         logger.info("remembered id=%s namespace=%s cache_invalidated=%s", id, request.namespace, invalidated)
-        return RememberResponse(id=id)
+        return RememberResponse(id=id, idempotent_replay=replay)
 
     @app.post(
         "/remember/batch",
@@ -1945,6 +1999,69 @@ def create_app(
         run_id = request.run_id or f"run_{uuid.uuid4().hex}"
         task_id = request.task_id or f"task_{uuid.uuid4().hex}"
         try:
+            existing_events = runtime.events(
+                namespace=request.namespace,
+                run_id=run_id,
+            )
+            if existing_events:
+                first = existing_events[0]
+                run_started = next(
+                    event
+                    for event in existing_events
+                    if event.kind is AgentEventKind.RUN_STARTED
+                )
+                task_started = next(
+                    event
+                    for event in existing_events
+                    if event.kind is AgentEventKind.TASK_STARTED
+                )
+                same_request = (
+                    (request.session_id is None or first.session_id == request.session_id)
+                    and (request.task_id is None or first.task_id == request.task_id)
+                    and run_started.payload.get("objective") == request.objective
+                    and task_started.payload.get("domain") == request.domain
+                    and task_started.payload.get("task_type") == request.task_type
+                )
+                if not same_request:
+                    raise HTTPException(
+                        status_code=409,
+                        detail="Run id already exists with a different payload",
+                    )
+                decisions = [
+                    item
+                    for item in runtime.injection_decisions(
+                        namespace=request.namespace,
+                        limit=1000,
+                    )
+                    if item.get("run_id") == run_id
+                ]
+                decision = decisions[0] if decisions else {
+                    "inject": False,
+                    "reason": "no_applicable_verified_experience",
+                    "confidence": None,
+                    "packet": None,
+                    "source_tool_result_refs": [],
+                }
+                packet = decision.get("packet") or {}
+                applied = tuple(
+                    str(item["experience_id"])
+                    for item in packet.get("items", [])
+                    if isinstance(item, dict) and item.get("experience_id")
+                )
+                return {
+                    "schema": "wavemind.agent_experience_run.v1",
+                    "namespace": request.namespace,
+                    "session_id": first.session_id,
+                    "run_id": run_id,
+                    "task_id": first.task_id,
+                    "next_sequence": runtime.next_sequence(
+                        namespace=request.namespace,
+                        run_id=run_id,
+                    ),
+                    "intervention": decision,
+                    "applied_experience_ids": list(applied),
+                    "idempotent_replay": True,
+                }
             intervention = runtime.decide(
                 request.query,
                 namespace=request.namespace,
@@ -1987,6 +2104,7 @@ def create_app(
             ),
             "intervention": intervention.as_dict(),
             "applied_experience_ids": list(applied),
+            "idempotent_replay": False,
         }
 
     @app.post(

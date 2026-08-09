@@ -1895,6 +1895,45 @@ def test_fastapi_rejects_invalid_principal_configuration(tmp_path, monkeypatch):
         mind.close()
 
 
+def test_fastapi_remember_idempotency_survives_reopen(tmp_path, monkeypatch):
+    monkeypatch.delenv("WAVEMIND_API_PRINCIPALS", raising=False)
+    db_path = tmp_path / "idempotent-remember.sqlite3"
+    payload = {
+        "text": "A retried request creates one durable memory",
+        "namespace": "tenant:retry",
+        "idempotency_key": "request-123",
+    }
+    first_id = None
+    for attempt in range(2):
+        mind = WaveMind(
+            db_path=db_path,
+            width=16,
+            height=16,
+            layers=1,
+            encoder=HashingTextEncoder(vector_dim=32),
+        )
+        try:
+            with TestClient(create_app(mind=mind)) as client:
+                response = client.post("/remember", json=payload)
+                assert response.status_code == 200
+                if attempt == 0:
+                    first_id = response.json()["id"]
+                    assert response.json()["idempotent_replay"] is False
+                else:
+                    assert response.json() == {
+                        "id": first_id,
+                        "idempotent_replay": True,
+                    }
+                    conflict = client.post(
+                        "/remember",
+                        json={**payload, "text": "different payload"},
+                    )
+                    assert conflict.status_code == 409
+                assert mind.stats(namespace="tenant:retry")["active_memories"] == 1
+        finally:
+            mind.close()
+
+
 def test_fastapi_rate_limit_is_opt_in(tmp_path, monkeypatch):
     monkeypatch.delenv("WAVEMIND_READ_KEYS", raising=False)
     monkeypatch.delenv("WAVEMIND_WRITE_KEYS", raising=False)

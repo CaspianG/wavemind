@@ -107,6 +107,36 @@ def test_http_runtime_supports_full_lifecycle_and_idempotent_capture(tmp_path: P
             assert started.json()["next_sequence"] == 3
             assert started.json()["intervention"]["inject"] is False
 
+            start_replay = client.post(
+                "/experience/runtime/runs",
+                json={
+                    "query": "repair deployment",
+                    "objective": "repair deployment",
+                    "domain": "operations",
+                    "task_type": "repair",
+                    "namespace": "agent",
+                    "run_id": "http-run",
+                    "session_id": "http-session",
+                    "task_id": "http-task",
+                    "tools": ["health"],
+                },
+            )
+            assert start_replay.status_code == 200
+            assert start_replay.json()["idempotent_replay"] is True
+            assert start_replay.json()["next_sequence"] == 3
+            start_conflict = client.post(
+                "/experience/runtime/runs",
+                json={
+                    "query": "different",
+                    "objective": "different objective",
+                    "domain": "operations",
+                    "task_type": "repair",
+                    "namespace": "agent",
+                    "run_id": "http-run",
+                },
+            )
+            assert start_conflict.status_code == 409
+
             call = {
                 "id": "http-call",
                 "namespace": "agent",
@@ -152,12 +182,28 @@ def test_http_runtime_supports_full_lifecycle_and_idempotent_capture(tmp_path: P
                     "verifier": "health-check",
                     "success": True,
                     "score": 1.0,
-                    "reference": "health://service",
+                    "reference": "health://service?api_key=secret-verification-token",
+                    "metadata": {"password": "secret-verification-password"},
                 },
             )
             assert verified.status_code == 200
             assert verified.json()["verified"] is True
             assert verified.json()["candidate_ids"]
+            verification_replay = client.post(
+                "/experience/runtime/runs/http-run/verify",
+                json={
+                    "namespace": "agent",
+                    "evidence_id": "health-evidence-1",
+                    "source": "environment",
+                    "verifier": "health-check",
+                    "success": True,
+                    "score": 1.0,
+                    "reference": "health://service?api_key=secret-verification-token",
+                    "metadata": {"password": "secret-verification-password"},
+                },
+            )
+            assert verification_replay.status_code == 200
+            assert verification_replay.json()["candidate_ids"] == verified.json()["candidate_ids"]
 
             details = client.get(
                 "/experience/runtime/runs/http-run",
@@ -166,6 +212,7 @@ def test_http_runtime_supports_full_lifecycle_and_idempotent_capture(tmp_path: P
             assert details.status_code == 200
             assert details.json()["events"][-1]["kind"] == "session.finished"
             assert "sk-secret" not in details.text
+            assert "secret-verification" not in details.text
 
             state = client.get(
                 "/experience/runtime/state",

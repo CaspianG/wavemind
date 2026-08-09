@@ -126,6 +126,10 @@ def test_supersession_and_rollback_preserve_version_chain_and_audit(tmp_path):
             promoted.id,
             reason="The correction caused a regression in the release flow.",
         )
+        replayed = store.rollback(
+            promoted.id,
+            reason="The correction caused a regression in the release flow.",
+        )
 
         assert store.get(original.id).status == ExperienceStatus.SUPERSEDED
         assert promoted.version == 2
@@ -135,6 +139,7 @@ def test_supersession_and_rollback_preserve_version_chain_and_audit(tmp_path):
         assert restored.rollback_of_id == promoted.id
         assert restored.supersedes_id == promoted.id
         assert restored.content == original.content
+        assert replayed.id == restored.id
         assert [event.action for event in store.audit_events(limit=10)] == [
             "rolled_back",
             "superseded",
