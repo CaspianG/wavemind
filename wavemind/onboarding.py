@@ -480,6 +480,84 @@ def _typescript_sdk_dependency(root: Path) -> str:
     return f"file:{selected}"
 
 
+def _docker_verification_template(namespace: str) -> str:
+    return f'''from __future__ import annotations
+
+import json
+import os
+import time
+import urllib.error
+import urllib.request
+
+
+BASE_URL = os.environ.get("WAVEMIND_URL", "http://wavemind:8000")
+API_KEY = os.environ.get("WAVEMIND_API_KEY", "local-quickstart-key")
+NAMESPACE = "{namespace}"
+
+
+def request(method: str, path: str, payload: dict | None = None) -> dict:
+    body = None if payload is None else json.dumps(payload).encode("utf-8")
+    call = urllib.request.Request(
+        f"{{BASE_URL}}{{path}}",
+        data=body,
+        method=method,
+        headers={{
+            "Authorization": f"Bearer {{API_KEY}}",
+            "Content-Type": "application/json",
+        }},
+    )
+    with urllib.request.urlopen(call, timeout=10) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+def wait_ready() -> None:
+    deadline = time.monotonic() + 60
+    while time.monotonic() < deadline:
+        try:
+            request("GET", "/healthz")
+            return
+        except (OSError, urllib.error.URLError):
+            time.sleep(0.5)
+    raise RuntimeError("WaveMind API did not become ready within 60 seconds")
+
+
+wait_ready()
+remembered = request("POST", "/remember", {{
+    "text": "Verified Docker deployments persist memory across restarts.",
+    "namespace": NAMESPACE,
+    "idempotency_key": "docker-quickstart-memory",
+    "metadata": {{"provenance": {{"source": "docker-onboarding"}}}},
+}})
+recalled = request("POST", "/query", {{
+    "text": "How do verified Docker deployments retain memory?",
+    "namespace": NAMESPACE,
+    "top_k": 3,
+}})
+matches = [item for item in recalled["results"] if item["id"] == remembered["id"]]
+if not matches:
+    raise RuntimeError("remembered Docker memory was not recalled")
+feedback = request("POST", "/feedback", {{
+    "id": remembered["id"],
+    "namespace": NAMESPACE,
+    "useful": True,
+    "strength": 0.5,
+    "query": "How do verified Docker deployments retain memory?",
+    "reason": "quickstart verification",
+}})
+explain = request(
+    "GET",
+    f"/memories/{{remembered['id']}}/explain?namespace={{NAMESPACE}}",
+)
+print(json.dumps({{
+    "schema": "wavemind.onboarding.docker.v1",
+    "remember": remembered,
+    "recall": matches[0],
+    "feedback": feedback,
+    "explain": explain,
+}}, indent=2))
+'''
+
+
 def _template_files(template: str, namespace: str, *, root: Path) -> dict[str, str]:
     common = {
         ".gitignore": ".wavemind/\n.env\nnode_modules/\ndist/\n",
@@ -574,6 +652,7 @@ def _template_files(template: str, namespace: str, *, root: Path) -> dict[str, s
     if template == "docker":
         return {
             **common,
+            "verify_flow.py": _docker_verification_template(namespace),
             "Dockerfile": (
                 "FROM python:3.11-slim\n"
                 f"RUN python -m pip install --no-cache-dir wavemind=={__version__}\n"
@@ -583,7 +662,9 @@ def _template_files(template: str, namespace: str, *, root: Path) -> dict[str, s
             "compose.yaml": (
                 "services:\n"
                 "  wavemind:\n"
+                "    image: ${WAVEMIND_IMAGE:-wavemind-quickstart:local}\n"
                 "    build: .\n"
+                "    command: [\"wavemind\", \"serve\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\", \"--allow-public\"]\n"
                 "    ports:\n"
                 '      - "127.0.0.1:${WAVEMIND_PORT:-8000}:8000"\n'
                 "    volumes:\n"
@@ -607,12 +688,28 @@ def _template_files(template: str, namespace: str, *, root: Path) -> dict[str, s
                 "      timeout: 2s\n"
                 "      retries: 30\n"
                 "    restart: unless-stopped\n"
+                "  verify:\n"
+                "    image: ${WAVEMIND_IMAGE:-wavemind-quickstart:local}\n"
+                "    build: .\n"
+                "    depends_on:\n"
+                "      wavemind:\n"
+                "        condition: service_healthy\n"
+                "    environment:\n"
+                "      WAVEMIND_URL: http://wavemind:8000\n"
+                "      WAVEMIND_API_KEY: local-quickstart-key\n"
+                "    volumes:\n"
+                "      - ./verify_flow.py:/client/verify_flow.py:ro\n"
+                "    command: [\"python\", \"/client/verify_flow.py\"]\n"
             ),
             "README.md": (
                 "# WaveMind Docker starter\n\n"
                 "```bash\n"
-                "docker compose up --build\n"
-                "```\n"
+                "docker compose up -d --build\n"
+                "docker compose run --rm verify\n"
+                "docker compose restart wavemind\n"
+                "docker compose run --rm verify\n"
+                "```\n\n"
+                "The second verification reuses the same memory ID after restart.\n"
             ),
         }
     raise ValueError(f"template must be one of: {', '.join(TEMPLATES)}")
