@@ -510,7 +510,7 @@ jobs:
           cd /tmp/wavemind-docker-starter
           trap 'docker compose down --volumes --remove-orphans' EXIT
           WAVEMIND_PORT=18081 docker compose up -d --build --wait
-          curl -fsS http://127.0.0.1:18081/stats \
+          curl -fsS 'http://127.0.0.1:18081/stats?namespace=wavemind-docker-starter' \
             -H "Authorization: Bearer local-quickstart-key"
 
       - name: Run PostgreSQL Qdrant Redis production stack
