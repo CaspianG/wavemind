@@ -54,7 +54,11 @@ def _git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
-def validate_verified_experience_artifacts(root: Path = PROJECT_ROOT) -> dict[str, Any]:
+def validate_verified_experience_artifacts(
+    root: Path = PROJECT_ROOT,
+    *,
+    require_current: bool = False,
+) -> dict[str, Any]:
     root = Path(root)
     benchmark = _load(root, BENCHMARK_PATH)
     admission = _load(root, ADMISSION_PATH)
@@ -134,6 +138,7 @@ def validate_verified_experience_artifacts(root: Path = PROJECT_ROOT) -> dict[st
         "admission artifact hash normalization is not locked to LF",
         errors,
     )
+    evidence_status = "current"
     if _is_sha(source_sha):
         ancestor = _git(root, "merge-base", "--is-ancestor", source_sha, "HEAD")
         _require(
@@ -144,11 +149,15 @@ def validate_verified_experience_artifacts(root: Path = PROJECT_ROOT) -> dict[st
         changed = _git(
             root, "diff", "--quiet", source_sha, "HEAD", "--", *RUNTIME_FILES
         )
-        _require(
-            changed.returncode == 0,
-            "runtime or frozen benchmark changed after the evaluated source SHA",
-            errors,
-        )
+        if changed.returncode == 1:
+            evidence_status = "historical"
+            _require(
+                not require_current,
+                "runtime or frozen benchmark changed after the evaluated source SHA",
+                errors,
+            )
+        elif changed.returncode != 0:
+            _require(False, "cannot compare runtime files with source SHA", errors)
     checks = (
         benchmark.get("checks") if isinstance(benchmark.get("checks"), list) else []
     )
@@ -163,6 +172,7 @@ def validate_verified_experience_artifacts(root: Path = PROJECT_ROOT) -> dict[st
     report = {
         "schema": "wavemind.verified_experience_artifact_validation.v1",
         "status": "pass" if not errors else "fail",
+        "evidence_status": evidence_status,
         "source_sha": source_sha,
         "runtime_files": list(RUNTIME_FILES),
         "errors": errors,
@@ -185,9 +195,13 @@ def _require(condition: bool, message: str, errors: list[str]) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, default=PROJECT_ROOT)
+    parser.add_argument("--require-current", action="store_true")
     args = parser.parse_args()
     try:
-        report = validate_verified_experience_artifacts(args.root)
+        report = validate_verified_experience_artifacts(
+            args.root,
+            require_current=args.require_current,
+        )
     except VerifiedExperienceArtifactError as exc:
         try:
             report = json.loads(str(exc))

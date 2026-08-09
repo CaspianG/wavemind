@@ -519,7 +519,8 @@ curl http://127.0.0.1:8000/index/health
 curl "http://127.0.0.1:8000/scale-plan?target_memories=50000"
 curl -X POST http://127.0.0.1:8000/index/rebuild
 curl -X POST http://127.0.0.1:8000/consolidate -H "Content-Type: application/json" -d '{"namespace":"demo","seed_text":"Rust compiler systems","min_energy":0.01}'
-curl -X POST http://127.0.0.1:8000/backup -H "Content-Type: application/json" -d '{"path":"./backups","keep_last":7}'
+WAVEMIND_BACKUP_ROOT=./backups wavemind serve
+curl -X POST http://127.0.0.1:8000/backup -H "Content-Type: application/json" -d '{"keep_last":7}'
 ```
 
 `/audit` returns mutation events such as `remember`, `forget`, `backup`, and

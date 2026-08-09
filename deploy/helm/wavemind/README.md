@@ -42,18 +42,19 @@ Helm rendering fails when `runtime.store=postgres` or
 Secret. This keeps a production release from silently falling back to local
 SQLite or NumPy state.
 
-```sh
-helm install wavemind ./deploy/helm/wavemind
-```
-
-For API authentication, create a Kubernetes Secret and reference it:
+API authentication is mandatory because Kubernetes pods bind to a non-loopback
+address. Create a Kubernetes Secret and reference it:
 
 ```sh
 kubectl create secret generic wavemind-auth --from-literal=admin-key="$WAVEMIND_ADMIN_KEY"
 helm upgrade --install wavemind ./deploy/helm/wavemind \
-  --set auth.enabled=true \
   --set auth.existingSecret=wavemind-auth
 ```
+
+The safe default is one SQLite replica with both Core and Verified Experience
+databases on the persistent volume. Rendering fails if SQLite is combined with
+multiple replicas or autoscaling. Configure PostgreSQL before increasing
+`replicaCount` or enabling the HPA.
 
 The repair CronJob calls `wavemind cluster-repair` against the StatefulSet
 pod DNS names. Set `repair.namespaceCount` or `repair.namespaces` to match the

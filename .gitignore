@@ -15,6 +15,7 @@ dist/
 
 *.sqlite
 *.sqlite3
+*.db
 data/
 !docs/data/
 !docs/data/leaderboard-status.json

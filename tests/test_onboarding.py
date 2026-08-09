@@ -39,6 +39,7 @@ def test_python_starter_runs_twice_and_returns_persistent_packet(tmp_path):
     assert manifest["schema"] == "wavemind.project.v1"
     assert manifest["template"] == "python"
 
+    runs = []
     for _ in range(2):
         result = subprocess.run(
             [sys.executable, "app.py"],
@@ -49,14 +50,118 @@ def test_python_starter_runs_twice_and_returns_persistent_packet(tmp_path):
             text=True,
             timeout=30,
         )
-        packet = json.loads(result.stdout)
+        onboarding = json.loads(result.stdout)
+        runs.append(onboarding)
+        assert onboarding["schema"] == "wavemind.onboarding.python.v1"
+        packet = onboarding["recall"]
         assert packet["schema"] == "wavemind.experience_packet.v1"
         assert packet["namespace"] == "demo-agent"
         assert len(packet["items"]) == 1
         assert packet["items"][0]["experience_id"] == "starter-deploy-recovery"
-        assert packet["citations"] == [
-            "experience:starter-deploy-recovery@v1"
-        ]
+        assert packet["citations"] == ["experience:starter-deploy-recovery@v1"]
+        assert onboarding["verification"] == {
+            "status": "active",
+            "evidence_ids": [
+                "starter-success-1",
+                "starter-success-2",
+                "starter-success-3",
+            ],
+        }
+        assert (
+            onboarding["explain"][0]["experience_id"]
+            == "starter-deploy-recovery"
+        )
+
+    assert runs[0]["remember"]["created"] is True
+    assert runs[1]["remember"]["created"] is False
+    assert runs[0]["remember"]["experience_id"] == runs[1]["remember"]["experience_id"]
+
+
+def test_mcp_verification_flow_recalls_and_expands_after_restart(tmp_path):
+    project = tmp_path / "mcp"
+    payload = initialize_project(project, template="mcp", name="MCP Agent")
+
+    assert payload["next_command"] == "python verify_flow.py"
+    runs = []
+    for _ in range(2):
+        result = subprocess.run(
+            [sys.executable, "verify_flow.py"],
+            cwd=project,
+            env=_python_env(),
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        onboarding = json.loads(result.stdout)
+        runs.append(onboarding)
+        assert onboarding["schema"] == "wavemind.onboarding.mcp.v1"
+        assert onboarding["recall"]["items"][0]["experience_id"] == (
+            "mcp-deploy-verification"
+        )
+        assert onboarding["verification"]["status"] == "active"
+        assert onboarding["explain"]["items"][0]["experience_id"] == (
+            "mcp-deploy-verification"
+        )
+
+    assert runs[0]["remember"]["created"] is True
+    assert runs[1]["remember"]["created"] is False
+    assert runs[0]["recall"]["citations"] == runs[1]["recall"]["citations"]
+
+
+def test_typescript_starter_runs_local_sdk_and_survives_server_restart(tmp_path):
+    node = shutil.which("node")
+    npm = shutil.which("npm")
+    if node is None or npm is None:
+        pytest.skip("Node.js and npm are required for the TypeScript quickstart")
+    project = tmp_path / "typescript"
+    payload = initialize_project(project, template="typescript", name="TS Agent")
+
+    assert payload["next_command"] == "npm run quickstart"
+    package = json.loads((project / "package.json").read_text(encoding="utf-8"))
+    dependency = package["dependencies"]["@wavemind/http"]
+    assert dependency.startswith("file:")
+    sdk_path = (project / dependency.removeprefix("file:")).resolve()
+    assert sdk_path == PROJECT_ROOT / "sdk" / "typescript"
+    assert 'from "@wavemind/http"' in (project / "src" / "index.ts").read_text(
+        encoding="utf-8"
+    )
+    runner = (project / "scripts" / "quickstart.mjs").read_text(encoding="utf-8")
+    assert 'OPENBLAS_NUM_THREADS: "1"' in runner
+    assert 'OMP_NUM_THREADS: "1"' in runner
+    assert 'MKL_NUM_THREADS: "1"' in runner
+    assert "copyFile(resolve(sdkRoot" in runner
+    assert "await symlink(sdkRoot" not in runner
+
+    env = _python_env()
+    env["PYTHON"] = sys.executable
+    result = subprocess.run(
+        [npm, "run", "quickstart"],
+        cwd=project,
+        env=env,
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=240,
+    )
+    json_start = result.stdout.find('{\n  "schema"')
+    assert json_start >= 0, result.stdout
+    onboarding = json.loads(result.stdout[json_start:])
+
+    assert onboarding["schema"] == "wavemind.onboarding.typescript.restart.v1"
+    assert onboarding["first"]["remember"]["created"] is True
+    assert onboarding["restarted"]["remember"]["created"] is False
+    assert onboarding["persistence"] == {
+        "same_memory_id": True,
+        "server_restarted": True,
+    }
+    assert onboarding["restarted"]["explain"]["provenance"] == {
+        "source": "typescript-onboarding"
+    }
+    actions = {
+        event["action"] for event in onboarding["restarted"]["explain"]["audit_events"]
+    }
+    assert {"remember", "feedback"} <= actions
 
 
 @pytest.mark.parametrize(
@@ -92,6 +197,20 @@ def test_docker_starter_has_valid_compose_config(tmp_path):
     )
 
     assert result.returncode == 0, result.stderr
+    compose = (project / "compose.yaml").read_text(encoding="utf-8")
+    dockerfile = (project / "Dockerfile").read_text(encoding="utf-8")
+    assert "127.0.0.1:${WAVEMIND_PORT:-8000}:8000" in compose
+    assert "WAVEMIND_EXPERIENCE_DB: /data/wavemind-experience.sqlite3" in compose
+    assert "WAVEMIND_API_PRINCIPALS" in compose
+    assert "docker-onboarding" in (project / "verify_flow.py").read_text(
+        encoding="utf-8"
+    )
+    assert "docker compose run --rm verify" in (project / "README.md").read_text(
+        encoding="utf-8"
+    )
+    assert "condition: service_healthy" in compose
+    assert 'command: ["wavemind", "serve", "--host", "0.0.0.0"' in compose
+    assert "--allow-public" in dockerfile
 
 
 def test_generated_python_sources_compile(tmp_path):

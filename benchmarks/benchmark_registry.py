@@ -3,10 +3,18 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+from wavemind.evidence import (
+    attach_artifact_integrity,
+    build_source_manifest,
+    canonical_json_bytes,
+    execution_environment,
+    repository_commit,
+    sha256_bytes,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -3390,18 +3398,70 @@ PUBLIC_BENCHMARKS: list[dict[str, Any]] = [
 
 
 def build_benchmark_matrix(root: Path = PROJECT_ROOT) -> dict[str, Any]:
-    return {
+    root = Path(root)
+    benchmarks = _implemented_entries(root) + _public_benchmarks(root)
+    generated_at = _generated_at()
+    source_sha = _source_ref(root)
+    refresh_profile = os.environ.get("WAVEMIND_BENCHMARK_REFRESH_PROFILE", "local")
+    claim_status = os.environ.get("WAVEMIND_BENCHMARK_CLAIM_STATUS", "historical")
+    if claim_status not in {"current", "historical"}:
+        raise ValueError("WAVEMIND_BENCHMARK_CLAIM_STATUS must be current or historical")
+    dataset_contracts = [
+        {
+            "id": entry.get("id"),
+            "dataset": entry.get("dataset"),
+            "source_url": entry.get("source_url"),
+        }
+        for entry in benchmarks
+    ]
+    payload = {
         "schema": "wavemind.benchmark_matrix.v1",
-        "generated_at": _generated_at(),
-        "source_ref": _source_ref(root),
+        "generated_at": generated_at,
+        "source_ref": source_sha,
         "workflow_run_id": os.environ.get("GITHUB_RUN_ID"),
-        "refresh_profile": os.environ.get("WAVEMIND_BENCHMARK_REFRESH_PROFILE", "local"),
+        "refresh_profile": refresh_profile,
+        "provenance": {
+            "schema": "wavemind.benchmark_snapshot_provenance.v1",
+            "claim_status": claim_status,
+            "source_sha": source_sha,
+            "source_manifest": build_source_manifest(root, _matrix_source_paths(root)),
+            "generated_at": generated_at,
+            "execution_environment": execution_environment(profile=refresh_profile),
+            "revisions": {
+                "registry_schema": "wavemind.benchmark_matrix.v1",
+                "dataset_contract_sha256": sha256_bytes(
+                    canonical_json_bytes(dataset_contracts)
+                ),
+                "model_revisions": "declared by each source benchmark artifact",
+                "config": {
+                    "refresh_profile": refresh_profile,
+                    "claim_status": claim_status,
+                },
+            },
+        },
         "note": (
             "Implemented entries are runnable from this repository. Planned entries are "
             "public benchmarks that require optional datasets, services, or heavier dependencies."
         ),
-        "benchmarks": _implemented_entries(root) + _public_benchmarks(root),
+        "benchmarks": benchmarks,
     }
+    return attach_artifact_integrity(payload)
+
+
+def _matrix_source_paths(root: Path) -> list[Path]:
+    benchmark_root = Path(root) / "benchmarks"
+    excluded = {
+        "benchmark_artifact_audit.json",
+        "benchmark_artifact_audit_ci.json",
+        "benchmark_matrix_results.json",
+    }
+    paths = [benchmark_root / "benchmark_registry.py"]
+    paths.extend(
+        path
+        for path in sorted(benchmark_root.glob("*_results.json"))
+        if path.name not in excluded
+    )
+    return paths
 
 
 def _public_benchmarks(root: Path) -> list[dict[str, Any]]:
@@ -3532,16 +3592,7 @@ def _source_ref(root: Path) -> str:
     value = os.environ.get("GITHUB_SHA") or os.environ.get("WAVEMIND_BENCHMARK_SOURCE_REF")
     if value:
         return value
-    try:
-        return subprocess.check_output(
-            ["git", "rev-parse", "--short=12", "HEAD"],
-            cwd=root,
-            text=True,
-            encoding="utf-8",
-            stderr=subprocess.DEVNULL,
-        ).strip()
-    except Exception:
-        return "unknown"
+    return repository_commit(root)
 
 
 def print_table(payload: dict[str, Any]) -> None:

@@ -19,7 +19,16 @@ def test_checked_in_verified_experience_artifacts_are_consistent() -> None:
     report = validate_verified_experience_artifacts()
 
     assert report["status"] == "pass"
+    assert report["evidence_status"] == "historical"
     assert report["errors"] == []
+
+
+def test_historical_artifact_cannot_satisfy_current_claim() -> None:
+    with pytest.raises(
+        VerifiedExperienceArtifactError,
+        match="runtime or frozen benchmark changed",
+    ):
+        validate_verified_experience_artifacts(require_current=True)
 
 
 def test_validator_rejects_benchmark_bytes_changed_after_admission(

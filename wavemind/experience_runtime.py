@@ -818,7 +818,16 @@ class AgentExperienceRuntime:
         task_id: str | None,
         verification: OutcomeVerification,
     ) -> None:
+        sanitized = self._sanitize_payload(
+            {
+                "reference": verification.reference,
+                "metadata": verification.metadata,
+            }
+        )
         payload = verification.as_dict()
+        payload["reference"] = sanitized["reference"]
+        payload["metadata"] = sanitized["metadata"]
+        payload.pop("verified_at", None)
         payload_sha = hashlib.sha256(_json(payload).encode()).hexdigest()
         with self.store._lock, self.store.conn:
             existing = self.store.conn.execute(
@@ -846,8 +855,8 @@ class AgentExperienceRuntime:
                     verification.verifier,
                     int(verification.success),
                     verification.score,
-                    verification.reference,
-                    _json(verification.metadata),
+                    sanitized["reference"],
+                    _json(sanitized["metadata"]),
                     verification.verified_at,
                     payload_sha,
                 ),

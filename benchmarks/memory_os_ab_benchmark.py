@@ -121,6 +121,7 @@ def _create_memory(path: Path) -> WaveMind:
         persist_access_on_query=False,
         query_feedback_strength=0.0,
         audit_queries=True,
+        confidence_gate=False,
     )
 
 
@@ -407,10 +408,14 @@ def run_benchmark(
             "same_observed_queries": True,
             "same_evaluation_queries": True,
             "difference": "Memory OS worker policies and hot-query cache only",
+            "retrieval_mode": "raw_non_production",
+            "production_abstention_admission_eligible": False,
         },
         "claim_boundary": (
             "This direct A/B uses identical memories and sequential query histories. "
-            "It measures the incremental effect of Memory OS adaptation over WaveMind baseline."
+            "It measures the incremental effect of Memory OS adaptation over WaveMind baseline. "
+            "Confidence abstention is disabled for benchmark mechanics, so this raw profile "
+            "cannot satisfy production false-memory admission."
         ),
         "results": results,
     }

@@ -1,0 +1,30 @@
+{
+  "schema": "wavemind.safe_product_retrieval_protocol.v1",
+  "revision": "safe-retrieval-unit-fixture-v1",
+  "dataset_path": "tests/fixtures/safe_retrieval_unit.json",
+  "dataset_sha256": "893b9bb167b53b84f6ee8d086457e4fe4454cde284234b2abcfbced2827afada",
+  "execution_policy": {
+    "first_execution_only_for_admission": false,
+    "execute_only_after_protocol_commit": false,
+    "maximum_admission_executions": 0,
+    "failure_action": "unit_test_failure"
+  },
+  "production_candidate": {
+    "encoder": "HashingTextEncoder",
+    "vector_dim": 384,
+    "confidence_gate": true,
+    "hash_vector_threshold": 0.12,
+    "lexical_coverage_threshold": 0.3333333333333333
+  },
+  "comparison_baseline": {
+    "confidence_gate": false,
+    "claim_boundary": "reusable raw non-production unit-test baseline"
+  },
+  "frozen_gates": {
+    "max_false_memory_injection_rate": 0.02,
+    "min_relevant_recall_at_1": 1.0,
+    "min_relevant_recall_ratio_vs_baseline": 1.0,
+    "namespace_leakage": 0,
+    "unverified_injection": 0
+  }
+}

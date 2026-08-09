@@ -379,10 +379,6 @@ STUDIO_HTML = r"""<!doctype html>
           </div>
           <div>
             <h2>Operations</h2>
-            <div class="field">
-              <label for="backupPath">Backup path</label>
-              <input id="backupPath" value="./backups">
-            </div>
             <button id="backupButton" style="margin-top:8px">Backup SQLite</button>
             <div class="status" id="backupStatus"></div>
             <div class="field" style="margin-top:14px">
@@ -768,7 +764,7 @@ STUDIO_HTML = r"""<!doctype html>
       try {
         const data = await request("/backup", {
           method: "POST",
-          body: JSON.stringify({ path: $("backupPath").value, keep_last: 10 })
+          body: JSON.stringify({ keep_last: 10 })
         });
         $("backupStatus").innerHTML = `<span class="ok">Backup: ${esc(data.path)}</span>`;
       } catch (error) {

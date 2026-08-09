@@ -9,21 +9,29 @@ concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
-permissions:
-  contents: write
-
 jobs:
-  release:
+  safe-product:
+    uses: ./.github/workflows/safe-product.yml
+    permissions:
+      contents: read
+      security-events: write
+
+  build:
+    needs: safe-product
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
-      - name: Validate release identity
+      - name: Validate release identity and canonical product status
         shell: bash
         run: |
           PACKAGE_VERSION="$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')"
@@ -32,56 +40,107 @@ jobs:
             echo "Tag $GITHUB_REF_NAME does not match package version $PACKAGE_VERSION" >&2
             exit 1
           fi
+          python scripts/sync_product_status.py --check
 
-      - name: Validate benchmark freshness gate
+      - name: Validate release claim boundaries
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev,bench]"
           python benchmarks/validate_benchmark_artifacts.py \
-            --max-age-days 8 \
-            --output benchmarks/benchmark_artifact_audit_ci.json
+            --expected-source-sha "${GITHUB_SHA}" \
+            --output "${RUNNER_TEMP}/benchmark-artifact-audit.json"
           python benchmarks/production_readiness_gate.py \
-            --output /tmp/production_readiness_results.json \
-            --markdown-output /tmp/PRODUCTION_READINESS.md
+            --output "${RUNNER_TEMP}/production-readiness.json" \
+            --markdown-output "${RUNNER_TEMP}/PRODUCTION_READINESS.md"
           python -m wavemind production-evidence-dispatch \
             --root "$GITHUB_WORKSPACE" \
             --write-artifacts \
-            --output /tmp/production_evidence_dispatch_results.json \
-            --markdown-output /tmp/PRODUCTION_EVIDENCE_DISPATCH.md
+            --output "${RUNNER_TEMP}/production-evidence-dispatch.json" \
+            --markdown-output "${RUNNER_TEMP}/PRODUCTION_EVIDENCE_DISPATCH.md"
           python -m wavemind production-evidence-bundle \
             --root "$GITHUB_WORKSPACE" \
             --write-artifacts \
-            --output /tmp/production_evidence_bundle_results.json \
-            --markdown-output /tmp/PRODUCTION_EVIDENCE_BUNDLE.md
+            --output "${RUNNER_TEMP}/production-evidence-bundle.json" \
+            --markdown-output "${RUNNER_TEMP}/PRODUCTION_EVIDENCE_BUNDLE.md"
           python -m wavemind release-claims \
             --root "$GITHUB_WORKSPACE" \
             --write-artifacts \
             --fail-on-blocked \
-            --output /tmp/release_claims_results.json \
-            --markdown-output /tmp/RELEASE_CLAIMS.md
+            --output "${RUNNER_TEMP}/release-claims.json" \
+            --markdown-output "${RUNNER_TEMP}/RELEASE_CLAIMS.md"
           python -m wavemind scale-gap \
             --root "$GITHUB_WORKSPACE" \
             --write-artifacts \
-            --output /tmp/scale_gap_results.json \
-            --markdown-output /tmp/SCALE_GAP.md
+            --output "${RUNNER_TEMP}/scale-gap.json" \
+            --markdown-output "${RUNNER_TEMP}/SCALE_GAP.md"
 
-      - name: Build and verify package
+      - name: Build and verify the release candidate once
         run: |
           python -m pip install build twine
           python -m build
           python -m twine check dist/*
 
-      - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-distributions-${{ github.sha }}
+          path: dist/*
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-claim-evidence-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/benchmark-artifact-audit.json
+            ${{ runner.temp }}/production-readiness.json
+            ${{ runner.temp }}/PRODUCTION_READINESS.md
+            ${{ runner.temp }}/production-evidence-dispatch.json
+            ${{ runner.temp }}/PRODUCTION_EVIDENCE_DISPATCH.md
+            ${{ runner.temp }}/production-evidence-bundle.json
+            ${{ runner.temp }}/PRODUCTION_EVIDENCE_BUNDLE.md
+            ${{ runner.temp }}/release-claims.json
+            ${{ runner.temp }}/RELEASE_CLAIMS.md
+            ${{ runner.temp }}/scale-gap.json
+            ${{ runner.temp }}/SCALE_GAP.md
+
+  github-release:
+    needs: [safe-product, build]
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          name: python-distributions-${{ github.sha }}
+          path: dist
+
+      - uses: actions/download-artifact@v5
+        with:
+          name: safe-product-admission-${{ github.sha }}
+          path: safe-product-evidence
+
+      - uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
           files: |
             dist/*
-            /tmp/release_claims_results.json
-            /tmp/RELEASE_CLAIMS.md
-            /tmp/scale_gap_results.json
-            /tmp/SCALE_GAP.md
-            /tmp/production_evidence_dispatch_results.json
-            /tmp/PRODUCTION_EVIDENCE_DISPATCH.md
-            /tmp/production_evidence_bundle_results.json
-            /tmp/PRODUCTION_EVIDENCE_BUNDLE.md
+            safe-product-evidence/*
+
+  pypi:
+    needs: [safe-product, build]
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      actions: read
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          name: python-distributions-${{ github.sha }}
+          path: dist
+
+      - name: Publish the verified release candidate
+        uses: pypa/gh-action-pypi-publish@release/v1

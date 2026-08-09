@@ -4,6 +4,15 @@
 {{- if and (eq .Values.runtime.index "qdrant") (not .Values.backends.qdrant.enabled) }}
 {{- fail "backends.qdrant.enabled must be true when runtime.index=qdrant" }}
 {{- end }}
+{{- if not .Values.auth.enabled }}
+{{- fail "auth.enabled must be true because the Kubernetes API binds to a non-loopback address" }}
+{{- end }}
+{{- if and (eq .Values.runtime.store "sqlite") (gt (int .Values.replicaCount) 1) }}
+{{- fail "runtime.store=sqlite supports exactly one replica; use PostgreSQL before scaling replicas" }}
+{{- end }}
+{{- if and (eq .Values.runtime.store "sqlite") .Values.autoscaling.enabled }}
+{{- fail "autoscaling requires runtime.store=postgres; SQLite cannot be horizontally scaled safely" }}
+{{- end }}
 {{- if and .Values.backends.postgres.enabled (not .Values.backends.postgres.existingSecret) }}
 {{- fail "backends.postgres.existingSecret is required when PostgreSQL is enabled" }}
 {{- end }}
@@ -52,6 +61,7 @@ spec:
             - "0.0.0.0"
             - --port
             - {{ .Values.service.port | quote }}
+            - --allow-public
           {{- with .Values.securityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}
@@ -63,6 +73,8 @@ spec:
           env:
             - name: WAVEMIND_DB
               value: /data/wavemind.sqlite3
+            - name: WAVEMIND_EXPERIENCE_DB
+              value: /data/wavemind-experience.sqlite3
             - name: WAVEMIND_STORE
               value: {{ .Values.runtime.store | quote }}
             - name: WAVEMIND_ENCODER

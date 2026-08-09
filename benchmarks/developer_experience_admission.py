@@ -118,13 +118,19 @@ def run_admission() -> dict[str, Any]:
                 env=env,
             )
             elapsed_ms = (time.perf_counter() - run_started) * 1000.0
-            packet = json.loads(result.stdout) if result.returncode == 0 else {}
+            output = json.loads(result.stdout) if result.returncode == 0 else {}
+            packet = (
+                output.get("recall")
+                if isinstance(output.get("recall"), dict)
+                else {}
+            )
             packet_runs.append(
                 {
                     "run": run_number,
                     "returncode": result.returncode,
                     "latency_ms": elapsed_ms,
-                    "schema": packet.get("schema"),
+                    "schema": output.get("schema"),
+                    "recall_schema": packet.get("schema"),
                     "item_count": len(packet.get("items") or []),
                     "citations": packet.get("citations") or [],
                     "stderr": result.stderr.strip(),
@@ -136,7 +142,9 @@ def run_admission() -> dict[str, Any]:
                 "first-experience-packet",
                 (
                     packet_runs[0]["returncode"] == 0
-                    and packet_runs[0]["schema"] == "wavemind.experience_packet.v1"
+                    and packet_runs[0]["schema"] == "wavemind.onboarding.python.v1"
+                    and packet_runs[0]["recall_schema"]
+                    == "wavemind.experience_packet.v1"
                     and packet_runs[0]["item_count"] == 1
                     and first_packet_seconds <= 300.0
                 ),

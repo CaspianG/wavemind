@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import ipaddress
 import json
 import os
 import sys
@@ -15,6 +16,7 @@ from .cluster_drill import run_cluster_drill
 from .active_active_drill import parse_active_active_regions, run_active_active_drill
 from .consensus import run_control_plane_consensus_profile
 from .core import WaveMind
+from .experience import SQLiteExperienceStore
 from .encoders import create_text_encoder
 from .advisor import advise_memory_architecture, advice_status_meets_or_exceeds
 from .scale import (
@@ -63,6 +65,7 @@ from .memory_safety_admission import (
     evaluate_memory_safety_admission,
     render_memory_safety_admission_markdown,
 )
+from .product_backup import create_product_backup, restore_product_backup
 from .integration_admission import (
     evaluate_integration_admission,
     render_integration_admission_markdown,
@@ -1677,6 +1680,25 @@ def build_parser() -> argparse.ArgumentParser:
     backup.add_argument("--keep-last", type=int)
     backup.add_argument("--prefix", default="wavemind")
 
+    product_backup = sub.add_parser(
+        "product-backup",
+        help="Backup Core memory and Verified Experience as one verified archive",
+    )
+    product_backup.add_argument("--out", required=True)
+    product_backup.add_argument(
+        "--experience-db",
+        default=os.environ.get("WAVEMIND_EXPERIENCE_DB", "wavemind-experience.db"),
+    )
+
+    product_restore = sub.add_parser(
+        "product-restore",
+        help="Restore Core memory and Verified Experience from one verified archive",
+    )
+    product_restore.add_argument("--from", dest="source", required=True)
+    product_restore.add_argument("--core-to", required=True)
+    product_restore.add_argument("--experience-to", required=True)
+    product_restore.add_argument("--overwrite", action="store_true")
+
     restore = sub.add_parser("restore", help="Restore a SQLite backup")
     restore.add_argument("--from", dest="source", required=True)
     restore.add_argument("--to", dest="destination")
@@ -1788,8 +1810,14 @@ def build_parser() -> argparse.ArgumentParser:
     bench.add_argument("--top-k", type=int, default=1)
 
     serve = sub.add_parser("serve", help="Run FastAPI daemon")
-    serve.add_argument("--host", default="0.0.0.0")
+    serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", type=int, default=8000)
+    serve.add_argument(
+        "--allow-public",
+        action="store_true",
+        default=_env_flag("WAVEMIND_ALLOW_PUBLIC_BIND"),
+        help="Explicitly allow a non-loopback bind. Authentication must also be configured.",
+    )
     serve.add_argument(
         "--replicated-root",
         dest="root",
@@ -1908,6 +1936,42 @@ def _env_int(name: str, *, default: int = 0) -> int:
     if raw is None or raw.strip() == "":
         return default
     return int(raw)
+
+
+def _is_loopback_host(host: str) -> bool:
+    selected = host.strip().strip("[]").lower()
+    if selected == "localhost":
+        return True
+    try:
+        return ipaddress.ip_address(selected).is_loopback
+    except ValueError:
+        return False
+
+
+def enforce_safe_serve_bind(args) -> int:
+    host = str(getattr(args, "host", "127.0.0.1"))
+    if _is_loopback_host(host):
+        return 0
+    if not getattr(args, "allow_public", False):
+        print(
+            "public bind blocked: pass --allow-public to acknowledge network exposure",
+            file=sys.stderr,
+        )
+        return 2
+    auth_names = (
+        "WAVEMIND_API_PRINCIPALS",
+        "WAVEMIND_READ_KEYS",
+        "WAVEMIND_WRITE_KEYS",
+        "WAVEMIND_API_KEYS",
+        "WAVEMIND_ADMIN_KEYS",
+    )
+    if not any(os.environ.get(name, "").strip() for name in auth_names):
+        print(
+            "public bind blocked: configure authenticated API principals or keys",
+            file=sys.stderr,
+        )
+        return 2
+    return 0
 
 
 def enforce_serve_production_admission(args) -> int:
@@ -2833,6 +2897,9 @@ def main(argv: list[str] | None = None) -> int:
 
         from .api import create_app
 
+        guard_status = enforce_safe_serve_bind(args)
+        if guard_status != 0:
+            return guard_status
         guard_status = enforce_serve_production_admission(args)
         if guard_status != 0:
             return guard_status
@@ -2865,6 +2932,17 @@ def main(argv: list[str] | None = None) -> int:
             overwrite=args.overwrite,
         )
         print(f"restored: {path}")
+        return 0
+
+    if args.command == "product-restore":
+        core_path, experience_path = restore_product_backup(
+            args.source,
+            core_destination=args.core_to,
+            experience_destination=args.experience_to,
+            overwrite=args.overwrite,
+        )
+        print(f"core_restored: {core_path}")
+        print(f"experience_restored: {experience_path}")
         return 0
 
     if args.command == "recovery-restore":
@@ -4562,6 +4640,13 @@ def main(argv: list[str] | None = None) -> int:
             backup_prefix=args.prefix,
         )
         print(f"backup: {path}")
+        return 0
+
+
+    if args.command == "product-backup":
+        with SQLiteExperienceStore(args.experience_db) as experience_store:
+            path = create_product_backup(mind, experience_store, args.out)
+        print(f"product_backup: {path}")
         return 0
 
     if args.command == "benchmark":

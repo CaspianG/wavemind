@@ -1,0 +1,29 @@
+{
+  "schema": "wavemind.safe_product_retrieval_dataset.v1",
+  "revision": "safe-retrieval-unit-fixture-v1",
+  "holdout_status": "reusable_unit_fixture",
+  "thresholds": {
+    "hash_vector": 0.12,
+    "semantic_vector": 0.28,
+    "max_false_memory_injection_rate": 0.02,
+    "min_relevant_recall_at_1": 1.0,
+    "min_relevant_recall_ratio_vs_baseline": 1.0
+  },
+  "memories": [
+    {"id": "maple", "text": "Maple deployment checks run every Tuesday morning."},
+    {"id": "birch", "text": "Birch reports are stored in the Dublin region."},
+    {"id": "spruce", "text": "Spruce incidents require two operator approvals."}
+  ],
+  "relevant_queries": [
+    {"query": "When do Maple deployment checks run?", "expected": "maple"},
+    {"query": "Which region stores Birch reports?", "expected": "birch"},
+    {"query": "How many operator approvals do Spruce incidents require?", "expected": "spruce"}
+  ],
+  "irrelevant_queries": [
+    "Why do comets develop tails?",
+    "How are watercolor pigments made?",
+    "Which bird crosses the equator twice?",
+    "What causes ocean phosphorescence?",
+    "Who composed the Brandenburg Concertos?"
+  ]
+}

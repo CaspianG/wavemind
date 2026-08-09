@@ -7,6 +7,8 @@ ARG INSTALL_PRODUCTION=false
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV WAVEMIND_DB=/data/wavemind.sqlite3
+ENV WAVEMIND_EXPERIENCE_DB=/data/wavemind-experience.sqlite3
+ENV WAVEMIND_BACKUP_ROOT=/backups
 ENV WAVEMIND_LOG_LEVEL=INFO
 
 WORKDIR /app
@@ -25,4 +27,4 @@ RUN if [ "$INSTALL_PRODUCTION" = "true" ]; then pip install --no-cache-dir -e ".
 VOLUME ["/data", "/backups"]
 EXPOSE 8000
 
-CMD ["wavemind", "serve", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["wavemind", "serve", "--host", "127.0.0.1", "--port", "8000"]

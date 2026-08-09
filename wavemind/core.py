@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import hashlib
-import time
 import re
+import time
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -31,6 +31,22 @@ from .storage import (
 
 
 LEXICAL_STOPWORDS = DEFAULT_TOKEN_STOPWORDS
+_AUDIT_SECRET_ASSIGNMENT_RE = re.compile(
+    r"(?i)\b(api[_-]?key|access[_-]?token|authorization|password|secret|token)"
+    r"\s*([=:])\s*([^\s&,;]+)"
+)
+_AUDIT_BEARER_RE = re.compile(r"(?i)\bBearer\s+[^\s,;]+")
+_AUDIT_PROVIDER_KEY_RE = re.compile(r"\bsk-[A-Za-z0-9_-]{8,}\b")
+
+
+def _redact_audit_text(value: object) -> str:
+    text = str(value)
+    text = _AUDIT_SECRET_ASSIGNMENT_RE.sub(
+        lambda match: f"{match.group(1)}{match.group(2)}[REDACTED]",
+        text,
+    )
+    text = _AUDIT_BEARER_RE.sub("Bearer [REDACTED]", text)
+    return _AUDIT_PROVIDER_KEY_RE.sub("[REDACTED]", text)
 
 
 class WaveField:
@@ -142,6 +158,7 @@ class QueryResult:
     namespace: str
     tags: tuple[str, ...] = ()
     metadata: dict[str, Any] = field(default_factory=dict)
+    confidence_reason: str = ""
 
 
 class WaveMind:
@@ -174,6 +191,10 @@ class WaveMind:
         audit_queries: bool = False,
         recovery_journal_path: str | Path | None = None,
         shared_store_refresh_seconds: float = -1.0,
+        confidence_gate: bool = True,
+        hash_confidence_threshold: float = 0.12,
+        hash_lexical_coverage_threshold: float = 1.0 / 3.0,
+        semantic_confidence_threshold: float = 0.28,
     ):
         self.encoder = encoder or HashingTextEncoder(vector_dim=384)
         self.projector = FieldProjector(width, height, self.encoder.vector_dim)
@@ -203,6 +224,10 @@ class WaveMind:
         self.audit_queries = bool(audit_queries)
         self.recovery_journal_path = Path(recovery_journal_path) if recovery_journal_path else None
         self.shared_store_refresh_seconds = float(shared_store_refresh_seconds)
+        self.confidence_gate = bool(confidence_gate)
+        self.hash_confidence_threshold = float(hash_confidence_threshold)
+        self.hash_lexical_coverage_threshold = float(hash_lexical_coverage_threshold)
+        self.semantic_confidence_threshold = float(semantic_confidence_threshold)
         self._namespace_store_refresh_at: dict[str, float] = {}
         self._records_by_id: dict[int, MemoryRecord] = {}
         self._namespace_ids: dict[str, set[int]] = {}
@@ -505,6 +530,13 @@ class WaveMind:
                 graph_score = graph_scores.get(candidate_id, self.graph.energy(candidate_id) if self.graph_weight > 0 else 0.0)
                 priority_score = min(1.0, max(0.0, record.priority / 10.0))
                 lexical_score = self._lexical_match(query_tokens, record.id, record.text)
+                confidence_reason = self._confidence_reason(
+                    record,
+                    vector_score=float(vector_score),
+                    lexical_score=float(lexical_score),
+                )
+                if confidence_reason is None:
+                    continue
                 score = (
                     self.vector_weight * vector_score
                     + field_weight * field_score
@@ -525,6 +557,7 @@ class WaveMind:
                         namespace=record.namespace,
                         tags=record.tags,
                         metadata=record.metadata,
+                        confidence_reason=confidence_reason,
                     )
                 )
 
@@ -548,7 +581,7 @@ class WaveMind:
                 "query",
                 namespace=namespace,
                 metadata={
-                    "query": text,
+                    "query": _redact_audit_text(text),
                     "top_k": int(top_k),
                     "result_count": len(selected),
                     "candidate_count": len(candidate_scores),
@@ -560,6 +593,61 @@ class WaveMind:
                 },
             )
         return selected
+
+    def confidence_policy(self) -> dict[str, Any]:
+        encoder_name = type(self.encoder).__name__
+        is_hash = encoder_name == "HashingTextEncoder"
+        return {
+            "enabled": self.confidence_gate,
+            "encoder": encoder_name,
+            "mode": (
+                "lexical_and_vector"
+                if is_hash
+                else "semantic_vector_or_exact_lexical"
+            ),
+            "vector_threshold": (
+                self.hash_confidence_threshold
+                if is_hash
+                else self.semantic_confidence_threshold
+            ),
+            "lexical_coverage_threshold": self.hash_lexical_coverage_threshold,
+            "blocks_unverified_or_stale": True,
+        }
+
+    def _confidence_reason(
+        self,
+        record: MemoryRecord,
+        *,
+        vector_score: float,
+        lexical_score: float,
+    ) -> str | None:
+        if not self.confidence_gate:
+            return "confidence_gate_disabled"
+        metadata = record.metadata if isinstance(record.metadata, dict) else {}
+        status = str(
+            metadata.get("verification_status")
+            or metadata.get("memory_status")
+            or ""
+        ).strip().lower()
+        if status in {"unverified", "rejected", "stale", "contradictory", "rolled_back"}:
+            return None
+        if metadata.get("stale") is True or metadata.get("contradictory") is True:
+            return None
+        trust = str(metadata.get("trust") or "").strip().lower()
+        if trust in {"unverified", "tool_output", "model_generated"} and metadata.get("verified") is not True:
+            return None
+        if type(self.encoder).__name__ == "HashingTextEncoder":
+            if (
+                lexical_score < self.hash_lexical_coverage_threshold
+                or vector_score < self.hash_confidence_threshold
+            ):
+                return None
+            return "lexical_and_vector_match"
+        if lexical_score >= self.hash_lexical_coverage_threshold:
+            return "exact_lexical_match"
+        if vector_score < self.semantic_confidence_threshold:
+            return None
+        return "semantic_vector_match"
 
     def forget(
         self,
@@ -759,10 +847,10 @@ class WaveMind:
             "access_count": int(record.access_count),
         }
         if reason:
-            metadata["reason"] = str(reason)
+            metadata["reason"] = _redact_audit_text(reason)
         if query:
             if self.audit_queries:
-                metadata["query"] = str(query)
+                metadata["query"] = _redact_audit_text(query)
             else:
                 metadata["query_length"] = len(str(query))
         if persist:

@@ -1,9 +1,424 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-29T00:31:45Z",
-  "source_ref": "85f00b41f082",
+  "generated_at": "2026-08-09T14:04:53Z",
+  "source_ref": "48e7c0f51f92abfba4ade379ca3a628eccf910ec",
   "workflow_run_id": null,
-  "refresh_profile": "local",
+  "refresh_profile": "checked-in-historical",
+  "provenance": {
+    "schema": "wavemind.benchmark_snapshot_provenance.v1",
+    "claim_status": "historical",
+    "source_sha": "48e7c0f51f92abfba4ade379ca3a628eccf910ec",
+    "source_manifest": {
+      "schema": "wavemind.source_manifest.v1",
+      "algorithm": "sha256",
+      "files": [
+        {
+          "path": "benchmarks/active_active_admission_results.json",
+          "sha256": "080d94e93266fb2165f884306bce8394faa44ba8d7e49ae5d55049651c1464ef"
+        },
+        {
+          "path": "benchmarks/agent_coherence_results.json",
+          "sha256": "8dd24f9a67c4059d8465ec976fa081673995e98a832635a603da41176aedfecc"
+        },
+        {
+          "path": "benchmarks/agent_impact_results.json",
+          "sha256": "3219e3d3d84f061793b1c91223531248b0c0316748a4d63f252118bb68f0e0ec"
+        },
+        {
+          "path": "benchmarks/agent_memory_advantage_admission_results.json",
+          "sha256": "b05a7cc61e6d7815cb3c7b17453e300c48a83e402de33b390b26028706dd6ab3"
+        },
+        {
+          "path": "benchmarks/agent_memory_advantage_results.json",
+          "sha256": "99bd05d5db4012f5b4f38eb46272f802b4da0ac40c0ecd2352343a0f8ef3e5cb"
+        },
+        {
+          "path": "benchmarks/agent_memory_results.json",
+          "sha256": "42bcc587a254a93192f7e597ed326ef9a8256cbbb9c5dabe9bbfeb80717d5e18"
+        },
+        {
+          "path": "benchmarks/ann_index_curve_results.json",
+          "sha256": "b6b45524a64fc3e77fed503cba4134bb738535bfae13e48597495caf90b95dba"
+        },
+        {
+          "path": "benchmarks/asset_lifecycle_results.json",
+          "sha256": "fa2204e03656bc7a60c23b7a265ca18398c0127f1570cac27ace85fbbae40506"
+        },
+        {
+          "path": "benchmarks/benchmark_registry.py",
+          "sha256": "c6cb6627954e3681dfa550017181e3538b8fded32d8eed1a5d2ab0544d8fe639"
+        },
+        {
+          "path": "benchmarks/cluster_admission_results.json",
+          "sha256": "bd873f18a5a1e4afa6742ab17c51c86c4a60c7cdcd255a11d24f56fee6731805"
+        },
+        {
+          "path": "benchmarks/cluster_autoscale_results.json",
+          "sha256": "952e14bde66c9a0a4fb93c05c00353c7acf1005b23dd1fae8f4b0e0610b11323"
+        },
+        {
+          "path": "benchmarks/cost_efficiency_results.json",
+          "sha256": "4814d9f762f69f4ffb7f319bf8543eb0464e755127f20a104898026cc0f66b28"
+        },
+        {
+          "path": "benchmarks/developer_experience_admission_results.json",
+          "sha256": "814cf3a144f489a3b82dbd9b47ad50902fecad8aab4a394e9e0b2794254de2a6"
+        },
+        {
+          "path": "benchmarks/dynamic_memory_results.json",
+          "sha256": "9de7aabcc5350be63c94021393dfe74b2249da0ab1b529be63a3e4dd3bb5bac5"
+        },
+        {
+          "path": "benchmarks/experience_quality_admission_results.json",
+          "sha256": "48cab241954d6da416d7881f60a69b6d80a34d0a72ec7a70e328a3e171cb2ea9"
+        },
+        {
+          "path": "benchmarks/experienced_work_agent_results.json",
+          "sha256": "c530a6c3da9f4129318898059a7a3e5b1a9338e65d661c8ba285de699e3e3274"
+        },
+        {
+          "path": "benchmarks/external_http_active_active_loopback_results.json",
+          "sha256": "2829159194d19c35561d688cedb209cce32f58298b063120be361907e6f791f4"
+        },
+        {
+          "path": "benchmarks/field_memory_dynamics_results.json",
+          "sha256": "76794f0ceb4b49e9685c7543b38f90ca43af08e485c0dfd050cbfc546e000c47"
+        },
+        {
+          "path": "benchmarks/goal4_quality_experiment_results.json",
+          "sha256": "b9b8744c5d5c8e8d05a8c1fee2cd32d18f5f32494ad34bbb728b2ae9c2fc9105"
+        },
+        {
+          "path": "benchmarks/http_cluster_load_results.json",
+          "sha256": "8540a4379a4279c7e0f245fb8a8fc2e7139ab3185a3453f1ec5066b0b928724d"
+        },
+        {
+          "path": "benchmarks/integration_admission_results.json",
+          "sha256": "714273dc0685e9760d7a0e15833940944e7aa325f3c7b3cf1fa044033512cbbd"
+        },
+        {
+          "path": "benchmarks/kubernetes_active_active_region_smoke_results.json",
+          "sha256": "c32a8ed85ae83160986771fe3a96f4296e2ce289187ad811c0f7e5ef03afe862"
+        },
+        {
+          "path": "benchmarks/kubernetes_cluster_network_smoke_results.json",
+          "sha256": "8f60f5788985593de27a72d93a9c0b9ccb055490175222e8a381b548ac114f0a"
+        },
+        {
+          "path": "benchmarks/kubernetes_operator_smoke_results.json",
+          "sha256": "0ccb084bb71df95234f12db06badbd77f249977bc88e78c2db23e4a964c332af"
+        },
+        {
+          "path": "benchmarks/kubernetes_postgres_qdrant_dr_smoke_results.json",
+          "sha256": "d3c2ad2741a78f2b426aed4c05ef4fb4f2bb2008701cb174790aa93e3931d47e"
+        },
+        {
+          "path": "benchmarks/kubernetes_serverless_lifecycle_smoke_results.json",
+          "sha256": "9f8878ffe99710128828b9c841b49e19980e227aea3639a9ddf8130a4ee007b4"
+        },
+        {
+          "path": "benchmarks/local_http_active_active_smoke_results.json",
+          "sha256": "f7199ae1a145fca65fbab389136a031cef862fb3fb56f11ab2991b0a3a49497e"
+        },
+        {
+          "path": "benchmarks/local_http_cluster_smoke_results.json",
+          "sha256": "b76a2b5de7932add4a0f3b30057f65f7d52ccd64706a45dcbe9b1f614ad9002c"
+        },
+        {
+          "path": "benchmarks/locomo_evidence_results.json",
+          "sha256": "a885668440b2e907cbfb5136231f9394718b45e7822b764b028052e5a449b997"
+        },
+        {
+          "path": "benchmarks/locomo_memory_os_results.json",
+          "sha256": "5a80ad48203edc3906283528c10af7eefa6e889b3d01b4cd32aa1df18c0d740b"
+        },
+        {
+          "path": "benchmarks/locomo_public_memory_competitors_results.json",
+          "sha256": "949d0c124d1ff4094a8f25079209fa21995cf776effac3716c8aca75b70b8be6"
+        },
+        {
+          "path": "benchmarks/locomo_sentence_evidence_results.json",
+          "sha256": "ba5be64f3b1bd944fe2ec3dd14d55b317fb8080c6b619ac5c1d1fd6317a1d2fa"
+        },
+        {
+          "path": "benchmarks/long_memory_evidence_results.json",
+          "sha256": "f303b99f9be3a734da256e592006e1eb1122d551194afcde6a612530d0addc4c"
+        },
+        {
+          "path": "benchmarks/longmemeval_answer_extractive_20_results.json",
+          "sha256": "694d121dc8f5ecb513ec29e3ce94f2e3199ddb77db5ef5c4572b1db3eda646bd"
+        },
+        {
+          "path": "benchmarks/longmemeval_answer_qwen25_0_5b_50_results.json",
+          "sha256": "036ffee1f1dd0efe626601d7eba9e92fe0c0ac83edd67a506eb15411d685d7ee"
+        },
+        {
+          "path": "benchmarks/longmemeval_answer_qwen25_1_5b_50_results.json",
+          "sha256": "c84ade1ea5a536bddbb5efa6a5c16dd4b5e7ad8d62fb3b62d2c702e658a7cbc0"
+        },
+        {
+          "path": "benchmarks/longmemeval_evidence_50_results.json",
+          "sha256": "a3f8220f8b4177b77dddc07d37c2c2a8c753b383eea6c7e8b2f6525db22735f0"
+        },
+        {
+          "path": "benchmarks/longmemeval_evidence_results.json",
+          "sha256": "14bf7cb12d442a7e40fa96dab81714c26aa7790feb133e6dc5448aa9f8c3a29f"
+        },
+        {
+          "path": "benchmarks/longmemeval_memory_os_results.json",
+          "sha256": "0d5502dfb9d5c945d09e5a8275f4f85c2c77d5b4c7e13d9e76163a3b38252ab1"
+        },
+        {
+          "path": "benchmarks/longmemeval_v2_frozen20_protocol_results.json",
+          "sha256": "e9888878c25a12b623763828f07c7478af3fb7c04184dd0d5a505da37561c747"
+        },
+        {
+          "path": "benchmarks/longmemeval_v2_small_memory_os_results.json",
+          "sha256": "73441e72699b2fcf750a714a4bf643614417017fef6a5ad9502ca4926f3bbf2d"
+        },
+        {
+          "path": "benchmarks/memory_competitor_results.json",
+          "sha256": "e3d0658102fd946df2736196ba6c1c46c80c710d7cb62b9d3353dcf4e4d4ecef"
+        },
+        {
+          "path": "benchmarks/memory_os_ab_results.json",
+          "sha256": "251a322f88e4839701b83373bee9d78f0509eeedc6f67ecc8d239f5bbc43e7db"
+        },
+        {
+          "path": "benchmarks/memory_os_admission_results.json",
+          "sha256": "1f0a3d82c9c3f189b3559f9790c8fe620b1bf6b32da5e6a83359bcb61ae06110"
+        },
+        {
+          "path": "benchmarks/memory_os_agent_quality_results.json",
+          "sha256": "2f16ac23d57d9c3e75361adb0f9158d59cbfa9c84554397ad9500afe7ec901bb"
+        },
+        {
+          "path": "benchmarks/memory_os_canary_results.json",
+          "sha256": "697a0b4163df38946bfd4d9fa47913faf59aec76f4a8acd5a2d1d5fb32b11133"
+        },
+        {
+          "path": "benchmarks/memory_os_intelligence_results.json",
+          "sha256": "9576d1be75ea2b5e2d2e3ae736b952e23ac6f683da5e8ebe9acfcbf3ed587aa4"
+        },
+        {
+          "path": "benchmarks/memory_os_policy_bundle_results.json",
+          "sha256": "ec966927bb0c62b7c3cc4b2b987f193685199a8b9cc6a1d79ae2b7de5a7fc967"
+        },
+        {
+          "path": "benchmarks/memory_os_policy_evolution_results.json",
+          "sha256": "9a68f8c238a227ceace6b894dc0d24e49c11b9c83abc281722a929dcdcc9614c"
+        },
+        {
+          "path": "benchmarks/memory_os_quality_results.json",
+          "sha256": "9f7226224ad4fb548ac8b9f9594f955d745ed37a33ca809e24c32fd3a931f02f"
+        },
+        {
+          "path": "benchmarks/memory_os_remote_soak_handoff_results.json",
+          "sha256": "3a98c5a5aee1abf17b45270d5f92023173c5f20a384bf90a9790451c60c06dc7"
+        },
+        {
+          "path": "benchmarks/memory_os_remote_worker_soak_results.json",
+          "sha256": "4756394c6a324e1843689ec6a5f5e9cd0685998c241d9e9ad574cc4f63d5130d"
+        },
+        {
+          "path": "benchmarks/memory_os_runtime_soak_results.json",
+          "sha256": "a9a76003ff7e714e367247ec0a834d0251cbf1bafbc34135389e405c39cf59bd"
+        },
+        {
+          "path": "benchmarks/memory_safety_admission_results.json",
+          "sha256": "72f7022e5f44a5add21b77cf636c540635f9b769ac27b013433c02f91697b69c"
+        },
+        {
+          "path": "benchmarks/multimodal_admission_results.json",
+          "sha256": "f5e2e17acd34197cd18b81ae6d27844e43a0a12316760f3c2fcb16acfa72018b"
+        },
+        {
+          "path": "benchmarks/multimodal_external_encoder_results.json",
+          "sha256": "1c6e2d78067d4405e95336eb906226ea433c7853b32a0a6814af7a5cf4254184"
+        },
+        {
+          "path": "benchmarks/nomiracl_russian_results.json",
+          "sha256": "81bc850c6fa961cbc354c06e46182f41b3c5b91e66785ba63409d9a1c9465f35"
+        },
+        {
+          "path": "benchmarks/open_retrieval_scifact_results.json",
+          "sha256": "577f9e6db5a3a22f125dbb24a2c90c912641a912f6e969fe2dca7435e1462cd2"
+        },
+        {
+          "path": "benchmarks/production_admission_results.json",
+          "sha256": "19e70180730c9f497ac40e23d230af275c9522aa1856f3f5f540139c946e62e2"
+        },
+        {
+          "path": "benchmarks/production_evidence_bundle_results.json",
+          "sha256": "c92ad11746a6c972987d339e772bec4508c6cd9ac8f6a0e24ab6f5f5a12b172a"
+        },
+        {
+          "path": "benchmarks/production_evidence_dispatch_results.json",
+          "sha256": "e2180cce872299bc6f82a2585e0b0c8ada0d2a877b974a2417d334e422842877"
+        },
+        {
+          "path": "benchmarks/production_evidence_preflight_results.json",
+          "sha256": "f7eb4c20bcaa56954f63b83cb01a511322ad5efe3c5ea8aa521a97acc20d7cdc"
+        },
+        {
+          "path": "benchmarks/production_evidence_results.json",
+          "sha256": "fbe6568668e1a87a94a6f69fc759cd92fba5f75886db9f590d8a4dfbec869328"
+        },
+        {
+          "path": "benchmarks/production_index_profile_results.json",
+          "sha256": "af9ad2834aa7a20a1097bea5683111a9abc77e16aa18c6a09428adf1b3f219a0"
+        },
+        {
+          "path": "benchmarks/production_load_faiss_1m_results.json",
+          "sha256": "4e1b519c6c96dedb74fb7e33707635fa87d5df8f3ba85933ce6d57b2a5c25a5b"
+        },
+        {
+          "path": "benchmarks/production_load_qdrant_100k_tuned_results.json",
+          "sha256": "1d74b005e799eb7c1391b9085fb183956d552e934aba809d4fb835940391fa58"
+        },
+        {
+          "path": "benchmarks/production_load_qdrant_1m_ef_sweep_results.json",
+          "sha256": "baf5c85d7a53dcd390556239bd0a50e079f6a4bb743f444d6f7bdad21e8fa098"
+        },
+        {
+          "path": "benchmarks/production_load_qdrant_1m_results.json",
+          "sha256": "8f41b67b531ed98b1ab03c5bbbf5c6c4127ee5ad3dbd0e3e6952634056caf949"
+        },
+        {
+          "path": "benchmarks/production_load_qdrant_1m_tuned_results.json",
+          "sha256": "6629d6ce00233134b12e67167ba4954f1f7ce67e5ec049a87a99a79674545cf9"
+        },
+        {
+          "path": "benchmarks/production_load_results.json",
+          "sha256": "87acc21f3c55fe2abbec0cff0e79d979be74dcdf92e6910dc4ebb0b3ae131966"
+        },
+        {
+          "path": "benchmarks/production_pgvector_tuning_results.json",
+          "sha256": "ced7915bd832095fca86d41a06da71000720a598541bc001fd0bb5d12afa062a"
+        },
+        {
+          "path": "benchmarks/production_readiness_results.json",
+          "sha256": "973ad16cd30f127aa66c022bbd344f64fce5a9151ad262d479c7cc597edbcec6"
+        },
+        {
+          "path": "benchmarks/production_streaming_load_ivfpq_100k_results.json",
+          "sha256": "ed1580c02964d2f12fbc6b91c722bc7d574ccff082c170470a761bb8b114a90e"
+        },
+        {
+          "path": "benchmarks/production_streaming_load_ivfpq_10m_results.json",
+          "sha256": "25c459766e18ed1d4b1195be8ba46bafd8e1fbafe40d9256edc1169a6a51d651"
+        },
+        {
+          "path": "benchmarks/production_streaming_load_ivfpq_1m_results.json",
+          "sha256": "57f0cd935631e8c0def60c20d605f8eb5a604d2dec7baccdc75b37b45a1818df"
+        },
+        {
+          "path": "benchmarks/production_streaming_load_ivfpq_50m_results.json",
+          "sha256": "92ed6db1aa458c6e3b9472a8d32bc9ef9fb5cf286166fe38567965d68e7aa260"
+        },
+        {
+          "path": "benchmarks/production_streaming_load_pgvector_10m_results.json",
+          "sha256": "7b5f4f9f9b4160e5381b6b822307c55ca674f6779b4d34817152c847088c614c"
+        },
+        {
+          "path": "benchmarks/production_streaming_load_pgvector_smoke_results.json",
+          "sha256": "00f988b4dac891fdee2267afd2f24c51c51661be22e7a1eeb9ca1d43f93b5dfd"
+        },
+        {
+          "path": "benchmarks/production_streaming_load_qdrant_10m_results.json",
+          "sha256": "d2f956db9db3e8c5533e28d6a2ec5710bc70fee2110393f399197212801a08b6"
+        },
+        {
+          "path": "benchmarks/production_streaming_load_qdrant_1m_results.json",
+          "sha256": "9cdcc7a1372ce0cb65b6632e259959e094681913b315854f61953e37b9e7cb3d"
+        },
+        {
+          "path": "benchmarks/production_streaming_load_qdrant_1m_tuned_results.json",
+          "sha256": "6cc295c5d1e2483c3c4b396aaa5e1d52b0b8b73c7b1ddce24fa88d0550d21509"
+        },
+        {
+          "path": "benchmarks/production_streaming_load_qdrant_sharded_10m_results.json",
+          "sha256": "f6feb7fbac3463a5a87e51f988c95e02911f2110642ee30a4e12f34d55cc0972"
+        },
+        {
+          "path": "benchmarks/production_streaming_load_qdrant_sharded_smoke_results.json",
+          "sha256": "99fba9de022fc2ed4d94ff5a00c21e69219a3d26ca38b1c5a0a800d469bfeea9"
+        },
+        {
+          "path": "benchmarks/production_streaming_load_qdrant_smoke_results.json",
+          "sha256": "d1356cceff5b232fe258526f5025a60083e09db4b3762a2d50abf9f28ebae3bf"
+        },
+        {
+          "path": "benchmarks/production_streaming_load_smoke_results.json",
+          "sha256": "b4c0fd381905129d90dc45ef57334b346b85e093cca23ec0100f99d480617831"
+        },
+        {
+          "path": "benchmarks/redis_api_load_results.json",
+          "sha256": "26e4859dcb9fa4688a27e4ef745201768ccfdfb56edaf7b78d85c276880d2887"
+        },
+        {
+          "path": "benchmarks/release_claims_results.json",
+          "sha256": "818e97f2b06657dc3704b6716c7178b24b9b3ba8d4ffc3a465c98f10ee7d2b65"
+        },
+        {
+          "path": "benchmarks/scale_gap_results.json",
+          "sha256": "53afc985b582fc38e950fac5f2704c90744539d3b0d2648af1863b7517c269bd"
+        },
+        {
+          "path": "benchmarks/scale_readiness_results.json",
+          "sha256": "f48906561592b64cfc26987692a203e2710ec6013f52d4a6d67c861b6558ade3"
+        },
+        {
+          "path": "benchmarks/serverless_admission_results.json",
+          "sha256": "37bdbef859972e815f5084854e4bce9878f77dc9fbd901b0abb640bf6d7afa97"
+        },
+        {
+          "path": "benchmarks/state_bench_agent_learning_adapter_results.json",
+          "sha256": "cfd145c40db3d445c448769ccfe4b15a7eb566c17627ebe99d2b6a32c850d8e7"
+        },
+        {
+          "path": "benchmarks/strict_evidence_readiness_results.json",
+          "sha256": "dae33ae5d0008c201fd58d1dacdae8d79a6d32c7f777b448a641e6038e565b1b"
+        },
+        {
+          "path": "benchmarks/structured_memory_results.json",
+          "sha256": "c1886aeeb3603ceadf955a5d21444808e364820cb2533d9b9dda8d483857be97"
+        },
+        {
+          "path": "benchmarks/verified_experience_admission_results.json",
+          "sha256": "c850be5be31d2f00fc37c63cd472d2c4c12765b6aecffe7acae1caf08d975b77"
+        },
+        {
+          "path": "benchmarks/verified_experience_results.json",
+          "sha256": "62c9c4dcef625936422e49e979b929837a1327c4ca63142e2d21bc1b276d0455"
+        },
+        {
+          "path": "benchmarks/wavemind_capacity_results.json",
+          "sha256": "e3909fdab536e15fe49bfdde1b813ec3ebf1ba4617f3585ff2efd3bfaab11fd8"
+        }
+      ],
+      "digest": "4e39f5656331a02dedd98e6ad3676f5d0e88b01ed18baf4219655fb8754b5ef0"
+    },
+    "generated_at": "2026-08-09T14:04:53Z",
+    "execution_environment": {
+      "profile": "checked-in-historical",
+      "python": "3.13.3",
+      "implementation": "CPython",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "executable": "python.exe",
+      "github_run_id": null,
+      "github_runner_os": null
+    },
+    "revisions": {
+      "registry_schema": "wavemind.benchmark_matrix.v1",
+      "dataset_contract_sha256": "48745f12c4e01ee528fd8fe21a15203835ea9e77cb2fd8b4c3798f70e2a57cb4",
+      "model_revisions": "declared by each source benchmark artifact",
+      "config": {
+        "refresh_profile": "checked-in-historical",
+        "claim_status": "historical"
+      }
+    }
+  },
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
   "benchmarks": [
     {
@@ -3443,5 +3858,10 @@
       "target": "Show whether WaveMind's dynamic suppression improves context quality when facts become stale or conflicting.",
       "next_step": "Add an optional RAGBench adapter after retrieval benchmarks are stable."
     }
-  ]
+  ],
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "8270d889176be38e3282056fa30932bbc570cbe0b3ded036c24f69e7a3741ddd"
+  }
 }

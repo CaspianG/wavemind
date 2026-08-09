@@ -30,6 +30,22 @@ updates:
         patterns:
           - "*"
 
+  - package-ecosystem: npm
+    directory: /sdk/typescript
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:45"
+      timezone: Europe/Moscow
+    open-pull-requests-limit: 5
+    groups:
+      typescript-minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+
   - package-ecosystem: docker
     directory: /
     schedule:

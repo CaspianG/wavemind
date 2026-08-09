@@ -747,6 +747,7 @@ def _core_from_experience(store: SQLiteExperienceStore, path: Path) -> WaveMind:
         db_path=path,
         encoder=HashingTextEncoder(vector_dim=384),
         score_threshold=0.0,
+        confidence_gate=False,
     )
     for record in store.list(
         namespace=NAMESPACE,
@@ -1094,6 +1095,8 @@ def run_benchmark(workdir: Path) -> dict[str, Any]:
                     "environment-verification latency"
                 ),
                 "latency_repetitions_per_case": LATENCY_REPETITIONS,
+                "core_retrieval_mode": "raw_non_production",
+                "production_abstention_admission_eligible": False,
             },
             "training": {
                 "successful": sum(bool(row["success"]) for row in training_runs),

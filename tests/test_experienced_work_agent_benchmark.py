@@ -62,6 +62,8 @@ def test_experienced_work_agent_meets_held_out_product_gates(tmp_path) -> None:
         - by_engine["WaveMind Core"]["p95_runtime_overhead_ms"]
     )
     assert payload["protocol"]["paired_latency_samples"] is True
+    assert payload["protocol"]["core_retrieval_mode"] == "raw_non_production"
+    assert payload["protocol"]["production_abstention_admission_eligible"] is False
     assert payload["protocol"]["paired_latency_regression_estimator"] == (
         "relative regression between engine p95 runtime overheads from "
         "per-case paired medians, excluding tool and environment-verification "

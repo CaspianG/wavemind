@@ -8,13 +8,17 @@ services:
     restart: unless-stopped
     environment:
       WAVEMIND_DB: /data/wavemind.sqlite3
+      WAVEMIND_EXPERIENCE_DB: /data/wavemind-experience.sqlite3
       WAVEMIND_RECOVERY_JOURNAL: /data/wavemind.recovery.jsonl
+      WAVEMIND_BACKUP_ROOT: /backups
+      WAVEMIND_API_PRINCIPALS: ${WAVEMIND_API_PRINCIPALS:?Set WAVEMIND_API_PRINCIPALS to a JSON key-to-principal mapping}
       WAVEMIND_ENCODER: hash
       WAVEMIND_INDEX: numpy
       WAVEMIND_SCORE_THRESHOLD: "0.05"
       WAVEMIND_LOG_LEVEL: INFO
+    command: ["wavemind", "serve", "--host", "0.0.0.0", "--port", "8000", "--allow-public"]
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     volumes:
       - ./data:/data
       - ./backups:/backups

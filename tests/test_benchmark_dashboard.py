@@ -28,6 +28,10 @@ def test_benchmark_dashboard_renderer_writes_static_html(tmp_path):
     assert "WaveMind Living Benchmark Dashboard" in html
     assert "assets/benchmark-summary.svg" in html
     assert "Publication Contract" in html
+    assert "Safe Product Truth" in html
+    assert "Checked-in status" in html
+    assert "historical" in html
+    assert "data/product-status.json" in html
     assert "claim-limited until strict production evidence passes" in html
     assert "weekly schedule: true" in html
     assert "github pages deploy: true" in html

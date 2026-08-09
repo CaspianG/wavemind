@@ -617,6 +617,17 @@ class SQLiteExperienceStore:
     def __exit__(self, exc_type: object, exc: object, tb: object) -> None:
         self.close()
 
+    def backup(self, destination: str | Path) -> Path:
+        path = Path(destination)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        target = sqlite3.connect(path)
+        try:
+            with self._lock:
+                self.conn.backup(target)
+        finally:
+            target.close()
+        return path
+
     def ensure_schema(self) -> None:
         with self._lock, self.conn:
             self.conn.execute(
@@ -1094,6 +1105,21 @@ class SQLiteExperienceStore:
             if current_row is None:
                 raise KeyError(experience_id)
             current = _experience_from_row(current_row)
+            if current.status is ExperienceStatus.ROLLED_BACK:
+                restored_row = self.conn.execute(
+                    """
+                    SELECT * FROM experience_records
+                    WHERE rollback_of_id = ?
+                    ORDER BY created_at DESC LIMIT 1
+                    """,
+                    (current.id,),
+                ).fetchone()
+                if restored_row is None:
+                    raise ValueError("rolled back experience is missing its restored version")
+                restored = _experience_from_row(restored_row)
+                if restored.metadata.get("rollback_reason") != reason:
+                    raise ValueError("rollback already completed with a different reason")
+                return restored
             if not current.supersedes_id:
                 raise ValueError("experience has no prior version to roll back to")
             prior_row = self.conn.execute(

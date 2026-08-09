@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
 import os
 import time
@@ -55,6 +56,7 @@ from .jobs import (
     query_with_vector_cache,
 )
 from .observability import configure_observability, instrument_fastapi_app
+from .product_backup import create_rotating_product_backup
 from .memory_firewall import (
     FirewallContext,
     MemoryFirewall,
@@ -65,6 +67,20 @@ from .studio import STUDIO_HTML, field_heatmap, studio_snapshot
 
 logger = logging.getLogger("wavemind.api")
 ROLE_LEVELS = {"read": 1, "write": 2, "admin": 3}
+
+
+@dataclass(frozen=True)
+class APIPrincipal:
+    identity: str
+    role: str
+    namespace_prefixes: tuple[str, ...]
+
+    def allows_namespace(self, namespace: str) -> bool:
+        selected = namespace.strip()
+        return any(
+            prefix == "*" or selected.startswith(prefix.removesuffix("*"))
+            for prefix in self.namespace_prefixes
+        )
 
 
 @dataclass(frozen=True)
@@ -80,12 +96,36 @@ class RateLimitStats:
 
 
 class APIAuth:
-    def __init__(self, keys: dict[str, str]):
-        self.keys = keys
+    def __init__(self, principals: dict[str, APIPrincipal]):
+        self.principals = principals
 
     @classmethod
     def from_env(cls) -> "APIAuth":
-        keys: dict[str, str] = {}
+        principals: dict[str, APIPrincipal] = {}
+        raw_principals = os.environ.get("WAVEMIND_API_PRINCIPALS", "").strip()
+        if raw_principals:
+            try:
+                payload = json.loads(raw_principals)
+            except json.JSONDecodeError as exc:
+                raise ValueError("WAVEMIND_API_PRINCIPALS must be valid JSON") from exc
+            if not isinstance(payload, dict):
+                raise ValueError("WAVEMIND_API_PRINCIPALS must be a JSON object")
+            for key, raw in payload.items():
+                if not isinstance(key, str) or not key.strip() or not isinstance(raw, dict):
+                    raise ValueError("WAVEMIND_API_PRINCIPALS entries must map keys to objects")
+                identity = str(raw.get("identity") or "").strip()
+                role = str(raw.get("role") or "").strip().lower()
+                prefixes = raw.get("namespace_prefixes")
+                if not identity or role not in ROLE_LEVELS:
+                    raise ValueError("API principals require identity and a valid role")
+                if not isinstance(prefixes, list) or not prefixes:
+                    raise ValueError("API principals require namespace_prefixes")
+                normalized = tuple(
+                    str(prefix).strip() for prefix in prefixes if str(prefix).strip()
+                )
+                if not normalized:
+                    raise ValueError("API principal namespace_prefixes must not be empty")
+                principals[key] = APIPrincipal(identity, role, normalized)
         for env_name, role in (
             ("WAVEMIND_READ_KEYS", "read"),
             ("WAVEMIND_WRITE_KEYS", "write"),
@@ -93,30 +133,53 @@ class APIAuth:
             ("WAVEMIND_ADMIN_KEYS", "admin"),
         ):
             for key in _split_keys(os.environ.get(env_name, "")):
-                keys[key] = role
-        return cls(keys)
+                principals.setdefault(
+                    key,
+                    APIPrincipal(
+                        identity=f"legacy:{role}",
+                        role=role,
+                        namespace_prefixes=("*",),
+                    ),
+                )
+        return cls(principals)
 
     @property
     def enabled(self) -> bool:
-        return bool(self.keys)
+        return bool(self.principals)
 
-    def role_for_request(self, request: Request) -> str | None:
+    def principal_for_request(self, request: Request) -> APIPrincipal | None:
         key = request.headers.get("x-api-key")
         authorization = request.headers.get("authorization", "")
         if authorization.lower().startswith("bearer "):
             key = authorization[7:].strip()
         if not key:
             return None
-        return self.keys.get(key)
+        return self.principals.get(key)
 
-    def check(self, request: Request, required_role: str) -> None:
+    def check(self, request: Request, required_role: str) -> APIPrincipal:
         if not self.enabled:
-            return
-        role = self.role_for_request(request)
-        if role is None:
+            return APIPrincipal("local", "admin", ("*",))
+        principal = self.principal_for_request(request)
+        if principal is None:
             raise HTTPException(status_code=401, detail="Missing or invalid API key")
-        if ROLE_LEVELS[role] < ROLE_LEVELS[required_role]:
+        if ROLE_LEVELS[principal.role] < ROLE_LEVELS[required_role]:
             raise HTTPException(status_code=403, detail="Insufficient API key role")
+        return principal
+
+    def check_namespaces(
+        self,
+        principal: APIPrincipal,
+        namespaces: set[str],
+    ) -> None:
+        if principal.namespace_prefixes == ("*",):
+            return
+        if not namespaces:
+            raise HTTPException(
+                status_code=403,
+                detail="An explicit authorized namespace is required",
+            )
+        if not all(principal.allows_namespace(namespace) for namespace in namespaces):
+            raise HTTPException(status_code=403, detail="Namespace access denied")
 
 
 class InMemoryRateLimiter:
@@ -622,9 +685,41 @@ def _rate_limit_key(request: Request) -> str:
     return f"ip:{client}"
 
 
+def _collect_namespace_values(value: Any, namespaces: set[str]) -> None:
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if key == "namespace" and isinstance(item, str) and item.strip():
+                namespaces.add(item.strip())
+            else:
+                _collect_namespace_values(item, namespaces)
+    elif isinstance(value, list):
+        for item in value:
+            _collect_namespace_values(item, namespaces)
+
+
+async def _request_namespaces(request: Request) -> set[str]:
+    namespaces = {
+        value.strip()
+        for value in request.query_params.getlist("namespace")
+        if value.strip()
+    }
+    if request.method not in {"GET", "HEAD", "OPTIONS"}:
+        content_type = request.headers.get("content-type", "").lower()
+        if "application/json" in content_type:
+            try:
+                payload = await request.json()
+            except (ValueError, json.JSONDecodeError):
+                payload = None
+            _collect_namespace_values(payload, namespaces)
+    return namespaces
+
+
 def require_role(role: str):
-    def dependency(request: Request) -> None:
-        request.app.state.auth.check(request, role)
+    async def dependency(request: Request) -> None:
+        auth = request.app.state.auth
+        principal = auth.check(request, role)
+        auth.check_namespaces(principal, await _request_namespaces(request))
+        request.state.wavemind_principal = principal
 
     return dependency
 
@@ -636,10 +731,12 @@ class RememberRequest(BaseModel):
     ttl_seconds: float | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
     priority: float = 1.0
+    idempotency_key: str | None = Field(default=None, min_length=1, max_length=255)
 
 
 class RememberResponse(BaseModel):
     id: int
+    idempotent_replay: bool = False
 
 
 class RememberBatchRequest(BaseModel):
@@ -678,10 +775,13 @@ class QueryResultResponse(BaseModel):
     namespace: str
     tags: list[str]
     metadata: dict[str, Any]
+    confidence_reason: str = ""
 
 
 class QueryResponse(BaseModel):
     results: list[QueryResultResponse]
+    abstained: bool = False
+    explain: dict[str, Any] = Field(default_factory=dict)
 
 
 class QueryBatchRequest(BaseModel):
@@ -780,13 +880,58 @@ class ImportResponse(BaseModel):
 
 
 class BackupRequest(BaseModel):
-    path: str
+    path: str | None = None
     keep_last: int | None = Field(default=None, ge=0)
     prefix: str = "wavemind"
 
 
 class BackupResponse(BaseModel):
     path: str
+
+
+def _resolve_http_import_path(raw_path: str) -> Path:
+    configured_root = os.environ.get("WAVEMIND_IMPORT_ROOT", "").strip()
+    if not configured_root:
+        raise HTTPException(
+            status_code=403,
+            detail="HTTP import is disabled; configure WAVEMIND_IMPORT_ROOT",
+        )
+    root = Path(configured_root).expanduser().resolve()
+    if not root.is_dir():
+        raise HTTPException(status_code=503, detail="Configured import root is unavailable")
+    if (
+        not raw_path
+        or raw_path in {".", ".."}
+        or "/" in raw_path
+        or "\\" in raw_path
+        or os.path.basename(raw_path) != raw_path
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="Import path must be one file or directory name inside the configured root",
+        )
+    candidate = next((entry for entry in root.iterdir() if entry.name == raw_path), None)
+    if candidate is None:
+        raise HTTPException(status_code=404, detail="Import path does not exist")
+    candidate = candidate.resolve()
+    try:
+        candidate.relative_to(root)
+    except ValueError as exc:
+        raise HTTPException(status_code=403, detail="Import path is outside the configured root") from exc
+    return candidate
+
+
+def _resolve_http_backup_root() -> Path:
+    configured_root = os.environ.get("WAVEMIND_BACKUP_ROOT", "").strip()
+    if not configured_root:
+        raise HTTPException(
+            status_code=403,
+            detail="HTTP backup is disabled; configure WAVEMIND_BACKUP_ROOT",
+        )
+    root = Path(configured_root).expanduser().resolve()
+    if not root.is_dir():
+        raise HTTPException(status_code=503, detail="Configured backup root is unavailable")
+    return root
 
 
 class MemoryExportRequest(BaseModel):
@@ -1472,9 +1617,70 @@ def create_app(
                 namespace=result.namespace,
                 tags=list(result.tags),
                 metadata=result.metadata,
+                confidence_reason=result.confidence_reason,
             )
             for result in results
         ]
+
+    def _remember_idempotently(request: RememberRequest) -> tuple[int, bool]:
+        metadata = dict(request.metadata)
+        if request.idempotency_key is None:
+            result = app.state.mind.remember(
+                request.text,
+                namespace=request.namespace,
+                tags=request.tags,
+                ttl_seconds=request.ttl_seconds,
+                metadata=metadata,
+                priority=request.priority,
+            )
+            return _remember_response_id(result), False
+        store = getattr(app.state.mind, "store", None)
+        list_records = getattr(store, "list", None)
+        if not callable(list_records):
+            raise HTTPException(
+                status_code=422,
+                detail="Idempotent remember requires a queryable persistent store",
+            )
+        key_digest = hashlib.sha256(request.idempotency_key.encode("utf-8")).hexdigest()
+        payload = {
+            "text": request.text,
+            "namespace": request.namespace,
+            "tags": list(request.tags),
+            "ttl_seconds": request.ttl_seconds,
+            "metadata": metadata,
+            "priority": request.priority,
+        }
+        payload_digest = hashlib.sha256(
+            json.dumps(
+                payload,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        ).hexdigest()
+        for record in list_records(namespace=request.namespace, include_expired=True):
+            internal = record.metadata.get("_wavemind_api", {})
+            if not isinstance(internal, dict) or internal.get("idempotency_key_sha256") != key_digest:
+                continue
+            if internal.get("payload_sha256") != payload_digest:
+                raise HTTPException(
+                    status_code=409,
+                    detail="Idempotency key already exists with a different payload",
+                )
+            return int(record.id), True
+        metadata["_wavemind_api"] = {
+            "idempotency_key_sha256": key_digest,
+            "payload_sha256": payload_digest,
+        }
+        result = app.state.mind.remember(
+            request.text,
+            namespace=request.namespace,
+            tags=request.tags,
+            ttl_seconds=request.ttl_seconds,
+            metadata=metadata,
+            priority=request.priority,
+        )
+        return _remember_response_id(result), False
 
     @app.middleware("http")
     async def rate_limit(request: Request, call_next):
@@ -1604,18 +1810,10 @@ def create_app(
     @app.post("/remember", response_model=RememberResponse, dependencies=[Depends(require_role("write"))])
     def remember(request: RememberRequest) -> RememberResponse:
         with _api_operation(app, "remember"):
-            remember_result = app.state.mind.remember(
-                request.text,
-                namespace=request.namespace,
-                tags=request.tags,
-                ttl_seconds=request.ttl_seconds,
-                metadata=request.metadata,
-                priority=request.priority,
-            )
-            id = _remember_response_id(remember_result)
+            id, replay = _remember_idempotently(request)
             invalidated = _invalidate_cache(app, request.namespace)
         logger.info("remembered id=%s namespace=%s cache_invalidated=%s", id, request.namespace, invalidated)
-        return RememberResponse(id=id)
+        return RememberResponse(id=id, idempotent_replay=replay)
 
     @app.post(
         "/remember/batch",
@@ -1697,7 +1895,33 @@ def create_app(
     def query(request: QueryRequest) -> QueryResponse:
         with _api_operation(app, "query"):
             results = _query_results(request)
-        return QueryResponse(results=_query_result_responses(results))
+        policy_factory = getattr(app.state.mind, "confidence_policy", None)
+        policy = (
+            policy_factory()
+            if callable(policy_factory)
+            else {
+                "enabled": True,
+                "mode": "replica_enforced",
+                "blocks_unverified_or_stale": True,
+            }
+        )
+        return QueryResponse(
+            results=_query_result_responses(results),
+            abstained=not bool(results),
+            explain=(
+                {
+                    "decision": "returned",
+                    "reason": results[0].confidence_reason,
+                    "confidence_policy": policy,
+                }
+                if results
+                else {
+                    "decision": "abstained",
+                    "reason": "no_candidate_passed_confidence_gate",
+                    "confidence_policy": policy,
+                }
+            ),
+        )
 
     @app.post(
         "/experience/packet",
@@ -1820,6 +2044,69 @@ def create_app(
         run_id = request.run_id or f"run_{uuid.uuid4().hex}"
         task_id = request.task_id or f"task_{uuid.uuid4().hex}"
         try:
+            existing_events = runtime.events(
+                namespace=request.namespace,
+                run_id=run_id,
+            )
+            if existing_events:
+                first = existing_events[0]
+                run_started = next(
+                    event
+                    for event in existing_events
+                    if event.kind is AgentEventKind.RUN_STARTED
+                )
+                task_started = next(
+                    event
+                    for event in existing_events
+                    if event.kind is AgentEventKind.TASK_STARTED
+                )
+                same_request = (
+                    (request.session_id is None or first.session_id == request.session_id)
+                    and (request.task_id is None or first.task_id == request.task_id)
+                    and run_started.payload.get("objective") == request.objective
+                    and task_started.payload.get("domain") == request.domain
+                    and task_started.payload.get("task_type") == request.task_type
+                )
+                if not same_request:
+                    raise HTTPException(
+                        status_code=409,
+                        detail="Run id already exists with a different payload",
+                    )
+                decisions = [
+                    item
+                    for item in runtime.injection_decisions(
+                        namespace=request.namespace,
+                        limit=1000,
+                    )
+                    if item.get("run_id") == run_id
+                ]
+                decision = decisions[0] if decisions else {
+                    "inject": False,
+                    "reason": "no_applicable_verified_experience",
+                    "confidence": None,
+                    "packet": None,
+                    "source_tool_result_refs": [],
+                }
+                packet = decision.get("packet") or {}
+                applied = tuple(
+                    str(item["experience_id"])
+                    for item in packet.get("items", [])
+                    if isinstance(item, dict) and item.get("experience_id")
+                )
+                return {
+                    "schema": "wavemind.agent_experience_run.v1",
+                    "namespace": request.namespace,
+                    "session_id": first.session_id,
+                    "run_id": run_id,
+                    "task_id": first.task_id,
+                    "next_sequence": runtime.next_sequence(
+                        namespace=request.namespace,
+                        run_id=run_id,
+                    ),
+                    "intervention": decision,
+                    "applied_experience_ids": list(applied),
+                    "idempotent_replay": True,
+                }
             intervention = runtime.decide(
                 request.query,
                 namespace=request.namespace,
@@ -1862,6 +2149,7 @@ def create_app(
             ),
             "intervention": intervention.as_dict(),
             "applied_experience_ids": list(applied),
+            "idempotent_replay": False,
         }
 
     @app.post(
@@ -2759,9 +3047,10 @@ def create_app(
 
     @app.post("/import", response_model=ImportResponse, dependencies=[Depends(require_role("write"))])
     def batch_import(request: ImportRequest) -> ImportResponse:
+        source_path = _resolve_http_import_path(request.path)
         with _api_operation(app, "import"):
             ids = import_path(
-                request.path,
+                source_path,
                 app.state.mind,
                 namespace=request.namespace,
                 tags=request.tags,
@@ -2772,11 +3061,23 @@ def create_app(
 
     @app.post("/backup", response_model=BackupResponse, dependencies=[Depends(require_role("admin"))])
     def backup(request: BackupRequest) -> BackupResponse:
+        if request.path is not None or request.prefix != "wavemind":
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Backup paths and prefixes are configured server-side; "
+                    "set WAVEMIND_BACKUP_ROOT"
+                ),
+            )
+        backup_root = _resolve_http_backup_root()
+        experience_store = _experience_compiler("default").store
         with _api_operation(app, "backup"):
-            path = app.state.mind.save(
-                request.path,
+            path = create_rotating_product_backup(
+                app.state.mind,
+                experience_store,
+                backup_root,
+                prefix="wavemind",
                 keep_last=request.keep_last,
-                backup_prefix=request.prefix,
             )
         return BackupResponse(path=str(path))
 

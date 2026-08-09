@@ -33,11 +33,19 @@ state check rather than an agent self-rating.
 | LangGraph | start, wrapped-node, and finish helpers |
 | MCP | `ExperienceMCPAdapter` and `build_experience_mcp_server()` |
 | HTTP | `/experience/runtime/*` |
-| TypeScript | runtime lifecycle methods in `@wavemind/sdk` |
+| TypeScript | runtime lifecycle methods in the repository-local `@wavemind/http` package |
 | Studio | `/studio/experience` |
 
 All surfaces use the same event and verification contracts. Provider wrappers
 do not create a separate trust model.
+
+`@wavemind/http` is the canonical TypeScript package name in this repository;
+`@wavemind/sdk` is not a second package or alias. The generated TypeScript
+starter uses the local `sdk/typescript` package and runs `npm run
+quickstart`, which builds the SDK, starts the required HTTP server, exercises
+remember, recall, feedback, and explanation, restarts the server against the
+same SQLite database, and checks that the same memory remains available. This
+is a local checkout flow and does not assert public registry publication.
 
 ## Outcome Verification
 

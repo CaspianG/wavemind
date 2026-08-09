@@ -126,6 +126,10 @@ def test_supersession_and_rollback_preserve_version_chain_and_audit(tmp_path):
             promoted.id,
             reason="The correction caused a regression in the release flow.",
         )
+        replayed = store.rollback(
+            promoted.id,
+            reason="The correction caused a regression in the release flow.",
+        )
 
         assert store.get(original.id).status == ExperienceStatus.SUPERSEDED
         assert promoted.version == 2
@@ -135,6 +139,7 @@ def test_supersession_and_rollback_preserve_version_chain_and_audit(tmp_path):
         assert restored.rollback_of_id == promoted.id
         assert restored.supersedes_id == promoted.id
         assert restored.content == original.content
+        assert replayed.id == restored.id
         assert [event.action for event in store.audit_events(limit=10)] == [
             "rolled_back",
             "superseded",
@@ -144,11 +149,11 @@ def test_supersession_and_rollback_preserve_version_chain_and_audit(tmp_path):
 
 def test_expire_due_hides_expired_records(tmp_path):
     now = time.time()
-    record = _record(expires_at=now + 0.05)
+    record = _record(expires_at=now + 60.0)
     with SQLiteExperienceStore(tmp_path / "experience.sqlite3") as store:
         store.put(record)
         assert store.list(namespace="release")
-        assert store.expire_due(now=now + 1.0) == 1
+        assert store.expire_due(now=now + 120.0) == 1
         assert store.list(namespace="release") == []
         expired = store.get(record.id)
         assert expired is not None

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import platform
 import re
 import shutil
@@ -80,7 +81,9 @@ with SQLiteExperienceStore(STATE_DIR / "experience.sqlite3") as store:
     )
     context = FirewallContext(namespace=NAMESPACE, actor="starter")
     experience_id = "starter-deploy-recovery"
+    created = False
     if store.get(experience_id) is None:
+        created = True
         record = ExperienceRecord.create(
             id=experience_id,
             namespace=NAMESPACE,
@@ -111,29 +114,253 @@ with SQLiteExperienceStore(STATE_DIR / "experience.sqlite3") as store:
         context=context,
         token_budget=220,
     )
-    print(json.dumps(packet.as_dict(), indent=2))
+    details = compiler.expand(
+        (item.experience_id for item in packet.items),
+        namespace=NAMESPACE,
+        context=context,
+    )
+    remembered = store.get(experience_id)
+    assert remembered is not None
+    print(json.dumps({{
+        "schema": "wavemind.onboarding.python.v1",
+        "remember": {{
+            "created": created,
+            "experience_id": remembered.id,
+        }},
+        "recall": packet.as_dict(),
+        "verification": {{
+            "status": remembered.status.value,
+            "evidence_ids": [f"starter-success-{{index}}" for index in range(1, 4)],
+        }},
+        "explain": [detail.__dict__ for detail in details],
+        "persistence": {{
+            "database": str(STATE_DIR / "experience.sqlite3"),
+        }},
+    }}, indent=2))
 '''
 
 
 def _typescript_template(namespace: str) -> str:
-    return f'''const baseUrl = process.env.WAVEMIND_URL ?? "http://127.0.0.1:8000";
+    return f'''import {{ WaveMindClient }} from "@wavemind/http";
 
-const response = await fetch(`${{baseUrl}}/experience/packet`, {{
-  method: "POST",
-  headers: {{ "content-type": "application/json" }},
-  body: JSON.stringify({{
-    namespace: "{namespace}",
-    query: "How should I recover a failed deployment?",
-    token_budget: 220,
-  }}),
-}});
 
-if (!response.ok) {{
-  throw new Error(`WaveMind returned ${{response.status}}: ${{await response.text()}}`);
+// @ts-ignore - Node exposes process at runtime without requiring @types/node.
+const runtimeEnv = globalThis.process?.env ?? {{}};
+const baseUrl = runtimeEnv.WAVEMIND_URL ?? "http://127.0.0.1:8000";
+const namespace = "{namespace}";
+const text = "Production deployments use a canary before full rollout.";
+const query = "How should production deployments roll out?";
+const client = new WaveMindClient({{ baseUrl }});
+
+let recalled = await client.query({{ text: query, namespace, top_k: 5 }});
+let memory = recalled.results.find((item) => item.text === text);
+let created = false;
+if (memory === undefined) {{
+  const remembered = await client.remember({{
+    text,
+    namespace,
+    tags: ["deployment", "verified"],
+    metadata: {{
+      provenance: {{ source: "typescript-onboarding" }},
+    }},
+  }});
+  created = true;
+  recalled = await client.query({{ text: query, namespace, top_k: 5 }});
+  memory = recalled.results.find((item) => item.id === remembered.id);
 }}
 
-console.log(JSON.stringify(await response.json(), null, 2));
+if (memory === undefined) {{
+  throw new Error("The remembered deployment fact was not recalled");
+}}
+const expectedId = runtimeEnv.WAVEMIND_EXPECT_ID;
+if (expectedId !== undefined && memory.id !== Number(expectedId)) {{
+  throw new Error(`Expected persisted memory ${{expectedId}}, received ${{memory.id}}`);
+}}
+
+const feedback = await client.feedback({{
+  id: memory.id,
+  namespace,
+  useful: true,
+  strength: 0.5,
+  query,
+  reason: "The onboarding verifier recalled the expected deployment fact",
+}});
+const explanation = await client.explainMemory(memory.id, namespace);
+
+console.log(JSON.stringify({{
+  schema: "wavemind.onboarding.typescript.v1",
+  remember: {{ created, id: memory.id }},
+  recall: {{ id: memory.id, text: memory.text, score: memory.score }},
+  feedback,
+  explain: explanation,
+}}, null, 2));
 '''
+
+
+def _typescript_runner_template() -> str:
+    return """import { spawn, spawnSync } from "node:child_process";
+import { access, copyFile, lstat, mkdir, readFile, rm, unlink } from "node:fs/promises";
+import net from "node:net";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const packageJson = JSON.parse(await readFile(resolve(root, "package.json"), "utf8"));
+const dependency = packageJson.dependencies?.["@wavemind/http"];
+if (typeof dependency !== "string" || !dependency.startsWith("file:")) {
+  throw new Error("@wavemind/http must reference the repository-local package");
+}
+const sdkRoot = resolve(root, dependency.slice("file:".length));
+const npmCli = process.env.npm_execpath;
+if (!npmCli) {
+  throw new Error("Run this flow through: npm run quickstart");
+}
+
+function run(command, args, options = {}) {
+  const result = spawnSync(command, args, {
+    cwd: options.cwd ?? root,
+    env: { ...process.env, ...(options.env ?? {}) },
+    encoding: "utf8",
+    windowsHide: true,
+  });
+  if (result.status !== 0) {
+    process.stderr.write(result.stdout ?? "");
+    process.stderr.write(result.stderr ?? "");
+    throw new Error(`${command} ${args.join(" ")} exited with ${result.status}`);
+  }
+  return result.stdout;
+}
+
+function runNpm(args, cwd) {
+  run(process.execPath, [npmCli, ...args], { cwd });
+}
+
+async function prepareLocalSdk() {
+  const compiler = resolve(sdkRoot, "node_modules", "typescript", "bin", "tsc");
+  try {
+    await access(compiler);
+  } catch {
+    runNpm(["ci"], sdkRoot);
+  }
+  try {
+    await access(resolve(sdkRoot, "dist", "index.js"));
+    await access(resolve(sdkRoot, "dist", "index.d.ts"));
+  } catch {
+    run(process.execPath, [compiler, "-p", resolve(sdkRoot, "tsconfig.json")], { cwd: sdkRoot });
+  }
+  const packageLink = resolve(root, "node_modules", "@wavemind", "http");
+  try {
+    const existing = await lstat(packageLink);
+    if (existing.isSymbolicLink()) {
+      await unlink(packageLink);
+    } else {
+      await rm(packageLink, { recursive: true, force: true });
+    }
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
+  await mkdir(resolve(packageLink, "dist"), { recursive: true });
+  await copyFile(resolve(sdkRoot, "package.json"), resolve(packageLink, "package.json"));
+  await copyFile(resolve(sdkRoot, "dist", "index.js"), resolve(packageLink, "dist", "index.js"));
+  await copyFile(resolve(sdkRoot, "dist", "index.d.ts"), resolve(packageLink, "dist", "index.d.ts"));
+  run(process.execPath, [compiler, "-p", resolve(root, "tsconfig.json")], { cwd: root });
+}
+
+async function availablePort() {
+  return new Promise((resolvePort, reject) => {
+    const probe = net.createServer();
+    probe.once("error", reject);
+    probe.listen(0, "127.0.0.1", () => {
+      const address = probe.address();
+      if (address === null || typeof address === "string") {
+        reject(new Error("Unable to allocate a local port"));
+        return;
+      }
+      probe.close(() => resolvePort(address.port));
+    });
+  });
+}
+
+async function startServer(database) {
+  const port = await availablePort();
+  const python = process.env.PYTHON ?? (process.platform === "win32" ? "python" : "python3");
+  const server = spawn(
+    python,
+    ["-m", "wavemind", "serve", "--host", "127.0.0.1", "--port", String(port)],
+    {
+      cwd: root,
+      env: {
+        ...process.env,
+        WAVEMIND_DB: database,
+        OPENBLAS_NUM_THREADS: "1",
+        OMP_NUM_THREADS: "1",
+        MKL_NUM_THREADS: "1",
+      },
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true,
+    },
+  );
+  let diagnostics = "";
+  server.stdout.on("data", (chunk) => { diagnostics += chunk.toString(); });
+  server.stderr.on("data", (chunk) => { diagnostics += chunk.toString(); });
+  const baseUrl = `http://127.0.0.1:${port}`;
+  for (let attempt = 0; attempt < 120; attempt += 1) {
+    if (server.exitCode !== null) {
+      throw new Error(`WaveMind server exited before readiness:\n${diagnostics}`);
+    }
+    try {
+      const response = await fetch(`${baseUrl}/stats`);
+      if (response.ok) return { server, baseUrl };
+    } catch {
+      // The socket is expected to refuse connections while uvicorn starts.
+    }
+    await new Promise((resolveWait) => setTimeout(resolveWait, 100));
+  }
+  server.kill();
+  throw new Error(`WaveMind server did not become ready:\n${diagnostics}`);
+}
+
+async function stopServer(server) {
+  if (server.exitCode !== null) return;
+  const exited = new Promise((resolveExit) => server.once("exit", resolveExit));
+  server.kill();
+  await Promise.race([
+    exited,
+    new Promise((_, reject) => setTimeout(() => reject(new Error("WaveMind server did not stop")), 5000)),
+  ]);
+}
+
+function runClient(baseUrl, expectedId) {
+  const env = { WAVEMIND_URL: baseUrl };
+  if (expectedId !== undefined) env.WAVEMIND_EXPECT_ID = String(expectedId);
+  return JSON.parse(run(process.execPath, [resolve(root, "dist", "index.js")], { env }));
+}
+
+await prepareLocalSdk();
+await mkdir(resolve(root, ".wavemind"), { recursive: true });
+const database = resolve(root, ".wavemind", "memory.sqlite3");
+
+let active;
+try {
+  active = await startServer(database);
+  const first = runClient(active.baseUrl);
+  await stopServer(active.server);
+  active = await startServer(database);
+  const restarted = runClient(active.baseUrl, first.remember.id);
+  console.log(JSON.stringify({
+    schema: "wavemind.onboarding.typescript.restart.v1",
+    first,
+    restarted,
+    persistence: {
+      same_memory_id: first.remember.id === restarted.remember.id,
+      server_restarted: true,
+    },
+  }, null, 2));
+} finally {
+  if (active !== undefined) await stopServer(active.server);
+}
+"""
 
 
 def _mcp_template(namespace: str) -> str:
@@ -163,7 +390,192 @@ finally:
 '''
 
 
-def _template_files(template: str, namespace: str) -> dict[str, str]:
+def _mcp_verification_template(namespace: str) -> str:
+    return f'''from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from wavemind import (
+    ExperienceCompiler,
+    ExperienceKind,
+    ExperienceRecord,
+    ExperienceSource,
+    FirewallContext,
+    MemoryFirewall,
+    MemoryFirewallPolicy,
+    SQLiteExperienceStore,
+    TrustClass,
+)
+from wavemind.integrations.mcp_experience import ExperienceMCPAdapter
+
+
+NAMESPACE = "{namespace}"
+STATE_DIR = Path(__file__).resolve().parent / ".wavemind"
+STATE_DIR.mkdir(exist_ok=True)
+
+with SQLiteExperienceStore(STATE_DIR / "experience.sqlite3") as store:
+    compiler = ExperienceCompiler(
+        store,
+        MemoryFirewall(MemoryFirewallPolicy(namespace=NAMESPACE)),
+    )
+    context = FirewallContext(namespace=NAMESPACE, actor="mcp_onboarding")
+    experience_id = "mcp-deploy-verification"
+    created = False
+    if store.get(experience_id) is None:
+        created = True
+        candidate, _ = compiler.submit(
+            ExperienceRecord.create(
+                id=experience_id,
+                namespace=NAMESPACE,
+                kind=ExperienceKind.PROCEDURE,
+                title="Verify a deployment",
+                content="Check service health after deployment and roll back on failure.",
+                source=ExperienceSource(
+                    provider="mcp",
+                    source_type="verified_trajectory",
+                    source_id="mcp-onboarding",
+                ),
+                confidence=0.9,
+                trust=TrustClass.AGENT_GENERATED,
+            ),
+            context=context,
+        )
+        for index in range(1, 4):
+            compiler.review_candidate(
+                candidate.id,
+                evidence_id=f"mcp-health-check-{{index}}",
+                successful=True,
+                score=0.95,
+                context=context,
+            )
+
+    adapter = ExperienceMCPAdapter(compiler)
+    packet = adapter.call_tool(
+        "compile_experience_packet",
+        {{
+            "query": "How should I verify a deployment?",
+            "namespace": NAMESPACE,
+            "token_budget": 220,
+            "top_k": 3,
+        }},
+    )
+    explanation = adapter.call_tool(
+        "expand_experience",
+        {{
+            "experience_ids": [item["experience_id"] for item in packet["items"]],
+            "namespace": NAMESPACE,
+        }},
+    )
+    remembered = store.get(experience_id)
+    assert remembered is not None
+    print(json.dumps({{
+        "schema": "wavemind.onboarding.mcp.v1",
+        "remember": {{"created": created, "experience_id": remembered.id}},
+        "recall": packet,
+        "verification": {{
+            "status": remembered.status.value,
+            "evidence_ids": [f"mcp-health-check-{{index}}" for index in range(1, 4)],
+        }},
+        "explain": explanation,
+        "persistence": {{"database": str(STATE_DIR / "experience.sqlite3")}},
+    }}, indent=2))
+'''
+
+
+def _typescript_sdk_dependency(root: Path) -> str:
+    sdk_root = Path(__file__).resolve().parents[1] / "sdk" / "typescript"
+    package_path = sdk_root / "package.json"
+    if not package_path.is_file():
+        raise RuntimeError(
+            "TypeScript onboarding requires the repository-local sdk/typescript package"
+        )
+    try:
+        selected = Path(os.path.relpath(sdk_root, start=root)).as_posix()
+    except ValueError:
+        selected = sdk_root.as_posix()
+    return f"file:{selected}"
+
+
+def _docker_verification_template(namespace: str) -> str:
+    return f'''from __future__ import annotations
+
+import json
+import os
+import time
+import urllib.error
+import urllib.request
+
+
+BASE_URL = os.environ.get("WAVEMIND_URL", "http://wavemind:8000")
+API_KEY = os.environ.get("WAVEMIND_API_KEY", "local-quickstart-key")
+NAMESPACE = "{namespace}"
+
+
+def request(method: str, path: str, payload: dict | None = None) -> dict:
+    body = None if payload is None else json.dumps(payload).encode("utf-8")
+    call = urllib.request.Request(
+        f"{{BASE_URL}}{{path}}",
+        data=body,
+        method=method,
+        headers={{
+            "Authorization": f"Bearer {{API_KEY}}",
+            "Content-Type": "application/json",
+        }},
+    )
+    with urllib.request.urlopen(call, timeout=10) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+def wait_ready() -> None:
+    deadline = time.monotonic() + 60
+    while time.monotonic() < deadline:
+        try:
+            request("GET", "/healthz")
+            return
+        except (OSError, urllib.error.URLError):
+            time.sleep(0.5)
+    raise RuntimeError("WaveMind API did not become ready within 60 seconds")
+
+
+wait_ready()
+remembered = request("POST", "/remember", {{
+    "text": "Verified Docker deployments persist memory across restarts.",
+    "namespace": NAMESPACE,
+    "idempotency_key": "docker-quickstart-memory",
+    "metadata": {{"provenance": {{"source": "docker-onboarding"}}}},
+}})
+recalled = request("POST", "/query", {{
+    "text": "How do verified Docker deployments retain memory?",
+    "namespace": NAMESPACE,
+    "top_k": 3,
+}})
+matches = [item for item in recalled["results"] if item["id"] == remembered["id"]]
+if not matches:
+    raise RuntimeError("remembered Docker memory was not recalled")
+feedback = request("POST", "/feedback", {{
+    "id": remembered["id"],
+    "namespace": NAMESPACE,
+    "useful": True,
+    "strength": 0.5,
+    "query": "How do verified Docker deployments retain memory?",
+    "reason": "quickstart verification",
+}})
+explain = request(
+    "GET",
+    f"/memories/{{remembered['id']}}/explain?namespace={{NAMESPACE}}",
+)
+print(json.dumps({{
+    "schema": "wavemind.onboarding.docker.v1",
+    "remember": remembered,
+    "recall": matches[0],
+    "feedback": feedback,
+    "explain": explain,
+}}, indent=2))
+'''
+
+
+def _template_files(template: str, namespace: str, *, root: Path) -> dict[str, str]:
     common = {
         ".gitignore": ".wavemind/\n.env\nnode_modules/\ndist/\n",
         ".env.example": "WAVEMIND_URL=http://127.0.0.1:8000\n",
@@ -182,9 +594,11 @@ def _template_files(template: str, namespace: str) -> dict[str, str]:
             ),
         }
     if template == "typescript":
+        sdk_dependency = _typescript_sdk_dependency(root)
         return {
             **common,
             "src/index.ts": _typescript_template(namespace),
+            "scripts/quickstart.mjs": _typescript_runner_template(),
             "package.json": json.dumps(
                 {
                     "name": f"{namespace}-wavemind",
@@ -193,7 +607,9 @@ def _template_files(template: str, namespace: str) -> dict[str, str]:
                     "scripts": {
                         "build": "tsc -p tsconfig.json",
                         "start": "node dist/index.js",
+                        "quickstart": "node scripts/quickstart.mjs",
                     },
+                    "dependencies": {"@wavemind/http": sdk_dependency},
                     "devDependencies": {"typescript": "5.9.3"},
                 },
                 indent=2,
@@ -215,15 +631,19 @@ def _template_files(template: str, namespace: str) -> dict[str, str]:
             + "\n",
             "README.md": (
                 "# WaveMind TypeScript starter\n\n"
-                "Start `wavemind serve`, then run:\n\n"
-                "```bash\nnpm install\nnpm run build\nnpm start\n```\n"
+                "From a Python environment with this WaveMind checkout installed, run:\n\n"
+                "```bash\nnpm run quickstart\n```\n\n"
+                "The command builds the repository-local `@wavemind/http` package, "
+                "starts and stops the required server, and verifies SQLite state "
+                "after a server restart.\n"
             ),
         }
     if template == "mcp":
         return {
             **common,
             "experience_mcp.py": _mcp_template(namespace),
-            "requirements.txt": f'wavemind[mcp]=={__version__}\n',
+            "verify_flow.py": _mcp_verification_template(namespace),
+            "requirements.txt": f"wavemind[mcp]=={__version__}\n",
             "mcp.json": json.dumps(
                 {
                     "mcpServers": {
@@ -238,29 +658,39 @@ def _template_files(template: str, namespace: str) -> dict[str, str]:
             + "\n",
             "README.md": (
                 "# WaveMind MCP starter\n\n"
-                "Install `requirements.txt`, then point your MCP client at "
-                "`mcp.json`.\n"
+                "```bash\n"
+                "python -m pip install -r requirements.txt\n"
+                "python verify_flow.py\n"
+                "```\n\n"
+                "The verification flow persists recalled and expanded experience. "
+                "Point your MCP client at `mcp.json` to use the same store.\n"
             ),
         }
     if template == "docker":
         return {
             **common,
+            "verify_flow.py": _docker_verification_template(namespace),
             "Dockerfile": (
                 "FROM python:3.11-slim\n"
                 f"RUN python -m pip install --no-cache-dir wavemind=={__version__}\n"
                 "WORKDIR /app\n"
-                'CMD ["wavemind", "serve", "--host", "0.0.0.0", "--port", "8000"]\n'
+                'CMD ["wavemind", "serve", "--host", "0.0.0.0", "--port", "8000", "--allow-public"]\n'
             ),
             "compose.yaml": (
                 "services:\n"
                 "  wavemind:\n"
+                "    image: ${WAVEMIND_IMAGE:-wavemind-quickstart:local}\n"
                 "    build: .\n"
+                "    command: [\"wavemind\", \"serve\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\", \"--allow-public\"]\n"
                 "    ports:\n"
-                '      - "${WAVEMIND_PORT:-8000}:8000"\n'
+                '      - "127.0.0.1:${WAVEMIND_PORT:-8000}:8000"\n'
                 "    volumes:\n"
                 "      - ./data:/data\n"
                 "    environment:\n"
                 "      WAVEMIND_DB: /data/wavemind.sqlite3\n"
+                "      WAVEMIND_EXPERIENCE_DB: /data/wavemind-experience.sqlite3\n"
+                "      WAVEMIND_API_PRINCIPALS: >-\n"
+                f'        {{"local-quickstart-key":{{"identity":"local-quickstart","role":"admin","namespace_prefixes":["{namespace}"]}}}}\n'
                 "    healthcheck:\n"
                 "      test:\n"
                 "        - CMD\n"
@@ -268,17 +698,35 @@ def _template_files(template: str, namespace: str) -> dict[str, str]:
                 "        - -c\n"
                 "        - >-\n"
                 "          import urllib.request;\n"
-                "          urllib.request.urlopen('http://127.0.0.1:8000/stats')\n"
+                "          request=urllib.request.Request('http://127.0.0.1:8000/stats?namespace="
+                f"{namespace}',headers={{'Authorization':'Bearer local-quickstart-key'}});\n"
+                "          urllib.request.urlopen(request)\n"
                 "      interval: 2s\n"
                 "      timeout: 2s\n"
                 "      retries: 30\n"
                 "    restart: unless-stopped\n"
+                "  verify:\n"
+                "    image: ${WAVEMIND_IMAGE:-wavemind-quickstart:local}\n"
+                "    build: .\n"
+                "    depends_on:\n"
+                "      wavemind:\n"
+                "        condition: service_healthy\n"
+                "    environment:\n"
+                "      WAVEMIND_URL: http://wavemind:8000\n"
+                "      WAVEMIND_API_KEY: local-quickstart-key\n"
+                "    volumes:\n"
+                "      - ./verify_flow.py:/client/verify_flow.py:ro\n"
+                "    command: [\"python\", \"/client/verify_flow.py\"]\n"
             ),
             "README.md": (
                 "# WaveMind Docker starter\n\n"
                 "```bash\n"
-                "docker compose up --build\n"
-                "```\n"
+                "docker compose up -d --build\n"
+                "docker compose run --rm verify\n"
+                "docker compose restart wavemind\n"
+                "docker compose run --rm verify\n"
+                "```\n\n"
+                "The second verification reuses the same memory ID after restart.\n"
             ),
         }
     raise ValueError(f"template must be one of: {', '.join(TEMPLATES)}")
@@ -296,7 +744,7 @@ def initialize_project(
     root = Path(directory).expanduser().resolve()
     project_name = _slug(name or root.name)
     root.mkdir(parents=True, exist_ok=True)
-    files = _template_files(template, project_name)
+    files = _template_files(template, project_name, root=root)
     manifest_path = root / ".wavemind-project.json"
     targets = [root / relative for relative in files]
     targets.append(manifest_path)
@@ -338,10 +786,10 @@ def _next_command(template: str) -> str:
     if template == "python":
         return "python app.py"
     if template == "typescript":
-        return "npm install && npm run build && npm start"
+        return "npm run quickstart"
     if template == "docker":
         return "docker compose up --build"
-    return "python experience_mcp.py"
+    return "python verify_flow.py"
 
 
 def _command_version(command: str, *args: str) -> str | None:

@@ -32,6 +32,7 @@ jobs:
           - 6379:6379
     env:
       WAVEMIND_BENCHMARK_REFRESH_PROFILE: weekly-fast
+      WAVEMIND_BENCHMARK_CLAIM_STATUS: current
 
     steps:
       - uses: actions/checkout@v5
@@ -252,6 +253,8 @@ jobs:
             --output docs/data/leaderboard-status.json
           python benchmarks/validate_benchmark_artifacts.py \
             --max-age-days 8 \
+            --expected-source-sha "${GITHUB_SHA}" \
+            --require-current \
             --output benchmarks/benchmark_artifact_audit.json
           python benchmarks/production_readiness_gate.py \
             --output benchmarks/production_readiness_results.json \
@@ -409,6 +412,8 @@ jobs:
             --output docs/data/leaderboard-status.json
           python benchmarks/validate_benchmark_artifacts.py \
             --max-age-days 8 \
+            --expected-source-sha "${GITHUB_SHA}" \
+            --require-current \
             --output benchmarks/benchmark_artifact_audit.json
           python benchmarks/render_leaderboard_status.py \
             --output docs/data/leaderboard-status.json
@@ -525,6 +530,7 @@ jobs:
           cp benchmarks/memory_os_quality_results.json site/data/memory_os_quality_results.json
           cp benchmarks/memory_os_remote_soak_handoff_results.json site/data/memory_os_remote_soak_handoff_results.json
           cp docs/data/leaderboard-status.json site/data/leaderboard-status.json
+          cp docs/data/product-status.json site/data/product-status.json
 
       - uses: actions/configure-pages@v6
 

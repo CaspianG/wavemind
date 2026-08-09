@@ -20,6 +20,9 @@ def test_memory_os_ab_uses_identical_protocol_and_proves_uplift():
     assert payload["protocol"]["measurement_trials"] == 5
     assert payload["protocol"]["latency_aggregation"] == "median_of_trial_p95"
     assert payload["protocol"]["execution_order"] == "alternating_baseline_memory_os"
+    assert payload["protocol"]["retrieval_mode"] == "raw_non_production"
+    assert payload["protocol"]["production_abstention_admission_eligible"] is False
+    assert "cannot satisfy production" in payload["claim_boundary"]
     assert baseline["measurement_trials"] == 5
     assert memory_os["measurement_trials"] == 5
     assert baseline["query_count"] == baseline["queries_per_trial"] * 5

@@ -40,6 +40,7 @@ services:
   api:
     image: ${WAVEMIND_IMAGE:?WAVEMIND_IMAGE is required}
     restart: unless-stopped
+    command: ["wavemind", "serve", "--host", "0.0.0.0", "--port", "8000", "--allow-public"]
     depends_on:
       postgres:
         condition: service_healthy

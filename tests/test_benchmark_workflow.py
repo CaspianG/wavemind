@@ -488,14 +488,15 @@ def test_full_check_blocks_stale_public_benchmark_artifacts():
     assert "/tmp/MEMORY_SAFETY_ADMISSION.md" in workflow
 
 
-def test_release_blocks_stale_public_benchmark_artifacts():
+def test_release_requires_exact_sha_safe_product_before_building():
     workflow = Path(".github/workflows/release.yml").read_text(encoding="utf-8")
 
-    assert "Validate benchmark freshness gate" in workflow
+    assert "uses: ./.github/workflows/safe-product.yml" in workflow
+    assert "needs: safe-product" in workflow
+    assert "needs: [safe-product, build]" in workflow
     assert "benchmarks/validate_benchmark_artifacts.py" in workflow
-    assert "--max-age-days 8" in workflow
-    assert "benchmarks/benchmark_artifact_audit_ci.json" in workflow
+    assert "scripts/sync_product_status.py --check" in workflow
     assert "benchmarks/production_readiness_gate.py" in workflow
-    assert workflow.index("Validate benchmark freshness gate") < workflow.index(
-        "Build and verify package"
+    assert workflow.index("Validate release claim boundaries") < workflow.index(
+        "Build and verify the release candidate once"
     )

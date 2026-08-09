@@ -594,6 +594,8 @@ def _query_memory(
             if use_memory_os
             else "wavemind_core"
         ),
+        "retrieval_mode": "raw_non_production",
+        "production_abstention_admission_eligible": False,
         "worker_runs": len(worker_reports),
         "worker_errors": sum(
             int(dict(row.get("prewarm") or {}).get("errors") or 0)
@@ -775,6 +777,7 @@ def run_benchmark(
                 persist_access_on_query=False,
                 query_feedback_strength=0.0,
                 audit_queries=False,
+                confidence_gate=False,
             )
 
         seed_memory = open_memory(base_path)
@@ -953,7 +956,9 @@ def run_benchmark(
             "per_query_count": len(per_query),
             "claim_boundary": (
                 "Local-reader profile on the pinned official Small dataset. "
-                "This is not an official leaderboard submission."
+                "This is not an official leaderboard submission. Confidence abstention "
+                "is disabled for retrieval comparability, so this raw profile cannot "
+                "satisfy production false-memory admission."
             ),
         },
         per_query,
