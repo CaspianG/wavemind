@@ -177,6 +177,7 @@ class WaveMind:
         shared_store_refresh_seconds: float = -1.0,
         confidence_gate: bool = True,
         hash_confidence_threshold: float = 0.12,
+        hash_lexical_coverage_threshold: float = 1.0 / 3.0,
         semantic_confidence_threshold: float = 0.28,
     ):
         self.encoder = encoder or HashingTextEncoder(vector_dim=384)
@@ -209,6 +210,7 @@ class WaveMind:
         self.shared_store_refresh_seconds = float(shared_store_refresh_seconds)
         self.confidence_gate = bool(confidence_gate)
         self.hash_confidence_threshold = float(hash_confidence_threshold)
+        self.hash_lexical_coverage_threshold = float(hash_lexical_coverage_threshold)
         self.semantic_confidence_threshold = float(semantic_confidence_threshold)
         self._namespace_store_refresh_at: dict[str, float] = {}
         self._records_by_id: dict[int, MemoryRecord] = {}
@@ -588,6 +590,9 @@ class WaveMind:
                 if is_hash
                 else self.semantic_confidence_threshold
             ),
+            "lexical_coverage_threshold": (
+                self.hash_lexical_coverage_threshold if is_hash else None
+            ),
             "blocks_unverified_or_stale": True,
         }
 
@@ -614,7 +619,10 @@ class WaveMind:
         if trust in {"unverified", "tool_output", "model_generated"} and metadata.get("verified") is not True:
             return None
         if type(self.encoder).__name__ == "HashingTextEncoder":
-            if lexical_score <= 0.0 or vector_score < self.hash_confidence_threshold:
+            if (
+                lexical_score < self.hash_lexical_coverage_threshold
+                or vector_score < self.hash_confidence_threshold
+            ):
                 return None
             return "lexical_and_vector_match"
         if vector_score < self.semantic_confidence_threshold:

@@ -7,7 +7,7 @@ from wavemind.safe_retrieval_admission import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DATASET = ROOT / "benchmarks" / "data" / "safe_product_retrieval_v1.json"
+DATASET = ROOT / "benchmarks" / "data" / "safe_product_retrieval_v2_heldout.json"
 
 
 def test_safe_retrieval_admission_passes_frozen_controls() -> None:
