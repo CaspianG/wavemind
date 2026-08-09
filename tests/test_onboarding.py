@@ -191,6 +191,12 @@ def test_docker_starter_has_valid_compose_config(tmp_path):
     )
 
     assert result.returncode == 0, result.stderr
+    compose = (project / "compose.yaml").read_text(encoding="utf-8")
+    dockerfile = (project / "Dockerfile").read_text(encoding="utf-8")
+    assert "127.0.0.1:${WAVEMIND_PORT:-8000}:8000" in compose
+    assert "WAVEMIND_EXPERIENCE_DB: /data/wavemind-experience.sqlite3" in compose
+    assert "WAVEMIND_API_PRINCIPALS" in compose
+    assert "--allow-public" in dockerfile
 
 
 def test_generated_python_sources_compile(tmp_path):

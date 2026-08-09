@@ -578,18 +578,21 @@ def _template_files(template: str, namespace: str, *, root: Path) -> dict[str, s
                 "FROM python:3.11-slim\n"
                 f"RUN python -m pip install --no-cache-dir wavemind=={__version__}\n"
                 "WORKDIR /app\n"
-                'CMD ["wavemind", "serve", "--host", "0.0.0.0", "--port", "8000"]\n'
+                'CMD ["wavemind", "serve", "--host", "0.0.0.0", "--port", "8000", "--allow-public"]\n'
             ),
             "compose.yaml": (
                 "services:\n"
                 "  wavemind:\n"
                 "    build: .\n"
                 "    ports:\n"
-                '      - "${WAVEMIND_PORT:-8000}:8000"\n'
+                '      - "127.0.0.1:${WAVEMIND_PORT:-8000}:8000"\n'
                 "    volumes:\n"
                 "      - ./data:/data\n"
                 "    environment:\n"
                 "      WAVEMIND_DB: /data/wavemind.sqlite3\n"
+                "      WAVEMIND_EXPERIENCE_DB: /data/wavemind-experience.sqlite3\n"
+                "      WAVEMIND_API_PRINCIPALS: >-\n"
+                f'        {{"local-quickstart-key":{{"identity":"local-quickstart","role":"admin","namespace_prefixes":["{namespace}"]}}}}\n'
                 "    healthcheck:\n"
                 "      test:\n"
                 "        - CMD\n"
@@ -597,7 +600,9 @@ def _template_files(template: str, namespace: str, *, root: Path) -> dict[str, s
                 "        - -c\n"
                 "        - >-\n"
                 "          import urllib.request;\n"
-                "          urllib.request.urlopen('http://127.0.0.1:8000/stats')\n"
+                "          request=urllib.request.Request('http://127.0.0.1:8000/stats?namespace="
+                f"{namespace}',headers={{'Authorization':'Bearer local-quickstart-key'}});\n"
+                "          urllib.request.urlopen(request)\n"
                 "      interval: 2s\n"
                 "      timeout: 2s\n"
                 "      retries: 30\n"
