@@ -1177,7 +1177,9 @@
       ]
     }
   ],
-  "claim_boundary": "Deterministic real-work workspace procedure selection from pinned public source outcomes; no universal model-quality claim.",
+  "claim_boundary": "Historical failed checksum-selection experiment only. Task success uses source_sha256_check over pinned files, not reproduced workflow, test, CI, or environment outcomes. This artifact must not satisfy Goal 7 real-work admission.",
+  "methodology_status": "historical_failed_checksum_selection_not_real_work",
+  "not_admission_evidence_reason": "Unique source paths and checksum commands are provenance checks, not independent real workflow/gotcha outcomes.",
   "procedures": [
     {
       "category": "ci-workflow",
@@ -2763,9 +2765,9 @@
       "stack": "typescript"
     }
   },
-  "revision": "workspace-experience-real-work-v3-frozen-20260810",
+  "revision": "workspace-experience-v3-checksum-selection-historical-20260810",
   "schema": "wavemind.workspace_experience_manifest.v1",
-  "sha256": "7496617197c8621c8b04d76b2d01837c3b307a0ceb0adeee4f433b30d8d0f090",
+  "sha256": "4f4d9c5f5dca3b0d4349a9e2d8b3af9768b8a603a924085bdd8c37f2076d6cf6",
   "thresholds": {
     "clean_onboarding_seconds_max": 300.0,
     "context_reduction_min": 0.3,

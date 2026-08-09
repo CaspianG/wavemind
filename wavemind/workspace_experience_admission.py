@@ -122,12 +122,19 @@ def evaluate_workspace_experience_admission_matrix(
             "tests/test_workspace_experience.py",
         ),
         _row(
-            "frozen-real-work-benchmark",
-            "Three public repos, 60 cases, dev/held-out splits, static baseline comparison.",
+            "historical-v3-checksum-selection-experiment",
+            "Historical failed v3 checksum-selection experiment; not real-work proof.",
             benchmark_status,
             "benchmarks/workspace_experience_benchmark_results.json",
             "tests/test_workspace_experience_benchmark.py",
             details=benchmark_details,
+        ),
+        _row(
+            "frozen-real-work-benchmark-v4",
+            "Three public repos, 60 independently sourced real workflow/test/environment cases, dev/held-out splits, static baseline comparison.",
+            "missing",
+            "benchmarks/workspace_experience_v4_benchmark_results.json",
+            "tests/test_workspace_experience_v4_benchmark.py",
         ),
         _row(
             "workspace-experience-admission",
@@ -304,6 +311,11 @@ def _benchmark_status(root: Path) -> tuple[str, dict[str, Any]]:
         "result_status": payload.get("status"),
         "split": payload.get("split"),
         "source_sha": payload.get("source_sha"),
+        "methodology_status": "historical_failed_checksum_selection_not_real_work",
+        "not_admission_evidence_reason": (
+            "v3 task success uses source_sha256_check, not reproduced workflow, "
+            "test, CI, or environment outcomes"
+        ),
         "manifest_sha256": payload.get("manifest", {}).get("sha256"),
         "failed_gates": failed_gates,
         "metrics": {

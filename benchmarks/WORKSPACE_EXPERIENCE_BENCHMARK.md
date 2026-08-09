@@ -1,10 +1,12 @@
-# Workspace Experience Real-Work Benchmark
+# Workspace Experience Historical Checksum-Selection Experiment
 
 - Status: `failed`
 - Split: `heldout`
-- Manifest: `workspace-experience-real-work-v3-frozen-20260810`
-- Manifest SHA-256: `7496617197c8621c8b04d76b2d01837c3b307a0ceb0adeee4f433b30d8d0f090`
-- Claim boundary: Deterministic real-work workspace procedure selection from pinned public source outcomes; no universal model-quality claim.
+- Manifest: `workspace-experience-v3-checksum-selection-historical-20260810`
+- Manifest SHA-256: `4f4d9c5f5dca3b0d4349a9e2d8b3af9768b8a603a924085bdd8c37f2076d6cf6`
+- Claim boundary: Historical failed checksum-selection experiment only. Task success uses source_sha256_check over pinned files, not reproduced workflow, test, CI, or environment outcomes. This artifact must not satisfy Goal 7 real-work admission.
+
+This artifact is historical failed evidence only. It is not real-work benchmark proof because task success is based on source checksum selection, not on reproduced workflow, test, CI, or environment outcomes.
 
 | Metric | Value | Gate |
 |---|---:|---:|

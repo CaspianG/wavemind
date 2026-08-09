@@ -2,7 +2,7 @@
   "admitted": false,
   "baseline_source_sha": "d42592553ed1036c463bc2eb864caf3ed9c31ebe",
   "claim_boundary": "This matrix is a Goal 7 gap audit, not final production admission.",
-  "generated_at": "2026-08-09T22:29:10.662886+00:00",
+  "generated_at": "2026-08-09T22:39:52.332792+00:00",
   "protocol": {
     "claim_boundary": "Local, provider-neutral workspace experience proof. No GPU, paid API, private client history, universal model-quality, or external service claim.",
     "comparison_modes": [
@@ -99,7 +99,8 @@
           "task_success_lift_pp",
           "repeated_known_error_reduction"
         ],
-        "manifest_sha256": "7496617197c8621c8b04d76b2d01837c3b307a0ceb0adeee4f433b30d8d0f090",
+        "manifest_sha256": "4f4d9c5f5dca3b0d4349a9e2d8b3af9768b8a603a924085bdd8c37f2076d6cf6",
+        "methodology_status": "historical_failed_checksum_selection_not_real_work",
         "metrics": {
           "context_reduction": 0.8066253860904953,
           "false_procedure_injection": 0.0,
@@ -108,14 +109,22 @@
           "task_success_lift_pp": 1.6666666666666607,
           "workspace_namespace_leakage": 0
         },
+        "not_admission_evidence_reason": "v3 task success uses source_sha256_check, not reproduced workflow, test, CI, or environment outcomes",
         "result_status": "failed",
         "source_sha": "6c69dcb2f7fae08e22d944f828c93767c315f3d6",
         "split": "heldout"
       },
-      "id": "frozen-real-work-benchmark",
-      "requirement": "Three public repos, 60 cases, dev/held-out splits, static baseline comparison.",
+      "id": "historical-v3-checksum-selection-experiment",
+      "requirement": "Historical failed v3 checksum-selection experiment; not real-work proof.",
       "status": "failed",
       "test": "tests/test_workspace_experience_benchmark.py"
+    },
+    {
+      "artifact": "benchmarks/workspace_experience_v4_benchmark_results.json",
+      "id": "frozen-real-work-benchmark-v4",
+      "requirement": "Three public repos, 60 independently sourced real workflow/test/environment cases, dev/held-out splits, static baseline comparison.",
+      "status": "missing",
+      "test": "tests/test_workspace_experience_v4_benchmark.py"
     },
     {
       "artifact": "benchmarks/workspace_experience_admission_results.json",
@@ -135,15 +144,15 @@
   "schema": "wavemind.workspace_experience_admission.v1",
   "source_manifest": {
     "algorithm": "sha256",
-    "digest": "69e9c236284e08b754a040b0d921fda9f08b1e388893d50512e32c97697f810f",
+    "digest": "36c14f477ae821ace184edbe2b8306c1fa0c30e52e3ac454e98278e431fc2330",
     "files": [
       {
         "path": "wavemind/workspace_experience.py",
-        "sha256": "e0ce34464601386b16b4faa124d20102ae3489efb73eaaeb4bd57f7dc7ad72d6"
+        "sha256": "a85e47a442b6ab5f20e813c9124b2f777f0b2cfa05a44b4016404daad689d3ca"
       },
       {
         "path": "wavemind/experience_runtime.py",
-        "sha256": "3e6278789379299f16e8f53bd87f6a850ce9c88e517b554eb6a4f6314d8285d7"
+        "sha256": "83efb9046f32bffa9a93fe3d597d561a6c354340b7c40514d0f30b4adaacaff0"
       },
       {
         "path": "wavemind/experience_compiler.py",
@@ -155,7 +164,7 @@
       },
       {
         "path": "wavemind/workspace_experience_admission.py",
-        "sha256": "4eed00a14d496aecfc64b856816ae43b635b1f3f648af5562186527393217ebd"
+        "sha256": "9ad1dd6766f35d3649f9f68bedbe6a7a8f5483222e9617ecfb8ba0dd003d77e7"
       },
       {
         "path": "wavemind/cli.py",
@@ -179,15 +188,15 @@
       },
       {
         "path": "benchmarks/workspace_experience_manifest.json",
-        "sha256": "1d681ac111ab7be0071a34862d9341f04a550be11a08a6f5f6ea4352c7b4d2b5"
+        "sha256": "b1d17dce315ce538c56bda4bf8dfbda4a0bebe7e6c52a1bf91448c4b6d59f601"
       },
       {
         "path": "benchmarks/workspace_experience_benchmark.py",
-        "sha256": "d6c328a15f84375cb13e6697abf1051f034baaba4d0f8cb696116564a24ede1e"
+        "sha256": "765b499fbbe96e238ff61a4a94958de5ae71ad5474c6557e6478714d8c1451aa"
       },
       {
         "path": "tests/test_workspace_experience.py",
-        "sha256": "291c0f0b6fa907dc49c3dda5ca09b9d001bfd1d50b3c44407cc255fa37762431"
+        "sha256": "252034d59868c1345c727d460d54393019954ba32aa9ab72ce38898287ef94a5"
       },
       {
         "path": "tests/test_workspace_experience_benchmark.py",
@@ -200,15 +209,15 @@
     ],
     "schema": "wavemind.workspace_experience_source_manifest.v1"
   },
-  "source_sha": "6c69dcb2f7fae08e22d944f828c93767c315f3d6",
+  "source_sha": "5767541a63e91f34a0df5665aff083b07a84d300",
   "status": "blocked",
   "summary": {
     "blocked": 1,
     "failed": 1,
     "implemented": 8,
-    "missing": 0,
+    "missing": 1,
     "partial": 0,
     "required_current": 1,
-    "total": 11
+    "total": 12
   }
 }

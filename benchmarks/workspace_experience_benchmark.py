@@ -254,8 +254,10 @@ def run_benchmark(
                 "llm_used": False,
                 "gpu_used": False,
                 "task_success_definition": (
-                    "positive cases require selected procedure plus successful executable outcome; "
-                    "control cases require abstention"
+                    "Historical v3 checksum-selection experiment only: positive cases "
+                    "required selected procedure plus source_sha256_check; control cases "
+                    "required abstention. This is not accepted as Goal 7 real-work "
+                    "workflow/test/CI/environment evidence."
                 ),
                 "claim_boundary": manifest["claim_boundary"],
             },
@@ -512,7 +514,7 @@ def _train_procedure(
             f"`{procedure['expected_outcome']['path']}` with SHA-256 "
             f"{procedure['expected_outcome']['sha256']} before editing."
         ),
-        reason="freeze real-work benchmark procedure",
+        reason="freeze historical checksum-selection experiment procedure",
         metadata={
             "procedure_id": procedure["id"],
             "expected_outcome": procedure["expected_outcome"],
@@ -895,13 +897,17 @@ def _rounded(value: dict[str, Any]) -> dict[str, Any]:
 def _render_markdown(payload: dict[str, Any]) -> str:
     admission = payload["metrics"]["admission"]
     lines = [
-        "# Workspace Experience Real-Work Benchmark",
+        "# Workspace Experience Historical Checksum-Selection Experiment",
         "",
         f"- Status: `{payload['status']}`",
         f"- Split: `{payload['split']}`",
         f"- Manifest: `{payload['manifest']['revision']}`",
         f"- Manifest SHA-256: `{payload['manifest']['sha256']}`",
         f"- Claim boundary: {payload['protocol']['claim_boundary']}",
+        "",
+        "This artifact is historical failed evidence only. It is not real-work "
+        "benchmark proof because task success is based on source checksum selection, "
+        "not on reproduced workflow, test, CI, or environment outcomes.",
         "",
         "| Metric | Value | Gate |",
         "|---|---:|---:|",

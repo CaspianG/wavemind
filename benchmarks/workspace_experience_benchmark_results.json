@@ -1,12 +1,18 @@
 {
   "duration_seconds": 27.725888000015402,
   "generated_at": "2026-08-09T22:26:18Z",
+  "historical_status": "failed_checksum_selection_experiment_not_real_work_evidence",
   "manifest": {
     "case_count": 84,
     "procedure_count": 60,
-    "revision": "workspace-experience-real-work-v3-frozen-20260810",
-    "sha256": "7496617197c8621c8b04d76b2d01837c3b307a0ceb0adeee4f433b30d8d0f090"
+    "revision": "workspace-experience-v3-checksum-selection-historical-20260810",
+    "sha256": "4f4d9c5f5dca3b0d4349a9e2d8b3af9768b8a603a924085bdd8c37f2076d6cf6"
   },
+  "methodology_limitations": [
+    "Task success uses source_sha256_check over pinned files.",
+    "The artifact does not reproduce real workflow, test, CI, or environment outcomes.",
+    "The artifact is retained only as historical failed evidence and must not satisfy Goal 7 admission."
+  ],
   "metrics": {
     "admission": {
       "capture_actual": 180,
@@ -57,10 +63,10 @@
     }
   },
   "protocol": {
-    "claim_boundary": "Deterministic real-work workspace procedure selection from pinned public source outcomes; no universal model-quality claim.",
+    "claim_boundary": "Historical failed checksum-selection experiment only. Task success uses source_sha256_check over pinned files, not reproduced workflow, test, CI, or environment outcomes. This artifact must not satisfy Goal 7 real-work admission.",
     "gpu_used": false,
     "llm_used": false,
-    "task_success_definition": "positive cases require selected procedure plus successful executable outcome; control cases require abstention"
+    "task_success_definition": "Historical v3 checksum-selection experiment only: positive cases required selected procedure plus source_sha256_check; control cases required abstention. This is not accepted as Goal 7 real-work workflow/test/CI/environment evidence."
   },
   "rows": [
     {
