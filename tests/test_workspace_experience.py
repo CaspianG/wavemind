@@ -304,6 +304,28 @@ def test_workspace_cli_init_doctor_status_and_mcp_config(tmp_path: Path) -> None
     assert outputs[1]["status"] == "pass"
     assert outputs[2]["schema"] == "wavemind.workspace_status.v1"
     assert "wavemind-workspace" in outputs[3]["mcpServers"]
+    demo = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "wavemind.cli",
+            "workspace",
+            "--root",
+            str(repo),
+            "demo",
+            "--workspace-id",
+            "cli-agent",
+            "--json",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    demo_payload = json.loads(demo.stdout)
+    assert demo_payload["schema"] == "wavemind.workspace_demo.v1"
+    assert demo_payload["packet"]["abstain"] is False
+    assert demo_payload["packet"]["selected_citations"]
+    assert "wavemind-workspace" in demo_payload["mcp"]["mcpServers"]
 
 
 def test_workspace_http_capture_review_and_cross_process_replay(tmp_path: Path) -> None:

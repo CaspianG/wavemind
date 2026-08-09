@@ -7,6 +7,7 @@ import json
 import os
 import sys
 import tempfile
+import time
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +19,7 @@ from .active_active_drill import parse_active_active_regions, run_active_active_
 from .consensus import run_control_plane_consensus_profile
 from .core import WaveMind
 from .experience import SQLiteExperienceStore
+from .experience_runtime import AgentEventKind, VerificationSource
 from .encoders import create_text_encoder
 from .advisor import advise_memory_architecture, advice_status_meets_or_exceeds
 from .scale import (
@@ -141,6 +143,7 @@ from .replication import ReplicatedWaveMind
 from .sharding import DistributedShardedWaveMind, HTTPNamespaceShardClient
 from .storage import SQLiteMemoryStore
 from .workspace_experience import (
+    WorkspaceEvent,
     WorkspaceExperienceManager,
     initialize_workspace,
     load_workspace_config,
@@ -261,6 +264,11 @@ def build_parser() -> argparse.ArgumentParser:
     workspace_doctor.add_argument("--json", action="store_true")
     workspace_status = workspace_sub.add_parser("status", help="Show workspace identity and queue status")
     workspace_status.add_argument("--json", action="store_true")
+    workspace_demo = workspace_sub.add_parser("demo", help="Run a local verified-experience demo")
+    workspace_demo.add_argument("--workspace-id")
+    workspace_demo.add_argument("--tenant", default="local")
+    workspace_demo.add_argument("--user", default="local")
+    workspace_demo.add_argument("--json", action="store_true")
     workspace_packet = workspace_sub.add_parser("packet", help="Compile a cited Experience Packet")
     workspace_packet.add_argument("query")
     workspace_packet.add_argument("--domain", default="workspace")
@@ -2842,14 +2850,94 @@ def run_interactive(args) -> int:
 
 def handle_workspace_command(args: argparse.Namespace) -> int:
     try:
-        if args.workspace_command == "init":
+        if args.workspace_command in {"init", "demo"}:
             config = initialize_workspace(
                 args.root,
                 workspace_id=args.workspace_id or Path(args.root).resolve().name,
                 tenant_id=args.tenant,
                 user_id=args.user,
-                force=args.force,
+                force=getattr(args, "force", False),
             )
+            if args.workspace_command == "demo":
+                suffix = f"{int(time.time() * 1000)}"
+                manager = WorkspaceExperienceManager(config)
+                try:
+                    started = manager.start_run(
+                        query="pytest cache permission failure",
+                        objective="fix pytest cache permission failure",
+                        domain="python",
+                        task_type="pytest-cache",
+                        run_id=f"workspace-demo-{suffix}",
+                        tools=("remove-cache", "pytest"),
+                        metadata={"demo": True},
+                    )
+                    call = manager.capture_event(
+                        WorkspaceEvent(
+                            id=f"workspace-demo-call-{suffix}",
+                            run_id=started["run_id"],
+                            session_id=started["session_id"],
+                            task_id=started["task_id"],
+                            kind=AgentEventKind.TOOL_CALL,
+                            sequence=started["next_sequence"],
+                            tool_name="remove-cache",
+                            payload={"input": {"path": ".pytest_cache"}},
+                        )
+                    )
+                    manager.capture_event(
+                        WorkspaceEvent(
+                            id=f"workspace-demo-result-{suffix}",
+                            run_id=started["run_id"],
+                            session_id=started["session_id"],
+                            task_id=started["task_id"],
+                            kind=AgentEventKind.TOOL_RESULT,
+                            sequence=started["next_sequence"] + 1,
+                            parent_event_id=call["event"]["id"],
+                            tool_name="remove-cache",
+                            payload={
+                                "success": True,
+                                "output": {"removed": ".pytest_cache"},
+                            },
+                        )
+                    )
+                    verified = manager.verify_run(
+                        run_id=started["run_id"],
+                        evidence_id=f"workspace-demo-pytest-{suffix}",
+                        source=VerificationSource.TEST,
+                        verifier="pytest",
+                        success=True,
+                        score=1.0,
+                        reference="local-demo://pytest",
+                    )
+                    candidate_id = verified["candidate_ids"][0]
+                    manager.approve(
+                        candidate_id,
+                        evidence_id=f"workspace-demo-operator-{suffix}",
+                    )
+                    packet = manager.packet(
+                        "pytest cache permission failure",
+                        domain="python",
+                        task_type="pytest-cache",
+                        tools=("remove-cache", "pytest"),
+                    )
+                    payload = {
+                        "schema": "wavemind.workspace_demo.v1",
+                        "identity": config.identity.as_dict(),
+                        "run": started,
+                        "verified": verified,
+                        "approved_experience_id": candidate_id,
+                        "packet": packet,
+                        "mcp": workspace_mcp_config(config),
+                    }
+                finally:
+                    manager.close()
+                if args.json:
+                    print(json.dumps(payload, ensure_ascii=False, indent=2))
+                else:
+                    print("workspace demo: ok")
+                    print(f"namespace: {config.identity.namespace}")
+                    print(f"citation: {payload['packet']['selected_citations'][0]}")
+                    print("mcp server: wavemind-workspace")
+                return 0
             payload = config.as_dict()
             if args.json:
                 print(json.dumps(payload, ensure_ascii=False, indent=2))

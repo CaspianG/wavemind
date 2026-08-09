@@ -115,8 +115,8 @@ def evaluate_workspace_experience_admission_matrix(
         _row(
             "workspace-onboarding",
             "workspace init, doctor, status, review, packet, export/import, MCP config.",
-            "partial",
-            "wavemind/cli.py",
+            "implemented",
+            "docs/WORKSPACE_EXPERIENCE_QUICKSTART.md",
             "tests/test_workspace_experience.py",
         ),
         _row(
@@ -243,6 +243,7 @@ def _source_manifest(root: Path) -> dict[str, Any]:
         "wavemind/api.py",
         "wavemind/integrations/mcp_experience.py",
         "sdk/typescript/src/index.ts",
+        "docs/WORKSPACE_EXPERIENCE_QUICKSTART.md",
         "tests/test_workspace_experience.py",
         "tests/test_experience_runtime_contracts.py",
     ]

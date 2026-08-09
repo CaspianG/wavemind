@@ -1,7 +1,7 @@
 # Workspace Experience Admission Matrix
 
 - Status: `gap_audit`
-- Source SHA: `d85e35cb8b5f61b937bcd93ad5212cc53297ef3e`
+- Source SHA: `e7538d12d5d7c1be09a16f32f47ade3d63fc3e09`
 - Protocol: `workspace-experience-v1-frozen-20260810`
 - Protocol SHA-256: `fa2ebc36799b44ff54e74120da7dab3a475d40461a4963872069f5905beeb590`
 
@@ -14,7 +14,7 @@
 | `human-review-control` | `implemented` | `wavemind/workspace_experience.py` | `tests/test_workspace_experience.py` |
 | `cross-agent-portability` | `implemented` | `wavemind/workspace_experience.py` | `tests/test_workspace_experience.py` |
 | `useful-experience-packet` | `implemented` | `wavemind/workspace_experience.py` | `tests/test_workspace_experience.py` |
-| `workspace-onboarding` | `partial` | `wavemind/cli.py` | `tests/test_workspace_experience.py` |
+| `workspace-onboarding` | `implemented` | `docs/WORKSPACE_EXPERIENCE_QUICKSTART.md` | `tests/test_workspace_experience.py` |
 | `frozen-real-work-benchmark` | `missing` | `benchmarks/workspace_experience_benchmark_results.json` | `tests/test_workspace_experience_benchmark.py` |
 | `workspace-experience-admission` | `missing` | `benchmarks/workspace_experience_admission_results.json` | `tests/test_workspace_experience_admission.py` |
 | `safe-product-regression` | `required_current` | `benchmarks/safe_product_admission_results.json` | `.github/workflows/safe-product.yml` |

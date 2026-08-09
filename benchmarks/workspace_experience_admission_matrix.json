@@ -2,7 +2,7 @@
   "admitted": false,
   "baseline_source_sha": "d42592553ed1036c463bc2eb864caf3ed9c31ebe",
   "claim_boundary": "This matrix is a Goal 7 gap audit, not final production admission.",
-  "generated_at": "2026-08-09T21:57:35.308784+00:00",
+  "generated_at": "2026-08-09T22:00:21.534933+00:00",
   "protocol": {
     "claim_boundary": "Local, provider-neutral workspace experience proof. No GPU, paid API, private client history, universal model-quality, or external service claim.",
     "comparison_modes": [
@@ -86,10 +86,10 @@
       "test": "tests/test_workspace_experience.py"
     },
     {
-      "artifact": "wavemind/cli.py",
+      "artifact": "docs/WORKSPACE_EXPERIENCE_QUICKSTART.md",
       "id": "workspace-onboarding",
       "requirement": "workspace init, doctor, status, review, packet, export/import, MCP config.",
-      "status": "partial",
+      "status": "implemented",
       "test": "tests/test_workspace_experience.py"
     },
     {
@@ -117,7 +117,7 @@
   "schema": "wavemind.workspace_experience_admission.v1",
   "source_manifest": {
     "algorithm": "sha256",
-    "digest": "ec905b08ff2b20185fbb3adbe348e3f1b93587534e37b929cc0bb3e2e6ada53a",
+    "digest": "40de3ca5263c2f419cec5dea729cf8354a9269eeb50bcb2f2fe136c6e9e6542a",
     "files": [
       {
         "path": "wavemind/workspace_experience.py",
@@ -137,7 +137,7 @@
       },
       {
         "path": "wavemind/cli.py",
-        "sha256": "d5984146111e0bc1aa6bd19003e8d168286457e91ca18b79d038b780cd8267d1"
+        "sha256": "f5d12b52b0404abe4d696bdd031d6b9f1b7e57b2f89b0f4dcada07d486c840f7"
       },
       {
         "path": "wavemind/api.py",
@@ -152,8 +152,12 @@
         "sha256": "026deba20248d70b46f6a93e38d7d27881d2f7a9c4afe28e7f2a142f564f424d"
       },
       {
+        "path": "docs/WORKSPACE_EXPERIENCE_QUICKSTART.md",
+        "sha256": "e561f335ad858494ff9caf00a2202df7e72222f14ad0f177b42bd73aa3c9fbe8"
+      },
+      {
         "path": "tests/test_workspace_experience.py",
-        "sha256": "8b277a0027aba8699a01d4f66397ddb71707f10b361aa9309957414e372c42eb"
+        "sha256": "291c0f0b6fa907dc49c3dda5ca09b9d001bfd1d50b3c44407cc255fa37762431"
       },
       {
         "path": "tests/test_experience_runtime_contracts.py",
@@ -162,12 +166,12 @@
     ],
     "schema": "wavemind.workspace_experience_source_manifest.v1"
   },
-  "source_sha": "d85e35cb8b5f61b937bcd93ad5212cc53297ef3e",
+  "source_sha": "e7538d12d5d7c1be09a16f32f47ade3d63fc3e09",
   "status": "gap_audit",
   "summary": {
-    "implemented": 7,
+    "implemented": 8,
     "missing": 2,
-    "partial": 1,
+    "partial": 0,
     "required_current": 1,
     "total": 11
   }
