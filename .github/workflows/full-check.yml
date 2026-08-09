@@ -577,7 +577,7 @@ jobs:
           version: v3.15.4
 
       - name: Lint Helm chart
-        run: helm lint deploy/helm/wavemind
+        run: helm lint deploy/helm/wavemind --set auth.adminKey=lint-key
 
       - name: Render Helm chart
         run: |

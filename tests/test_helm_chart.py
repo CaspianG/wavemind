@@ -27,8 +27,8 @@ def test_helm_chart_core_files_exist_and_track_app_version():
     assert f'appVersion: "{wavemind.__version__}"' in chart
     assert f'tag: "{wavemind.__version__}"' in values
     assert "repository: ghcr.io/caspiang/wavemind" in values
-    assert "replicaCount: 3" in values
-    assert "replicationFactor: 2" in values
+    assert "replicaCount: 1" in values
+    assert "replicationFactor: 1" in values
     assert "recoveryJournal: /data/wavemind.recovery.jsonl" in values
     assert "autoscaling:" in values
     assert "maxReplicas: 12" in values
@@ -52,9 +52,11 @@ def test_helm_chart_templates_define_cluster_network_and_state():
     assert "serviceName: {{ include \"wavemind.headlessServiceName\" . }}" in statefulset
     assert "volumeClaimTemplates:" in statefulset
     assert "WAVEMIND_DB" in statefulset
+    assert "WAVEMIND_EXPERIENCE_DB" in statefulset
     assert "command:" in statefulset
     assert "- wavemind" in statefulset
     assert "- serve" in statefulset
+    assert "- --allow-public" in statefulset
     assert "WAVEMIND_RECOVERY_JOURNAL" in statefulset
     assert "WAVEMIND_STORE" in statefulset
     assert "WAVEMIND_POSTGRES_DSN" in statefulset
@@ -165,11 +167,19 @@ def test_helm_chart_auth_secret_is_optional_but_supported():
     readme = read_chart_file("README.md")
 
     assert "auth:" in values
-    assert "enabled: false" in values
+    assert "enabled: true" in values
     assert "existingSecret" in values
     assert "required \"auth.adminKey is required" in secret
     assert "kubectl create secret generic wavemind-auth" in readme
     assert "--set auth.existingSecret=wavemind-auth" in readme
+
+
+def test_helm_chart_fails_closed_for_unsafe_public_or_sqlite_scaling():
+    statefulset = read_chart_file("templates/statefulset.yaml")
+
+    assert "auth.enabled must be true" in statefulset
+    assert "runtime.store=sqlite supports exactly one replica" in statefulset
+    assert "autoscaling requires runtime.store=postgres" in statefulset
 
 
 def test_helm_chart_requires_secret_backed_production_backends():
@@ -203,7 +213,7 @@ def test_helm_chart_is_checked_by_github_actions():
 
     assert "helm:" in workflow
     assert "azure/setup-helm" in workflow
-    assert "helm lint deploy/helm/wavemind" in workflow
+    assert "helm lint deploy/helm/wavemind --set auth.adminKey=lint-key" in workflow
     assert "helm template wavemind deploy/helm/wavemind" in workflow
     assert "grep -q \"kind: StatefulSet\"" in workflow
     assert "grep -q \"kind: CronJob\"" in workflow
