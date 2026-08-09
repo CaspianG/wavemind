@@ -43,6 +43,7 @@ jobs:
           python -m pip install -e ".[dev,bench]"
           python benchmarks/validate_benchmark_artifacts.py \
             --max-age-days 8 \
+            --expected-source-sha "${GITHUB_SHA}" \
             --output benchmarks/benchmark_artifact_audit_ci.json
           python benchmarks/production_readiness_gate.py \
             --output /tmp/production_readiness_results.json \
