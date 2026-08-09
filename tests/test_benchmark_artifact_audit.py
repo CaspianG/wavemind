@@ -23,6 +23,19 @@ def _copy_bundle(tmp_path: Path) -> Path:
         ignore=shutil.ignore_patterns("data", ".field_memory_workdir", "__pycache__"),
     )
     (tmp_path / "docs" / "data").mkdir(parents=True)
+    matrix = json.loads(
+        (tmp_path / "benchmarks" / "benchmark_matrix_results.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    for entry in matrix.get("benchmarks", []):
+        source = entry.get("source") if isinstance(entry, dict) else None
+        if not isinstance(source, str) or source.startswith(("http://", "https://")):
+            continue
+        source_path = tmp_path / source
+        if not source_path.exists():
+            source_path.parent.mkdir(parents=True, exist_ok=True)
+            source_path.touch()
     return project_root
 
 
@@ -157,9 +170,9 @@ def test_benchmark_artifact_audit_rejects_missing_manifest(tmp_path):
 
 
 def test_benchmark_artifact_audit_rejects_unsynchronized_leaderboard_status(tmp_path):
-    _copy_bundle(tmp_path)
+    project_root = _copy_bundle(tmp_path)
     docs_data = tmp_path / "docs" / "data"
-    docs_data.mkdir(parents=True)
+    docs_data.mkdir(parents=True, exist_ok=True)
     status = render_leaderboard_status(tmp_path)
     status["publishing_status"] = "stale"
     (docs_data / "leaderboard-status.json").write_text(
@@ -176,6 +189,10 @@ def test_benchmark_artifact_audit_rejects_unsynchronized_leaderboard_status(tmp_
     )
 
     with pytest.raises(BenchmarkArtifactError) as exc:
-        validate_benchmark_artifacts(tmp_path, max_age_days=3650)
+        validate_benchmark_artifacts(
+            tmp_path,
+            max_age_days=3650,
+            expected_source_sha=repository_commit(project_root),
+        )
 
     assert "leaderboard status is not synchronized" in str(exc.value)
