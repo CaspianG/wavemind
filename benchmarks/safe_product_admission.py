@@ -21,6 +21,7 @@ def main() -> int:
     parser.add_argument("--product-persistence", type=Path, required=True)
     parser.add_argument("--quickstarts", type=Path, required=True)
     parser.add_argument("--ci-matrix-passed", action="store_true")
+    parser.add_argument("--sast-passed", action="store_true")
     parser.add_argument(
         "--output",
         type=Path,
@@ -39,6 +40,7 @@ def main() -> int:
         product_persistence_artifact=args.product_persistence,
         quickstart_artifact=args.quickstarts,
         ci_matrix_passed=args.ci_matrix_passed,
+        sast_passed=args.sast_passed,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(

@@ -1,0 +1,143 @@
+name: safe-product
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: safe-product-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  compatibility:
+    name: compatibility (${{ matrix.os }}, py${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            python: "3.10"
+          - os: ubuntu-latest
+            python: "3.11"
+          - os: ubuntu-latest
+            python: "3.12"
+          - os: ubuntu-latest
+            python: "3.13"
+          - os: windows-latest
+            python: "3.10"
+          - os: windows-latest
+            python: "3.13"
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Run compatibility and safe-default checks
+        run: >-
+          python -m pytest -q
+          tests/test_core_persistence.py
+          tests/test_cli_smoke.py::test_cli_serve_public_bind_is_explicit_and_authenticated
+          tests/test_api.py::test_fastapi_principals_enforce_namespace_prefixes
+          tests/test_onboarding.py::test_cli_init_and_doctor_json
+
+  sast:
+    name: sast (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [python, javascript-typescript]
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v4
+
+  admission:
+    name: exact-SHA admission
+    needs: [compatibility, sast]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: sdk/typescript/package-lock.json
+
+      - name: Install admission dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,bench]"
+          npm ci --prefix sdk/typescript
+
+      - name: Build the exact candidate image
+        run: docker build --build-arg INSTALL_PRODUCTION=true --tag "wavemind:safe-product-${GITHUB_SHA}" .
+
+      - name: Generate exact-SHA component evidence
+        run: |
+          python benchmarks/safe_retrieval_admission.py \
+            --output "${RUNNER_TEMP}/safe-retrieval.json" \
+            --require-admitted
+          python benchmarks/product_persistence_admission.py \
+            --image "wavemind:safe-product-${GITHUB_SHA}" \
+            --state-root "${RUNNER_TEMP}/persistence" \
+            --output "${RUNNER_TEMP}/product-persistence.json"
+          python benchmarks/quickstart_admission.py \
+            --docker-image "wavemind:safe-product-${GITHUB_SHA}" \
+            --temp-root "${RUNNER_TEMP}/quickstarts" \
+            --output "${RUNNER_TEMP}/quickstarts.json"
+
+      - name: Enforce Safe Product Admission
+        run: |
+          python benchmarks/safe_product_admission.py \
+            --safe-retrieval "${RUNNER_TEMP}/safe-retrieval.json" \
+            --product-persistence "${RUNNER_TEMP}/product-persistence.json" \
+            --quickstarts "${RUNNER_TEMP}/quickstarts.json" \
+            --ci-matrix-passed \
+            --sast-passed \
+            --output "${RUNNER_TEMP}/safe-product.json" \
+            --markdown-output "${RUNNER_TEMP}/SAFE_PRODUCT_ADMISSION.md" \
+            --require-admitted
+
+      - name: Upload exact-SHA admission evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: safe-product-admission-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/safe-retrieval.json
+            ${{ runner.temp }}/product-persistence.json
+            ${{ runner.temp }}/quickstarts.json
+            ${{ runner.temp }}/safe-product.json
+            ${{ runner.temp }}/SAFE_PRODUCT_ADMISSION.md

@@ -308,7 +308,12 @@ def _backup_restore_rollback_check() -> dict[str, Any]:
     }
 
 
-def _repository_confidence(root: Path, *, ci_matrix_passed: bool) -> tuple[dict[str, Any], dict[str, Any]]:
+def _repository_confidence(
+    root: Path,
+    *,
+    ci_matrix_passed: bool,
+    sast_passed: bool,
+) -> tuple[dict[str, Any], dict[str, Any]]:
     tests_workflow = (root / ".github/workflows/tests.yml").read_text(encoding="utf-8")
     codeql = root / ".github/workflows/codeql.yml"
     versions = {
@@ -325,6 +330,7 @@ def _repository_confidence(root: Path, *, ci_matrix_passed: bool) -> tuple[dict[
         "workflow_present": codeql.is_file(),
         "codeql_v4": "github/codeql-action" in codeql.read_text(encoding="utf-8")
         and "@v4" in codeql.read_text(encoding="utf-8"),
+        "dependency_jobs_passed": bool(sast_passed),
     }
     return matrix, sast
 
@@ -336,6 +342,7 @@ def run_safe_product_admission(
     product_persistence_artifact: str | Path,
     quickstart_artifact: str | Path,
     ci_matrix_passed: bool,
+    sast_passed: bool,
 ) -> dict[str, Any]:
     root = Path(project_root).resolve()
     source_sha = repository_commit(root)
@@ -362,7 +369,9 @@ def run_safe_product_admission(
     isolation, secrets = _api_isolation_and_secret_checks(root)
     backup = _backup_restore_rollback_check()
     python_matrix, sast = _repository_confidence(
-        root, ci_matrix_passed=ci_matrix_passed
+        root,
+        ci_matrix_passed=ci_matrix_passed,
+        sast_passed=sast_passed,
     )
     safe_metrics = safe_retrieval.get("metrics") or {}
     persistence_checks = product_persistence.get("checks") or {}
@@ -463,6 +472,7 @@ def run_safe_product_admission(
         [
             ".github/workflows/benchmark-leaderboard.yml",
             ".github/workflows/codeql.yml",
+            ".github/workflows/safe-product.yml",
             ".github/workflows/tests.yml",
             "Dockerfile",
             "docker-compose.yml",

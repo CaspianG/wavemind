@@ -84,3 +84,39 @@ def test_dependabot_covers_typescript_sdk_npm_dependencies():
     assert npm["directory"] == "/sdk/typescript"
     assert npm["schedule"]["interval"] == "weekly"
     assert npm["open-pull-requests-limit"] == "5"
+
+
+def test_safe_product_admission_depends_on_real_compatibility_and_sast_jobs():
+    workflow = load_yaml(WORKFLOWS / "safe-product.yml")
+    jobs = workflow["jobs"]
+
+    compatibility = jobs["compatibility"]["strategy"]["matrix"]["include"]
+    assert {entry["python"] for entry in compatibility} == {
+        "3.10",
+        "3.11",
+        "3.12",
+        "3.13",
+    }
+    assert {entry["os"] for entry in compatibility} == {
+        "ubuntu-latest",
+        "windows-latest",
+    }
+    assert jobs["sast"]["strategy"]["matrix"]["language"] == [
+        "python",
+        "javascript-typescript",
+    ]
+    admission = jobs["admission"]
+    assert admission["needs"] == ["compatibility", "sast"]
+    commands = "\n".join(
+        step.get("run", "") for step in admission["steps"]
+    )
+    for command in (
+        "safe_retrieval_admission.py",
+        "product_persistence_admission.py",
+        "quickstart_admission.py",
+        "safe_product_admission.py",
+        "--ci-matrix-passed",
+        "--sast-passed",
+        "--require-admitted",
+    ):
+        assert command in commands
