@@ -617,6 +617,17 @@ class SQLiteExperienceStore:
     def __exit__(self, exc_type: object, exc: object, tb: object) -> None:
         self.close()
 
+    def backup(self, destination: str | Path) -> Path:
+        path = Path(destination)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        target = sqlite3.connect(path)
+        try:
+            with self._lock:
+                self.conn.backup(target)
+        finally:
+            target.close()
+        return path
+
     def ensure_schema(self) -> None:
         with self._lock, self.conn:
             self.conn.execute(

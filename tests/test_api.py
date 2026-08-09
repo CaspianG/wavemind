@@ -163,8 +163,8 @@ def test_fastapi_remember_query_forget_and_stats(tmp_path):
                 },
             )
             assert backup.status_code == 200
-            assert backup.json()["path"].endswith(".sqlite3")
-            assert len(list(backup_dir.glob("api-*.sqlite3"))) == 1
+            assert backup.json()["path"].endswith(".wavemind.zip")
+            assert len(list(backup_dir.glob("api-*.wavemind.zip"))) == 1
 
             mind.index.remove(memory_id)
             drifted = client.get("/index/health")

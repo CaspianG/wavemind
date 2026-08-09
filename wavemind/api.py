@@ -56,6 +56,7 @@ from .jobs import (
     query_with_vector_cache,
 )
 from .observability import configure_observability, instrument_fastapi_app
+from .product_backup import create_rotating_product_backup
 from .memory_firewall import (
     FirewallContext,
     MemoryFirewall,
@@ -2866,11 +2867,14 @@ def create_app(
 
     @app.post("/backup", response_model=BackupResponse, dependencies=[Depends(require_role("admin"))])
     def backup(request: BackupRequest) -> BackupResponse:
+        experience_store = _experience_compiler("default").store
         with _api_operation(app, "backup"):
-            path = app.state.mind.save(
+            path = create_rotating_product_backup(
+                app.state.mind,
+                experience_store,
                 request.path,
+                prefix=request.prefix,
                 keep_last=request.keep_last,
-                backup_prefix=request.prefix,
             )
         return BackupResponse(path=str(path))
 
