@@ -229,6 +229,33 @@ def test_workspace_edit_approve_supersedes_and_rollback_preserves_provenance(
         manager.close()
 
 
+def test_workspace_repeated_verified_run_validates_current_superseding_version(
+    tmp_path: Path,
+) -> None:
+    repo = _make_repo(tmp_path / "repo")
+    config = initialize_workspace(repo, workspace_id="agent", tenant_id="tenant", user_id="user")
+    manager = WorkspaceExperienceManager(config)
+    try:
+        candidate_id = _verified_workspace_run(manager, suffix="repeat-a")
+        edited = manager.edit_and_approve(
+            candidate_id,
+            evidence_id="operator-repeat-a",
+            title="Handle pytest cache failure",
+            content="Remove pytest cache before rerunning pytest.",
+        )
+        edited_id = edited["experience_id"]
+        before = manager.store.candidate_validation_summary(edited_id).validation_count
+
+        _verified_workspace_run(manager, suffix="repeat-b")
+
+        after = manager.store.candidate_validation_summary(edited_id).validation_count
+        assert after > before
+        assert manager.store.get(candidate_id).status is ExperienceStatus.SUPERSEDED
+        assert manager.store.get(edited_id).status is ExperienceStatus.ACTIVE
+    finally:
+        manager.close()
+
+
 def test_workspace_negative_controls_abstain_and_bundle_namespace_mismatch(tmp_path: Path) -> None:
     repo = _make_repo(tmp_path / "repo")
     config = initialize_workspace(repo, workspace_id="agent", tenant_id="tenant", user_id="user")
