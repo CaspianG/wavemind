@@ -49,6 +49,16 @@ def _ready(pod: dict[str, Any]) -> bool:
     )
 
 
+def _authenticated_stats_script() -> str:
+    return (
+        "import json,os,urllib.request; "
+        "key=os.environ['WAVEMIND_API_KEY']; "
+        "request=urllib.request.Request('http://127.0.0.1:8000/stats', "
+        "headers={'Authorization':'Bearer '+key}); "
+        "print(json.loads(urllib.request.urlopen(request, timeout=5).read()))"
+    )
+
+
 def _wait_for(
     description: str,
     predicate: Callable[[], Any],
@@ -408,11 +418,7 @@ def run_smoke(args: argparse.Namespace) -> dict[str, Any]:
         "--",
         "python",
         "-c",
-        (
-            "import json,urllib.request; "
-            "print(json.loads(urllib.request.urlopen('http://127.0.0.1:8000/stats', "
-            "timeout=5).read()))"
-        ),
+        _authenticated_stats_script(),
     )
 
     def _ready_pdb() -> dict[str, Any] | None:
@@ -580,11 +586,7 @@ def run_smoke(args: argparse.Namespace) -> dict[str, Any]:
                     "--",
                     "python",
                     "-c",
-                    (
-                        "import json,urllib.request; "
-                        "print(json.loads(urllib.request.urlopen('http://127.0.0.1:8000/stats', "
-                        "timeout=5).read()))"
-                    ),
+                    _authenticated_stats_script(),
                 )
             )
         )
