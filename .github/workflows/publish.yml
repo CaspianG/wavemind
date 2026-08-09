@@ -1,6 +1,9 @@
 name: publish-existing-release
 
 on:
+  push:
+    tags:
+      - "v*"
   workflow_dispatch:
     inputs:
       tag:
@@ -11,35 +14,79 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: publish-pypi-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
 jobs:
-  pypi-recovery:
+  pypi:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     environment: pypi
+    env:
+      TARGET_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
     permissions:
       contents: read
       id-token: write
 
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.TARGET_TAG }}
 
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
-      - name: Download the already-built GitHub release distributions
+      - name: Wait for and download the verified GitHub release distributions
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          mkdir -p dist
-          gh release download "${{ inputs.tag }}" \
-            --pattern "*.whl" \
-            --pattern "*.tar.gz" \
-            --dir dist
+          for attempt in $(seq 1 160); do
+            rm -rf dist
+            mkdir -p dist
+            if gh release download "$TARGET_TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --pattern "*.whl" \
+              --pattern "*.tar.gz" \
+              --dir dist; then
+              wheel_count=$(find dist -maxdepth 1 -type f -name '*.whl' | wc -l)
+              sdist_count=$(find dist -maxdepth 1 -type f -name '*.tar.gz' | wc -l)
+              if [ "$wheel_count" -eq 1 ] && [ "$sdist_count" -eq 1 ]; then
+                exit 0
+              fi
+            fi
+            echo "Release assets for $TARGET_TAG are not ready (attempt $attempt/160)."
+            sleep 15
+          done
+          echo "Timed out waiting for exactly one wheel and one sdist for $TARGET_TAG." >&2
+          exit 1
 
-      - name: Verify downloaded distributions
+      - name: Verify tag identity and downloaded distributions
         run: |
-          python -m pip install --upgrade pip twine
+          python -m pip install --upgrade pip twine packaging
           python -m twine check dist/*
+          python - <<'PY'
+          import os
+          from pathlib import Path
+
+          from packaging.utils import parse_sdist_filename, parse_wheel_filename
+
+          expected = os.environ["TARGET_TAG"].removeprefix("v")
+          wheels = list(Path("dist").glob("*.whl"))
+          sdists = list(Path("dist").glob("*.tar.gz"))
+          if len(wheels) != 1 or len(sdists) != 1:
+              raise SystemExit("Expected exactly one wheel and one sdist")
+
+          wheel_name, wheel_version, _, _ = parse_wheel_filename(wheels[0].name)
+          sdist_name, sdist_version = parse_sdist_filename(sdists[0].name)
+          if str(wheel_name) != "wavemind" or str(sdist_name) != "wavemind":
+              raise SystemExit("Release distributions are not WaveMind packages")
+          if str(wheel_version) != expected or str(sdist_version) != expected:
+              raise SystemExit(
+                  f"Release distributions do not match {os.environ['TARGET_TAG']}"
+              )
+          PY
 
       - name: Publish without rebuilding
         uses: pypa/gh-action-pypi-publish@release/v1

@@ -213,21 +213,28 @@ def test_release_workflow_builds_and_creates_github_release():
     assert "python -m build" in workflow
     assert "python -m twine check dist/*" in workflow
     assert "python-distributions-${{ github.sha }}" in workflow
-    assert "pypa/gh-action-pypi-publish" in workflow
+    assert "pypa/gh-action-pypi-publish" not in workflow
     assert "softprops/action-gh-release" in workflow
     assert "Validate release identity and canonical product status" in workflow
     assert "workflow_dispatch:" not in workflow
 
 
-def test_pypi_recovery_publishes_existing_release_without_rebuilding():
+def test_pypi_workflow_publishes_existing_release_without_rebuilding():
     workflow = Path(".github/workflows/publish.yml").read_text(encoding="utf-8")
 
     assert "workflow_dispatch:" in workflow
-    assert "tags:" not in workflow
-    assert 'gh release download "${{ inputs.tag }}"' in workflow
+    assert "push:" in workflow
+    assert "tags:" in workflow
+    assert '"v*"' in workflow
+    assert 'gh release download "$TARGET_TAG"' in workflow
+    assert 'ref: ${{ env.TARGET_TAG }}' in workflow
+    assert "Wait for and download the verified GitHub release distributions" in workflow
+    assert "parse_wheel_filename" in workflow
+    assert "parse_sdist_filename" in workflow
     assert "python -m build" not in workflow
     assert "python -m twine check dist/*" in workflow
     assert "pypa/gh-action-pypi-publish" in workflow
+    assert "id-token: write" in workflow
     assert "skip-existing: true" in workflow
 
 
