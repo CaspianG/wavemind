@@ -252,9 +252,28 @@ def _backup_restore_rollback_check() -> dict[str, Any]:
                         status=ExperienceStatus.ACTIVE,
                     )
                 )
+                replacement = ExperienceRecord.create(
+                    kind=ExperienceKind.CORRECTION,
+                    title="Verified backup and restore policy",
+                    content="Restore both product databases as one checked unit.",
+                    source=ExperienceSource(
+                        provider="safe-product-admission",
+                        source_type="environment",
+                        source_id="backup-proof-v2",
+                    ),
+                    namespace="tenant:backup",
+                    confidence=1.0,
+                    trust=TrustClass.VERIFIED_OPERATOR,
+                    status=ExperienceStatus.ACTIVE,
+                )
+                promoted = store.supersede(
+                    experience.id,
+                    replacement,
+                    reason="Prove that rollback preserves the version chain.",
+                )
                 archive = create_product_backup(mind, store, root / "product.zip")
                 rolled_back = store.rollback(
-                    experience.id,
+                    promoted.id,
                     reason="safe product rollback proof",
                 )
                 core_after_rollback = mind.store.get(memory_id) is not None
@@ -276,7 +295,7 @@ def _backup_restore_rollback_check() -> dict[str, Any]:
         finally:
             restored_mind.close()
         with SQLiteExperienceStore(restored_experience) as store:
-            restored = store.get(experience.id)
+            restored = store.get(promoted.id)
     return {
         "rollback_status": rolled_back.status.value,
         "core_survived_rollback": core_after_rollback,
