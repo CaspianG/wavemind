@@ -2,7 +2,7 @@
   "admitted": false,
   "baseline_source_sha": "d42592553ed1036c463bc2eb864caf3ed9c31ebe",
   "claim_boundary": "This matrix is a Goal 7 gap audit, not final production admission.",
-  "generated_at": "2026-08-09T22:29:10.662886+00:00",
+  "generated_at": "2026-08-09T22:29:10.729035+00:00",
   "protocol": {
     "claim_boundary": "Local, provider-neutral workspace experience proof. No GPU, paid API, private client history, universal model-quality, or external service claim.",
     "comparison_modes": [

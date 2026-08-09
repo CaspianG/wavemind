@@ -62,6 +62,8 @@ def evaluate_workspace_experience_admission_matrix(
     baseline_source_sha: str | None = None,
 ) -> dict[str, Any]:
     root_path = Path(root)
+    benchmark_status, benchmark_details = _benchmark_status(root_path)
+    admission_status = "blocked" if benchmark_status == "failed" else "missing"
     rows = [
         _row(
             "baseline-gap-audit",
@@ -122,14 +124,15 @@ def evaluate_workspace_experience_admission_matrix(
         _row(
             "frozen-real-work-benchmark",
             "Three public repos, 60 cases, dev/held-out splits, static baseline comparison.",
-            "missing",
+            benchmark_status,
             "benchmarks/workspace_experience_benchmark_results.json",
             "tests/test_workspace_experience_benchmark.py",
+            details=benchmark_details,
         ),
         _row(
             "workspace-experience-admission",
             "Exact-SHA JSON/Markdown admission with all mandatory rows green.",
-            "missing",
+            admission_status,
             "benchmarks/workspace_experience_admission_results.json",
             "tests/test_workspace_experience_admission.py",
         ),
@@ -142,9 +145,10 @@ def evaluate_workspace_experience_admission_matrix(
         ),
     ]
     complete = all(row["status"] == "implemented" for row in rows)
+    failed = any(row["status"] == "failed" for row in rows)
     return {
         "schema": WORKSPACE_EXPERIENCE_ADMISSION_SCHEMA,
-        "status": "admitted" if complete else "gap_audit",
+        "status": "admitted" if complete else ("blocked" if failed else "gap_audit"),
         "admitted": complete,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "baseline_source_sha": baseline_source_sha,
@@ -155,6 +159,8 @@ def evaluate_workspace_experience_admission_matrix(
             "implemented": sum(row["status"] == "implemented" for row in rows),
             "partial": sum(row["status"] == "partial" for row in rows),
             "missing": sum(row["status"] == "missing" for row in rows),
+            "failed": sum(row["status"] == "failed" for row in rows),
+            "blocked": sum(row["status"] == "blocked" for row in rows),
             "required_current": sum(row["status"] == "required_current" for row in rows),
             "total": len(rows),
         },
@@ -223,14 +229,97 @@ def _row(
     status: str,
     artifact: str,
     test: str,
-) -> dict[str, str]:
-    return {
+    *,
+    details: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    row = {
         "id": row_id,
         "requirement": requirement,
         "status": status,
         "artifact": artifact,
         "test": test,
     }
+    if details:
+        row["details"] = details
+    return row
+
+
+def _benchmark_status(root: Path) -> tuple[str, dict[str, Any]]:
+    path = root / "benchmarks" / "workspace_experience_benchmark_results.json"
+    if not path.exists():
+        return "missing", {}
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if payload.get("split") != "heldout":
+        return "failed", {"reason": "benchmark result is not held-out evidence"}
+    metrics = payload.get("metrics", {}).get("admission", {})
+    thresholds = workspace_experience_protocol_manifest()["thresholds"]
+    failed_gates: list[str] = []
+    if float(metrics.get("task_success_lift_pp", -1.0)) < thresholds["task_success_lift_pp_min"]:
+        failed_gates.append("task_success_lift_pp")
+    if (
+        float(metrics.get("repeated_known_error_reduction", -1.0))
+        < thresholds["repeated_known_error_reduction_min"]
+    ):
+        failed_gates.append("repeated_known_error_reduction")
+    if float(metrics.get("context_reduction", -1.0)) < thresholds["context_reduction_min"]:
+        failed_gates.append("context_reduction")
+    if (
+        float(metrics.get("false_procedure_injection", 1.0))
+        > thresholds["false_procedure_injection_max"]
+    ):
+        failed_gates.append("false_procedure_injection")
+    if int(metrics.get("unverified_injection", -1)) != thresholds["unverified_injection"]:
+        failed_gates.append("unverified_injection")
+    if (
+        int(metrics.get("workspace_namespace_leakage", -1))
+        != thresholds["workspace_namespace_leakage"]
+    ):
+        failed_gates.append("workspace_namespace_leakage")
+    if (
+        float(metrics.get("mandatory_event_capture", -1.0))
+        < thresholds["mandatory_event_capture_min"]
+    ):
+        failed_gates.append("mandatory_event_capture")
+    if (
+        float(metrics.get("cross_client_citation_state_parity", -1.0))
+        != thresholds["cross_client_citation_state_parity"]
+    ):
+        failed_gates.append("cross_client_citation_state_parity")
+    if (
+        float(metrics.get("packet_selection_p95_ms", 999999.0))
+        > thresholds["packet_selection_p95_ms_max"]
+    ):
+        failed_gates.append("packet_selection_p95_ms")
+    if (
+        float(metrics.get("packet_selection_p99_ms", 999999.0))
+        > thresholds["packet_selection_p99_ms_max"]
+    ):
+        failed_gates.append("packet_selection_p99_ms")
+    if (
+        float(metrics.get("clean_onboarding_seconds", 999999.0))
+        > thresholds["clean_onboarding_seconds_max"]
+    ):
+        failed_gates.append("clean_onboarding_seconds")
+    details = {
+        "result_status": payload.get("status"),
+        "split": payload.get("split"),
+        "source_sha": payload.get("source_sha"),
+        "manifest_sha256": payload.get("manifest", {}).get("sha256"),
+        "failed_gates": failed_gates,
+        "metrics": {
+            "task_success_lift_pp": metrics.get("task_success_lift_pp"),
+            "repeated_known_error_reduction": metrics.get(
+                "repeated_known_error_reduction"
+            ),
+            "context_reduction": metrics.get("context_reduction"),
+            "false_procedure_injection": metrics.get("false_procedure_injection"),
+            "workspace_namespace_leakage": metrics.get("workspace_namespace_leakage"),
+            "packet_selection_p95_ms": metrics.get("packet_selection_p95_ms"),
+        },
+    }
+    if payload.get("status") == "passed" and not failed_gates:
+        return "implemented", details
+    return "failed", details
 
 
 def _source_manifest(root: Path) -> dict[str, Any]:
@@ -239,12 +328,16 @@ def _source_manifest(root: Path) -> dict[str, Any]:
         "wavemind/experience_runtime.py",
         "wavemind/experience_compiler.py",
         "wavemind/experience.py",
+        "wavemind/workspace_experience_admission.py",
         "wavemind/cli.py",
         "wavemind/api.py",
         "wavemind/integrations/mcp_experience.py",
         "sdk/typescript/src/index.ts",
         "docs/WORKSPACE_EXPERIENCE_QUICKSTART.md",
+        "benchmarks/workspace_experience_manifest.json",
+        "benchmarks/workspace_experience_benchmark.py",
         "tests/test_workspace_experience.py",
+        "tests/test_workspace_experience_benchmark.py",
         "tests/test_experience_runtime_contracts.py",
     ]
     entries = []

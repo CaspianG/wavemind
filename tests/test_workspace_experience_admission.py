@@ -30,18 +30,25 @@ def test_workspace_experience_gap_matrix_is_not_final_admission() -> None:
     )
 
     assert payload["schema"] == WORKSPACE_EXPERIENCE_ADMISSION_SCHEMA
-    assert payload["status"] == "gap_audit"
+    assert payload["status"] == "blocked"
     assert payload["admitted"] is False
     assert payload["baseline_source_sha"] == "baseline-sha"
     assert payload["summary"] == {
         "implemented": 8,
         "partial": 0,
-        "missing": 2,
+        "missing": 0,
+        "failed": 1,
+        "blocked": 1,
         "required_current": 1,
         "total": 11,
     }
     rows = {row["id"]: row for row in payload["rows"]}
-    assert rows["frozen-real-work-benchmark"]["status"] == "missing"
+    assert rows["frozen-real-work-benchmark"]["status"] == "failed"
+    assert rows["frozen-real-work-benchmark"]["details"]["failed_gates"] == [
+        "task_success_lift_pp",
+        "repeated_known_error_reduction",
+    ]
+    assert rows["workspace-experience-admission"]["status"] == "blocked"
     assert rows["safe-product-regression"]["status"] == "required_current"
     assert rows["workspace-identity-isolation"]["artifact"]
     assert rows["workspace-identity-isolation"]["test"]
@@ -63,6 +70,6 @@ def test_workspace_experience_admission_markdown_and_write(tmp_path: Path) -> No
     written = json.loads(json_path.read_text(encoding="utf-8"))
     markdown = md_path.read_text(encoding="utf-8")
     assert written["source_manifest"]["digest"] == payload["source_manifest"]["digest"]
-    assert "| `workspace-experience-admission` | `missing` |" in markdown
+    assert "| `workspace-experience-admission` | `blocked` |" in markdown
     assert "Goal 7 gap audit" in markdown
     assert render_workspace_experience_admission_markdown(payload) == markdown
