@@ -773,10 +773,13 @@ class QueryResultResponse(BaseModel):
     namespace: str
     tags: list[str]
     metadata: dict[str, Any]
+    confidence_reason: str = ""
 
 
 class QueryResponse(BaseModel):
     results: list[QueryResultResponse]
+    abstained: bool = False
+    explain: dict[str, Any] = Field(default_factory=dict)
 
 
 class QueryBatchRequest(BaseModel):
@@ -1567,6 +1570,7 @@ def create_app(
                 namespace=result.namespace,
                 tags=list(result.tags),
                 metadata=result.metadata,
+                confidence_reason=result.confidence_reason,
             )
             for result in results
         ]
@@ -1792,7 +1796,33 @@ def create_app(
     def query(request: QueryRequest) -> QueryResponse:
         with _api_operation(app, "query"):
             results = _query_results(request)
-        return QueryResponse(results=_query_result_responses(results))
+        policy_factory = getattr(app.state.mind, "confidence_policy", None)
+        policy = (
+            policy_factory()
+            if callable(policy_factory)
+            else {
+                "enabled": True,
+                "mode": "replica_enforced",
+                "blocks_unverified_or_stale": True,
+            }
+        )
+        return QueryResponse(
+            results=_query_result_responses(results),
+            abstained=not bool(results),
+            explain=(
+                {
+                    "decision": "returned",
+                    "reason": results[0].confidence_reason,
+                    "confidence_policy": policy,
+                }
+                if results
+                else {
+                    "decision": "abstained",
+                    "reason": "no_candidate_passed_confidence_gate",
+                    "confidence_policy": policy,
+                }
+            ),
+        )
 
     @app.post(
         "/experience/packet",
