@@ -1,24 +1,37 @@
 # WaveMind TypeScript HTTP SDK
 
+`@wavemind/http` is the canonical package name for the repository-local
+TypeScript SDK. Build it from this checkout before installing it into another
+local project:
+
+```sh
+npm --prefix sdk/typescript ci
+npm --prefix sdk/typescript run build
+npm install ./sdk/typescript
+```
+
 ```ts
 import { WaveMindClient } from "@wavemind/http";
 
 const memory = new WaveMindClient({ baseUrl: "http://localhost:8000" });
-await memory.remember({ text: "The deployment uses a canary.", namespace: "agent" });
-const packet = await memory.compileExperiencePacket({
-  query: "How should I deploy?",
+const remembered = await memory.remember({
+  text: "The deployment uses a canary.",
+  namespace: "agent",
+});
+const recalled = await memory.query({
+  text: "How should I deploy?",
   namespace: "agent",
 });
 
 await memory.feedback({
-  id: 42,
+  id: remembered.id,
   namespace: "agent",
   useful: true,
-  reason: "The agent used this memory successfully",
+  reason: "The expected memory was recalled and verified",
 });
 
-const explanation = await memory.explainMemory(42, "agent");
-await memory.forget({ id: 42, namespace: "agent" });
+const explanation = await memory.explainMemory(remembered.id, "agent");
+console.log({ recalled, explanation });
 ```
 
 The client has no runtime dependencies and works with Node.js 18+ or modern
