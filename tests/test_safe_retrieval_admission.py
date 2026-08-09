@@ -1,8 +1,10 @@
 from pathlib import Path
 
+from wavemind.evidence import attach_artifact_integrity
 from wavemind.safe_retrieval_admission import (
     evaluate_safe_retrieval_admission,
     render_safe_retrieval_markdown,
+    validate_safe_retrieval_artifact,
 )
 
 
@@ -30,3 +32,32 @@ def test_safe_retrieval_report_discloses_metrics_and_provenance() -> None:
     assert "Namespace leakage" in markdown
     assert report["dataset_revision"] in markdown
     assert report["source_sha"] in markdown
+
+
+def test_safe_retrieval_validator_rejects_wrong_sha_and_tampering() -> None:
+    report = evaluate_safe_retrieval_admission(DATASET, project_root=ROOT)
+    assert validate_safe_retrieval_artifact(
+        report,
+        project_root=ROOT,
+        expected_source_sha=report["source_sha"],
+    ) == []
+
+    wrong_sha = dict(report)
+    wrong_sha["source_sha"] = "0" * 40
+    wrong_sha = attach_artifact_integrity(wrong_sha)
+    assert "safe retrieval source SHA mismatch" in validate_safe_retrieval_artifact(
+        wrong_sha,
+        project_root=ROOT,
+        expected_source_sha=report["source_sha"],
+    )
+
+    tampered = dict(report)
+    tampered["metrics"] = dict(report["metrics"])
+    tampered["metrics"]["false_memory_injection_rate"] = 0.5
+    errors = validate_safe_retrieval_artifact(
+        tampered,
+        project_root=ROOT,
+        expected_source_sha=report["source_sha"],
+    )
+    assert "artifact payload digest mismatch" in errors
+    assert "false memory injection exceeds 2 percent" in errors

@@ -11,6 +11,8 @@ from .evidence import (
     attach_artifact_integrity,
     build_source_manifest,
     repository_commit,
+    validate_artifact_integrity,
+    validate_source_manifest,
 )
 
 
@@ -162,3 +164,41 @@ def render_safe_retrieval_markdown(report: dict[str, Any]) -> str:
         "",
     ]
     return "\n".join(lines)
+
+
+def validate_safe_retrieval_artifact(
+    report: dict[str, Any],
+    *,
+    project_root: str | Path,
+    expected_source_sha: str,
+) -> list[str]:
+    errors = validate_artifact_integrity(report)
+    if report.get("schema") != SCHEMA:
+        errors.append("safe retrieval schema is invalid")
+    if report.get("source_sha") != expected_source_sha:
+        errors.append("safe retrieval source SHA mismatch")
+    manifest = report.get("source_manifest")
+    if not isinstance(manifest, dict):
+        errors.append("safe retrieval source manifest is missing")
+    else:
+        errors.extend(
+            validate_source_manifest(
+                Path(project_root), manifest, require_current_files=True
+            )
+        )
+    checks = report.get("checks")
+    if not isinstance(checks, dict) or not checks or not all(checks.values()):
+        errors.append("safe retrieval checks are not all passing")
+    metrics = report.get("metrics")
+    if not isinstance(metrics, dict):
+        errors.append("safe retrieval metrics are missing")
+    else:
+        if float(metrics.get("false_memory_injection_rate", 1.0)) > 0.02:
+            errors.append("false memory injection exceeds 2 percent")
+        if int(metrics.get("namespace_leakage", 1)) != 0:
+            errors.append("namespace leakage is not zero")
+        if int(metrics.get("unverified_injection", 1)) != 0:
+            errors.append("unverified injection is not zero")
+    if report.get("status") != "admitted":
+        errors.append("safe retrieval status is not admitted")
+    return errors
