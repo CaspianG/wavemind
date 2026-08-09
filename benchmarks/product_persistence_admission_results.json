@@ -1,0 +1,70 @@
+{
+  "schema": "wavemind.product_persistence_admission.v1",
+  "status": "admitted",
+  "generated_at": "2026-08-09T15:01:28.214105+00:00",
+  "source_sha": "3db1fc39f73121be0ae409503b7a0b2f14b9b27f",
+  "image": {
+    "reference": "wavemind:goal6-persistence",
+    "id": "sha256:03788ba09e5962f1560d5288acb5f478ab49dfa1d50fa60b019a5ca439ac662e"
+  },
+  "environment": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "docker": "28.3.0"
+  },
+  "container_ids": [
+    "9efe39a00d6a7baa611a229c8f5ba3e363520afd8e1f7ad90a813169fe164c80",
+    "69bc0bd6dbbe79671b0f0cf48237b9578fc0cd0017b1fb8b4482156130e55315"
+  ],
+  "checks": {
+    "distinct_containers": true,
+    "core_memory_after_recreate": true,
+    "experience_after_recreate": true,
+    "verification_after_recreate": true,
+    "idempotent_retry_after_recreate": true,
+    "product_backup_persisted": true,
+    "core_database_persisted": true,
+    "experience_database_persisted": true,
+    "secret_leakage_zero": true
+  },
+  "metrics": {
+    "events_after_recreate": 9,
+    "verifications_after_recreate": 1,
+    "backups_after_recreate": 1
+  },
+  "source_manifest": {
+    "schema": "wavemind.source_manifest.v1",
+    "algorithm": "sha256",
+    "files": [
+      {
+        "path": "Dockerfile",
+        "sha256": "912fd32083cb70ffc9442cc283cae4517176f6a1e394e8f1255a27e19a9b9daf"
+      },
+      {
+        "path": "docker-compose.yml",
+        "sha256": "f499ca33323f64a6296975e72935d725b44f93f204c4353dd90ed66574c11248"
+      },
+      {
+        "path": "wavemind/api.py",
+        "sha256": "94224aa0421c74a41cc4dbb80cba8adbe7009ab22ea54abf72bbb7d85b65afd6"
+      },
+      {
+        "path": "wavemind/experience_runtime.py",
+        "sha256": "b51efd851840e98aabd7621b3aee3ae76eb43b5beda7724b4259ced908fbc243"
+      },
+      {
+        "path": "wavemind/product_backup.py",
+        "sha256": "0b6776dd62bf3b73ce1e56e10bd50db80b4c01673af811d4487bb0795d6dfc7b"
+      },
+      {
+        "path": "wavemind/product_persistence_admission.py",
+        "sha256": "16b0a4f2d774c8382c97152273fd603fed526ed95dd4bc8cb3ece763d7f6d30c"
+      }
+    ],
+    "digest": "f67c898589c71ff2ca821cb1c7c063c43f317035fbe10fda2d5e6775f562dfc9"
+  },
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "7d5a22cc79f5fa864fc43501707723ec86d713c2e12c69aed9887e7fb009e740"
+  }
+}
