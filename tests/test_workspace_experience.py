@@ -89,6 +89,9 @@ def _verified_workspace_run(
         reference="pytest://tests",
     )
     assert final["verified"] is True
+    candidate = manager.store.get(final["candidate_ids"][0])
+    assert candidate is not None
+    assert "pytest" in candidate.applicability.tools
     return final["candidate_ids"][0]
 
 

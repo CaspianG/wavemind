@@ -327,6 +327,7 @@ class WorkspaceExperienceManager:
             task_id=task_id,
             metadata={
                 "workspace_identity": self.identity.as_dict(),
+                "declared_tools": list(dict.fromkeys(str(tool) for tool in tools)),
                 **dict(metadata or {}),
             },
             applied_experience_ids=applied,

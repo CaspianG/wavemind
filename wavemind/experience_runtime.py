@@ -890,7 +890,17 @@ class AgentExperienceRuntime:
         source_type = "independently_verified_run" if verified else "unverified_run"
         kinds: list[tuple[ExperienceKind, str, str, dict[str, Any]]] = []
 
-        plan = tuple(step.name for step in calls if step.name)
+        declared_tools = tuple(
+            str(tool)
+            for tool in metadata.get("declared_tools", ())
+            if isinstance(tool, str) and tool.strip()
+        )
+        plan = tuple(
+            dict.fromkeys(
+                tuple(tool for tool in declared_tools if tool)
+                + tuple(step.name for step in calls if step.name)
+            )
+        )
         if plan:
             kinds.append(
                 (
@@ -1063,7 +1073,16 @@ class CapturedRun:
         self._capture(AgentEventKind.RUN_STARTED, {"objective": objective})
         self._capture(
             AgentEventKind.TASK_STARTED,
-            {"objective": objective, "domain": domain, "task_type": task_type},
+            {
+                "objective": objective,
+                "domain": domain,
+                "task_type": task_type,
+                "declared_tools": list(
+                    dict.fromkeys(
+                        str(tool) for tool in metadata.get("declared_tools", ())
+                    )
+                ),
+            },
         )
 
     def _capture(
