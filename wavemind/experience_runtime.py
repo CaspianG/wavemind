@@ -777,20 +777,27 @@ class AgentExperienceRuntime:
         )
 
     def approve(self, experience_id: str, *, namespace: str, evidence_id: str, score: float = 1.0) -> str:
-        review = self.compiler.review_candidate(
-            experience_id,
-            evidence_id=evidence_id,
-            successful=True,
-            score=score,
-            context=FirewallContext(
-                namespace=namespace,
-                actor="operator",
-                actor_trust=TrustClass.VERIFIED_OPERATOR,
-                operator_override=True,
-            ),
-            metadata={"verification_source": VerificationSource.OPERATOR.value},
-        )
-        return review.status.value
+        status = ""
+        for index in range(self.compiler.policy.activation_validation_count):
+            review = self.compiler.review_candidate(
+                experience_id,
+                evidence_id=(
+                    evidence_id if index == 0 else f"{evidence_id}:operator:{index + 1}"
+                ),
+                successful=True,
+                score=score,
+                context=FirewallContext(
+                    namespace=namespace,
+                    actor="operator",
+                    actor_trust=TrustClass.VERIFIED_OPERATOR,
+                    operator_override=True,
+                ),
+                metadata={"verification_source": VerificationSource.OPERATOR.value},
+            )
+            status = review.status.value
+            if review.status is ExperienceStatus.ACTIVE:
+                break
+        return status
 
     def reject(self, experience_id: str, *, namespace: str, reason: str) -> ExperienceRecord:
         record = self.store.get(experience_id)

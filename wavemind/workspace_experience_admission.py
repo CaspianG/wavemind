@@ -1,0 +1,290 @@
+from __future__ import annotations
+
+import hashlib
+import json
+import subprocess
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+
+WORKSPACE_EXPERIENCE_ADMISSION_SCHEMA = "wavemind.workspace_experience_admission.v1"
+WORKSPACE_EXPERIENCE_PROTOCOL_REVISION = "workspace-experience-v1-frozen-20260810"
+WORKSPACE_EXPERIENCE_PROTOCOL_SHA256 = "fa2ebc36799b44ff54e74120da7dab3a475d40461a4963872069f5905beeb590"
+
+
+def workspace_experience_protocol_manifest() -> dict[str, Any]:
+    manifest = {
+        "revision": WORKSPACE_EXPERIENCE_PROTOCOL_REVISION,
+        "dataset": {
+            "repositories": 3,
+            "technology_stacks_min": 2,
+            "workflow_gotcha_cases_min": 60,
+            "negative_conflict_stale_controls_min": 20,
+            "development_split": "predeclared and allowed for implementation tuning",
+            "held_out_split": "untouched after protocol freeze",
+            "answer_leakage": "ids, filenames, metadata, and prebuilt packets forbidden",
+        },
+        "thresholds": {
+            "task_success_lift_pp_min": 15.0,
+            "repeated_known_error_reduction_min": 0.50,
+            "context_reduction_min": 0.30,
+            "false_procedure_injection_max": 0.01,
+            "unverified_injection": 0,
+            "workspace_namespace_leakage": 0,
+            "mandatory_event_capture_min": 0.99,
+            "cross_client_citation_state_parity": 1.00,
+            "packet_selection_p95_ms_max": 100.0,
+            "packet_selection_p99_ms_max": 250.0,
+            "clean_onboarding_seconds_max": 300.0,
+        },
+        "comparison_modes": [
+            "no_experience",
+            "static_raw_trace_retrieval",
+            "wavemind_verified_workspace_experience",
+        ],
+        "claim_boundary": (
+            "Local, provider-neutral workspace experience proof. No GPU, paid API, "
+            "private client history, universal model-quality, or external service claim."
+        ),
+    }
+    digest = _sha256(manifest)
+    if digest != WORKSPACE_EXPERIENCE_PROTOCOL_SHA256:
+        raise RuntimeError(
+            "workspace experience protocol manifest changed without updating the frozen hash"
+        )
+    return {**manifest, "sha256": digest}
+
+
+def evaluate_workspace_experience_admission_matrix(
+    *,
+    root: str | Path = ".",
+    baseline_source_sha: str | None = None,
+) -> dict[str, Any]:
+    root_path = Path(root)
+    rows = [
+        _row(
+            "baseline-gap-audit",
+            "Gap audit, protocol manifest, and source manifest exist before metric tuning.",
+            "implemented",
+            "benchmarks/workspace_experience_admission_matrix.json",
+            "tests/test_workspace_experience_admission.py",
+        ),
+        _row(
+            "workspace-identity-isolation",
+            "Stable workspace identity and tenant/user/workspace isolation.",
+            "implemented",
+            "tests/test_workspace_experience.py",
+            "tests/test_workspace_experience.py",
+        ),
+        _row(
+            "provider-neutral-capture-contract",
+            "Python, HTTP, MCP, retries, ordering, redaction, and crash/restart recovery.",
+            "partial",
+            "tests/test_experience_runtime_contracts.py",
+            "tests/test_workspace_experience.py",
+        ),
+        _row(
+            "verified-runbook-compiler",
+            "Versioned procedure/workflow/gotcha runbook JSON and Markdown with provenance.",
+            "partial",
+            "wavemind/workspace_experience.py",
+            "tests/test_workspace_experience.py",
+        ),
+        _row(
+            "human-review-control",
+            "Candidate queue, diff, approve, reject, rollback, protected deletion, audit trail.",
+            "partial",
+            "wavemind/workspace_experience.py",
+            "tests/test_workspace_experience.py",
+        ),
+        _row(
+            "cross-agent-portability",
+            "Client A to restart to client B replay and checksummed portable bundle parity.",
+            "partial",
+            "wavemind/workspace_experience.py",
+            "tests/test_workspace_experience.py",
+        ),
+        _row(
+            "useful-experience-packet",
+            "Minimal cited packet with abstain and stale/conflict/unverified exclusion reasons.",
+            "partial",
+            "wavemind/workspace_experience.py",
+            "tests/test_workspace_experience.py",
+        ),
+        _row(
+            "workspace-onboarding",
+            "workspace init, doctor, status, review, packet, export/import, MCP config.",
+            "partial",
+            "wavemind/cli.py",
+            "tests/test_workspace_experience.py",
+        ),
+        _row(
+            "frozen-real-work-benchmark",
+            "Three public repos, 60 cases, dev/held-out splits, static baseline comparison.",
+            "missing",
+            "benchmarks/workspace_experience_benchmark_results.json",
+            "tests/test_workspace_experience_benchmark.py",
+        ),
+        _row(
+            "workspace-experience-admission",
+            "Exact-SHA JSON/Markdown admission with all mandatory rows green.",
+            "missing",
+            "benchmarks/workspace_experience_admission_results.json",
+            "tests/test_workspace_experience_admission.py",
+        ),
+        _row(
+            "safe-product-regression",
+            "Safe Product admission remains admitted on the same final source SHA.",
+            "required_current",
+            "benchmarks/safe_product_admission_results.json",
+            ".github/workflows/safe-product.yml",
+        ),
+    ]
+    complete = all(row["status"] == "implemented" for row in rows)
+    return {
+        "schema": WORKSPACE_EXPERIENCE_ADMISSION_SCHEMA,
+        "status": "admitted" if complete else "gap_audit",
+        "admitted": complete,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "baseline_source_sha": baseline_source_sha,
+        "source_sha": _git_sha(root_path),
+        "protocol": workspace_experience_protocol_manifest(),
+        "source_manifest": _source_manifest(root_path),
+        "summary": {
+            "implemented": sum(row["status"] == "implemented" for row in rows),
+            "partial": sum(row["status"] == "partial" for row in rows),
+            "missing": sum(row["status"] == "missing" for row in rows),
+            "required_current": sum(row["status"] == "required_current" for row in rows),
+            "total": len(rows),
+        },
+        "rows": rows,
+        "claim_boundary": (
+            "This matrix is a Goal 7 gap audit, not final production admission."
+        ),
+    }
+
+
+def render_workspace_experience_admission_markdown(payload: dict[str, Any]) -> str:
+    lines = [
+        "# Workspace Experience Admission Matrix",
+        "",
+        f"- Status: `{payload['status']}`",
+        f"- Source SHA: `{payload.get('source_sha')}`",
+        f"- Protocol: `{payload['protocol']['revision']}`",
+        f"- Protocol SHA-256: `{payload['protocol']['sha256']}`",
+        "",
+        "| Row | Status | Artifact | Test |",
+        "|---|---|---|---|",
+    ]
+    for row in payload["rows"]:
+        lines.append(
+            f"| `{row['id']}` | `{row['status']}` | `{row['artifact']}` | `{row['test']}` |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Claim Boundary",
+            "",
+            payload["claim_boundary"],
+        ]
+    )
+    return "\n".join(lines) + "\n"
+
+
+def write_workspace_experience_admission_matrix(
+    *,
+    root: str | Path = ".",
+    output: str | Path = "benchmarks/workspace_experience_admission_matrix.json",
+    markdown_output: str | Path = "benchmarks/WORKSPACE_EXPERIENCE_ADMISSION_MATRIX.md",
+    baseline_source_sha: str | None = None,
+) -> dict[str, Any]:
+    payload = evaluate_workspace_experience_admission_matrix(
+        root=root,
+        baseline_source_sha=baseline_source_sha,
+    )
+    output_path = Path(output)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(
+        json.dumps(payload, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    markdown_path = Path(markdown_output)
+    markdown_path.write_text(
+        render_workspace_experience_admission_markdown(payload),
+        encoding="utf-8",
+    )
+    return payload
+
+
+def _row(
+    row_id: str,
+    requirement: str,
+    status: str,
+    artifact: str,
+    test: str,
+) -> dict[str, str]:
+    return {
+        "id": row_id,
+        "requirement": requirement,
+        "status": status,
+        "artifact": artifact,
+        "test": test,
+    }
+
+
+def _source_manifest(root: Path) -> dict[str, Any]:
+    files = [
+        "wavemind/workspace_experience.py",
+        "wavemind/experience_runtime.py",
+        "wavemind/experience_compiler.py",
+        "wavemind/experience.py",
+        "wavemind/cli.py",
+        "wavemind/api.py",
+        "wavemind/integrations/mcp_experience.py",
+        "sdk/typescript/src/index.ts",
+        "tests/test_workspace_experience.py",
+        "tests/test_experience_runtime_contracts.py",
+    ]
+    entries = []
+    for relative in files:
+        path = root / relative
+        if not path.exists():
+            continue
+        entries.append(
+            {
+                "path": relative,
+                "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            }
+        )
+    return {
+        "schema": "wavemind.workspace_experience_source_manifest.v1",
+        "algorithm": "sha256",
+        "files": entries,
+        "digest": _sha256(entries),
+    }
+
+
+def _git_sha(root: Path) -> str:
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "HEAD"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    return result.stdout.strip() if result.returncode == 0 else ""
+
+
+def _sha256(value: Any) -> str:
+    return hashlib.sha256(
+        json.dumps(
+            value,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()

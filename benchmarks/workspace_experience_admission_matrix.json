@@ -1,0 +1,174 @@
+{
+  "admitted": false,
+  "baseline_source_sha": "d42592553ed1036c463bc2eb864caf3ed9c31ebe",
+  "claim_boundary": "This matrix is a Goal 7 gap audit, not final production admission.",
+  "generated_at": "2026-08-09T21:46:35.541979+00:00",
+  "protocol": {
+    "claim_boundary": "Local, provider-neutral workspace experience proof. No GPU, paid API, private client history, universal model-quality, or external service claim.",
+    "comparison_modes": [
+      "no_experience",
+      "static_raw_trace_retrieval",
+      "wavemind_verified_workspace_experience"
+    ],
+    "dataset": {
+      "answer_leakage": "ids, filenames, metadata, and prebuilt packets forbidden",
+      "development_split": "predeclared and allowed for implementation tuning",
+      "held_out_split": "untouched after protocol freeze",
+      "negative_conflict_stale_controls_min": 20,
+      "repositories": 3,
+      "technology_stacks_min": 2,
+      "workflow_gotcha_cases_min": 60
+    },
+    "revision": "workspace-experience-v1-frozen-20260810",
+    "sha256": "fa2ebc36799b44ff54e74120da7dab3a475d40461a4963872069f5905beeb590",
+    "thresholds": {
+      "clean_onboarding_seconds_max": 300.0,
+      "context_reduction_min": 0.3,
+      "cross_client_citation_state_parity": 1.0,
+      "false_procedure_injection_max": 0.01,
+      "mandatory_event_capture_min": 0.99,
+      "packet_selection_p95_ms_max": 100.0,
+      "packet_selection_p99_ms_max": 250.0,
+      "repeated_known_error_reduction_min": 0.5,
+      "task_success_lift_pp_min": 15.0,
+      "unverified_injection": 0,
+      "workspace_namespace_leakage": 0
+    }
+  },
+  "rows": [
+    {
+      "artifact": "benchmarks/workspace_experience_admission_matrix.json",
+      "id": "baseline-gap-audit",
+      "requirement": "Gap audit, protocol manifest, and source manifest exist before metric tuning.",
+      "status": "implemented",
+      "test": "tests/test_workspace_experience_admission.py"
+    },
+    {
+      "artifact": "tests/test_workspace_experience.py",
+      "id": "workspace-identity-isolation",
+      "requirement": "Stable workspace identity and tenant/user/workspace isolation.",
+      "status": "implemented",
+      "test": "tests/test_workspace_experience.py"
+    },
+    {
+      "artifact": "tests/test_experience_runtime_contracts.py",
+      "id": "provider-neutral-capture-contract",
+      "requirement": "Python, HTTP, MCP, retries, ordering, redaction, and crash/restart recovery.",
+      "status": "partial",
+      "test": "tests/test_workspace_experience.py"
+    },
+    {
+      "artifact": "wavemind/workspace_experience.py",
+      "id": "verified-runbook-compiler",
+      "requirement": "Versioned procedure/workflow/gotcha runbook JSON and Markdown with provenance.",
+      "status": "partial",
+      "test": "tests/test_workspace_experience.py"
+    },
+    {
+      "artifact": "wavemind/workspace_experience.py",
+      "id": "human-review-control",
+      "requirement": "Candidate queue, diff, approve, reject, rollback, protected deletion, audit trail.",
+      "status": "partial",
+      "test": "tests/test_workspace_experience.py"
+    },
+    {
+      "artifact": "wavemind/workspace_experience.py",
+      "id": "cross-agent-portability",
+      "requirement": "Client A to restart to client B replay and checksummed portable bundle parity.",
+      "status": "partial",
+      "test": "tests/test_workspace_experience.py"
+    },
+    {
+      "artifact": "wavemind/workspace_experience.py",
+      "id": "useful-experience-packet",
+      "requirement": "Minimal cited packet with abstain and stale/conflict/unverified exclusion reasons.",
+      "status": "partial",
+      "test": "tests/test_workspace_experience.py"
+    },
+    {
+      "artifact": "wavemind/cli.py",
+      "id": "workspace-onboarding",
+      "requirement": "workspace init, doctor, status, review, packet, export/import, MCP config.",
+      "status": "partial",
+      "test": "tests/test_workspace_experience.py"
+    },
+    {
+      "artifact": "benchmarks/workspace_experience_benchmark_results.json",
+      "id": "frozen-real-work-benchmark",
+      "requirement": "Three public repos, 60 cases, dev/held-out splits, static baseline comparison.",
+      "status": "missing",
+      "test": "tests/test_workspace_experience_benchmark.py"
+    },
+    {
+      "artifact": "benchmarks/workspace_experience_admission_results.json",
+      "id": "workspace-experience-admission",
+      "requirement": "Exact-SHA JSON/Markdown admission with all mandatory rows green.",
+      "status": "missing",
+      "test": "tests/test_workspace_experience_admission.py"
+    },
+    {
+      "artifact": "benchmarks/safe_product_admission_results.json",
+      "id": "safe-product-regression",
+      "requirement": "Safe Product admission remains admitted on the same final source SHA.",
+      "status": "required_current",
+      "test": ".github/workflows/safe-product.yml"
+    }
+  ],
+  "schema": "wavemind.workspace_experience_admission.v1",
+  "source_manifest": {
+    "algorithm": "sha256",
+    "digest": "108e36aa45ee9a175817504373daa5db8fe586dd2f5d7e43dfcae93379456d4e",
+    "files": [
+      {
+        "path": "wavemind/workspace_experience.py",
+        "sha256": "2a636c54c1fad26d9163af5c138e12cf62fd99fa7214275b4739cd6206e26e25"
+      },
+      {
+        "path": "wavemind/experience_runtime.py",
+        "sha256": "3e6278789379299f16e8f53bd87f6a850ce9c88e517b554eb6a4f6314d8285d7"
+      },
+      {
+        "path": "wavemind/experience_compiler.py",
+        "sha256": "a8e5ae77fc1065711347b56628bf1091c4c2a896098f061c327e13ee6bfdfe41"
+      },
+      {
+        "path": "wavemind/experience.py",
+        "sha256": "f34c503c6befb38efdac5eca062e79ef715bb8dd63c4b1ef28ace8572ffa1e34"
+      },
+      {
+        "path": "wavemind/cli.py",
+        "sha256": "32ff48c5849823dd0043c2a16f0415c091dce859294b95f28de61ce00e323797"
+      },
+      {
+        "path": "wavemind/api.py",
+        "sha256": "945259def6eb768f7ae9189714d56d005c8a5af092358e9c1b9e9479a36ea13a"
+      },
+      {
+        "path": "wavemind/integrations/mcp_experience.py",
+        "sha256": "44ccd59f4ea9015917e00587d64bbb76d192505c8fdb320908c3b9b0be6cd74b"
+      },
+      {
+        "path": "sdk/typescript/src/index.ts",
+        "sha256": "026deba20248d70b46f6a93e38d7d27881d2f7a9c4afe28e7f2a142f564f424d"
+      },
+      {
+        "path": "tests/test_workspace_experience.py",
+        "sha256": "043b7f354e0ec48a6b04fa66aa5b8c0d57c6e1b612a8c07d0ff3a5c9969a43da"
+      },
+      {
+        "path": "tests/test_experience_runtime_contracts.py",
+        "sha256": "ee08c17005f1b18109ca8e9e9029bdcfbed86781f6599b8e1e21f80073d0e31b"
+      }
+    ],
+    "schema": "wavemind.workspace_experience_source_manifest.v1"
+  },
+  "source_sha": "d42592553ed1036c463bc2eb864caf3ed9c31ebe",
+  "status": "gap_audit",
+  "summary": {
+    "implemented": 2,
+    "missing": 2,
+    "partial": 6,
+    "required_current": 1,
+    "total": 11
+  }
+}
