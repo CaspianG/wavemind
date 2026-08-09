@@ -84,5 +84,5 @@ def test_safe_product_reads_the_canonical_public_status():
     evidence = _canonical_product_status_check(Path.cwd())
 
     assert evidence["status_schema"] == "wavemind.product_status.v1"
-    assert evidence["expected_version"] == "2.10.0"
+    assert evidence["expected_version"] == "2.11.0"
     assert evidence["errors"] == []

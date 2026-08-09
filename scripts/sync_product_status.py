@@ -47,7 +47,7 @@ def render_status(status: dict, *, docs_path: bool) -> str:
             "",
             "| Product truth | Status | Evidence |",
             "|---|---|---|",
-            f"| Public release | `v{release['version']}` at `{release['source_sha'][:12]}` | PyPI package `{release['python_package']}` and `{release['container']}` |",
+            f"| Public release | `v{release['version']}`; runtime source `{release['source_sha'][:12]}` | PyPI package `{release['python_package']}` and `{release['container']}` |",
             f"| Safe Product snapshot | `{safe['checked_in_status']}`, {safe['checked_in_checks_passed']}/{safe['checked_in_checks_total']} checks at `{safe['checked_in_source_sha'][:12]}` | [`{safe['artifact']}`]({artifact}) |",
             f"| Current-source admission | Required per exact source SHA | [`{safe['current_claim_source']}`]({workflow}) |",
             f"| TypeScript SDK | `{status['typescript']['package_name']}`, {status['typescript']['distribution']}; npm claim disabled | Repository package only |",

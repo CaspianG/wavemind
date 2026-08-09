@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wavemind"
-version = "2.10.0"
+version = "2.11.0"
 description = "Adaptive, local-first memory infrastructure for agents and applications"
 readme = "README.md"
 license = "MIT"
