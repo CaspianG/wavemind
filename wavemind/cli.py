@@ -1279,6 +1279,8 @@ def build_parser() -> argparse.ArgumentParser:
     operator_bundle_cmd.add_argument("--sample-replicas", type=int, default=3)
     operator_bundle_cmd.add_argument("--sample-replication-factor", type=int, default=2)
     operator_bundle_cmd.add_argument("--sample-namespace-count", type=int, default=128)
+    operator_bundle_cmd.add_argument("--sample-auth-secret")
+    operator_bundle_cmd.add_argument("--sample-auth-secret-key", default="api-key")
     operator_bundle_cmd.add_argument("--json", action="store_true")
     operator_bundle_cmd.add_argument("--out", help="Write UTF-8 JSON to this file instead of stdout")
 
@@ -4109,6 +4111,8 @@ def main(argv: list[str] | None = None) -> int:
             replicas=args.sample_replicas,
             replication_factor=args.sample_replication_factor,
             namespace_count=args.sample_namespace_count,
+            auth_secret=args.sample_auth_secret,
+            auth_secret_key=args.sample_auth_secret_key,
         )
         _emit_json(
             operator_bundle(

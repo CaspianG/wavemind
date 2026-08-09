@@ -6,8 +6,9 @@ control plane in this directory.
 The operator path uses a `WaveMindCluster` custom resource:
 
 ```sh
-wavemind operator-bundle --namespace wavemind-system --json | kubectl apply -f -
-kubectl apply -f deploy/operator/wavemindcluster.sample.json
+kubectl create namespace wavemind-system
+kubectl create secret generic wavemind-auth --namespace wavemind-system --from-literal=api-key="$WAVEMIND_API_KEY"
+wavemind operator-bundle --namespace wavemind-system --sample-auth-secret wavemind-auth --json | kubectl apply -f -
 wavemind operator-reconcile --file deploy/operator/wavemindcluster.sample.json --out wavemind-resources.json
 kubectl apply -f wavemind-resources.json
 ```
@@ -19,6 +20,12 @@ repair CronJob, and optional Memory OS CronJob. When a capacity target is
 configured, it also renders a bounded `ConfigMap` named
 `<cluster>-rebalance-plan` with rolling namespace rebalance metadata and preview
 batches.
+
+The generated API pods bind to the cluster network with an explicit
+`--allow-public` acknowledgement and fail closed unless `spec.auth` references
+a valid Kubernetes Secret. The same Secret is exposed to in-pod maintenance
+commands as `WAVEMIND_API_KEY`, so repair and failover drills remain
+authenticated. Do not store the key in the custom resource or manifest.
 
 The operator Deployment runs two replicas by default. Kubernetes
 `coordination.k8s.io/v1` Lease leader election keeps followers read-only and

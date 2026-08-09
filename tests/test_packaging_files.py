@@ -44,6 +44,9 @@ def test_release_version_matches_deployment_examples():
         "deploy/serverless/wavemind-serverless.sample.json"
     ).read_text(encoding="utf-8")
     assert expected_image in Path(
+        "deploy/operator/wavemindcluster.sample.json"
+    ).read_text(encoding="utf-8")
+    assert expected_image in Path(
         "deploy/cloud/gcp-remote-active-active/terraform.tfvars.example"
     ).read_text(encoding="utf-8")
     assert f'appVersion: "{version}"' in Path("deploy/helm/wavemind/Chart.yaml").read_text(

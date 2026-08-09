@@ -70,7 +70,14 @@ def test_serverless_bundle_renders_knative_and_keda_resources():
     assert service["spec"]["template"]["metadata"]["annotations"]["autoscaling.knative.dev/max-scale"] == "50"
     assert service["spec"]["template"]["metadata"]["annotations"]["autoscaling.knative.dev/target"] == "80"
     assert container["command"] == ["wavemind"]
-    assert container["args"] == ["serve", "--host", "0.0.0.0", "--port", "8000"]
+    assert container["args"] == [
+        "serve",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+        "--allow-public",
+    ]
     assert container["readinessProbe"]["httpGet"]["path"] == "/healthz"
     assert container["livenessProbe"]["httpGet"]["path"] == "/healthz"
     assert env["WAVEMIND_STORE"]["value"] == "postgres"

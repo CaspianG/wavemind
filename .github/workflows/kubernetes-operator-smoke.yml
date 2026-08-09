@@ -111,6 +111,8 @@ jobs:
             --sample-replicas 3 \
             --sample-replication-factor 2 \
             --sample-namespace-count 32 \
+            --sample-auth-secret wavemind-ci-auth \
+            --sample-auth-secret-key api-key \
             --out /tmp/wavemind-operator-bundle.json
           python - <<'PY'
           import json
@@ -127,6 +129,9 @@ jobs:
           Path("/tmp/wavemind-cluster.json").write_text(json.dumps(cluster))
           PY
           kubectl create namespace "$NAMESPACE"
+          kubectl create secret generic wavemind-ci-auth \
+            --namespace "$NAMESPACE" \
+            --from-literal=api-key=wavemind-ci-internal-test-key
           kubectl apply -f /tmp/wavemind-operator-bootstrap.json
           kubectl wait --for=condition=Established \
             crd/wavemindclusters.memory.wavemind.ai --timeout=120s

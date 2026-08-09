@@ -202,7 +202,16 @@ def test_operator_reconcile_renders_cluster_resources():
     container = resources["StatefulSet"]["spec"]["template"]["spec"]["containers"][0]
     assert container["image"] == "ghcr.io/caspiang/wavemind:2.4.3"
     assert container["command"] == ["wavemind"]
-    assert container["args"] == ["serve", "--host", "0.0.0.0", "--port", "8000"]
+    assert container["args"] == [
+        "serve",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+        "--allow-public",
+    ]
+    env_names = {item["name"] for item in container["env"]}
+    assert {"WAVEMIND_API_KEYS", "WAVEMIND_ADMIN_KEYS", "WAVEMIND_API_KEY"} <= env_names
     assert container["readinessProbe"]["httpGet"]["path"] == "/healthz"
     assert container["livenessProbe"]["httpGet"]["path"] == "/healthz"
     assert {"name": "WAVEMIND_REPLICATION_FACTOR", "value": "2"} in container["env"]
@@ -266,7 +275,14 @@ def test_operator_reconcile_renders_explicit_production_admission_guard():
     env = {item["name"]: item.get("value") for item in container["env"]}
 
     assert container["command"] == ["wavemind"]
-    assert container["args"] == ["serve", "--host", "0.0.0.0", "--port", "8000"]
+    assert container["args"] == [
+        "serve",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+        "--allow-public",
+    ]
     assert env["WAVEMIND_REQUIRE_PRODUCTION_ADMISSION"] == "1"
     assert env["WAVEMIND_PRODUCTION_TARGET_MEMORIES"] == "100000000"
     assert env["WAVEMIND_PRODUCTION_ENGINE"] == "qdrant-sharded-service"
@@ -758,7 +774,16 @@ def test_operator_cli_sample_bundle_and_reconcile(tmp_path):
         run_cli("operator-reconcile", "--file", str(sample_file), "--json").stdout
     )
     bundle = json.loads(
-        run_cli("operator-bundle", "--namespace", "wavemind-system", "--json").stdout
+        run_cli(
+            "operator-bundle",
+            "--namespace",
+            "wavemind-system",
+            "--sample-auth-secret",
+            "wavemind-auth",
+            "--sample-auth-secret-key",
+            "api-key",
+            "--json",
+        ).stdout
     )
 
     assert sample_payload["kind"] == "WaveMindCluster"
@@ -772,6 +797,13 @@ def test_operator_cli_sample_bundle_and_reconcile(tmp_path):
     }
     assert sample_payload["spec"]["autoscaling"]["maxReplicas"] == 18
     assert any(item["kind"] == "CustomResourceDefinition" for item in bundle["items"])
+    bundled_cluster = next(
+        item for item in bundle["items"] if item["kind"] == "WaveMindCluster"
+    )
+    assert bundled_cluster["spec"]["auth"] == {
+        "secretName": "wavemind-auth",
+        "secretKey": "api-key",
+    }
     assert "operatorStatus" in reconciled
 
     memory_os_sample = json.loads(

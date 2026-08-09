@@ -648,6 +648,7 @@ class WaveMindClusterSpec:
                 [
                     {"name": "WAVEMIND_API_KEYS", "valueFrom": secret_ref},
                     {"name": "WAVEMIND_ADMIN_KEYS", "valueFrom": secret_ref},
+                    {"name": "WAVEMIND_API_KEY", "valueFrom": secret_ref},
                 ]
             )
 
@@ -656,7 +657,14 @@ class WaveMindClusterSpec:
             "image": self.image,
             "imagePullPolicy": self.image_pull_policy,
             "command": ["wavemind"],
-            "args": ["serve", "--host", "0.0.0.0", "--port", str(self.service_port)],
+            "args": [
+                "serve",
+                "--host",
+                "0.0.0.0",
+                "--port",
+                str(self.service_port),
+                "--allow-public",
+            ],
             "ports": [{"name": "http", "containerPort": self.service_port, "protocol": "TCP"}],
             "env": env,
             "livenessProbe": {
