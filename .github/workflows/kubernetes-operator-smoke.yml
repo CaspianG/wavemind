@@ -3,6 +3,19 @@ name: kubernetes-operator-smoke
 on:
   schedule:
     - cron: "17 2 * * 1"
+  pull_request:
+    branches: [main]
+    paths:
+      - "wavemind/k8s_operator.py"
+      - "wavemind/serverless.py"
+      - "wavemind/cli.py"
+      - "deploy/operator/**"
+      - "deploy/serverless/**"
+      - "benchmarks/kubernetes_*"
+      - "tests/test_k8s_operator.py"
+      - "tests/test_kubernetes_*"
+      - "tests/test_serverless.py"
+      - ".github/workflows/kubernetes-operator-smoke.yml"
   push:
     branches: [main]
     paths:
