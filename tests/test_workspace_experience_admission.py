@@ -34,8 +34,8 @@ def test_workspace_experience_gap_matrix_is_not_final_admission() -> None:
     assert payload["admitted"] is False
     assert payload["baseline_source_sha"] == "baseline-sha"
     assert payload["summary"] == {
-        "implemented": 2,
-        "partial": 6,
+        "implemented": 3,
+        "partial": 5,
         "missing": 2,
         "required_current": 1,
         "total": 11,

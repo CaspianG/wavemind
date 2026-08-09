@@ -34,6 +34,7 @@ WORKSPACE_PACKET_SCHEMA = "wavemind.workspace_experience_packet.v1"
 
 _SLUG_RE = re.compile(r"[^A-Za-z0-9_.:-]+")
 _PRIVATE_PARTS = {".codex", ".claude", "claude"}
+_ATTACHMENT_CONTENT_LIMIT_BYTES = 256 * 1024
 
 
 @dataclass(frozen=True)
@@ -94,7 +95,7 @@ class WorkspaceEvent:
             parent_event_id=self.parent_event_id,
             tool_name=self.tool_name,
             duration_ms=self.duration_ms,
-            payload=dict(self.payload),
+            payload=_normalize_workspace_payload(self.payload, Path(identity.project_root)),
         )
 
 
@@ -224,7 +225,81 @@ class WorkspaceExperienceManager:
         task_id: str | None = None,
         tools: Sequence[str] = (),
         metadata: Mapping[str, Any] | None = None,
+        token_budget: int = 400,
+        top_k: int = 3,
+        canary: bool = False,
     ) -> dict[str, Any]:
+        if run_id:
+            existing_events = self.runtime.events(
+                namespace=self.identity.namespace,
+                run_id=run_id,
+            )
+            if existing_events:
+                first = existing_events[0]
+                run_started = next(
+                    (
+                        event
+                        for event in existing_events
+                        if event.kind is AgentEventKind.RUN_STARTED
+                    ),
+                    None,
+                )
+                task_started = next(
+                    (
+                        event
+                        for event in existing_events
+                        if event.kind is AgentEventKind.TASK_STARTED
+                    ),
+                    None,
+                )
+                same_request = (
+                    run_started is not None
+                    and task_started is not None
+                    and (session_id is None or first.session_id == session_id)
+                    and (task_id is None or first.task_id == task_id)
+                    and run_started.payload.get("objective") == objective
+                    and task_started.payload.get("domain") == domain
+                    and task_started.payload.get("task_type") == task_type
+                )
+                if not same_request:
+                    raise ValueError("run_id already exists with a different payload")
+                decision = next(
+                    (
+                        item
+                        for item in self.runtime.injection_decisions(
+                            namespace=self.identity.namespace,
+                            limit=1000,
+                        )
+                        if item.get("run_id") == run_id
+                    ),
+                    {
+                        "inject": False,
+                        "reason": "no_applicable_verified_experience",
+                        "confidence": None,
+                        "packet": None,
+                        "source_tool_result_refs": [],
+                    },
+                )
+                applied = [
+                    str(item["experience_id"])
+                    for item in (decision.get("packet") or {}).get("items", [])
+                    if isinstance(item, dict) and item.get("experience_id")
+                ]
+                return {
+                    "schema": "wavemind.workspace_run.v1",
+                    "identity": self.identity.as_dict(),
+                    "run_id": run_id,
+                    "session_id": first.session_id,
+                    "task_id": first.task_id,
+                    "namespace": self.identity.namespace,
+                    "intervention": decision,
+                    "applied_experience_ids": applied,
+                    "next_sequence": self.runtime.next_sequence(
+                        namespace=self.identity.namespace,
+                        run_id=run_id,
+                    ),
+                    "idempotent_replay": True,
+                }
         intervention = self.runtime.decide(
             query,
             namespace=self.identity.namespace,
@@ -233,6 +308,9 @@ class WorkspaceExperienceManager:
             domains=(domain,),
             task_types=(task_type,),
             tools=tuple(tools),
+            token_budget=token_budget,
+            top_k=top_k,
+            canary=canary,
         )
         applied = (
             tuple(item.experience_id for item in intervention.packet.items)
@@ -266,6 +344,7 @@ class WorkspaceExperienceManager:
                 namespace=self.identity.namespace,
                 run_id=handle.run_id,
             ),
+            "idempotent_replay": False,
         }
 
     def capture_event(self, event: WorkspaceEvent) -> dict[str, Any]:
@@ -327,6 +406,45 @@ class WorkspaceExperienceManager:
             verification=verification,
             applied_experience_ids=applied_experience_ids,
         ).as_dict()
+
+    def cancel_run(
+        self,
+        *,
+        run_id: str,
+        evidence_id: str,
+        verifier: str = "operator",
+        reason: str = "cancelled",
+    ) -> dict[str, Any]:
+        events = self.runtime.events(namespace=self.identity.namespace, run_id=run_id)
+        if not events:
+            raise KeyError(run_id)
+        self.capture_event(
+            WorkspaceEvent(
+                id=f"{run_id}:cancelled",
+                run_id=run_id,
+                session_id=events[-1].session_id,
+                task_id=events[-1].task_id,
+                kind=AgentEventKind.ERROR,
+                sequence=self.runtime.next_sequence(
+                    namespace=self.identity.namespace,
+                    run_id=run_id,
+                ),
+                payload={
+                    "message": reason,
+                    "error_code": "run_cancelled",
+                    "cancelled": True,
+                },
+            )
+        )
+        return self.verify_run(
+            run_id=run_id,
+            evidence_id=evidence_id,
+            source=VerificationSource.OPERATOR,
+            verifier=verifier,
+            success=False,
+            score=0.0,
+            metadata={"cancelled": True, "reason": reason},
+        )
 
     def packet(
         self,
@@ -639,6 +757,68 @@ def _safe_project_root(root: str | Path, *, allow_private_root: bool) -> Path:
             "pass allow_private_root only for explicit imports"
         )
     return project_root
+
+
+def _normalize_workspace_payload(payload: Mapping[str, Any], project_root: Path) -> dict[str, Any]:
+    selected = dict(payload)
+    attachments = selected.get("attachments")
+    if attachments is None:
+        return selected
+    if not isinstance(attachments, list):
+        raise ValueError("attachments must be an array")
+    normalized = []
+    root = project_root.resolve()
+    for index, raw in enumerate(attachments):
+        if not isinstance(raw, Mapping):
+            raise ValueError("attachments entries must be objects")
+        label = str(raw.get("label") or raw.get("name") or f"attachment-{index}")
+        if raw.get("path") is not None:
+            raw_path = Path(str(raw["path"]))
+            path = raw_path if raw_path.is_absolute() else root / raw_path
+            resolved = path.resolve()
+            if not _is_relative_to(resolved, root):
+                raise WorkspacePathError("attachment path escapes workspace root")
+            if any(part.lower() in _PRIVATE_PARTS for part in resolved.parts):
+                raise WorkspacePathError("attachment path targets a private assistant directory")
+            data = resolved.read_bytes()
+            normalized.append(
+                {
+                    "label": label,
+                    "source": "file",
+                    "path": resolved.relative_to(root).as_posix(),
+                    "bytes": len(data),
+                    "sha256": hashlib.sha256(data).hexdigest(),
+                }
+            )
+            continue
+        if raw.get("content") is not None:
+            data = (
+                raw["content"].encode("utf-8")
+                if isinstance(raw["content"], str)
+                else json.dumps(raw["content"], sort_keys=True).encode("utf-8")
+            )
+            if len(data) > _ATTACHMENT_CONTENT_LIMIT_BYTES:
+                raise ValueError("attachment content exceeds workspace event limit")
+            normalized.append(
+                {
+                    "label": label,
+                    "source": "inline",
+                    "bytes": len(data),
+                    "sha256": hashlib.sha256(data).hexdigest(),
+                }
+            )
+            continue
+        raise ValueError("attachment requires path or content")
+    selected["attachments"] = normalized
+    return selected
+
+
+def _is_relative_to(path: Path, parent: Path) -> bool:
+    try:
+        path.relative_to(parent)
+        return True
+    except ValueError:
+        return False
 
 
 def _project_fingerprint_source(root: Path) -> dict[str, Any]:

@@ -1,14 +1,19 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 import sys
 from pathlib import Path
 
 import pytest
+from fastapi.testclient import TestClient
 
+from wavemind import WaveMind
+from wavemind.api import create_app
 from wavemind.experience import ExperienceStatus
 from wavemind.experience_runtime import AgentEventKind, VerificationSource
+from wavemind.integrations.mcp_experience import ExperienceMCPAdapter
 from wavemind.workspace_experience import (
     WorkspaceEvent,
     WorkspaceExperienceManager,
@@ -240,3 +245,258 @@ def test_workspace_cli_init_doctor_status_and_mcp_config(tmp_path: Path) -> None
     assert outputs[1]["status"] == "pass"
     assert outputs[2]["schema"] == "wavemind.workspace_status.v1"
     assert "wavemind-workspace" in outputs[3]["mcpServers"]
+
+
+def test_workspace_http_capture_review_and_cross_process_replay(tmp_path: Path) -> None:
+    repo = _make_repo(tmp_path / "repo")
+    evidence_file = repo / "evidence.log"
+    evidence_file.write_text("pytest passed after cache cleanup\n", encoding="utf-8")
+    initialize_workspace(repo, workspace_id="http-agent", tenant_id="tenant", user_id="user")
+    mind = WaveMind(db_path=tmp_path / "memory.sqlite3")
+    try:
+        with TestClient(create_app(mind=mind)) as client:
+            start = client.post(
+                "/workspace/runtime/runs",
+                json={
+                    "root": str(repo),
+                    "query": "pytest cache permission failure",
+                    "objective": "fix pytest cache permission failure",
+                    "domain": "python",
+                    "task_type": "pytest-cache",
+                    "run_id": "http-run",
+                    "session_id": "http-session",
+                    "task_id": "http-task",
+                    "tools": ["remove-cache"],
+                },
+            )
+            assert start.status_code == 200
+            started = start.json()
+            assert started["idempotent_replay"] is False
+            replay = client.post(
+                "/workspace/runtime/runs",
+                json={
+                    "root": str(repo),
+                    "query": "pytest cache permission failure",
+                    "objective": "fix pytest cache permission failure",
+                    "domain": "python",
+                    "task_type": "pytest-cache",
+                    "run_id": "http-run",
+                    "session_id": "http-session",
+                    "task_id": "http-task",
+                    "tools": ["remove-cache"],
+                },
+            )
+            assert replay.status_code == 200
+            assert replay.json()["idempotent_replay"] is True
+            assert replay.json()["next_sequence"] == started["next_sequence"]
+
+            call = {
+                "root": str(repo),
+                "id": "http-call",
+                "run_id": "http-run",
+                "session_id": "http-session",
+                "task_id": "http-task",
+                "kind": "tool.call",
+                "sequence": started["next_sequence"],
+                "tool_name": "remove-cache",
+                "payload": {
+                    "input": {"path": ".pytest_cache"},
+                    "api_key": "sk-test-secret",
+                    "attachments": [
+                        {"label": "pytest-log", "path": "evidence.log"},
+                        {"label": "inline-note", "content": {"status": "pass"}},
+                    ],
+                },
+            }
+            event = client.post("/workspace/runtime/events", json=call)
+            assert event.status_code == 200
+            assert event.json()["inserted"] is True
+            event_payload = event.json()["event"]["payload"]
+            assert event_payload["api_key"] == "[REDACTED]"
+            assert event_payload["attachments"][0]["sha256"] == hashlib.sha256(
+                evidence_file.read_bytes()
+            ).hexdigest()
+            assert event_payload["attachments"][0]["path"] == "evidence.log"
+            assert "content" not in event_payload["attachments"][1]
+            duplicate = client.post("/workspace/runtime/events", json=call)
+            assert duplicate.status_code == 200
+            assert duplicate.json()["inserted"] is False
+            result = client.post(
+                "/workspace/runtime/events",
+                json={
+                    "root": str(repo),
+                    "id": "http-result",
+                    "run_id": "http-run",
+                    "session_id": "http-session",
+                    "task_id": "http-task",
+                    "kind": "tool.result",
+                    "sequence": started["next_sequence"] + 1,
+                    "parent_event_id": "http-call",
+                    "tool_name": "remove-cache",
+                    "payload": {"success": True, "output": {"removed": ".pytest_cache"}},
+                },
+            )
+            assert result.status_code == 200
+            verified = client.post(
+                "/workspace/runtime/runs/http-run/verify",
+                json={
+                    "root": str(repo),
+                    "evidence_id": "http-pytest-pass",
+                    "source": "test",
+                    "verifier": "pytest",
+                    "success": True,
+                    "score": 1.0,
+                    "reference": "pytest://tests",
+                },
+            )
+            assert verified.status_code == 200
+            candidate_id = verified.json()["candidate_ids"][0]
+
+            queue = client.post("/workspace/review", json={"root": str(repo)})
+            assert queue.status_code == 200
+            assert queue.json()["items"][0]["experience"]["id"] == candidate_id
+            approved = client.post(
+                f"/workspace/runtime/{candidate_id}/approve",
+                json={
+                    "root": str(repo),
+                    "evidence_id": "http-operator-approve",
+                    "reason": "verified in HTTP contract test",
+                },
+            )
+            assert approved.status_code == 200
+            assert approved.json()["status"] == "active"
+            packet = client.post(
+                "/workspace/packet",
+                json={
+                    "root": str(repo),
+                    "query": "pytest cache permission failure",
+                    "domain": "python",
+                    "task_type": "pytest-cache",
+                    "tools": ["remove-cache"],
+                },
+            )
+            assert packet.status_code == 200
+            assert packet.json()["abstain"] is False
+            assert packet.json()["selected_citations"] == [f"experience:{candidate_id}@v1"]
+
+            escaped = dict(call)
+            escaped["id"] = "http-escaped"
+            escaped["payload"] = {"attachments": [{"label": "bad", "path": "../secret.txt"}]}
+            escaped_result = client.post("/workspace/runtime/events", json=escaped)
+            assert escaped_result.status_code == 422
+
+            cancelled_start = client.post(
+                "/workspace/runtime/runs",
+                json={
+                    "root": str(repo),
+                    "query": "cancelled task",
+                    "objective": "cancel cancelled task",
+                    "domain": "python",
+                    "task_type": "cancel",
+                    "run_id": "http-cancel",
+                },
+            )
+            assert cancelled_start.status_code == 200
+            cancelled = client.post(
+                "/workspace/runtime/runs/http-cancel/cancel",
+                json={
+                    "root": str(repo),
+                    "evidence_id": "operator-cancel",
+                    "reason": "operator cancelled cleanly",
+                },
+            )
+            assert cancelled.status_code == 200
+            assert cancelled.json()["verified"] is True
+            assert cancelled.json()["verification"]["success"] is False
+    finally:
+        mind.close()
+
+    other_process = WorkspaceExperienceManager.open(repo)
+    try:
+        replayed = other_process.packet(
+            "pytest cache permission failure",
+            domain="python",
+            task_type="pytest-cache",
+            tools=("remove-cache",),
+        )
+        assert replayed["selected_citations"] == [f"experience:{candidate_id}@v1"]
+    finally:
+        other_process.close()
+
+
+def test_workspace_mcp_adapter_uses_same_runtime_and_namespace(tmp_path: Path) -> None:
+    repo = _make_repo(tmp_path / "repo")
+    config = initialize_workspace(repo, workspace_id="mcp-agent", tenant_id="tenant", user_id="user")
+    manager = WorkspaceExperienceManager(config)
+    try:
+        adapter = ExperienceMCPAdapter(manager.compiler, manager.runtime)
+        namespace = config.identity.namespace
+        started = adapter.call_tool(
+            "start_experience_run",
+            {
+                "namespace": namespace,
+                "query": "pytest cache permission failure",
+                "objective": "fix pytest cache permission failure",
+                "domain": "python",
+                "task_type": "pytest-cache",
+                "tools": ["remove-cache"],
+                "run_id": "mcp-run",
+                "session_id": "mcp-session",
+                "task_id": "mcp-task",
+            },
+        )
+        assert started["run_id"] == "mcp-run"
+        call = adapter.call_tool(
+            "capture_experience_event",
+            {
+                "namespace": namespace,
+                "run_id": "mcp-run",
+                "kind": "tool.call",
+                "tool_name": "remove-cache",
+                "payload": {"input": {"path": ".pytest_cache"}},
+            },
+        )
+        assert call["run_id"] == "mcp-run"
+        adapter.call_tool(
+            "capture_experience_event",
+            {
+                "namespace": namespace,
+                "run_id": "mcp-run",
+                "kind": "tool.result",
+                "tool_name": "remove-cache",
+                "success": True,
+                "parent_event_id": call["event_id"],
+                "payload": {"output": {"removed": ".pytest_cache"}},
+            },
+        )
+        finalized = adapter.call_tool(
+            "verify_experience_run",
+            {
+                "namespace": namespace,
+                "run_id": "mcp-run",
+                "evidence_id": "mcp-pytest-pass",
+                "source": "test",
+                "verifier": "pytest",
+                "success": True,
+                "score": 1.0,
+            },
+        )
+        candidate_id = finalized["candidate_ids"][0]
+        status = adapter.call_tool(
+            "approve_experience",
+            {
+                "namespace": namespace,
+                "experience_id": candidate_id,
+                "evidence_id": "mcp-operator-approve",
+            },
+        )
+        assert status["status"] == "active"
+        packet = manager.packet(
+            "pytest cache permission failure",
+            domain="python",
+            task_type="pytest-cache",
+            tools=("remove-cache",),
+        )
+        assert packet["selected_citations"] == [f"experience:{candidate_id}@v1"]
+    finally:
+        manager.close()

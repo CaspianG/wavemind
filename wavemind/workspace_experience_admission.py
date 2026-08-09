@@ -80,8 +80,8 @@ def evaluate_workspace_experience_admission_matrix(
         _row(
             "provider-neutral-capture-contract",
             "Python, HTTP, MCP, retries, ordering, redaction, and crash/restart recovery.",
-            "partial",
-            "tests/test_experience_runtime_contracts.py",
+            "implemented",
+            "tests/test_workspace_experience.py",
             "tests/test_workspace_experience.py",
         ),
         _row(

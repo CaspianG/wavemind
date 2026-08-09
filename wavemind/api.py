@@ -63,6 +63,10 @@ from .memory_firewall import (
     MemoryFirewallPolicy,
 )
 from .studio import STUDIO_HTML, field_heatmap, studio_snapshot
+from .workspace_experience import (
+    WorkspaceEvent,
+    WorkspaceExperienceManager,
+)
 
 
 logger = logging.getLogger("wavemind.api")
@@ -1336,6 +1340,70 @@ class ExperienceRuntimeLifecycleRequest(BaseModel):
     score: float = Field(default=1.0, ge=0.0, le=1.0)
 
 
+class WorkspaceRootRequest(BaseModel):
+    root: str = Field(min_length=1)
+
+
+class WorkspaceRuntimeStartRequest(WorkspaceRootRequest):
+    query: str = Field(min_length=1)
+    objective: str = Field(min_length=1)
+    domain: str = Field(default="workspace", min_length=1)
+    task_type: str = Field(default="task", min_length=1)
+    session_id: str | None = None
+    run_id: str | None = None
+    task_id: str | None = None
+    tools: list[str] = Field(default_factory=list)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    token_budget: int = Field(default=400, ge=32)
+    top_k: int = Field(default=3, ge=1, le=100)
+    canary: bool = False
+
+
+class WorkspaceRuntimeEventRequest(WorkspaceRootRequest):
+    id: str = Field(min_length=1)
+    run_id: str = Field(min_length=1)
+    kind: str = Field(min_length=1)
+    sequence: int = Field(ge=0)
+    occurred_at: float | None = None
+    session_id: str | None = None
+    task_id: str | None = None
+    parent_event_id: str | None = None
+    tool_name: str | None = None
+    duration_ms: float | None = Field(default=None, ge=0.0)
+    payload: dict[str, Any] = Field(default_factory=dict)
+
+
+class WorkspaceRuntimeVerifyRequest(WorkspaceRootRequest):
+    evidence_id: str = Field(min_length=1)
+    source: str
+    verifier: str = Field(min_length=1)
+    success: bool
+    score: float | None = Field(default=None, ge=0.0, le=1.0)
+    reference: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    applied_experience_ids: list[str] = Field(default_factory=list)
+
+
+class WorkspacePacketRequest(WorkspaceRootRequest):
+    query: str = Field(min_length=1)
+    domain: str = Field(default="workspace", min_length=1)
+    task_type: str = Field(default="task", min_length=1)
+    tools: list[str] = Field(default_factory=list)
+    token_budget: int = Field(default=400, ge=32)
+    top_k: int = Field(default=3, ge=1, le=100)
+
+
+class WorkspaceReviewRequest(WorkspaceRootRequest):
+    limit: int = Field(default=100, ge=1, le=1000)
+
+
+class WorkspaceLifecycleRequest(WorkspaceRootRequest):
+    reason: str = Field(default="operator review", min_length=1)
+    evidence_id: str | None = None
+    score: float = Field(default=1.0, ge=0.0, le=1.0)
+    confirmation: str | None = None
+
+
 def _remember_response_id(result: Any) -> int:
     if isinstance(result, int):
         return result
@@ -1559,6 +1627,17 @@ def create_app(
                 runtime = AgentExperienceRuntime(compiler)
                 app.state.experience_runtimes[selected] = runtime
             return runtime
+
+    @contextmanager
+    def _workspace_manager(root: str) -> Iterator[WorkspaceExperienceManager]:
+        try:
+            manager = WorkspaceExperienceManager.open(root)
+        except (OSError, ValueError) as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        try:
+            yield manager
+        finally:
+            manager.close()
 
     def _close_experience_store() -> None:
         if (
@@ -2343,6 +2422,210 @@ def create_app(
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
         return record.as_dict()
+
+    @app.post(
+        "/workspace/runtime/runs",
+        dependencies=[Depends(require_role("write"))],
+    )
+    def start_workspace_runtime_run(request: WorkspaceRuntimeStartRequest):
+        with _workspace_manager(request.root) as manager:
+            try:
+                return manager.start_run(
+                    query=request.query,
+                    objective=request.objective,
+                    domain=request.domain,
+                    task_type=request.task_type,
+                    run_id=request.run_id,
+                    session_id=request.session_id,
+                    task_id=request.task_id,
+                    tools=request.tools,
+                    metadata={"provider": "http", **request.metadata},
+                    token_budget=request.token_budget,
+                    top_k=request.top_k,
+                    canary=request.canary,
+                )
+            except (KeyError, ValueError) as exc:
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @app.post(
+        "/workspace/runtime/events",
+        dependencies=[Depends(require_role("write"))],
+    )
+    def capture_workspace_runtime_event(request: WorkspaceRuntimeEventRequest):
+        with _workspace_manager(request.root) as manager:
+            try:
+                return manager.capture_event(
+                    WorkspaceEvent(
+                        id=request.id,
+                        run_id=request.run_id,
+                        kind=AgentEventKind(request.kind),
+                        sequence=request.sequence,
+                        occurred_at=request.occurred_at,
+                        session_id=request.session_id,
+                        task_id=request.task_id,
+                        parent_event_id=request.parent_event_id,
+                        tool_name=request.tool_name,
+                        duration_ms=request.duration_ms,
+                        payload=request.payload,
+                    )
+                )
+            except (KeyError, ValueError) as exc:
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @app.post(
+        "/workspace/runtime/runs/{run_id}/verify",
+        dependencies=[Depends(require_role("write"))],
+    )
+    def verify_workspace_runtime_run(
+        run_id: str,
+        request: WorkspaceRuntimeVerifyRequest,
+    ):
+        with _workspace_manager(request.root) as manager:
+            try:
+                return manager.verify_run(
+                    run_id=run_id,
+                    evidence_id=request.evidence_id,
+                    source=request.source,
+                    verifier=request.verifier,
+                    success=request.success,
+                    score=request.score,
+                    reference=request.reference,
+                    metadata=request.metadata,
+                    applied_experience_ids=request.applied_experience_ids,
+                )
+            except KeyError as exc:
+                raise HTTPException(status_code=404, detail="Workspace run not found") from exc
+            except ValueError as exc:
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @app.post(
+        "/workspace/runtime/runs/{run_id}/cancel",
+        dependencies=[Depends(require_role("write"))],
+    )
+    def cancel_workspace_runtime_run(
+        run_id: str,
+        request: WorkspaceLifecycleRequest,
+    ):
+        if not request.evidence_id:
+            raise HTTPException(status_code=422, detail="evidence_id is required")
+        with _workspace_manager(request.root) as manager:
+            try:
+                return manager.cancel_run(
+                    run_id=run_id,
+                    evidence_id=request.evidence_id,
+                    verifier="operator",
+                    reason=request.reason,
+                )
+            except KeyError as exc:
+                raise HTTPException(status_code=404, detail="Workspace run not found") from exc
+            except ValueError as exc:
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @app.post(
+        "/workspace/packet",
+        dependencies=[Depends(require_role("read"))],
+    )
+    def compile_workspace_experience_packet(request: WorkspacePacketRequest):
+        with _workspace_manager(request.root) as manager:
+            try:
+                return manager.packet(
+                    request.query,
+                    domain=request.domain,
+                    task_type=request.task_type,
+                    tools=request.tools,
+                    token_budget=request.token_budget,
+                    top_k=request.top_k,
+                )
+            except ValueError as exc:
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @app.post(
+        "/workspace/review",
+        dependencies=[Depends(require_role("read"))],
+    )
+    def list_workspace_review_queue(request: WorkspaceReviewRequest):
+        with _workspace_manager(request.root) as manager:
+            return {
+                "schema": "wavemind.workspace_review_queue.v1",
+                "identity": manager.identity.as_dict(),
+                "items": manager.review_queue(limit=request.limit),
+            }
+
+    @app.post(
+        "/workspace/runtime/{experience_id}/approve",
+        dependencies=[Depends(require_role("admin"))],
+    )
+    def approve_workspace_experience(
+        experience_id: str,
+        request: WorkspaceLifecycleRequest,
+    ):
+        if not request.evidence_id:
+            raise HTTPException(status_code=422, detail="evidence_id is required")
+        with _workspace_manager(request.root) as manager:
+            try:
+                return {
+                    "experience_id": experience_id,
+                    "status": manager.approve(
+                        experience_id,
+                        evidence_id=request.evidence_id,
+                        score=request.score,
+                    ),
+                }
+            except KeyError as exc:
+                raise HTTPException(status_code=404, detail="Experience not found") from exc
+
+    @app.post(
+        "/workspace/runtime/{experience_id}/reject",
+        dependencies=[Depends(require_role("admin"))],
+    )
+    def reject_workspace_experience(
+        experience_id: str,
+        request: WorkspaceLifecycleRequest,
+    ):
+        with _workspace_manager(request.root) as manager:
+            try:
+                return manager.reject(experience_id, reason=request.reason)
+            except KeyError as exc:
+                raise HTTPException(status_code=404, detail="Experience not found") from exc
+
+    @app.post(
+        "/workspace/runtime/{experience_id}/rollback",
+        dependencies=[Depends(require_role("admin"))],
+    )
+    def rollback_workspace_experience(
+        experience_id: str,
+        request: WorkspaceLifecycleRequest,
+    ):
+        with _workspace_manager(request.root) as manager:
+            try:
+                return manager.rollback(experience_id, reason=request.reason)
+            except KeyError as exc:
+                raise HTTPException(status_code=404, detail="Experience not found") from exc
+            except ValueError as exc:
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @app.delete(
+        "/workspace/runtime/{experience_id}",
+        dependencies=[Depends(require_role("admin"))],
+    )
+    def delete_workspace_experience(
+        experience_id: str,
+        request: WorkspaceLifecycleRequest,
+    ):
+        with _workspace_manager(request.root) as manager:
+            try:
+                return {
+                    "experience_id": experience_id,
+                    "deleted": manager.protected_delete(
+                        experience_id,
+                        reason=request.reason,
+                        confirmation=request.confirmation or "",
+                    ),
+                }
+            except KeyError as exc:
+                raise HTTPException(status_code=404, detail="Experience not found") from exc
+            except ValueError as exc:
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     @app.post(
         "/query/batch",
