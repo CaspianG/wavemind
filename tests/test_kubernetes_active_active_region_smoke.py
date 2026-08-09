@@ -98,6 +98,7 @@ def test_region_resources_pin_persistent_replicated_regions_to_three_zones():
     )
     services = [item for item in resources if item["kind"] == "Service"]
     statefulsets = [item for item in resources if item["kind"] == "StatefulSet"]
+    secrets = [item for item in resources if item["kind"] == "Secret"]
 
     assert len(services) == 3
     assert len(statefulsets) == 3
@@ -113,11 +114,17 @@ def test_region_resources_pin_persistent_replicated_regions_to_three_zones():
         for item in statefulsets
     } == {"zone-a", "zone-b", "zone-c"}
     assert all(item["spec"]["volumeClaimTemplates"] for item in statefulsets)
+    assert len(secrets) == 1
+    assert secrets[0]["metadata"]["name"] == "wavemind-region-auth"
     for item in statefulsets:
-        args = item["spec"]["template"]["spec"]["containers"][0]["args"]
+        container = item["spec"]["template"]["spec"]["containers"][0]
+        args = container["args"]
         assert "--replicated-root" in args
+        assert "--allow-public" in args
         assert args.count("--replica-node") == 3
         assert "--replication-factor" in args
+        env_names = {entry["name"] for entry in container["env"]}
+        assert {"WAVEMIND_API_KEYS", "WAVEMIND_ADMIN_KEYS", "WAVEMIND_API_KEY"} <= env_names
 
 
 def test_kind_workflow_runs_active_active_region_failure_drill():
