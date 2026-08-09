@@ -279,7 +279,13 @@ async function startServer(database) {
     ["-m", "wavemind", "serve", "--host", "127.0.0.1", "--port", String(port)],
     {
       cwd: root,
-      env: { ...process.env, WAVEMIND_DB: database },
+      env: {
+        ...process.env,
+        WAVEMIND_DB: database,
+        OPENBLAS_NUM_THREADS: "1",
+        OMP_NUM_THREADS: "1",
+        MKL_NUM_THREADS: "1",
+      },
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,
     },

@@ -126,6 +126,10 @@ def test_typescript_starter_runs_local_sdk_and_survives_server_restart(tmp_path)
     assert 'from "@wavemind/http"' in (project / "src" / "index.ts").read_text(
         encoding="utf-8"
     )
+    runner = (project / "scripts" / "quickstart.mjs").read_text(encoding="utf-8")
+    assert 'OPENBLAS_NUM_THREADS: "1"' in runner
+    assert 'OMP_NUM_THREADS: "1"' in runner
+    assert 'MKL_NUM_THREADS: "1"' in runner
 
     env = _python_env()
     env["PYTHON"] = sys.executable
