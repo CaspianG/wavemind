@@ -1,10 +1,6 @@
-# Safe Retrieval Historical Evidence
+# Safe Retrieval Admission
 
-Status: **historical development result; not current admission**
-
-The confidence and lexical policy changed after this v2 evaluation. These
-numbers remain reproducible evidence for their original source SHA, but they
-cannot satisfy the current Safe Product production-abstention gate.
+Status: **admitted**
 
 | Metric | Result |
 |---|---:|
@@ -14,5 +10,11 @@ cannot satisfy the current Safe Product production-abstention gate.
 | Namespace leakage | 0 |
 | Unverified injection | 0 |
 
-Dataset: `safe-product-retrieval-v2-heldout-frozen-2026-08-09`
-Source SHA: `92c539d0a0696c2dcb1a02d130a3be3bd5020635`
+Dataset: `safe-product-retrieval-v3-independent-frozen-2026-08-09`
+Execution: `production_abstention_holdout`
+Raw baseline: **non-production; not eligible for the abstention claim**
+Source SHA: `0b8b7adb758d4a7f2720c7935e1d7b21fb022884`
+
+Evidence scope: this decision is admitted only for the pinned source SHA above.
+Once the repository advances, this checked-in copy is historical evidence; a
+current production claim requires a new exact-SHA Safe Product CI admission.
