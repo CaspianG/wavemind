@@ -149,11 +149,11 @@ def test_supersession_and_rollback_preserve_version_chain_and_audit(tmp_path):
 
 def test_expire_due_hides_expired_records(tmp_path):
     now = time.time()
-    record = _record(expires_at=now + 0.05)
+    record = _record(expires_at=now + 60.0)
     with SQLiteExperienceStore(tmp_path / "experience.sqlite3") as store:
         store.put(record)
         assert store.list(namespace="release")
-        assert store.expire_due(now=now + 1.0) == 1
+        assert store.expire_due(now=now + 120.0) == 1
         assert store.list(namespace="release") == []
         expired = store.get(record.id)
         assert expired is not None
