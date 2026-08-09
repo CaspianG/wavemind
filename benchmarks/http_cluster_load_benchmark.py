@@ -121,7 +121,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=[],
         help="Optional node zone as id=zone. Repeat as needed.",
     )
-    parser.add_argument("--api-key", default=None)
+    parser.add_argument(
+        "--api-key",
+        default=os.environ.get("WAVEMIND_API_KEY"),
+        help="Bearer token for WaveMind API nodes. Defaults to WAVEMIND_API_KEY.",
+    )
     parser.add_argument("--timeout", type=float, default=15.0)
     parser.add_argument("--replication-factor", type=int, default=3)
     parser.add_argument("--write-quorum", type=int, default=None)
