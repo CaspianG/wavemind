@@ -1,0 +1,35 @@
+{
+  "schema": "wavemind.safe_product_retrieval_protocol.v1",
+  "revision": "safe-product-retrieval-v3-independent-frozen-2026-08-09",
+  "dataset_path": "benchmarks/data/safe_product_retrieval_v3_holdout.json",
+  "dataset_sha256": "21641e14985038d4e5b96a3289a86ed915d311497137228b4d04f65da88173c0",
+  "sealed_at": "2026-08-09T16:40:00Z",
+  "execution_policy": {
+    "first_execution_only_for_admission": true,
+    "execute_only_after_protocol_commit": true,
+    "maximum_admission_executions": 1,
+    "failure_action": "record_blocked_without_tuning"
+  },
+  "production_candidate": {
+    "encoder": "HashingTextEncoder",
+    "vector_dim": 384,
+    "confidence_gate": true,
+    "hash_vector_threshold": 0.12,
+    "lexical_coverage_threshold": 0.3333333333333333
+  },
+  "comparison_baseline": {
+    "confidence_gate": false,
+    "claim_boundary": "raw non-production retrieval baseline; cannot satisfy production abstention admission"
+  },
+  "frozen_gates": {
+    "max_false_memory_injection_rate": 0.02,
+    "min_relevant_recall_at_1": 0.9,
+    "min_relevant_recall_ratio_vs_baseline": 0.95,
+    "namespace_leakage": 0,
+    "unverified_injection": 0
+  },
+  "prior_evidence": {
+    "v2_status": "development_historical",
+    "reason": "The confidence and lexical policy changed after v2 was first evaluated."
+  }
+}
