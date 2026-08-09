@@ -113,6 +113,8 @@ def _start_container(
         "-e",
         "WAVEMIND_EXPERIENCE_DB=/data/wavemind-experience.sqlite3",
         "-e",
+        "WAVEMIND_BACKUP_ROOT=/data/backups",
+        "-e",
         f"WAVEMIND_API_PRINCIPALS={principals}",
         image,
         "wavemind",
@@ -208,7 +210,7 @@ def _write_first_instance(base_url: str) -> dict[str, Any]:
         base_url,
         "POST",
         "/backup",
-        payload={"path": "/data/backups", "prefix": "safe-product"},
+        payload={},
     )
     return {"memory": memory, "run": run, "verification": verification, "backup": backup}
 

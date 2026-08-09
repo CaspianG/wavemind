@@ -43,7 +43,10 @@ class CountingEncoder:
         return vector / (float(np.linalg.norm(vector)) + 1e-9)
 
 
-def test_fastapi_remember_query_forget_and_stats(tmp_path):
+def test_fastapi_remember_query_forget_and_stats(tmp_path, monkeypatch):
+    backup_dir = tmp_path / "api-backups"
+    backup_dir.mkdir()
+    monkeypatch.setenv("WAVEMIND_BACKUP_ROOT", str(backup_dir))
     mind = WaveMind(
         db_path=tmp_path / "api.sqlite3",
         width=32,
@@ -153,18 +156,13 @@ def test_fastapi_remember_query_forget_and_stats(tmp_path):
             assert autoscale_payload["required_nodes"] >= 43
             assert len(autoscale_payload["moves"]) == 5
 
-            backup_dir = tmp_path / "api-backups"
             backup = client.post(
                 "/backup",
-                json={
-                    "path": str(backup_dir),
-                    "keep_last": 1,
-                    "prefix": "api",
-                },
+                json={"keep_last": 1},
             )
             assert backup.status_code == 200
             assert backup.json()["path"].endswith(".wavemind.zip")
-            assert len(list(backup_dir.glob("api-*.wavemind.zip"))) == 1
+            assert len(list(backup_dir.glob("wavemind-*.wavemind.zip"))) == 1
 
             mind.index.remove(memory_id)
             drifted = client.get("/index/health")
@@ -1730,6 +1728,9 @@ def test_fastapi_api_keys_enforce_roles(tmp_path, monkeypatch):
     monkeypatch.setenv("WAVEMIND_WRITE_KEYS", "write-key")
     monkeypatch.setenv("WAVEMIND_ADMIN_KEYS", "admin-key")
     monkeypatch.setenv("WAVEMIND_COMMIT_SHA", "a" * 40)
+    backup_root = tmp_path / "auth-backups"
+    backup_root.mkdir()
+    monkeypatch.setenv("WAVEMIND_BACKUP_ROOT", str(backup_root))
     mind = WaveMind(
         db_path=tmp_path / "auth.sqlite3",
         width=32,
@@ -1785,14 +1786,14 @@ def test_fastapi_api_keys_enforce_roles(tmp_path, monkeypatch):
 
             read_backup = client.post(
                 "/backup",
-                json={"path": str(tmp_path / "read-backup.sqlite3")},
+                json={},
                 headers={"X-API-Key": "read-key"},
             )
             assert read_backup.status_code == 403
 
             admin_backup = client.post(
                 "/backup",
-                json={"path": str(tmp_path / "admin-backup.sqlite3")},
+                json={},
                 headers={"X-API-Key": "admin-key"},
             )
             assert admin_backup.status_code == 200
@@ -1981,6 +1982,30 @@ def test_fastapi_http_import_is_confined_to_configured_root(tmp_path, monkeypatc
         assert escaped.status_code == 403
         assert absolute.status_code == 403
         assert mind.stats(namespace="tenant:import")["active_memories"] == 1
+    finally:
+        mind.close()
+
+
+def test_fastapi_http_backup_is_server_confined(tmp_path, monkeypatch):
+    monkeypatch.delenv("WAVEMIND_BACKUP_ROOT", raising=False)
+    mind = WaveMind(db_path=tmp_path / "backup-confined.sqlite3")
+    try:
+        with TestClient(create_app(mind=mind)) as client:
+            disabled = client.post("/backup", json={})
+            assert disabled.status_code == 403
+
+            backup_root = tmp_path / "backups"
+            backup_root.mkdir()
+            monkeypatch.setenv("WAVEMIND_BACKUP_ROOT", str(backup_root))
+            injected = client.post(
+                "/backup",
+                json={"path": str(tmp_path / "outside.zip")},
+            )
+            assert injected.status_code == 400
+
+            created = client.post("/backup", json={"keep_last": 1})
+            assert created.status_code == 200
+            assert len(list(backup_root.glob("wavemind-*.wavemind.zip"))) == 1
     finally:
         mind.close()
 

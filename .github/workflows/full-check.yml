@@ -451,18 +451,27 @@ jobs:
 
       - name: Run Docker API smoke
         run: |
-          docker run -d --name wavemind-ci -p 8000:8000 wavemind-ci
+          docker run -d --name wavemind-ci \
+            -p 127.0.0.1:8000:8000 \
+            -e WAVEMIND_ADMIN_KEYS=ci-api-key \
+            wavemind-ci \
+            wavemind serve --host 0.0.0.0 --port 8000 --allow-public
           for i in $(seq 1 30); do
-            if curl -fsS http://127.0.0.1:8000/stats >/tmp/wavemind-stats.json; then
+            if curl -fsS http://127.0.0.1:8000/healthz >/tmp/wavemind-health.json; then
               break
             fi
             sleep 1
           done
+          test "$(curl -sS -o /tmp/wavemind-unauthorized.json -w '%{http_code}' http://127.0.0.1:8000/stats)" = "401"
+          curl -fsS http://127.0.0.1:8000/stats \
+            -H "X-API-Key: ci-api-key" >/tmp/wavemind-stats.json
           cat /tmp/wavemind-stats.json
           curl -fsS -X POST http://127.0.0.1:8000/remember \
+            -H "X-API-Key: ci-api-key" \
             -H "Content-Type: application/json" \
             -d '{"text":"Andrey is testing WaveMind Docker API","namespace":"ci"}'
           curl -fsS -X POST http://127.0.0.1:8000/query \
+            -H "X-API-Key: ci-api-key" \
             -H "Content-Type: application/json" \
             -d '{"query":"Docker API","namespace":"ci","top_k":1}' \
             | tee /tmp/wavemind-query.json

@@ -10,6 +10,7 @@ services:
       WAVEMIND_DB: /data/wavemind.sqlite3
       WAVEMIND_EXPERIENCE_DB: /data/wavemind-experience.sqlite3
       WAVEMIND_RECOVERY_JOURNAL: /data/wavemind.recovery.jsonl
+      WAVEMIND_BACKUP_ROOT: /backups
       WAVEMIND_API_PRINCIPALS: ${WAVEMIND_API_PRINCIPALS:?Set WAVEMIND_API_PRINCIPALS to a JSON key-to-principal mapping}
       WAVEMIND_ENCODER: hash
       WAVEMIND_INDEX: numpy

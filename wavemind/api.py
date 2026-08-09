@@ -880,7 +880,7 @@ class ImportResponse(BaseModel):
 
 
 class BackupRequest(BaseModel):
-    path: str
+    path: str | None = None
     keep_last: int | None = Field(default=None, ge=0)
     prefix: str = "wavemind"
 
@@ -899,15 +899,39 @@ def _resolve_http_import_path(raw_path: str) -> Path:
     root = Path(configured_root).expanduser().resolve()
     if not root.is_dir():
         raise HTTPException(status_code=503, detail="Configured import root is unavailable")
-    requested = Path(raw_path).expanduser()
-    candidate = (root / requested).resolve() if not requested.is_absolute() else requested.resolve()
+    if (
+        not raw_path
+        or raw_path in {".", ".."}
+        or "/" in raw_path
+        or "\\" in raw_path
+        or os.path.basename(raw_path) != raw_path
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="Import path must be one file or directory name inside the configured root",
+        )
+    candidate = next((entry for entry in root.iterdir() if entry.name == raw_path), None)
+    if candidate is None:
+        raise HTTPException(status_code=404, detail="Import path does not exist")
+    candidate = candidate.resolve()
     try:
         candidate.relative_to(root)
     except ValueError as exc:
         raise HTTPException(status_code=403, detail="Import path is outside the configured root") from exc
-    if not candidate.exists():
-        raise HTTPException(status_code=404, detail="Import path does not exist")
     return candidate
+
+
+def _resolve_http_backup_root() -> Path:
+    configured_root = os.environ.get("WAVEMIND_BACKUP_ROOT", "").strip()
+    if not configured_root:
+        raise HTTPException(
+            status_code=403,
+            detail="HTTP backup is disabled; configure WAVEMIND_BACKUP_ROOT",
+        )
+    root = Path(configured_root).expanduser().resolve()
+    if not root.is_dir():
+        raise HTTPException(status_code=503, detail="Configured backup root is unavailable")
+    return root
 
 
 class MemoryExportRequest(BaseModel):
@@ -3037,13 +3061,22 @@ def create_app(
 
     @app.post("/backup", response_model=BackupResponse, dependencies=[Depends(require_role("admin"))])
     def backup(request: BackupRequest) -> BackupResponse:
+        if request.path is not None or request.prefix != "wavemind":
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Backup paths and prefixes are configured server-side; "
+                    "set WAVEMIND_BACKUP_ROOT"
+                ),
+            )
+        backup_root = _resolve_http_backup_root()
         experience_store = _experience_compiler("default").store
         with _api_operation(app, "backup"):
             path = create_rotating_product_backup(
                 app.state.mind,
                 experience_store,
-                request.path,
-                prefix=request.prefix,
+                backup_root,
+                prefix="wavemind",
                 keep_last=request.keep_last,
             )
         return BackupResponse(path=str(path))

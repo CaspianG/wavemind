@@ -120,3 +120,17 @@ def test_safe_product_admission_depends_on_real_compatibility_and_sast_jobs():
         "--require-admitted",
     ):
         assert command in commands
+
+
+def test_full_check_container_smoke_uses_authenticated_explicit_public_bind():
+    workflow = load_yaml(WORKFLOWS / "full-check.yml")
+    docker_job = workflow["jobs"]["docker"]
+    smoke = next(
+        step for step in docker_job["steps"] if step.get("name") == "Run Docker API smoke"
+    )["run"]
+
+    assert "-p 127.0.0.1:8000:8000" in smoke
+    assert "WAVEMIND_ADMIN_KEYS=ci-api-key" in smoke
+    assert "--host 0.0.0.0 --port 8000 --allow-public" in smoke
+    assert "X-API-Key: ci-api-key" in smoke
+    assert "= \"401\"" in smoke

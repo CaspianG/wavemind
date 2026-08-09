@@ -63,6 +63,9 @@ def test_observability_endpoint_reports_app_status(tmp_path, monkeypatch):
 
 def test_metrics_endpoint_reports_api_operation_latency_and_failures(tmp_path, monkeypatch):
     monkeypatch.delenv("WAVEMIND_OTEL_ENABLED", raising=False)
+    backup_root = tmp_path / "backups"
+    backup_root.mkdir()
+    monkeypatch.setenv("WAVEMIND_BACKUP_ROOT", str(backup_root))
     mind = WaveMind(
         db_path=tmp_path / "api-metrics.sqlite3",
         width=16,
@@ -88,7 +91,7 @@ def test_metrics_endpoint_reports_api_operation_latency_and_failures(tmp_path, m
                 raise RuntimeError("backup destination unavailable")
 
             monkeypatch.setattr(mind, "save", fail_save)
-            failed_backup = client.post("/backup", json={"path": str(tmp_path / "backup.sqlite3")})
+            failed_backup = client.post("/backup", json={})
             assert failed_backup.status_code == 500
 
             metrics = client.get("/metrics").text
