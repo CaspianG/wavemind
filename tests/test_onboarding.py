@@ -130,6 +130,8 @@ def test_typescript_starter_runs_local_sdk_and_survives_server_restart(tmp_path)
     assert 'OPENBLAS_NUM_THREADS: "1"' in runner
     assert 'OMP_NUM_THREADS: "1"' in runner
     assert 'MKL_NUM_THREADS: "1"' in runner
+    assert "copyFile(resolve(sdkRoot" in runner
+    assert "await symlink(sdkRoot" not in runner
 
     env = _python_env()
     env["PYTHON"] = sys.executable

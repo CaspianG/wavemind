@@ -61,7 +61,7 @@ def build_prompt(question: str, nodes: list[WaveMindNode]) -> str:
 
 
 def main() -> int:
-    question = "How should the agent answer WaveMind demo questions?"
+    question = "How does the WaveMind project use offline retrieval before calling an LLM?"
     with build_memory() as memory:
         memory_ids = seed_memory(memory)
         print(f"Remembered {len(memory_ids)} memories.")

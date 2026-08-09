@@ -600,15 +600,17 @@ class WaveMind:
         return {
             "enabled": self.confidence_gate,
             "encoder": encoder_name,
-            "mode": "lexical_and_vector" if is_hash else "semantic_vector",
+            "mode": (
+                "lexical_and_vector"
+                if is_hash
+                else "semantic_vector_or_exact_lexical"
+            ),
             "vector_threshold": (
                 self.hash_confidence_threshold
                 if is_hash
                 else self.semantic_confidence_threshold
             ),
-            "lexical_coverage_threshold": (
-                self.hash_lexical_coverage_threshold if is_hash else None
-            ),
+            "lexical_coverage_threshold": self.hash_lexical_coverage_threshold,
             "blocks_unverified_or_stale": True,
         }
 
@@ -641,6 +643,8 @@ class WaveMind:
             ):
                 return None
             return "lexical_and_vector_match"
+        if lexical_score >= self.hash_lexical_coverage_threshold:
+            return "exact_lexical_match"
         if vector_score < self.semantic_confidence_threshold:
             return None
         return "semantic_vector_match"

@@ -144,9 +144,9 @@ def _typescript_template(namespace: str) -> str:
     return f'''import {{ WaveMindClient }} from "@wavemind/http";
 
 
-declare const process: {{ env: Record<string, string | undefined> }};
-
-const baseUrl = process.env.WAVEMIND_URL ?? "http://127.0.0.1:8000";
+// @ts-ignore - Node exposes process at runtime without requiring @types/node.
+const runtimeEnv = globalThis.process?.env ?? {{}};
+const baseUrl = runtimeEnv.WAVEMIND_URL ?? "http://127.0.0.1:8000";
 const namespace = "{namespace}";
 const text = "Production deployments use a canary before full rollout.";
 const query = "How should production deployments roll out?";
@@ -172,7 +172,7 @@ if (memory === undefined) {{
 if (memory === undefined) {{
   throw new Error("The remembered deployment fact was not recalled");
 }}
-const expectedId = process.env.WAVEMIND_EXPECT_ID;
+const expectedId = runtimeEnv.WAVEMIND_EXPECT_ID;
 if (expectedId !== undefined && memory.id !== Number(expectedId)) {{
   throw new Error(`Expected persisted memory ${{expectedId}}, received ${{memory.id}}`);
 }}
@@ -199,7 +199,7 @@ console.log(JSON.stringify({{
 
 def _typescript_runner_template() -> str:
     return """import { spawn, spawnSync } from "node:child_process";
-import { access, mkdir, readFile, rm, symlink } from "node:fs/promises";
+import { access, copyFile, lstat, mkdir, readFile, rm, unlink } from "node:fs/promises";
 import net from "node:net";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -250,9 +250,20 @@ async function prepareLocalSdk() {
     run(process.execPath, [compiler, "-p", resolve(sdkRoot, "tsconfig.json")], { cwd: sdkRoot });
   }
   const packageLink = resolve(root, "node_modules", "@wavemind", "http");
-  await mkdir(dirname(packageLink), { recursive: true });
-  await rm(packageLink, { recursive: true, force: true });
-  await symlink(sdkRoot, packageLink, process.platform === "win32" ? "junction" : "dir");
+  try {
+    const existing = await lstat(packageLink);
+    if (existing.isSymbolicLink()) {
+      await unlink(packageLink);
+    } else {
+      await rm(packageLink, { recursive: true, force: true });
+    }
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
+  await mkdir(resolve(packageLink, "dist"), { recursive: true });
+  await copyFile(resolve(sdkRoot, "package.json"), resolve(packageLink, "package.json"));
+  await copyFile(resolve(sdkRoot, "dist", "index.js"), resolve(packageLink, "dist", "index.js"));
+  await copyFile(resolve(sdkRoot, "dist", "index.d.ts"), resolve(packageLink, "dist", "index.d.ts"));
   run(process.execPath, [compiler, "-p", resolve(root, "tsconfig.json")], { cwd: root });
 }
 

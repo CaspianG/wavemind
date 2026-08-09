@@ -775,6 +775,7 @@ def run_benchmark(
                 persist_access_on_query=False,
                 query_feedback_strength=0.0,
                 audit_queries=False,
+                confidence_gate=False,
             )
 
         seed_memory = open_memory(base_path)

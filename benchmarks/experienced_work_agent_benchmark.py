@@ -747,6 +747,7 @@ def _core_from_experience(store: SQLiteExperienceStore, path: Path) -> WaveMind:
         db_path=path,
         encoder=HashingTextEncoder(vector_dim=384),
         score_threshold=0.0,
+        confidence_gate=False,
     )
     for record in store.list(
         namespace=NAMESPACE,

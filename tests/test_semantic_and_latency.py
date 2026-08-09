@@ -130,6 +130,7 @@ def test_short_query_exact_match_can_beat_stronger_vector_candidate(tmp_path):
     results = mind.query("needle", namespace="short", top_k=1)
 
     assert results[0].id == expected_id
+    assert results[0].confidence_reason == "exact_lexical_match"
 
 
 def test_common_query_words_do_not_expand_lexical_candidates(tmp_path):

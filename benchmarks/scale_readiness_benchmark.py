@@ -1480,6 +1480,7 @@ def run_redis_cache_profile() -> dict[str, object]:
             graph_steps=2,
             graph_expand_k=10,
             rerank_k=10,
+            confidence_gate=False,
         )
         try:
             namespace = "tenant:redis-cache"

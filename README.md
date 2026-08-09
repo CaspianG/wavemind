@@ -665,47 +665,29 @@ Release history: [`CHANGELOG.md`](CHANGELOG.md).
 
 Near-term priorities:
 
-- Extend the admitted real local multimodal suite with independently maintained
-  public datasets while preserving its per-modality quality, latency, leakage,
-  persistence, and lifecycle gates.
-- Tune feedback-free Memory OS on LoCoMo, where the complete direct run is
-  currently within the admission tolerance but does not beat Core.
-- Raise strict LongMemEval-V2 answer quality from the frozen-20 `10%` smoke to
-  at least `18%`, then rerun all 451 questions with official haystacks,
-  isolated A/B stores, image support, and a pinned local reader.
-- Improve dynamic re-ranking latency, context efficiency, and cost without
-  weakening stale suppression, provenance, or recall quality.
-- Expand production operations with stronger index-health metrics, alerting
-  examples, and externally executed disaster-recovery evidence.
-- Complete the remaining cluster evidence on real non-loopback infrastructure:
-  multi-region active-active, managed serverless telemetry, and 100M service
-  load.
+- strengthen independent multimodal and agent-quality evidence;
+- improve re-ranking latency and context efficiency without weakening safety;
+- expand index-health, alerting, and disaster-recovery evidence;
+- complete multi-region and 100M scale claims only on matching infrastructure.
 
 Longer-term direction:
 
-- make adaptive memory improve real agent workflows, not only retrieval
-  metrics;
-- preserve one provenance-aware lifecycle across text, media, structured data,
-  temporal events, and knowledge graphs;
-- scale from a private local database to replicated production deployments
-  without changing the application-level memory contract;
-- keep every public capability tied to a reproducible artifact, gate, or
-  clearly locked claim.
+Make adaptive memory improve real workflows, preserve one provenance-aware
+lifecycle across modalities, and scale without changing the application-level
+contract. Every public capability remains tied to an artifact, gate, or locked
+claim boundary.
 
 ## Contributing
 
-Contributing guide: [`CONTRIBUTING.md`](CONTRIBUTING.md).
-Community participation follows the
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) and
 [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
 
 Useful contribution paths:
 
 - add reproducible benchmark adapters and checked-in result JSON;
 - improve FAISS, Qdrant, pgvector, or other candidate-index backends;
-- add examples for LangGraph, LlamaIndex, CrewAI, AutoGen, OpenClaw, and
-  HTTP-only sidecar deployments;
-- improve dynamic memory behavior around TTL, corrections, namespaces, graph
-  excitation/inhibition, and consolidation;
+- add framework examples and improve TTL, corrections, namespaces, graph
+  dynamics, and consolidation;
 - harden production operations: backups, audit logs, metrics, tracing, and
   migration tools.
 
@@ -714,5 +696,4 @@ integrations. Benchmark claims need a reproduction command and committed result
 artifact before they are added to README.
 
 ## License
-
 MIT. See [LICENSE](LICENSE).

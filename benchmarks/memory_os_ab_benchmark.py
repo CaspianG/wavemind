@@ -121,6 +121,7 @@ def _create_memory(path: Path) -> WaveMind:
         persist_access_on_query=False,
         query_feedback_strength=0.0,
         audit_queries=True,
+        confidence_gate=False,
     )
 
 
