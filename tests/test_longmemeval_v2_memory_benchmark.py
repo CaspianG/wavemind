@@ -190,6 +190,8 @@ def test_memory_os_executes_inside_v2_runner_and_reuses_equal_answers(tmp_path):
     assert payload["scenario"]["official_question_haystacks"] is True
     assert payload["scenario"]["isolated_ab_stores"] is True
     assert memory_os["execution_mode"] == "memory_os_direct_feedback_free"
+    assert memory_os["retrieval_mode"] == "raw_non_production"
+    assert memory_os["production_abstention_admission_eligible"] is False
     assert memory_os["worker_runs"] == 2
     assert memory_os["worker_errors"] == 0
     assert memory_os["maintenance_interval_queries"] == 32

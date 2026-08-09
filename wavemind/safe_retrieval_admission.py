@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -19,6 +20,11 @@ from .evidence import (
 SCHEMA = "wavemind.safe_retrieval_admission.v1"
 
 
+def _canonical_sha256(path: Path) -> str:
+    content = path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return hashlib.sha256(content).hexdigest()
+
+
 def _populate(memory: WaveMind, payload: dict[str, Any], namespace: str) -> dict[str, int]:
     return {
         item["id"]: memory.remember(
@@ -33,18 +39,46 @@ def _populate(memory: WaveMind, payload: dict[str, Any], namespace: str) -> dict
 def evaluate_safe_retrieval_admission(
     dataset_path: str | Path,
     *,
+    protocol_path: str | Path,
     project_root: str | Path,
 ) -> dict[str, Any]:
     dataset = Path(dataset_path).resolve()
+    protocol_file = Path(protocol_path).resolve()
     root = Path(project_root).resolve()
     payload = json.loads(dataset.read_text(encoding="utf-8"))
+    protocol = json.loads(protocol_file.read_text(encoding="utf-8"))
+    dataset_sha256 = _canonical_sha256(dataset)
+    protocol_sha256 = _canonical_sha256(protocol_file)
+    if dataset_sha256 != protocol.get("dataset_sha256"):
+        raise ValueError("safe retrieval dataset checksum does not match protocol")
+    if payload.get("revision") != protocol.get("revision"):
+        raise ValueError("safe retrieval dataset and protocol revisions differ")
+    candidate = protocol.get("production_candidate") or {}
+    if candidate.get("confidence_gate") is not True:
+        raise ValueError("safe retrieval production candidate must enable confidence gate")
     thresholds = payload["thresholds"]
+    frozen_gates = protocol.get("frozen_gates") or {}
+    for key in (
+        "max_false_memory_injection_rate",
+        "min_relevant_recall_at_1",
+        "min_relevant_recall_ratio_vs_baseline",
+    ):
+        if float(thresholds[key]) != float(frozen_gates[key]):
+            raise ValueError(f"safe retrieval threshold {key} differs from protocol")
+    if float(candidate.get("hash_vector_threshold")) != float(
+        thresholds["hash_vector"]
+    ):
+        raise ValueError("safe retrieval hash threshold differs from protocol")
     namespace = "tenant:admission:primary"
 
     gated = WaveMind(
         db_path=None,
-        encoder=HashingTextEncoder(vector_dim=384),
+        encoder=HashingTextEncoder(vector_dim=int(candidate["vector_dim"])),
+        confidence_gate=True,
         hash_confidence_threshold=float(thresholds["hash_vector"]),
+        hash_lexical_coverage_threshold=float(
+            candidate["lexical_coverage_threshold"]
+        ),
     )
     baseline = WaveMind(
         db_path=None,
@@ -108,6 +142,8 @@ def evaluate_safe_retrieval_admission(
     checks = {
         "false_memory_injection": false_rate
         <= float(thresholds["max_false_memory_injection_rate"]),
+        "absolute_relevant_recall": gated_recall
+        >= float(thresholds["min_relevant_recall_at_1"]),
         "relevant_recall": recall_ratio
         >= float(thresholds["min_relevant_recall_ratio_vs_baseline"]),
         "namespace_isolation": namespace_leakage == 0,
@@ -119,6 +155,17 @@ def evaluate_safe_retrieval_admission(
         "generated_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
         "source_sha": repository_commit(root),
         "dataset_revision": payload["revision"],
+        "protocol_revision": protocol["revision"],
+        "dataset_sha256": dataset_sha256,
+        "protocol_sha256": protocol_sha256,
+        "execution_mode": "production_abstention_holdout",
+        "decision_run": True,
+        "production_confidence_gate": True,
+        "raw_baseline": {
+            "mode": "raw_non_production_retrieval",
+            "eligible_for_production_claim": False,
+            "claim_boundary": protocol["comparison_baseline"]["claim_boundary"],
+        },
         "thresholds": thresholds,
         "metrics": {
             "relevant_queries": len(relevant),
@@ -136,6 +183,7 @@ def evaluate_safe_retrieval_admission(
             root,
             [
                 dataset.relative_to(root),
+                protocol_file.relative_to(root),
                 Path("wavemind/core.py"),
                 Path("wavemind/safe_retrieval_admission.py"),
             ],
@@ -160,6 +208,8 @@ def render_safe_retrieval_markdown(report: dict[str, Any]) -> str:
         f"| Unverified injection | {metrics['unverified_injection']} |",
         "",
         f"Dataset: `{report['dataset_revision']}`",
+        f"Execution: `{report['execution_mode']}`",
+        "Raw baseline: **non-production; not eligible for the abstention claim**",
         f"Source SHA: `{report['source_sha']}`",
         "",
     ]
@@ -177,6 +227,15 @@ def validate_safe_retrieval_artifact(
         errors.append("safe retrieval schema is invalid")
     if report.get("source_sha") != expected_source_sha:
         errors.append("safe retrieval source SHA mismatch")
+    if report.get("execution_mode") != "production_abstention_holdout":
+        errors.append("safe retrieval did not run in production abstention mode")
+    if report.get("production_confidence_gate") is not True:
+        errors.append("safe retrieval confidence gate was not enabled")
+    raw_baseline = report.get("raw_baseline")
+    if not isinstance(raw_baseline, dict) or raw_baseline.get(
+        "eligible_for_production_claim"
+    ) is not False:
+        errors.append("raw baseline claim boundary is missing")
     manifest = report.get("source_manifest")
     if not isinstance(manifest, dict):
         errors.append("safe retrieval source manifest is missing")
@@ -195,6 +254,11 @@ def validate_safe_retrieval_artifact(
     else:
         if float(metrics.get("false_memory_injection_rate", 1.0)) > 0.02:
             errors.append("false memory injection exceeds 2 percent")
+        thresholds = report.get("thresholds") or {}
+        if float(metrics.get("gated_recall_at_1", 0.0)) < float(
+            thresholds.get("min_relevant_recall_at_1", 1.0)
+        ):
+            errors.append("relevant recall is below the frozen absolute gate")
         if int(metrics.get("namespace_leakage", 1)) != 0:
             errors.append("namespace leakage is not zero")
         if int(metrics.get("unverified_injection", 1)) != 0:

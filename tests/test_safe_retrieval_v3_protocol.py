@@ -10,13 +10,16 @@ DATASET = ROOT / "benchmarks" / "data" / "safe_product_retrieval_v3_holdout.json
 PROTOCOL = ROOT / "benchmarks" / "data" / "safe_product_retrieval_v3_protocol.json"
 
 
+def _canonical_sha256(path: Path) -> str:
+    content = path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return hashlib.sha256(content).hexdigest()
+
+
 def test_v3_holdout_is_sealed_before_first_execution() -> None:
     dataset = json.loads(DATASET.read_text(encoding="utf-8"))
     protocol = json.loads(PROTOCOL.read_text(encoding="utf-8"))
 
-    assert hashlib.sha256(DATASET.read_bytes()).hexdigest() == protocol[
-        "dataset_sha256"
-    ]
+    assert _canonical_sha256(DATASET) == protocol["dataset_sha256"]
     assert dataset["revision"] == protocol["revision"]
     assert dataset["holdout_status"] == "sealed_unexecuted"
     assert len(dataset["memories"]) == 20

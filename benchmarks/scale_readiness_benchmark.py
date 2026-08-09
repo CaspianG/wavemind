@@ -1668,6 +1668,8 @@ def run_redis_cache_profile() -> dict[str, object]:
             os_reader_stats = os_reader_cache.stats()
             return {
                 "engine": "WaveMind Redis hot cache",
+                "retrieval_mode": "raw_non_production",
+                "production_abstention_admission_eligible": False,
                 "client": "redis-compatible",
                 "shared_cache_visible_across_clients": shared_hit,
                 "cache_prewarm_warmed": prewarm.warmed,

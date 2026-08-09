@@ -202,6 +202,8 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
     assert results["WaveMind shared rate limiter"]["limited"] == 1
     assert results["WaveMind shared rate limiter"]["expire_seconds"] == 120
     assert results["WaveMind Redis hot cache"]["shared_cache_visible_across_clients"] is True
+    assert results["WaveMind Redis hot cache"]["retrieval_mode"] == "raw_non_production"
+    assert results["WaveMind Redis hot cache"]["production_abstention_admission_eligible"] is False
     assert results["WaveMind Redis hot cache"]["cache_prewarm_warmed"] == 1
     assert results["WaveMind Redis hot cache"]["cache_prewarm_cross_worker_hit"] is True
     assert results["WaveMind Redis hot cache"]["memory_os_ok"] is True

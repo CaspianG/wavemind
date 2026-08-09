@@ -1095,6 +1095,8 @@ def run_benchmark(workdir: Path) -> dict[str, Any]:
                     "environment-verification latency"
                 ),
                 "latency_repetitions_per_case": LATENCY_REPETITIONS,
+                "core_retrieval_mode": "raw_non_production",
+                "production_abstention_admission_eligible": False,
             },
             "training": {
                 "successful": sum(bool(row["success"]) for row in training_runs),

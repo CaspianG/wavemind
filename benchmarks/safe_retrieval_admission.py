@@ -17,7 +17,12 @@ def main() -> int:
     parser.add_argument(
         "--dataset",
         type=Path,
-        default=Path("benchmarks/data/safe_product_retrieval_v2_heldout.json"),
+        default=Path("benchmarks/data/safe_product_retrieval_v3_holdout.json"),
+    )
+    parser.add_argument(
+        "--protocol",
+        type=Path,
+        default=Path("benchmarks/data/safe_product_retrieval_v3_protocol.json"),
     )
     parser.add_argument(
         "--output",
@@ -28,6 +33,7 @@ def main() -> int:
     args = parser.parse_args()
     report = evaluate_safe_retrieval_admission(
         args.dataset,
+        protocol_path=args.protocol,
         project_root=PROJECT_ROOT,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
