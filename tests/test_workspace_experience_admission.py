@@ -37,10 +37,10 @@ def test_workspace_experience_gap_matrix_is_not_final_admission() -> None:
         "implemented": 8,
         "partial": 0,
         "missing": 1,
-        "failed": 1,
+        "failed": 2,
         "blocked": 1,
         "required_current": 1,
-        "total": 12,
+        "total": 13,
     }
     rows = {row["id"]: row for row in payload["rows"]}
     assert rows["historical-v3-checksum-selection-experiment"]["status"] == "failed"
@@ -54,7 +54,15 @@ def test_workspace_experience_gap_matrix_is_not_final_admission() -> None:
         ]
         == "historical_failed_checksum_selection_not_real_work"
     )
-    assert rows["frozen-real-work-benchmark-v4"]["status"] == "missing"
+    assert rows["frozen-real-work-benchmark-v4"]["status"] == "failed"
+    assert (
+        rows["frozen-real-work-benchmark-v4"]["details"]["methodology_status"]
+        == "historical_invalid_not_admission_evidence"
+    )
+    assert "hardcoded" in " ".join(
+        rows["frozen-real-work-benchmark-v4"]["details"]["invalid_reasons"]
+    )
+    assert rows["frozen-real-work-benchmark-v5"]["status"] == "missing"
     assert rows["workspace-experience-admission"]["status"] == "blocked"
     assert rows["safe-product-regression"]["status"] == "required_current"
     assert rows["workspace-identity-isolation"]["artifact"]

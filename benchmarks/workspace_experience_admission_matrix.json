@@ -1,8 +1,8 @@
 {
   "admitted": false,
-  "baseline_source_sha": "d42592553ed1036c463bc2eb864caf3ed9c31ebe",
+  "baseline_source_sha": "origin/main",
   "claim_boundary": "This matrix is a Goal 7 gap audit, not final production admission.",
-  "generated_at": "2026-08-09T22:39:52.332792+00:00",
+  "generated_at": "2026-08-10T00:10:52.924249+00:00",
   "protocol": {
     "claim_boundary": "Local, provider-neutral workspace experience proof. No GPU, paid API, private client history, universal model-quality, or external service claim.",
     "comparison_modes": [
@@ -120,11 +120,31 @@
       "test": "tests/test_workspace_experience_benchmark.py"
     },
     {
-      "artifact": "benchmarks/workspace_experience_v4_benchmark_results.json",
+      "artifact": "benchmarks/workspace_experience_v4_manifest.json",
+      "details": {
+        "heldout_status": "viewed_invalid_not_untouched",
+        "invalid_reasons": [
+          "clean_onboarding_seconds was hardcoded instead of measured from a clean subprocess flow",
+          "static baseline can collapse to zero positive success and is not the strongest static comparator",
+          "positive task success accepts outcome-kind matches without exact case/procedure validation",
+          "cross-client parity reopens the same Python manager instead of cross-surface client A to restart to client B replay"
+        ],
+        "methodology_status": "historical_invalid_not_admission_evidence",
+        "next_protocol": "v5",
+        "protocol_commit": "8214d58",
+        "source_sha": "8214d58f8a6e7671c3da9980d3512ca1634f51d5"
+      },
       "id": "frozen-real-work-benchmark-v4",
-      "requirement": "Three public repos, 60 independently sourced real workflow/test/environment cases, dev/held-out splits, static baseline comparison.",
-      "status": "missing",
+      "requirement": "Historical invalid v4 protocol; not admission evidence.",
+      "status": "failed",
       "test": "tests/test_workspace_experience_v4_benchmark.py"
+    },
+    {
+      "artifact": "benchmarks/workspace_experience_v5_benchmark_results.json",
+      "id": "frozen-real-work-benchmark-v5",
+      "requirement": "New independent real workflow benchmark with exact case/procedure success, strongest static baseline, measured onboarding, and cross-surface replay.",
+      "status": "missing",
+      "test": "tests/test_workspace_experience_v5_benchmark.py"
     },
     {
       "artifact": "benchmarks/workspace_experience_admission_results.json",
@@ -144,7 +164,7 @@
   "schema": "wavemind.workspace_experience_admission.v1",
   "source_manifest": {
     "algorithm": "sha256",
-    "digest": "36c14f477ae821ace184edbe2b8306c1fa0c30e52e3ac454e98278e431fc2330",
+    "digest": "fd82e5d0e80cc7f1fe0144c3c13f6785606ce55e8076d8beae437e71d16e05d9",
     "files": [
       {
         "path": "wavemind/workspace_experience.py",
@@ -152,7 +172,7 @@
       },
       {
         "path": "wavemind/experience_runtime.py",
-        "sha256": "83efb9046f32bffa9a93fe3d597d561a6c354340b7c40514d0f30b4adaacaff0"
+        "sha256": "2744752efd3ae5ebb66cb6a44f31902f18087d1f860a9f76f030c7f6f5b6f001"
       },
       {
         "path": "wavemind/experience_compiler.py",
@@ -164,7 +184,7 @@
       },
       {
         "path": "wavemind/workspace_experience_admission.py",
-        "sha256": "9ad1dd6766f35d3649f9f68bedbe6a7a8f5483222e9617ecfb8ba0dd003d77e7"
+        "sha256": "163b7d4cab4155b001f612c5e7b08925dc8d398909bca4ab9081b16eb059193e"
       },
       {
         "path": "wavemind/cli.py",
@@ -195,12 +215,24 @@
         "sha256": "765b499fbbe96e238ff61a4a94958de5ae71ad5474c6557e6478714d8c1451aa"
       },
       {
+        "path": "benchmarks/workspace_experience_v4_manifest.json",
+        "sha256": "46ddbe582f253a3de379935d741ffb20196cbac1ead352e491dcf0b61ed61ab1"
+      },
+      {
+        "path": "benchmarks/workspace_experience_v4_benchmark.py",
+        "sha256": "d128684f1d8a81610cc56067163a0b13d043e62a86aeaaf9d4bd97a54508b6fe"
+      },
+      {
         "path": "tests/test_workspace_experience.py",
-        "sha256": "252034d59868c1345c727d460d54393019954ba32aa9ab72ce38898287ef94a5"
+        "sha256": "aac985c227c68648b8414ec587b2e06e65a82516aca2d1ebe9d7ab479a2d9d24"
       },
       {
         "path": "tests/test_workspace_experience_benchmark.py",
         "sha256": "dc72d0d01dd35501869fe2afa17df1a3973bac1834a41e91e35cc91e65e2792d"
+      },
+      {
+        "path": "tests/test_workspace_experience_v4_benchmark.py",
+        "sha256": "54efa1d4f82eb566800627ec2af98eac0882752c2edf565e30d58fddede7239d"
       },
       {
         "path": "tests/test_experience_runtime_contracts.py",
@@ -209,15 +241,15 @@
     ],
     "schema": "wavemind.workspace_experience_source_manifest.v1"
   },
-  "source_sha": "5767541a63e91f34a0df5665aff083b07a84d300",
+  "source_sha": "8214d58f8a6e7671c3da9980d3512ca1634f51d5",
   "status": "blocked",
   "summary": {
     "blocked": 1,
-    "failed": 1,
+    "failed": 2,
     "implemented": 8,
     "missing": 1,
     "partial": 0,
     "required_current": 1,
-    "total": 12
+    "total": 13
   }
 }

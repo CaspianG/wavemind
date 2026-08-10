@@ -140,7 +140,12 @@ def test_v4_static_raw_trace_fails_on_unverified_control(tmp_path) -> None:
 
 def test_v4_heldout_requires_explicit_allowance() -> None:
     with pytest.raises(bench.WorkspaceV4BenchmarkError, match="explicit"):
-        bench.run_benchmark(split="heldout")
+        bench.run_benchmark(split="heldout", allow_invalid_protocol=True)
+
+
+def test_v4_run_is_historical_diagnostic_only() -> None:
+    with pytest.raises(bench.WorkspaceV4BenchmarkError, match="historical_invalid"):
+        bench.run_benchmark(split="dev")
 
 
 def _manifest() -> dict:

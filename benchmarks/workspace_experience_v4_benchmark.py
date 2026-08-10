@@ -29,6 +29,13 @@ from wavemind.workspace_experience import (
 MANIFEST_SCHEMA = "wavemind.workspace_experience_v4_manifest.v1"
 RESULT_SCHEMA = "wavemind.workspace_experience_v4_benchmark.v1"
 DEFAULT_MANIFEST = ROOT / "benchmarks" / "workspace_experience_v4_manifest.json"
+PROTOCOL_STATUS = "historical_invalid_not_admission_evidence"
+PROTOCOL_INVALID_REASONS = [
+    "clean_onboarding_seconds was hardcoded instead of measured from a clean subprocess flow",
+    "static baseline can collapse to zero positive success and is not the strongest static comparator",
+    "positive task success accepts outcome-kind matches without exact case/procedure validation",
+    "cross-client parity reopens the same Python manager instead of cross-surface client A to restart to client B replay",
+]
 FORBIDDEN_TASK_OUTCOMES = {"source_sha256_check", "file_hash_check", "checksum_only"}
 SUPPORTED_OUTCOMES = {
     "python_py_compile",
@@ -206,9 +213,15 @@ def run_benchmark(
     split: str = "dev",
     cache_root: str | Path | None = None,
     allow_heldout: bool = False,
+    allow_invalid_protocol: bool = False,
 ) -> dict[str, Any]:
     if split not in {"dev", "heldout"}:
         raise WorkspaceV4BenchmarkError("split must be dev or heldout")
+    if not allow_invalid_protocol:
+        raise WorkspaceV4BenchmarkError(
+            "v4 protocol is historical_invalid_not_admission_evidence; "
+            "use v5 for admission or pass allow_invalid_protocol for diagnostics"
+        )
     if split == "heldout" and not allow_heldout:
         raise WorkspaceV4BenchmarkError(
             "v4 held-out requires explicit allow_heldout after committed protocol freeze"
@@ -311,6 +324,8 @@ def run_benchmark(
                 "case_count": len(manifest["cases"]),
             },
             "protocol": {
+                "status": PROTOCOL_STATUS,
+                "invalid_reasons": PROTOCOL_INVALID_REASONS,
                 "llm_used": False,
                 "gpu_used": False,
                 "task_success_definition": (
@@ -338,12 +353,14 @@ def write_artifacts(
     output: str | Path = "benchmarks/workspace_experience_v4_dev_results.json",
     cache_root: str | Path | None = None,
     allow_heldout: bool = False,
+    allow_invalid_protocol: bool = False,
 ) -> dict[str, Any]:
     payload = run_benchmark(
         manifest_path=manifest_path,
         split=split,
         cache_root=cache_root,
         allow_heldout=allow_heldout,
+        allow_invalid_protocol=allow_invalid_protocol,
     )
     output_path = Path(output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1074,6 +1091,11 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Run the frozen heldout split after protocol freeze.",
     )
+    parser.add_argument(
+        "--allow-invalid-protocol",
+        action="store_true",
+        help="Run v4 only as a historical diagnostic; v4 is not admission evidence.",
+    )
     args = parser.parse_args(argv)
     manifest = load_manifest(args.manifest)
     if args.validate_only:
@@ -1090,6 +1112,7 @@ def main(argv: list[str] | None = None) -> int:
         output=args.output,
         cache_root=args.cache_root,
         allow_heldout=args.allow_heldout,
+        allow_invalid_protocol=args.allow_invalid_protocol,
     )
     print(
         json.dumps(

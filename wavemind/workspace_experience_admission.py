@@ -11,6 +11,12 @@ from typing import Any
 WORKSPACE_EXPERIENCE_ADMISSION_SCHEMA = "wavemind.workspace_experience_admission.v1"
 WORKSPACE_EXPERIENCE_PROTOCOL_REVISION = "workspace-experience-v1-frozen-20260810"
 WORKSPACE_EXPERIENCE_PROTOCOL_SHA256 = "fa2ebc36799b44ff54e74120da7dab3a475d40461a4963872069f5905beeb590"
+V4_INVALID_REASONS = [
+    "clean_onboarding_seconds was hardcoded instead of measured from a clean subprocess flow",
+    "static baseline can collapse to zero positive success and is not the strongest static comparator",
+    "positive task success accepts outcome-kind matches without exact case/procedure validation",
+    "cross-client parity reopens the same Python manager instead of cross-surface client A to restart to client B replay",
+]
 
 
 def workspace_experience_protocol_manifest() -> dict[str, Any]:
@@ -131,10 +137,25 @@ def evaluate_workspace_experience_admission_matrix(
         ),
         _row(
             "frozen-real-work-benchmark-v4",
-            "Three public repos, 60 independently sourced real workflow/test/environment cases, dev/held-out splits, static baseline comparison.",
-            "missing",
-            "benchmarks/workspace_experience_v4_benchmark_results.json",
+            "Historical invalid v4 protocol; not admission evidence.",
+            "failed",
+            "benchmarks/workspace_experience_v4_manifest.json",
             "tests/test_workspace_experience_v4_benchmark.py",
+            details={
+                "methodology_status": "historical_invalid_not_admission_evidence",
+                "source_sha": _git_sha(root_path),
+                "protocol_commit": "8214d58",
+                "invalid_reasons": V4_INVALID_REASONS,
+                "heldout_status": "viewed_invalid_not_untouched",
+                "next_protocol": "v5",
+            },
+        ),
+        _row(
+            "frozen-real-work-benchmark-v5",
+            "New independent real workflow benchmark with exact case/procedure success, strongest static baseline, measured onboarding, and cross-surface replay.",
+            "missing",
+            "benchmarks/workspace_experience_v5_benchmark_results.json",
+            "tests/test_workspace_experience_v5_benchmark.py",
         ),
         _row(
             "workspace-experience-admission",
@@ -348,8 +369,11 @@ def _source_manifest(root: Path) -> dict[str, Any]:
         "docs/WORKSPACE_EXPERIENCE_QUICKSTART.md",
         "benchmarks/workspace_experience_manifest.json",
         "benchmarks/workspace_experience_benchmark.py",
+        "benchmarks/workspace_experience_v4_manifest.json",
+        "benchmarks/workspace_experience_v4_benchmark.py",
         "tests/test_workspace_experience.py",
         "tests/test_workspace_experience_benchmark.py",
+        "tests/test_workspace_experience_v4_benchmark.py",
         "tests/test_experience_runtime_contracts.py",
     ]
     entries = []
