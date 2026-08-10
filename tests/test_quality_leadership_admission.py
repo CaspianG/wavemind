@@ -392,6 +392,50 @@ def test_development_results_refreshes_per_query_header(tmp_path: Path) -> None:
     ] == "implemented"
 
 
+def test_development_results_accepts_explicit_protocol_path(tmp_path: Path) -> None:
+    protocol = build_frozen_protocol(
+        root=PROJECT_ROOT,
+        memory_agent_metadata=_memory_agent_metadata(),
+        lane=CANDIDATE2_LANE,
+    )
+    protocol_path = tmp_path / "candidate2_protocol.json"
+    protocol_path.write_text(json.dumps(protocol), encoding="utf-8")
+    diagnostic_payload = _agent_memory_payload()
+    core = diagnostic_payload["results"][0]
+    memory_os = diagnostic_payload["results"][1]
+    for category in (
+        "Accurate_Retrieval",
+        "Conflict_Resolution",
+        "Long_Range_Understanding",
+        "Test_Time_Learning",
+    ):
+        core["category_success"][category] = 0.20
+        memory_os["category_success"][category] = 0.40
+        diagnostic_payload["paired_lift"]["categories"][category] = {
+            "lower": 0.10,
+            "upper": 0.30,
+        }
+    diagnostic = tmp_path / "agent.json"
+    diagnostic.write_text(json.dumps(diagnostic_payload), encoding="utf-8")
+
+    payload = write_quality_leadership_development_results(
+        root=PROJECT_ROOT,
+        agent_memory_path=diagnostic,
+        protocol_path=protocol_path,
+        results_output=tmp_path / "results.json",
+        per_query_output=tmp_path / "per_query.jsonl",
+        admission_output=tmp_path / "admission.json",
+        markdown_output=tmp_path / "admission.md",
+    )
+
+    rows = {row["id"]: row for row in payload["rows"]}
+    assert rows["protocol-snapshot-current"]["status"] == "implemented"
+    assert rows["protocol-frozen-before-heldout"]["status"] == "implemented"
+    assert rows["development-go-no-go"]["details"]["observed"]["diagnostic"].endswith(
+        "agent.json"
+    )
+
+
 def test_development_results_reject_wrong_source_diagnostic(tmp_path: Path) -> None:
     diagnostic = tmp_path / "agent.json"
     diagnostic.write_text(

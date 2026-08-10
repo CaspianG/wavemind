@@ -679,6 +679,7 @@ def write_quality_leadership_development_results(
     *,
     root: str | Path = ".",
     agent_memory_path: str | Path = DEFAULT_AGENT_MEMORY_DIAGNOSTIC_PATH,
+    protocol_path: str | Path | None = None,
     results_output: str | Path = DEFAULT_RESULTS_PATH,
     per_query_output: str | Path = DEFAULT_PER_QUERY_PATH,
     admission_output: str | Path = DEFAULT_ADMISSION_PATH,
@@ -711,6 +712,7 @@ def write_quality_leadership_development_results(
     payload = evaluate_quality_leadership_admission(
         root=root_path,
         expected_source_sha=expected_source_sha,
+        protocol_path=protocol_path,
         results_path=results_path,
         per_query_path=per_query_path,
         safe_product_path=safe_product_path,

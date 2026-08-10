@@ -23,6 +23,15 @@ def main() -> int:
         default=Path("benchmarks/agent_memory_advantage_results.json"),
     )
     parser.add_argument(
+        "--protocol",
+        type=Path,
+        default=None,
+        help=(
+            "Optional frozen protocol artifact to evaluate with the development "
+            "diagnostic. Defaults to benchmarks/quality_leadership_protocol.json."
+        ),
+    )
+    parser.add_argument(
         "--output",
         type=Path,
         default=Path("benchmarks/quality_leadership_results.json"),
@@ -50,6 +59,7 @@ def main() -> int:
     payload = write_quality_leadership_development_results(
         root=PROJECT_ROOT,
         agent_memory_path=args.agent_memory,
+        protocol_path=args.protocol,
         results_output=args.output,
         per_query_output=args.per_query_output,
         admission_output=args.admission_output,
