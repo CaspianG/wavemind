@@ -3,36 +3,46 @@
   "claim_boundary": "Development diagnostic evidence only. A blocked development gate forbids heavy/full held-out execution and forbids public quality-leadership claims.",
   "competitor_runs": [
     {
+      "eligible_for_comparison": true,
+      "embedding_comparable": true,
       "engine": "Chroma static",
       "family": "static_chroma_or_qdrant",
-      "p95_latency_ms": 3.143799985991791,
+      "p95_latency_ms": 4.352700023446232,
+      "reason": null,
       "simulated": false,
       "status": "pass",
       "task_success_rate": 0.2222222222222222
     },
     {
+      "eligible_for_comparison": true,
+      "embedding_comparable": true,
       "engine": "Qdrant static",
       "family": "static_chroma_or_qdrant",
-      "p95_latency_ms": 2.115600014803931,
+      "p95_latency_ms": 1.9106999970972538,
+      "reason": null,
       "simulated": false,
       "status": "pass",
       "task_success_rate": 0.2222222222222222
     },
     {
-      "engine": "Mem0 OSS",
-      "family": "mem0_oss",
-      "p95_latency_ms": 19.302000000607222,
-      "simulated": false,
-      "status": "pass",
-      "task_success_rate": 0.5
-    },
-    {
+      "eligible_for_comparison": true,
+      "embedding_comparable": true,
       "engine": "LangGraph persistent memory",
       "family": "langmem_or_langgraph",
-      "p95_latency_ms": 0.8864999981597066,
+      "p95_latency_ms": 0.9435999963898212,
+      "reason": null,
       "simulated": false,
       "status": "pass",
       "task_success_rate": 0.2222222222222222
+    },
+    {
+      "eligible_for_comparison": false,
+      "embedding_comparable": false,
+      "engine": "Mem0 OSS",
+      "family": "mem0_oss",
+      "reason": "Mem0 OSS is installed, but this Mem0 version only accepts configured embedder providers for Memory.from_config; the shared WaveMind hash-384 encoder is not available as a Mem0 provider in this benchmark. The Mem0 row is therefore excluded from same-embedding comparison until a verified adapter exists.",
+      "simulated": false,
+      "status": "skipped"
     }
   ],
   "confidence_intervals": {
@@ -92,11 +102,12 @@
     "diagnostic": "benchmarks/quality_leadership_agent_memory_advantage_dev_real_competitors.json",
     "errors": [
       "improved_category_count below threshold",
+      "missing real local competitors: mem0_oss",
       "LongMemEval-V2 quality gate has not been run on this protocol"
     ],
     "status": "blocked"
   },
-  "generated_at": "2026-08-10T18:59:51Z",
+  "generated_at": "2026-08-10T19:21:57Z",
   "held_out_gate": {
     "reason": "held-out is forbidden until protocol freeze and development go/no-go",
     "status": "not_opened"
@@ -108,7 +119,7 @@
   },
   "integrity": {
     "algorithm": "sha256",
-    "payload_sha256": "63a548b0ed36e4d9206ceaed8a2fe91ab503d7ad872079bfbf373cff6ab3bbfe",
+    "payload_sha256": "23e4b87bc91ffb115bfa3da619cfc8dddab88bf7e49c0ef9ff1396bb7e22058f",
     "schema": "wavemind.artifact_integrity.v1"
   },
   "measurement_runs": 5,
@@ -176,8 +187,8 @@
     "improved_category_count": 2,
     "measurement_runs": 5,
     "memory_os_uplift_over_core": 0.6111111111111112,
-    "p95_overhead_ms": -0.2091999922413379,
-    "p95_overhead_ratio": -0.09433196177743314,
+    "p95_overhead_ms": -0.03370002377778292,
+    "p95_overhead_ratio": -0.015348191269253866,
     "stale_contradiction_error_rate": 0.0
   },
   "protocol_revision": "quality-leadership-v1-20260810",
@@ -186,18 +197,18 @@
       "artifact": "benchmarks/quality_leadership_agent_memory_advantage_dev_real_competitors.json",
       "claim_boundary": "Bounded development diagnostic only; it cannot replace public held-out quality evidence or real competitor execution.",
       "id": "controlled-sequential-agent-memory",
-      "source_sha": "ebab888eab1a3f75ae08103a99a8ccc11c156f0f",
+      "source_sha": "c53c1aad38b51fe703c15eef15ce9ccca164c0ee",
       "status": "pass"
     }
   ],
   "schema": "wavemind.quality_leadership_results.v1",
   "source_manifest": {
     "algorithm": "sha256",
-    "digest": "7c82a397c1b819b61e42545ce4bb3132eed10a4e2c338c68fd610438072473c0",
+    "digest": "ae9238643de3fbd1f0f52c4123f34b8171597c9dd183c2f60342659f166b1aa0",
     "files": [
       {
         "path": "benchmarks/agent_memory_advantage_benchmark.py",
-        "sha256": "fcd242be133a0604f0bf1b423c0d4d8d7ad2d7fbfb60f27da20bdf7f7b09e431"
+        "sha256": "8fd087fb48842ed37e114be392464b57292ee4e16041890c6923828ea07cd9ba"
       },
       {
         "path": "benchmarks/goal4_quality_experiment_results.json",
@@ -253,7 +264,7 @@
       },
       {
         "path": "wavemind/quality_leadership_admission.py",
-        "sha256": "d6c42ecd6821c8a64354ba3ff49a0c24f572e22d11a3f99a4511ea12a04af0b7"
+        "sha256": "6c19dc711f6dbcf3d878e3b24e9bb55629a44aecde8db11bcf4892bc55e7bd43"
       },
       {
         "path": "wavemind/workspace_experience_admission.py",
@@ -262,6 +273,6 @@
     ],
     "schema": "wavemind.source_manifest.v1"
   },
-  "source_sha": "ebab888eab1a3f75ae08103a99a8ccc11c156f0f",
+  "source_sha": "c53c1aad38b51fe703c15eef15ce9ccca164c0ee",
   "status": "development_blocked"
 }

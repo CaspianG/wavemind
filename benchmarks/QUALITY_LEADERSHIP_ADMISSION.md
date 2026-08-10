@@ -1,9 +1,9 @@
 # Quality Leadership Admission
 
 Status: **blocked**
-Source SHA: `ebab888eab1a3f75ae08103a99a8ccc11c156f0f`
+Source SHA: `c53c1aad38b51fe703c15eef15ce9ccca164c0ee`
 Protocol: `quality-leadership-v1-20260810`
-Rows: **11/22 implemented**, 9 blocked, 2 required-current, 0 failed
+Rows: **10/22 implemented**, 10 blocked, 2 required-current, 0 failed
 
 | Row | Status | Artifact | Test |
 |---|---:|---|---|
@@ -23,7 +23,7 @@ Rows: **11/22 implemented**, 9 blocked, 2 required-current, 0 failed
 | `stale-contradiction-control` | `implemented` | `benchmarks/quality_leadership_results.json` | `tests/test_quality_leadership_admission.py` |
 | `latency-budget` | `implemented` | `benchmarks/quality_leadership_results.json` | `tests/test_quality_leadership_admission.py` |
 | `locomo-longmemeval-dynamic-categories` | `blocked` | `benchmarks/quality_leadership_results.json` | `tests/test_quality_leadership_admission.py` |
-| `real-local-competitors` | `implemented` | `benchmarks/quality_leadership_results.json` | `tests/test_quality_leadership_admission.py` |
+| `real-local-competitors` | `blocked` | `benchmarks/quality_leadership_results.json` | `tests/test_quality_leadership_admission.py` |
 | `backend-recall-loss` | `blocked` | `benchmarks/quality_leadership_results.json` | `tests/test_quality_leadership_admission.py` |
 | `five-run-confidence-intervals` | `implemented` | `benchmarks/quality_leadership_results.json` | `tests/test_quality_leadership_admission.py` |
 | `verdict-fingerprint-stability` | `blocked` | `benchmarks/quality_leadership_results.json` | `tests/test_quality_leadership_admission.py` |
@@ -34,6 +34,7 @@ Rows: **11/22 implemented**, 9 blocked, 2 required-current, 0 failed
 
 - Freeze a new independent quality-leadership development/held-out protocol before tuning.
 - Run a bounded development benchmark and stop unless the go/no-go gate passes.
+- Run real local Chroma/Qdrant, Mem0 OSS, and LangMem/LangGraph comparators on the same protocol.
 - Use exact-current CI artifacts for Safe Product and Workspace Experience on the final SHA.
 - Open the new held-out split exactly once only after protocol freeze and dev go/no-go.
 

@@ -8,16 +8,17 @@
     "results": "benchmarks/quality_leadership_results.json"
   },
   "claim_boundary": "Quality leadership is blocked until a new frozen protocol, bounded development gate, single untouched held-out run, real local competitors, current Safe Product and Workspace Experience evidence, and exact-main CI evidence all pass. The historical Goal 4 failure remains public.",
-  "expected_source_sha": "ebab888eab1a3f75ae08103a99a8ccc11c156f0f",
-  "generated_at": "2026-08-10T18:59:51Z",
+  "expected_source_sha": "c53c1aad38b51fe703c15eef15ce9ccca164c0ee",
+  "generated_at": "2026-08-10T19:21:59Z",
   "integrity": {
     "algorithm": "sha256",
-    "payload_sha256": "5a3b96d911274ae516193be2ff56ea06ebda88ea44dd3a2fe1dc60b14c4d26c4",
+    "payload_sha256": "295d762eea82da6f81c538bf91f572e2baf9483782e041a0f73910e63d31ef14",
     "schema": "wavemind.artifact_integrity.v1"
   },
   "next_actions": [
     "Freeze a new independent quality-leadership development/held-out protocol before tuning.",
     "Run a bounded development benchmark and stop unless the go/no-go gate passes.",
+    "Run real local Chroma/Qdrant, Mem0 OSS, and LangMem/LangGraph comparators on the same protocol.",
     "Use exact-current CI artifacts for Safe Product and Workspace Experience on the final SHA.",
     "Open the new held-out split exactly once only after protocol freeze and dev go/no-go."
   ],
@@ -26,8 +27,8 @@
     {
       "artifact": "git rev-parse HEAD",
       "details": {
-        "expected_source_sha": "ebab888eab1a3f75ae08103a99a8ccc11c156f0f",
-        "source_sha": "ebab888eab1a3f75ae08103a99a8ccc11c156f0f"
+        "expected_source_sha": "c53c1aad38b51fe703c15eef15ce9ccca164c0ee",
+        "source_sha": "c53c1aad38b51fe703c15eef15ce9ccca164c0ee"
       },
       "id": "source-sha-exact",
       "requirement": "Admission is evaluated against the exact current source SHA.",
@@ -126,6 +127,7 @@
           "diagnostic": "benchmarks/quality_leadership_agent_memory_advantage_dev_real_competitors.json",
           "errors": [
             "improved_category_count below threshold",
+            "missing real local competitors: mem0_oss",
             "LongMemEval-V2 quality gate has not been run on this protocol"
           ],
           "status": "blocked"
@@ -219,8 +221,8 @@
     {
       "artifact": "benchmarks/quality_leadership_results.json",
       "details": {
-        "p95_overhead_ms": -0.2091999922413379,
-        "p95_overhead_ratio": -0.09433196177743314,
+        "p95_overhead_ms": -0.03370002377778292,
+        "p95_overhead_ratio": -0.015348191269253866,
         "targets": {
           "p95_overhead_ms": 5.0,
           "p95_overhead_ratio": 0.2
@@ -246,17 +248,19 @@
     {
       "artifact": "benchmarks/quality_leadership_results.json",
       "details": {
-        "missing": [],
+        "missing": [
+          "mem0_oss"
+        ],
+        "non_comparable": [],
         "observed": [
           "langmem_or_langgraph",
-          "mem0_oss",
           "static_chroma_or_qdrant"
         ],
         "simulated": []
       },
       "id": "real-local-competitors",
       "requirement": "Runnable local competitors are real packages/runs, not simulated baselines.",
-      "status": "implemented",
+      "status": "blocked",
       "test": "tests/test_quality_leadership_admission.py"
     },
     {
@@ -321,11 +325,11 @@
   "schema": "wavemind.quality_leadership_admission.v1",
   "source_manifest": {
     "algorithm": "sha256",
-    "digest": "7c82a397c1b819b61e42545ce4bb3132eed10a4e2c338c68fd610438072473c0",
+    "digest": "ae9238643de3fbd1f0f52c4123f34b8171597c9dd183c2f60342659f166b1aa0",
     "files": [
       {
         "path": "benchmarks/agent_memory_advantage_benchmark.py",
-        "sha256": "fcd242be133a0604f0bf1b423c0d4d8d7ad2d7fbfb60f27da20bdf7f7b09e431"
+        "sha256": "8fd087fb48842ed37e114be392464b57292ee4e16041890c6923828ea07cd9ba"
       },
       {
         "path": "benchmarks/goal4_quality_experiment_results.json",
@@ -381,7 +385,7 @@
       },
       {
         "path": "wavemind/quality_leadership_admission.py",
-        "sha256": "d6c42ecd6821c8a64354ba3ff49a0c24f572e22d11a3f99a4511ea12a04af0b7"
+        "sha256": "6c19dc711f6dbcf3d878e3b24e9bb55629a44aecde8db11bcf4892bc55e7bd43"
       },
       {
         "path": "wavemind/workspace_experience_admission.py",
@@ -390,13 +394,13 @@
     ],
     "schema": "wavemind.source_manifest.v1"
   },
-  "source_sha": "ebab888eab1a3f75ae08103a99a8ccc11c156f0f",
+  "source_sha": "c53c1aad38b51fe703c15eef15ce9ccca164c0ee",
   "status": "blocked",
   "summary": {
-    "blocked": 9,
+    "blocked": 10,
     "failed": 0,
     "historical": 0,
-    "implemented": 11,
+    "implemented": 10,
     "required_current": 2,
     "total": 22
   }
