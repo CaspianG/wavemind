@@ -15,6 +15,7 @@ from wavemind.quality_leadership_admission import (
     quality_leadership_results_from_diagnostics,
     quality_leadership_protocol_manifest,
     validate_goal4_failure_artifact,
+    write_quality_leadership_development_results,
 )
 from wavemind.evidence import (
     attach_artifact_integrity,
@@ -269,6 +270,39 @@ def test_development_results_extract_metrics_but_keep_gate_blocked(tmp_path: Pat
     assert "missing real local competitors" in " ".join(
         payload["development_gate"]["errors"]
     )
+
+
+def test_development_results_refreshes_per_query_header(tmp_path: Path) -> None:
+    diagnostic = tmp_path / "agent.json"
+    diagnostic.write_text(json.dumps(_agent_memory_payload()), encoding="utf-8")
+    per_query = tmp_path / "quality_leadership_per_query.jsonl"
+    per_query.write_text(
+        json.dumps(
+            {
+                "schema": "wavemind.quality_leadership_per_query.v1",
+                "status": "not_run",
+                "source_sha": "0" * 40,
+            },
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    payload = write_quality_leadership_development_results(
+        root=PROJECT_ROOT,
+        agent_memory_path=diagnostic,
+        results_output=tmp_path / "results.json",
+        per_query_output=per_query,
+        admission_output=tmp_path / "admission.json",
+        markdown_output=tmp_path / "admission.md",
+    )
+
+    header = json.loads(per_query.read_text(encoding="utf-8").splitlines()[0])
+    assert header["source_sha"] == _source_sha()
+    assert {row["id"]: row for row in payload["rows"]}["per-query-artifact"][
+        "status"
+    ] == "implemented"
 
 
 def test_development_results_reject_wrong_source_diagnostic(tmp_path: Path) -> None:

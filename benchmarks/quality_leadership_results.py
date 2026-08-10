@@ -37,6 +37,11 @@ def main() -> int:
         type=Path,
         default=Path("benchmarks/QUALITY_LEADERSHIP_ADMISSION.md"),
     )
+    parser.add_argument(
+        "--per-query-output",
+        type=Path,
+        default=Path("benchmarks/quality_leadership_per_query.jsonl"),
+    )
     parser.add_argument("--expected-source-sha")
     parser.add_argument("--safe-product", type=Path, default=None)
     parser.add_argument("--workspace-experience", type=Path, default=None)
@@ -46,6 +51,7 @@ def main() -> int:
         root=PROJECT_ROOT,
         agent_memory_path=args.agent_memory,
         results_output=args.output,
+        per_query_output=args.per_query_output,
         admission_output=args.admission_output,
         markdown_output=args.markdown_output,
         expected_source_sha=args.expected_source_sha,

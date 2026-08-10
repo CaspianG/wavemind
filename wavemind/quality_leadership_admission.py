@@ -611,6 +611,7 @@ def write_quality_leadership_development_results(
     root: str | Path = ".",
     agent_memory_path: str | Path = DEFAULT_AGENT_MEMORY_DIAGNOSTIC_PATH,
     results_output: str | Path = DEFAULT_RESULTS_PATH,
+    per_query_output: str | Path = DEFAULT_PER_QUERY_PATH,
     admission_output: str | Path = DEFAULT_ADMISSION_PATH,
     markdown_output: str | Path = DEFAULT_ADMISSION_MARKDOWN_PATH,
     expected_source_sha: str | None = None,
@@ -619,6 +620,7 @@ def write_quality_leadership_development_results(
 ) -> dict[str, Any]:
     root_path = Path(root)
     results_path = _resolve(root_path, results_output)
+    per_query_path = _resolve(root_path, per_query_output)
     admission_path = _resolve(root_path, admission_output)
     markdown_path = _resolve(root_path, markdown_output)
     _write_json(
@@ -628,10 +630,20 @@ def write_quality_leadership_development_results(
             agent_memory_path=agent_memory_path,
         ),
     )
+    _write_text(
+        per_query_path,
+        json.dumps(
+            quality_leadership_per_query_header(root=root_path),
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+        + "\n",
+    )
     payload = evaluate_quality_leadership_admission(
         root=root_path,
         expected_source_sha=expected_source_sha,
         results_path=results_path,
+        per_query_path=per_query_path,
         safe_product_path=safe_product_path,
         workspace_experience_path=workspace_experience_path,
     )
