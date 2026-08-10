@@ -15,7 +15,7 @@
       "static_chroma_or_qdrant"
     ]
   },
-  "generated_at": "2026-08-10T21:21:33Z",
+  "generated_at": "2026-08-10T21:37:24Z",
   "go_no_go": {
     "dev_gate_required_before_full_run": true,
     "max_architecture_candidates_before_blocked": 2,
@@ -43,7 +43,7 @@
   },
   "integrity": {
     "algorithm": "sha256",
-    "payload_sha256": "b61223bc26c704e5ad89d9ca998fcbd954c5a8da046ad6f81e0537aa263dcf1a",
+    "payload_sha256": "f319b0c8bbc086a1b7ed247300346b7eb2415b78d0bd488f25d71ab665ddabaf",
     "schema": "wavemind.artifact_integrity.v1"
   },
   "new_quality_dataset": {
@@ -335,7 +335,7 @@
   "schema": "wavemind.quality_leadership_protocol.v1",
   "source_manifest": {
     "algorithm": "sha256",
-    "digest": "5df5308397a75f9bfba089dd40cad26d5dc0cce3e1a372874611086c3b4d7a9f",
+    "digest": "e7635cbffb378cfc894fdd6bc514e8189d772c7f5b4f58c89a966845ada12672",
     "files": [
       {
         "path": "benchmarks/agent_memory_advantage_benchmark.py",
@@ -399,7 +399,7 @@
       },
       {
         "path": "wavemind/quality_leadership_admission.py",
-        "sha256": "464a296c0c76b61f09e8ed4b6ca455942f7a9b224171e513a16d3b4d6085d480"
+        "sha256": "3c51b268cb3cc5d6567144424ea367b7f86ada49dc098e92b42f7f26c236aa59"
       },
       {
         "path": "wavemind/workspace_experience_admission.py",
@@ -408,7 +408,7 @@
     ],
     "schema": "wavemind.source_manifest.v1"
   },
-  "source_sha": "527ec84c2c42cfc107d75e9ed6b4df62769491dc",
+  "source_sha": "28c18b96d546b0d3e4fbeb321c30b8963e2e3be6",
   "status": "frozen_before_heldout",
   "thresholds": {
     "backend_recall_loss_max": 0.01,
