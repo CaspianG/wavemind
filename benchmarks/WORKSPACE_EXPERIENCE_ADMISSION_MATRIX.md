@@ -1,7 +1,7 @@
 # Workspace Experience Admission Matrix
 
 - Status: `blocked`
-- Source SHA: `530e8362b8356f2b6e9563572ac665f7420f234f`
+- Source SHA: `c1dc8eb4e25ce5290def04ac851c846c6b33d13d`
 - Protocol: `workspace-experience-v1-frozen-20260810`
 - Protocol SHA-256: `fa2ebc36799b44ff54e74120da7dab3a475d40461a4963872069f5905beeb590`
 
@@ -17,7 +17,7 @@
 | `workspace-onboarding` | `implemented` | `docs/WORKSPACE_EXPERIENCE_QUICKSTART.md` | `tests/test_workspace_experience.py` |
 | `historical-v3-checksum-selection-experiment` | `failed` | `benchmarks/workspace_experience_benchmark_results.json` | `tests/test_workspace_experience_benchmark.py` |
 | `frozen-real-work-benchmark-v4` | `failed` | `benchmarks/workspace_experience_v4_manifest.json` | `tests/test_workspace_experience_v4_benchmark.py` |
-| `frozen-real-work-benchmark-v5` | `missing` | `benchmarks/workspace_experience_v5_benchmark_results.json` | `tests/test_workspace_experience_v5_benchmark.py` |
+| `frozen-real-work-benchmark-v5` | `blocked` | `benchmarks/workspace_experience_v5_benchmark_results.json` | `tests/test_workspace_experience_v5_benchmark.py` |
 | `workspace-experience-admission` | `blocked` | `benchmarks/workspace_experience_admission_results.json` | `tests/test_workspace_experience_admission.py` |
 | `safe-product-regression` | `required_current` | `benchmarks/safe_product_admission_results.json` | `.github/workflows/safe-product.yml` |
 
