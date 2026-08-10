@@ -1,14 +1,19 @@
 from __future__ import annotations
 
 import argparse
+import gc
 import hashlib
 import importlib.util
 import json
+import logging
+import os
 import platform
 import random
 import statistics
 import subprocess
 import sys
+import tempfile
+import time
 from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -59,6 +64,13 @@ def _source_ref() -> str:
         ).strip()
     except Exception:
         return "unknown"
+
+
+def _module_available(name: str) -> bool:
+    try:
+        return importlib.util.find_spec(name) is not None
+    except ModuleNotFoundError:
+        return False
 
 
 def _bootstrap_ci(
@@ -137,6 +149,13 @@ def build_dynamic_dataset() -> EvidenceDataset:
     )
 
 
+def _full_context_token_budget(dataset: EvidenceDataset) -> int:
+    return sum(
+        max(1, int(len(memory.text.split()) * 1.25 + 0.999))
+        for memory in dataset.memories
+    )
+
+
 def _full_context(
     dataset: EvidenceDataset,
     _encoder: Any,
@@ -158,10 +177,7 @@ def _full_context(
         rankings,
         texts,
         [0.0 for _ in dataset.queries],
-        sum(
-            max(1, int(len(memory.text.split()) * 1.25 + 0.999))
-            for memory in dataset.memories
-        ),
+        _full_context_token_budget(dataset),
         2,
         "Full context",
     )
@@ -177,10 +193,7 @@ def _no_memory(
         {query.id: [] for query in dataset.queries},
         {query.id: [] for query in dataset.queries},
         [0.0 for _ in dataset.queries],
-        sum(
-            max(1, int(len(memory.text.split()) * 1.25 + 0.999))
-            for memory in dataset.memories
-        ),
+        _full_context_token_budget(dataset),
         1,
         "No memory",
     )
@@ -292,6 +305,165 @@ def _run_real_baseline(
     return _aggregate_trials(engine, trials, category_counts)
 
 
+def _mem0_rows(response: Any) -> list[dict[str, Any]]:
+    rows = response.get("results") if isinstance(response, dict) else response
+    return [row for row in rows or [] if isinstance(row, dict)]
+
+
+def _mem0_evidence_ids(response: Any) -> list[str]:
+    ids: list[str] = []
+    for row in _mem0_rows(response):
+        metadata = row.get("metadata") or {}
+        evidence_id = metadata.get("evidence_id")
+        if evidence_id:
+            ids.append(str(evidence_id))
+    return ids
+
+
+def _mem0_texts(response: Any) -> list[str]:
+    texts: list[str] = []
+    for row in _mem0_rows(response):
+        text = (
+            row.get("memory")
+            or row.get("text")
+            or row.get("document")
+            or row.get("content")
+            or ""
+        )
+        texts.append(str(text))
+    return texts
+
+
+def run_mem0_oss(
+    dataset: EvidenceDataset,
+    _encoder: Any,
+    top_k: int,
+) -> EvidenceMetrics:
+    os.environ.setdefault("MEM0_TELEMETRY", "False")
+    logging.getLogger("mem0.utils.spacy_models").setLevel(logging.ERROR)
+
+    from mem0 import Memory
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        config = {
+            "llm": {
+                "provider": "openai",
+                "config": {"api_key": "dummy-not-used-with-infer-false"},
+            },
+            "embedder": {
+                "provider": "fastembed",
+                "config": {"model": "BAAI/bge-small-en-v1.5"},
+            },
+            "vector_store": {
+                "provider": "qdrant",
+                "config": {
+                    "path": str(root / "qdrant"),
+                    "collection_name": "wavemind_quality_leadership_mem0",
+                    "embedding_model_dims": 384,
+                },
+            },
+            "history_db_path": str(root / "history.db"),
+        }
+        memory = Memory.from_config(config)
+        try:
+            for item in dataset.memories:
+                memory.add(
+                    item.text,
+                    user_id=item.namespace,
+                    metadata={
+                        "evidence_id": item.id,
+                        "namespace": item.namespace,
+                    },
+                    infer=False,
+                )
+            rankings: dict[str, list[str]] = {}
+            texts: dict[str, list[str]] = {}
+            latencies: list[float] = []
+            for query in dataset.queries:
+                started = time.perf_counter()
+                response = memory.search(
+                    query.text,
+                    filters={"user_id": query.namespace},
+                    top_k=top_k,
+                    threshold=0.0,
+                    show_expired=False,
+                )
+                latencies.append((time.perf_counter() - started) * 1000.0)
+                rankings[query.id] = _mem0_evidence_ids(response)
+                texts[query.id] = _mem0_texts(response)
+        finally:
+            memory.close()
+            del memory
+            gc.collect()
+    return compute_evidence_metrics(
+        dataset.queries,
+        rankings,
+        texts,
+        latencies,
+        _full_context_token_budget(dataset),
+        top_k,
+        "Mem0 OSS",
+    )
+
+
+def run_langgraph_persistent(
+    dataset: EvidenceDataset,
+    encoder: Any,
+    top_k: int,
+) -> EvidenceMetrics:
+    from langgraph.store.sqlite import SqliteStore
+
+    def embed(texts: str | list[str]) -> list[list[float]]:
+        batch = [texts] if isinstance(texts, str) else list(texts)
+        return [
+            encoder.encode_vector(text).astype(float).tolist()
+            for text in batch
+        ]
+
+    with tempfile.TemporaryDirectory() as tmp:
+        db_path = Path(tmp) / "langgraph-store.sqlite"
+        with SqliteStore.from_conn_string(
+            str(db_path),
+            index={"dims": int(encoder.vector_dim), "embed": embed, "fields": ["text"]},
+        ) as store:
+            store.setup()
+            for item in dataset.memories:
+                store.put(
+                    (item.namespace,),
+                    item.id,
+                    {
+                        "text": item.text,
+                        "evidence_id": item.id,
+                        "namespace": item.namespace,
+                    },
+                )
+            rankings: dict[str, list[str]] = {}
+            texts: dict[str, list[str]] = {}
+            latencies: list[float] = []
+            for query in dataset.queries:
+                started = time.perf_counter()
+                results = store.search((query.namespace,), query=query.text, limit=top_k)
+                latencies.append((time.perf_counter() - started) * 1000.0)
+                rankings[query.id] = [
+                    str(item.value.get("evidence_id", item.key))
+                    for item in results
+                ]
+                texts[query.id] = [
+                    str(item.value.get("text", ""))
+                    for item in results
+                ]
+    return compute_evidence_metrics(
+        dataset.queries,
+        rankings,
+        texts,
+        latencies,
+        _full_context_token_budget(dataset),
+        top_k,
+        "LangGraph persistent memory",
+    )
+
+
 def _ab_rows(
     ab_payload: dict[str, Any],
     category_counts: dict[str, int],
@@ -399,11 +571,9 @@ def _paired_case_lifts(
 def _optional_competitors() -> list[dict[str, Any]]:
     rows = []
     for engine, module in (
-        ("Mem0 OSS", "mem0"),
-        ("LangMem / LangGraph", "langmem"),
         ("Graphiti", "graphiti_core"),
     ):
-        installed = importlib.util.find_spec(module) is not None
+        installed = _module_available(module)
         rows.append(
             {
                 "engine": engine,
@@ -426,6 +596,8 @@ def run_benchmark(
     measurement_trials: int = MEASUREMENT_TRIALS,
     include_chroma: bool = True,
     include_qdrant: bool = True,
+    include_mem0: bool = True,
+    include_langgraph: bool = True,
 ) -> dict[str, Any]:
     if measurement_trials < 5:
         raise ValueError("measurement_trials must be at least 5")
@@ -488,12 +660,24 @@ def run_benchmark(
         )
     )
 
-    requested_real_baselines: list[tuple[str, str, Runner, bool]] = [
-        ("Chroma static", "chromadb", run_chroma_static, include_chroma),
-        ("Qdrant static", "qdrant_client", run_qdrant_static, include_qdrant),
+    requested_real_baselines: list[tuple[str, tuple[str, ...], Runner, bool]] = [
+        ("Chroma static", ("chromadb",), run_chroma_static, include_chroma),
+        ("Qdrant static", ("qdrant_client",), run_qdrant_static, include_qdrant),
+        (
+            "Mem0 OSS",
+            ("mem0", "fastembed", "qdrant_client"),
+            run_mem0_oss,
+            include_mem0,
+        ),
+        (
+            "LangGraph persistent memory",
+            ("langgraph.store.sqlite",),
+            run_langgraph_persistent,
+            include_langgraph,
+        ),
     ]
     skipped: list[dict[str, Any]] = []
-    for engine, module, runner, enabled in requested_real_baselines:
+    for engine, modules, runner, enabled in requested_real_baselines:
         if not enabled:
             skipped.append(
                 {
@@ -504,26 +688,40 @@ def run_benchmark(
                 }
             )
             continue
-        if importlib.util.find_spec(module) is None:
+        missing_modules = [module for module in modules if not _module_available(module)]
+        if missing_modules:
             skipped.append(
                 {
                     "engine": engine,
                     "status": "skipped",
-                    "reason": f"{module}_not_installed; no imitation substituted",
+                    "reason": (
+                        f"{', '.join(missing_modules)}_not_installed; "
+                        "no imitation substituted"
+                    ),
                     "eligible_for_comparison": False,
                 }
             )
             continue
-        rows.append(
-            _run_real_baseline(
-                engine=engine,
-                runner=runner,
-                dataset=dataset,
-                encoder=encoder,
-                category_counts=category_counts,
-                measurement_trials=measurement_trials,
+        try:
+            rows.append(
+                _run_real_baseline(
+                    engine=engine,
+                    runner=runner,
+                    dataset=dataset,
+                    encoder=encoder,
+                    category_counts=category_counts,
+                    measurement_trials=measurement_trials,
+                )
             )
-        )
+        except Exception as exc:
+            skipped.append(
+                {
+                    "engine": engine,
+                    "status": "skipped",
+                    "reason": f"same-protocol adapter failed: {type(exc).__name__}: {exc}",
+                    "eligible_for_comparison": False,
+                }
+            )
 
     overall_lift, category_lifts = _paired_case_lifts(
         memory_os,
@@ -596,6 +794,8 @@ def main() -> int:
     parser.add_argument("--measurement-trials", type=int, default=MEASUREMENT_TRIALS)
     parser.add_argument("--without-chroma", action="store_true")
     parser.add_argument("--without-qdrant", action="store_true")
+    parser.add_argument("--without-mem0", action="store_true")
+    parser.add_argument("--without-langgraph", action="store_true")
     parser.add_argument(
         "--output",
         type=Path,
@@ -606,6 +806,8 @@ def main() -> int:
         measurement_trials=args.measurement_trials,
         include_chroma=not args.without_chroma,
         include_qdrant=not args.without_qdrant,
+        include_mem0=not args.without_mem0,
+        include_langgraph=not args.without_langgraph,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(

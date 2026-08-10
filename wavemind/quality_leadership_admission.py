@@ -867,6 +867,7 @@ def _competitors_from_agent_memory(payload: Mapping[str, Any] | None) -> list[di
         "Qdrant static": "static_chroma_or_qdrant",
         "Mem0 OSS": "mem0_oss",
         "LangMem / LangGraph": "langmem_or_langgraph",
+        "LangGraph persistent memory": "langmem_or_langgraph",
     }
     for row in payload.get("results") or []:
         if not isinstance(row, Mapping):

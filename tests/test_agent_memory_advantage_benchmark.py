@@ -20,6 +20,8 @@ def test_advantage_benchmark_reports_paired_confidence_and_honest_skips():
         measurement_trials=5,
         include_chroma=False,
         include_qdrant=False,
+        include_mem0=False,
+        include_langgraph=False,
     )
     results = {row["engine"]: row for row in payload["results"]}
     memory_os = results["WaveMind + Memory OS"]
@@ -53,4 +55,5 @@ def test_advantage_benchmark_reports_paired_confidence_and_honest_skips():
     skipped = {row["engine"]: row for row in payload["skipped"]}
     assert skipped["Chroma static"]["reason"] == "disabled_by_cli"
     assert skipped["Qdrant static"]["reason"] == "disabled_by_cli"
-    assert "no imitation" in skipped["Mem0 OSS"]["reason"]
+    assert skipped["Mem0 OSS"]["reason"] == "disabled_by_cli"
+    assert skipped["LangGraph persistent memory"]["reason"] == "disabled_by_cli"
