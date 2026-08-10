@@ -2,7 +2,7 @@
   "admitted": false,
   "baseline_source_sha": "origin/main",
   "claim_boundary": "This checked-in payload is a Goal 7 evidence snapshot. It is not an exact-current PR or main admission; exact verdicts are produced by CI artifacts on the current SHA. The goal remains blocked while Safe Product is required_current.",
-  "generated_at": "2026-08-10T01:49:42.066287+00:00",
+  "generated_at": "2026-08-10T01:55:23.149740+00:00",
   "protocol": {
     "claim_boundary": "Local, provider-neutral workspace experience proof. No GPU, paid API, private client history, universal model-quality, or external service claim.",
     "comparison_modes": [
@@ -132,7 +132,7 @@
         "methodology_status": "historical_invalid_not_admission_evidence",
         "next_protocol": "v5",
         "protocol_commit": "8214d58",
-        "source_sha": "b984e202d9963b13bd842886b2b989304b1b294f"
+        "source_sha": "b54b0fd34ab62841b2963261cbf25054846889a1"
       },
       "id": "frozen-real-work-benchmark-v4",
       "requirement": "Historical invalid v4 protocol; not admission evidence.",
@@ -173,7 +173,7 @@
     {
       "artifact": "benchmarks/safe_product_admission_results.json",
       "details": {
-        "current_source_sha": "b984e202d9963b13bd842886b2b989304b1b294f",
+        "current_source_sha": "b54b0fd34ab62841b2963261cbf25054846889a1",
         "reason": "safe product admission is not current for this source SHA",
         "result_status": "admitted",
         "source_sha": "92c539d0a0696c2dcb1a02d130a3be3bd5020635",
@@ -191,11 +191,11 @@
   "schema": "wavemind.workspace_experience_admission.v1",
   "source_manifest": {
     "algorithm": "sha256",
-    "digest": "01d502dce2a477af0f7a4864a368069b15a3b5d0f5d614ab0729100cac67c576",
+    "digest": "219979a4b02e9f5ac955581a37af9b8dfb709f1b8ce61c3a67e37d47d34e1b92",
     "files": [
       {
         "path": "wavemind/workspace_experience.py",
-        "sha256": "52f4c818cbf947eb88111b7faf1fd709e7cf6ca4d6a3f1e1e48de0817c36c1d8"
+        "sha256": "221c0d35482749ef22263403e89b875fc069540ebe23702ac02c34ebce8d0747"
       },
       {
         "path": "wavemind/experience_runtime.py",
@@ -292,7 +292,7 @@
     ],
     "schema": "wavemind.workspace_experience_source_manifest.v1"
   },
-  "source_sha": "b984e202d9963b13bd842886b2b989304b1b294f",
+  "source_sha": "b54b0fd34ab62841b2963261cbf25054846889a1",
   "status": "blocked",
   "summary": {
     "blocked": 0,
