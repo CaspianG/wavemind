@@ -274,12 +274,24 @@ def test_checked_in_quality_leadership_admission_blocks_without_new_evidence() -
     assert payload["status"] == "blocked"
     assert payload["admitted"] is False
     assert rows["goal4-failure-preserved"]["status"] == "implemented"
-    assert rows["protocol-frozen-before-heldout"]["status"] == "blocked"
+    assert expected_freeze_status == "implemented"
+    if protocol["source_sha"] == payload["source_sha"]:
+        freeze_row = rows["protocol-frozen-before-heldout"]
+    else:
+        assert rows["protocol-snapshot-current"]["status"] == "blocked"
+        assert rows["results-artifact-current"]["status"] == "blocked"
+        snapshot_payload = evaluate_quality_leadership_admission(
+            root=PROJECT_ROOT,
+            expected_source_sha=protocol["source_sha"],
+        )
+        freeze_row = {
+            row["id"]: row for row in snapshot_payload["rows"]
+        }["protocol-frozen-before-heldout"]
+    assert freeze_row["status"] == "blocked"
     assert any(
         "category improvement ceiling below threshold" in error
-        for error in rows["protocol-frozen-before-heldout"]["details"]["errors"]
+        for error in freeze_row["details"]["errors"]
     )
-    assert expected_freeze_status == "implemented"
     assert rows["development-go-no-go"]["status"] == "blocked"
     assert rows["heldout-opened-once"]["status"] == "blocked"
 
