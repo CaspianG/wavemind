@@ -351,6 +351,16 @@ def test_development_results_extract_metrics_but_keep_gate_blocked(tmp_path: Pat
     ]
     assert taxonomy["held_out_policy"].startswith("not_opened")
     assert taxonomy["blockers"][0]["id"] == "category_improvement_ceiling"
+    assert any(
+        blocker["id"] == "real_local_competitors_missing"
+        and blocker["missing_families"]
+        == [
+            "langmem_or_langgraph",
+            "mem0_oss",
+            "static_chroma_or_qdrant",
+        ]
+        for blocker in taxonomy["blockers"]
+    )
     assert "category_improvement_ceiling below threshold" in " ".join(
         payload["development_gate"]["errors"]
     )
@@ -433,6 +443,55 @@ def test_development_results_accepts_explicit_protocol_path(tmp_path: Path) -> N
     assert rows["protocol-frozen-before-heldout"]["status"] == "implemented"
     assert rows["development-go-no-go"]["details"]["observed"]["diagnostic"].endswith(
         "agent.json"
+    )
+
+
+def test_candidate2_blocker_taxonomy_uses_candidate2_split_identity(
+    tmp_path: Path,
+) -> None:
+    protocol = build_frozen_protocol(
+        root=PROJECT_ROOT,
+        memory_agent_metadata=_memory_agent_metadata(),
+        lane=CANDIDATE2_LANE,
+    )
+    protocol_path = tmp_path / "candidate2_protocol.json"
+    protocol_path.write_text(json.dumps(protocol), encoding="utf-8")
+    diagnostic_payload = _agent_memory_payload()
+    diagnostic_payload["protocol"] = {
+        **diagnostic_payload["protocol"],
+        "lane": CANDIDATE2_LANE,
+        "development_split_sha256": protocol["new_quality_dataset"][
+            "development_split_sha256"
+        ],
+        "held_out_viewed": False,
+    }
+    diagnostic = tmp_path / "agent.json"
+    diagnostic.write_text(json.dumps(diagnostic_payload), encoding="utf-8")
+    results = tmp_path / "results.json"
+
+    write_quality_leadership_development_results(
+        root=PROJECT_ROOT,
+        agent_memory_path=diagnostic,
+        protocol_path=protocol_path,
+        results_output=results,
+        per_query_output=tmp_path / "per_query.jsonl",
+        admission_output=tmp_path / "admission.json",
+        markdown_output=tmp_path / "admission.md",
+    )
+
+    payload = json.loads(results.read_text(encoding="utf-8"))
+    taxonomy = payload["blocker_taxonomy"]
+    assert taxonomy["candidate"] == "candidate-2-memoryagentbench-balanced"
+    assert taxonomy["failed_candidates"][0]["id"] == (
+        "candidate-2-memoryagentbench-balanced"
+    )
+    assert taxonomy["failed_candidates"][0]["frozen_split_sha256"] == (
+        protocol["new_quality_dataset"]["development_split_sha256"]
+    )
+    assert "MemoryAgentBench-balanced" in taxonomy["failed_candidates"][0]["reason"]
+    assert any(
+        blocker["id"] == "real_local_competitors_missing"
+        for blocker in taxonomy["blockers"]
     )
 
 

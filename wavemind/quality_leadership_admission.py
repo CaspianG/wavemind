@@ -240,14 +240,7 @@ def quality_leadership_results_from_diagnostics(
         gate_errors.append("latency overhead metrics missing")
     elif float(metrics["p95_overhead_ms"]) > QUALITY_THRESHOLDS["p95_overhead_ms_max"] or float(metrics["p95_overhead_ratio"]) > QUALITY_THRESHOLDS["p95_overhead_ratio_max"]:
         gate_errors.append("latency overhead exceeds threshold")
-    missing_competitors = sorted(REQUIRED_LOCAL_COMPETITORS - {
-        str(row.get("family"))
-        for row in competitor_runs
-        if row.get("status") == "pass"
-        and row.get("simulated") is not True
-        and row.get("eligible_for_comparison") is True
-        and row.get("embedding_comparable") is True
-    })
+    missing_competitors = _missing_real_competitor_families(competitor_runs)
     if missing_competitors:
         gate_errors.append(f"missing real local competitors: {', '.join(missing_competitors)}")
     if "longmemeval_v2_quality" not in metrics:
@@ -286,7 +279,12 @@ def quality_leadership_results_from_diagnostics(
         ],
         "competitor_runs": competitor_runs,
         "metrics": metrics,
-        "blocker_taxonomy": _development_blocker_taxonomy(metrics, gate_errors),
+        "blocker_taxonomy": _development_blocker_taxonomy(
+            metrics,
+            gate_errors,
+            agent_payload=agent_payload,
+            competitor_runs=competitor_runs,
+        ),
         "historical_goal4_failure": {
             "artifact": GOAL4_ARTIFACT_PATH.as_posix(),
             "status": "preserved_failed_experiment",
@@ -1210,8 +1208,14 @@ def _category_improvement_analysis(
 def _development_blocker_taxonomy(
     metrics: Mapping[str, Any],
     gate_errors: list[str],
+    *,
+    agent_payload: Mapping[str, Any] | None = None,
+    competitor_runs: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     category_analysis = metrics.get("category_improvement_analysis")
+    candidate = _candidate_context_from_agent_payload(agent_payload)
+    competitor_rows = competitor_runs or []
+    missing_competitors = _missing_real_competitor_families(competitor_rows)
     blockers: list[dict[str, Any]] = []
     failed_candidates: list[dict[str, Any]] = []
     if (
@@ -1221,13 +1225,10 @@ def _development_blocker_taxonomy(
     ):
         failed_candidates.append(
             {
-                "id": "candidate-1",
+                "id": candidate["id"],
                 "status": "failed",
-                "reason": (
-                    "bounded development evidence on the preregistered 18-case "
-                    "split cannot reach the four-category improvement gate"
-                ),
-                "frozen_split_sha256": FROZEN_V1_DEVELOPMENT_SPLIT_SHA256,
+                "reason": candidate["category_ceiling_failure_reason"],
+                "frozen_split_sha256": candidate["development_split_sha256"],
                 "improvement_ceiling_over_core": _as_int(
                     category_analysis.get("improvement_ceiling_over_core")
                 ),
@@ -1252,6 +1253,49 @@ def _development_blocker_taxonomy(
                 ),
             }
         )
+    if missing_competitors:
+        blockers.append(
+            {
+                "id": "real_local_competitors_missing",
+                "status": "blocked",
+                "reason": (
+                    "same-protocol local competitor evidence is missing or "
+                    "not comparable under the frozen embedding/runtime policy"
+                ),
+                "missing_families": missing_competitors,
+                "passing_families": _passing_real_competitor_families(
+                    competitor_rows
+                ),
+                "skipped": [
+                    {
+                        "engine": row.get("engine"),
+                        "family": row.get("family"),
+                        "reason": row.get("reason"),
+                    }
+                    for row in competitor_rows
+                    if row.get("status") == "skipped"
+                ],
+                "non_comparable": [
+                    {
+                        "engine": row.get("engine"),
+                        "family": row.get("family"),
+                        "reason": row.get("reason"),
+                    }
+                    for row in competitor_rows
+                    if row.get("status") == "pass"
+                    and (
+                        row.get("eligible_for_comparison") is not True
+                        or row.get("embedding_comparable") is not True
+                        or row.get("simulated") is True
+                    )
+                ],
+                "allowed_next_step": (
+                    "run Chroma or Qdrant, Mem0 OSS, and LangGraph/LangMem "
+                    "through the same protocol and embedding space; Mem0 must "
+                    "include runtime proof that ingest and search used hash-384"
+                ),
+            }
+        )
     if "LongMemEval-V2 quality gate has not been run on this protocol" in gate_errors:
         blockers.append(
             {
@@ -1266,7 +1310,7 @@ def _development_blocker_taxonomy(
         )
     return {
         "status": "blocked" if gate_errors else "clear",
-        "candidate": "candidate-1",
+        "candidate": candidate["id"],
         "candidate_status": "failed" if failed_candidates else ("passed" if not gate_errors else "blocked"),
         "failed_candidates": failed_candidates,
         "gate_errors": list(gate_errors),
@@ -1275,6 +1319,58 @@ def _development_blocker_taxonomy(
             "not_opened; remains forbidden while development gate is blocked"
         ),
     }
+
+
+def _candidate_context_from_agent_payload(
+    payload: Mapping[str, Any] | None,
+) -> dict[str, str]:
+    protocol = payload.get("protocol") if isinstance(payload, Mapping) else {}
+    if not isinstance(protocol, Mapping):
+        protocol = {}
+    lane = str(protocol.get("lane") or "")
+    development_split_sha256 = str(
+        protocol.get("development_split_sha256")
+        or FROZEN_V1_DEVELOPMENT_SPLIT_SHA256
+    )
+    if lane == "candidate2-memoryagentbench-balanced":
+        return {
+            "id": "candidate-2-memoryagentbench-balanced",
+            "development_split_sha256": development_split_sha256,
+            "category_ceiling_failure_reason": (
+                "bounded development evidence on the preregistered "
+                "MemoryAgentBench-balanced split cannot reach the "
+                "four-category improvement gate"
+            ),
+        }
+    return {
+        "id": "candidate-1",
+        "development_split_sha256": development_split_sha256,
+        "category_ceiling_failure_reason": (
+            "bounded development evidence on the preregistered 18-case split "
+            "cannot reach the four-category improvement gate"
+        ),
+    }
+
+
+def _passing_real_competitor_families(
+    competitor_runs: list[dict[str, Any]],
+) -> list[str]:
+    return sorted(
+        {
+            str(row.get("family"))
+            for row in competitor_runs
+            if row.get("status") == "pass"
+            and row.get("simulated") is not True
+            and row.get("eligible_for_comparison") is True
+            and row.get("embedding_comparable") is True
+        }
+    )
+
+
+def _missing_real_competitor_families(
+    competitor_runs: list[dict[str, Any]],
+) -> list[str]:
+    return sorted(REQUIRED_LOCAL_COMPETITORS - set(_passing_real_competitor_families(competitor_runs)))
 
 
 def _competitors_from_agent_memory(payload: Mapping[str, Any] | None) -> list[dict[str, Any]]:
