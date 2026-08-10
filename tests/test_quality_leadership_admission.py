@@ -327,6 +327,23 @@ def test_development_results_extract_metrics_but_keep_gate_blocked(tmp_path: Pat
         == "blocked_unsatisfiable_without_split_change_or_baseline_degradation"
     )
     taxonomy = payload["blocker_taxonomy"]
+    assert taxonomy["candidate_status"] == "failed"
+    assert taxonomy["failed_candidates"] == [
+        {
+            "id": "candidate-1",
+            "status": "failed",
+            "reason": (
+                "bounded development evidence on the preregistered 18-case "
+                "split cannot reach the four-category improvement gate"
+            ),
+            "frozen_split_sha256": (
+                "e4345094922637414bec7f69a15cea9207380b1795b39eb53270da99b89965a2"
+            ),
+            "improvement_ceiling_over_core": 2,
+            "target": QUALITY_THRESHOLDS["improved_categories_min"],
+            "held_out_policy": "not_opened",
+        }
+    ]
     assert taxonomy["held_out_policy"].startswith("not_opened")
     assert taxonomy["blockers"][0]["id"] == "category_improvement_ceiling"
     assert "category_improvement_ceiling below threshold" in " ".join(

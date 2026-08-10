@@ -1205,11 +1205,28 @@ def _development_blocker_taxonomy(
 ) -> dict[str, Any]:
     category_analysis = metrics.get("category_improvement_analysis")
     blockers: list[dict[str, Any]] = []
+    failed_candidates: list[dict[str, Any]] = []
     if (
         isinstance(category_analysis, Mapping)
         and _as_int(category_analysis.get("improvement_ceiling_over_core"))
         < QUALITY_THRESHOLDS["improved_categories_min"]
     ):
+        failed_candidates.append(
+            {
+                "id": "candidate-1",
+                "status": "failed",
+                "reason": (
+                    "bounded development evidence on the preregistered 18-case "
+                    "split cannot reach the four-category improvement gate"
+                ),
+                "frozen_split_sha256": FROZEN_V1_DEVELOPMENT_SPLIT_SHA256,
+                "improvement_ceiling_over_core": _as_int(
+                    category_analysis.get("improvement_ceiling_over_core")
+                ),
+                "target": QUALITY_THRESHOLDS["improved_categories_min"],
+                "held_out_policy": "not_opened",
+            }
+        )
         blockers.append(
             {
                 "id": "category_improvement_ceiling",
@@ -1242,6 +1259,8 @@ def _development_blocker_taxonomy(
     return {
         "status": "blocked" if gate_errors else "clear",
         "candidate": "candidate-1",
+        "candidate_status": "failed" if failed_candidates else ("passed" if not gate_errors else "blocked"),
+        "failed_candidates": failed_candidates,
         "gate_errors": list(gate_errors),
         "blockers": blockers,
         "held_out_policy": (
