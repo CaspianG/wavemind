@@ -1,8 +1,8 @@
 {
   "admitted": false,
-  "baseline_source_sha": "d42592553ed1036c463bc2eb864caf3ed9c31ebe",
-  "claim_boundary": "This matrix is a Goal 7 gap audit, not final production admission.",
-  "generated_at": "2026-08-09T22:39:52.412673+00:00",
+  "baseline_source_sha": "origin/main",
+  "claim_boundary": "This checked-in payload is a Goal 7 evidence snapshot. It is not an exact-current PR or main admission; exact verdicts are produced by CI artifacts on the current SHA. The goal remains blocked while Safe Product is required_current.",
+  "generated_at": "2026-08-10T01:43:07.936732+00:00",
   "protocol": {
     "claim_boundary": "Local, provider-neutral workspace experience proof. No GPU, paid API, private client history, universal model-quality, or external service claim.",
     "comparison_modes": [
@@ -116,25 +116,72 @@
       },
       "id": "historical-v3-checksum-selection-experiment",
       "requirement": "Historical failed v3 checksum-selection experiment; not real-work proof.",
-      "status": "failed",
+      "status": "historical",
       "test": "tests/test_workspace_experience_benchmark.py"
     },
     {
-      "artifact": "benchmarks/workspace_experience_v4_benchmark_results.json",
+      "artifact": "benchmarks/workspace_experience_v4_manifest.json",
+      "details": {
+        "heldout_status": "viewed_invalid_not_untouched",
+        "invalid_reasons": [
+          "clean_onboarding_seconds was hardcoded instead of measured from a clean subprocess flow",
+          "static baseline can collapse to zero positive success and is not the strongest static comparator",
+          "positive task success accepts outcome-kind matches without exact case/procedure validation",
+          "cross-client parity reopens the same Python manager instead of cross-surface client A to restart to client B replay"
+        ],
+        "methodology_status": "historical_invalid_not_admission_evidence",
+        "next_protocol": "v5",
+        "protocol_commit": "8214d58",
+        "source_sha": "dcb8348c7d7d92577bafd81b6f07c11340ce06c2"
+      },
       "id": "frozen-real-work-benchmark-v4",
-      "requirement": "Three public repos, 60 independently sourced real workflow/test/environment cases, dev/held-out splits, static baseline comparison.",
-      "status": "missing",
+      "requirement": "Historical invalid v4 protocol; not admission evidence.",
+      "status": "historical",
       "test": "tests/test_workspace_experience_v4_benchmark.py"
+    },
+    {
+      "artifact": "benchmarks/workspace_experience_v5_benchmark_results.json",
+      "details": {
+        "failed_gates": [],
+        "manifest_sha256": "9fa1d31b4085b723baf2e4dacd6ea4be8b894e734ecc475329fdc53d5cd888b8",
+        "metrics": {
+          "clean_onboarding_seconds": 1.4325614000263158,
+          "context_reduction": 0.4399101123595506,
+          "false_procedure_injection": 0.0,
+          "packet_selection_p95_ms": 9.237099991878495,
+          "packet_selection_p99_ms": 9.673199994722381,
+          "repeated_known_error_reduction": 1.0,
+          "task_success_lift_pp": 28.57142857142857,
+          "workspace_namespace_leakage": 0
+        },
+        "result_status": "passed",
+        "source_sha": "eb27a54c001a9169e7baf4bc299ee49fa86468bd",
+        "split": "heldout"
+      },
+      "id": "frozen-real-work-benchmark-v5",
+      "requirement": "New independent real workflow benchmark with exact case/procedure success, strongest static baseline, measured onboarding, and cross-surface replay.",
+      "status": "implemented",
+      "test": "tests/test_workspace_experience_v5_benchmark.py"
     },
     {
       "artifact": "benchmarks/workspace_experience_admission_results.json",
       "id": "workspace-experience-admission",
       "requirement": "Exact-SHA JSON/Markdown admission with all mandatory rows green.",
-      "status": "blocked",
+      "status": "implemented",
       "test": "tests/test_workspace_experience_admission.py"
     },
     {
       "artifact": "benchmarks/safe_product_admission_results.json",
+      "details": {
+        "current_source_sha": "dcb8348c7d7d92577bafd81b6f07c11340ce06c2",
+        "reason": "safe product admission is not current for this source SHA",
+        "result_status": "admitted",
+        "source_sha": "92c539d0a0696c2dcb1a02d130a3be3bd5020635",
+        "summary": {
+          "checks_passed": 18,
+          "checks_total": 18
+        }
+      },
       "id": "safe-product-regression",
       "requirement": "Safe Product admission remains admitted on the same final source SHA.",
       "status": "required_current",
@@ -144,7 +191,7 @@
   "schema": "wavemind.workspace_experience_admission.v1",
   "source_manifest": {
     "algorithm": "sha256",
-    "digest": "36c14f477ae821ace184edbe2b8306c1fa0c30e52e3ac454e98278e431fc2330",
+    "digest": "48f2ca6efa414ba17cea20e9f169a37d41b9cf444d21eea8837d927037239d63",
     "files": [
       {
         "path": "wavemind/workspace_experience.py",
@@ -152,11 +199,11 @@
       },
       {
         "path": "wavemind/experience_runtime.py",
-        "sha256": "83efb9046f32bffa9a93fe3d597d561a6c354340b7c40514d0f30b4adaacaff0"
+        "sha256": "2744752efd3ae5ebb66cb6a44f31902f18087d1f860a9f76f030c7f6f5b6f001"
       },
       {
         "path": "wavemind/experience_compiler.py",
-        "sha256": "a8e5ae77fc1065711347b56628bf1091c4c2a896098f061c327e13ee6bfdfe41"
+        "sha256": "502a16a3fa38b4d24fce31c8f0404d5be2fdc687d438523b694b85b06f7a94a4"
       },
       {
         "path": "wavemind/experience.py",
@@ -164,7 +211,7 @@
       },
       {
         "path": "wavemind/workspace_experience_admission.py",
-        "sha256": "9ad1dd6766f35d3649f9f68bedbe6a7a8f5483222e9617ecfb8ba0dd003d77e7"
+        "sha256": "e5eb16cc9dd1b2155c33843acee0782e72c399aadac27766f0939f9a213133b8"
       },
       {
         "path": "wavemind/cli.py",
@@ -195,12 +242,48 @@
         "sha256": "765b499fbbe96e238ff61a4a94958de5ae71ad5474c6557e6478714d8c1451aa"
       },
       {
+        "path": "benchmarks/workspace_experience_v4_manifest.json",
+        "sha256": "46ddbe582f253a3de379935d741ffb20196cbac1ead352e491dcf0b61ed61ab1"
+      },
+      {
+        "path": "benchmarks/workspace_experience_v4_benchmark.py",
+        "sha256": "d128684f1d8a81610cc56067163a0b13d043e62a86aeaaf9d4bd97a54508b6fe"
+      },
+      {
+        "path": "benchmarks/workspace_experience_v5_manifest.json",
+        "sha256": "518b73ac94843f011703b74d40be35facb287c2b7f3137fe01adfdb8f953a327"
+      },
+      {
+        "path": "benchmarks/workspace_experience_v5_manifest_builder.py",
+        "sha256": "845a49fa8b03d7ff9d00b03d772d4ca9b2e77a8f7e1d8647dd99aad4565f8c80"
+      },
+      {
+        "path": "benchmarks/workspace_experience_v5_benchmark.py",
+        "sha256": "03ed4cde142626a45bab98437c487a43c66b683b5b534eebfd9cd9e05bdfa016"
+      },
+      {
         "path": "tests/test_workspace_experience.py",
-        "sha256": "252034d59868c1345c727d460d54393019954ba32aa9ab72ce38898287ef94a5"
+        "sha256": "aac985c227c68648b8414ec587b2e06e65a82516aca2d1ebe9d7ab479a2d9d24"
       },
       {
         "path": "tests/test_workspace_experience_benchmark.py",
         "sha256": "dc72d0d01dd35501869fe2afa17df1a3973bac1834a41e91e35cc91e65e2792d"
+      },
+      {
+        "path": "tests/test_workspace_experience_v4_benchmark.py",
+        "sha256": "54efa1d4f82eb566800627ec2af98eac0882752c2edf565e30d58fddede7239d"
+      },
+      {
+        "path": "tests/test_workspace_experience_v5_benchmark.py",
+        "sha256": "c6830ba51331cd775750e94fa605fdc2d742ffd39c05683d479c440e38a4896a"
+      },
+      {
+        "path": "tests/test_workspace_experience_admission.py",
+        "sha256": "eb12b66432bc7c95fafec60357e1369858e52e2d225e0072d140b769bd4a69e2"
+      },
+      {
+        "path": "tests/test_experience_compiler.py",
+        "sha256": "8d4faeda094d06f2e99fa7b77aac0a65726ff22feead3e05ea3651c7af467b3c"
       },
       {
         "path": "tests/test_experience_runtime_contracts.py",
@@ -209,15 +292,16 @@
     ],
     "schema": "wavemind.workspace_experience_source_manifest.v1"
   },
-  "source_sha": "5767541a63e91f34a0df5665aff083b07a84d300",
+  "source_sha": "dcb8348c7d7d92577bafd81b6f07c11340ce06c2",
   "status": "blocked",
   "summary": {
-    "blocked": 1,
-    "failed": 1,
-    "implemented": 8,
-    "missing": 1,
+    "blocked": 0,
+    "failed": 0,
+    "historical": 2,
+    "implemented": 10,
+    "missing": 0,
     "partial": 0,
     "required_current": 1,
-    "total": 12
+    "total": 13
   }
 }

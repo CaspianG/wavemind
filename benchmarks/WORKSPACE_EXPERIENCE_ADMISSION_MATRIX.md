@@ -1,7 +1,8 @@
 # Workspace Experience Admission Matrix
 
 - Status: `blocked`
-- Source SHA: `1ffb597424dd0376717d6b8bda18f35ed1e70067`
+- Evidence Snapshot Source SHA: `dcb8348c7d7d92577bafd81b6f07c11340ce06c2`
+- Exact Current Verdict: CI artifact on the current PR/main SHA
 - Protocol: `workspace-experience-v1-frozen-20260810`
 - Protocol SHA-256: `fa2ebc36799b44ff54e74120da7dab3a475d40461a4963872069f5905beeb590`
 
@@ -23,4 +24,4 @@
 
 ## Claim Boundary
 
-This matrix is a Goal 7 gap audit, not final production admission.
+This checked-in payload is a Goal 7 evidence snapshot. It is not an exact-current PR or main admission; exact verdicts are produced by CI artifacts on the current SHA. The goal remains blocked while Safe Product is required_current.

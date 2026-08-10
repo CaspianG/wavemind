@@ -1,7 +1,8 @@
-# Workspace Experience Admission Matrix
+# Workspace Experience Admission
 
 - Status: `blocked`
-- Source SHA: `5767541a63e91f34a0df5665aff083b07a84d300`
+- Evidence Snapshot Source SHA: `dcb8348c7d7d92577bafd81b6f07c11340ce06c2`
+- Exact Current Verdict: CI artifact on the current PR/main SHA
 - Protocol: `workspace-experience-v1-frozen-20260810`
 - Protocol SHA-256: `fa2ebc36799b44ff54e74120da7dab3a475d40461a4963872069f5905beeb590`
 
@@ -15,11 +16,12 @@
 | `cross-agent-portability` | `implemented` | `wavemind/workspace_experience.py` | `tests/test_workspace_experience.py` |
 | `useful-experience-packet` | `implemented` | `wavemind/workspace_experience.py` | `tests/test_workspace_experience.py` |
 | `workspace-onboarding` | `implemented` | `docs/WORKSPACE_EXPERIENCE_QUICKSTART.md` | `tests/test_workspace_experience.py` |
-| `historical-v3-checksum-selection-experiment` | `failed` | `benchmarks/workspace_experience_benchmark_results.json` | `tests/test_workspace_experience_benchmark.py` |
-| `frozen-real-work-benchmark-v4` | `missing` | `benchmarks/workspace_experience_v4_benchmark_results.json` | `tests/test_workspace_experience_v4_benchmark.py` |
-| `workspace-experience-admission` | `blocked` | `benchmarks/workspace_experience_admission_results.json` | `tests/test_workspace_experience_admission.py` |
+| `historical-v3-checksum-selection-experiment` | `historical` | `benchmarks/workspace_experience_benchmark_results.json` | `tests/test_workspace_experience_benchmark.py` |
+| `frozen-real-work-benchmark-v4` | `historical` | `benchmarks/workspace_experience_v4_manifest.json` | `tests/test_workspace_experience_v4_benchmark.py` |
+| `frozen-real-work-benchmark-v5` | `implemented` | `benchmarks/workspace_experience_v5_benchmark_results.json` | `tests/test_workspace_experience_v5_benchmark.py` |
+| `workspace-experience-admission` | `implemented` | `benchmarks/workspace_experience_admission_results.json` | `tests/test_workspace_experience_admission.py` |
 | `safe-product-regression` | `required_current` | `benchmarks/safe_product_admission_results.json` | `.github/workflows/safe-product.yml` |
 
 ## Claim Boundary
 
-This matrix is a Goal 7 gap audit, not final production admission.
+This checked-in payload is a Goal 7 evidence snapshot. It is not an exact-current PR or main admission; exact verdicts are produced by CI artifacts on the current SHA. The goal remains blocked while Safe Product is required_current.
