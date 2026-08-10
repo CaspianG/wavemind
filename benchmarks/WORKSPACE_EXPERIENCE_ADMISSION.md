@@ -1,7 +1,7 @@
 # Workspace Experience Admission
 
 - Status: `blocked`
-- Evidence Snapshot Source SHA: `dcb8348c7d7d92577bafd81b6f07c11340ce06c2`
+- Evidence Snapshot Source SHA: `b984e202d9963b13bd842886b2b989304b1b294f`
 - Exact Current Verdict: CI artifact on the current PR/main SHA
 - Protocol: `workspace-experience-v1-frozen-20260810`
 - Protocol SHA-256: `fa2ebc36799b44ff54e74120da7dab3a475d40461a4963872069f5905beeb590`
