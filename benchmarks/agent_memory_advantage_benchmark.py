@@ -42,13 +42,6 @@ Runner = Callable[[EvidenceDataset, Any, int], EvidenceMetrics]
 MEASUREMENT_TRIALS = 5
 BOOTSTRAP_SAMPLES = 10_000
 BOOTSTRAP_SEED = 20260728
-MEM0_NON_COMPARABLE_REASON = (
-    "Mem0 OSS is installed, but this Mem0 version only accepts configured "
-    "embedder providers for Memory.from_config; the shared WaveMind hash-384 "
-    "encoder is not available as a Mem0 provider in this benchmark. The Mem0 "
-    "row is therefore excluded from same-embedding comparison until a verified "
-    "adapter exists."
-)
 
 
 def _utc_now() -> str:
@@ -315,6 +308,27 @@ def _run_real_baseline(
     return _aggregate_trials(engine, trials, category_counts)
 
 
+class _Mem0SharedEmbedding:
+    def __init__(self, encoder: Any):
+        self.encoder = encoder
+        self.config = {
+            "provider": "wavemind-shared",
+            "kind": "hash",
+            "vector_dim": int(encoder.vector_dim),
+        }
+
+    def embed(self, text: str, memory_action: str | None = None) -> list[float]:
+        del memory_action
+        return self.encoder.encode_vector(str(text)).astype(float).tolist()
+
+    def embed_batch(
+        self,
+        texts: list[str],
+        memory_action: str = "add",
+    ) -> list[list[float]]:
+        return [self.embed(text, memory_action) for text in texts]
+
+
 def _mem0_rows(response: Any) -> list[dict[str, Any]]:
     rows = response.get("results") if isinstance(response, dict) else response
     return [row for row in rows or [] if isinstance(row, dict)]
@@ -346,7 +360,7 @@ def _mem0_texts(response: Any) -> list[str]:
 
 def run_mem0_oss(
     dataset: EvidenceDataset,
-    _encoder: Any,
+    encoder: Any,
     top_k: int,
 ) -> EvidenceMetrics:
     os.environ.setdefault("MEM0_TELEMETRY", "False")
@@ -376,6 +390,7 @@ def run_mem0_oss(
             "history_db_path": str(root / "history.db"),
         }
         memory = Memory.from_config(config)
+        memory.embedding_model = _Mem0SharedEmbedding(encoder)
         try:
             for item in dataset.memories:
                 memory.add(
@@ -716,18 +731,6 @@ def run_benchmark(
                 }
             )
             continue
-        if engine == "Mem0 OSS":
-            skipped.append(
-                {
-                    "engine": engine,
-                    "status": "skipped",
-                    "reason": MEM0_NON_COMPARABLE_REASON,
-                    "eligible_for_comparison": False,
-                    "embedding_comparable": False,
-                    "same_embedding_as_wavemind": False,
-                }
-            )
-            continue
         try:
             rows.append(
                 _run_real_baseline(
@@ -786,8 +789,7 @@ def run_benchmark(
             "same_embeddings_scope": (
                 "WaveMind Core, WaveMind + Memory OS, Static vector, Full "
                 "context, No memory, Chroma static, Qdrant static, and "
-                "LangGraph persistent memory. Mem0 OSS is skipped until it "
-                "can consume the same frozen encoder."
+                "Mem0 OSS, LangGraph persistent memory."
             ),
             "same_top_k": True,
             "embedding": {

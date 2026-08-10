@@ -59,27 +59,15 @@ def test_advantage_benchmark_reports_paired_confidence_and_honest_skips():
     assert skipped["LangGraph persistent memory"]["reason"] == "disabled_by_cli"
 
 
-def test_mem0_is_not_comparable_without_shared_embedding_adapter(monkeypatch):
-    from benchmarks import agent_memory_advantage_benchmark as benchmark
+def test_mem0_shared_embedding_adapter_uses_frozen_encoder():
+    from benchmarks.agent_memory_advantage_benchmark import _Mem0SharedEmbedding
+    from wavemind.encoders import create_text_encoder
 
-    monkeypatch.setattr(
-        benchmark,
-        "_module_available",
-        lambda module: module in {"mem0", "fastembed", "qdrant_client"},
-    )
+    encoder = create_text_encoder(kind="hash", vector_dim=384)
+    adapter = _Mem0SharedEmbedding(encoder)
+    text = "The current release requires artifact checksums."
 
-    payload = benchmark.run_benchmark(
-        measurement_trials=5,
-        include_chroma=False,
-        include_qdrant=False,
-        include_mem0=True,
-        include_langgraph=False,
-    )
-
-    skipped = {row["engine"]: row for row in payload["skipped"]}
-    mem0 = skipped["Mem0 OSS"]
-    assert mem0["eligible_for_comparison"] is False
-    assert mem0["embedding_comparable"] is False
-    assert mem0["same_embedding_as_wavemind"] is False
-    assert "shared WaveMind hash-384 encoder" in mem0["reason"]
-    assert payload["strongest_local_baseline"]["engine"] != "Mem0 OSS"
+    assert adapter.config["provider"] == "wavemind-shared"
+    assert adapter.config["vector_dim"] == 384
+    assert adapter.embed(text, "search") == encoder.encode_vector(text).astype(float).tolist()
+    assert adapter.embed_batch([text], "add") == [adapter.embed(text, "add")]
