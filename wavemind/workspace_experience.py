@@ -171,9 +171,15 @@ def initialize_workspace(
     return config
 
 
-def load_workspace_config(path_or_root: str | Path) -> WorkspaceConfig:
-    path = Path(path_or_root)
-    config_path = path if path.is_file() else path / ".wavemind" / "workspace.json"
+def load_workspace_config(
+    path_or_root: str | Path,
+    *,
+    allow_private_root: bool = False,
+) -> WorkspaceConfig:
+    config_path = _resolve_workspace_config_path(
+        path_or_root,
+        allow_private_root=allow_private_root,
+    )
     payload = json.loads(config_path.read_text(encoding="utf-8"))
     if payload.get("schema") != WORKSPACE_CONFIG_SCHEMA:
         raise ValueError("unsupported workspace config schema")
@@ -810,6 +816,30 @@ def _safe_project_root(root: str | Path, *, allow_private_root: bool) -> Path:
             "pass allow_private_root only for explicit imports"
         )
     return project_root
+
+
+def _resolve_workspace_config_path(
+    path_or_root: str | Path,
+    *,
+    allow_private_root: bool,
+) -> Path:
+    raw = Path(path_or_root).expanduser()
+    if raw.name == "workspace.json" and raw.parent.name == ".wavemind":
+        config_path = raw.resolve()
+        project_root = config_path.parent.parent
+    elif raw.exists() and raw.is_file():
+        raise WorkspacePathError("workspace config must be .wavemind/workspace.json")
+    else:
+        project_root = _safe_project_root(raw, allow_private_root=allow_private_root)
+        config_path = project_root / ".wavemind" / "workspace.json"
+    project_root = _safe_project_root(project_root, allow_private_root=allow_private_root)
+    state_dir = project_root / ".wavemind"
+    config_path = config_path.resolve()
+    if config_path.name != "workspace.json" or config_path.parent != state_dir:
+        raise WorkspacePathError("workspace config must be .wavemind/workspace.json")
+    if not _is_relative_to(config_path, project_root):
+        raise WorkspacePathError("workspace config escapes workspace root")
+    return config_path
 
 
 def _normalize_workspace_payload(payload: Mapping[str, Any], project_root: Path) -> dict[str, Any]:

@@ -19,6 +19,7 @@ from wavemind.workspace_experience import (
     WorkspaceExperienceManager,
     WorkspacePathError,
     initialize_workspace,
+    load_workspace_config,
     render_runbook_markdown,
     resolve_workspace_identity,
     workspace_mcp_config,
@@ -168,6 +169,22 @@ def test_workspace_capture_review_packet_restart_and_bundle_parity(tmp_path: Pat
     )
     assert imported["selected_citations"] == packet["selected_citations"]
     fresh.close()
+
+
+def test_workspace_config_loader_rejects_non_workspace_json(tmp_path: Path) -> None:
+    repo = _make_repo(tmp_path / "repo")
+    config = initialize_workspace(repo, workspace_id="agent", tenant_id="tenant", user_id="user")
+
+    loaded = load_workspace_config(config.config_path)
+    assert loaded.identity.namespace == config.identity.namespace
+
+    arbitrary = tmp_path / "workspace.json"
+    arbitrary.write_text(
+        json.dumps(config.as_dict(), ensure_ascii=False, sort_keys=True),
+        encoding="utf-8",
+    )
+    with pytest.raises(WorkspacePathError, match=r"\.wavemind/workspace\.json"):
+        load_workspace_config(arbitrary)
 
 
 def test_workspace_edit_approve_supersedes_and_rollback_preserves_provenance(
