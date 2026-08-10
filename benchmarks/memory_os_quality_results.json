@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.memory_os_quality_gate.v2",
-  "generated_at": "2026-07-20T08:26:51Z",
-  "source_ref": "edade872efde8f8d63d4115cf677a74a5650b9fd",
+  "generated_at": "2026-08-10T22:52:52Z",
+  "source_ref": "a9e41e8a7fe6bcd35bdff4366039c7f3663bec34",
   "status": "pass",
   "claim_boundary": "Only the direct WaveMind baseline versus WaveMind plus Memory OS A/B controls this gate. LoCoMo and LongMemEval are supplemental because their current runners do not execute Memory OS policies.",
   "thresholds": {
@@ -16,45 +16,45 @@
   },
   "metrics": {
     "memory_os_task_success": 1.0,
-    "baseline_task_success": 0.875,
-    "task_success_uplift": 0.125,
+    "baseline_task_success": 0.3888888888888889,
+    "task_success_uplift": 0.6111111111111112,
     "memory_os_stale_error_rate": 0.0,
-    "baseline_stale_error_rate": 0.125,
-    "stale_suppression_uplift": 0.125,
-    "memory_os_p95_latency_ms": 3.2509000011486933,
-    "baseline_p95_latency_ms": 3.3573000036994927,
-    "p95_latency_delta_ms": -0.1064000025507994,
-    "p95_latency_regression_ratio": -0.031692134284560386,
-    "cold_p95_latency_delta_ms": 0.02510000194888562,
-    "cold_p95_latency_regression_ratio": 0.007497237661467624
+    "baseline_stale_error_rate": 0.6111111111111112,
+    "stale_suppression_uplift": 0.6111111111111112,
+    "memory_os_p95_latency_ms": 4.728300031274557,
+    "baseline_p95_latency_ms": 5.2479999721981585,
+    "p95_latency_delta_ms": -0.5196999409236014,
+    "p95_latency_regression_ratio": -0.09902819048718892,
+    "cold_p95_latency_delta_ms": -0.3247000277042389,
+    "cold_p95_latency_regression_ratio": -0.06165034323875546
   },
   "checks": [
     {
       "id": "direct-comparable-protocol",
       "title": "Baseline and Memory OS execute the same sequential adaptive protocol",
       "passed": true,
-      "evidence": "protocol_hash=0e684ccabc796c7d1d7ea00805e2e64208900f847b6253170bd026e72e326730, workload=sequential_adaptive_recall",
+      "evidence": "protocol_hash=e9604ec394c706aa734f1699740b5351a0ffd0ee5ab7782c2fda6f4768835572, workload=sequential_adaptive_recall",
       "source": "benchmarks/memory_os_ab_results.json"
     },
     {
       "id": "memory-os-task-success-uplift",
       "title": "Memory OS improves task success over WaveMind baseline",
       "passed": true,
-      "evidence": "memory_os=1.0000, baseline=0.8750, uplift=0.1250",
+      "evidence": "memory_os=1.0000, baseline=0.3889, uplift=0.6111",
       "source": "benchmarks/memory_os_ab_results.json"
     },
     {
       "id": "memory-os-stale-suppression-uplift",
       "title": "Memory OS reduces stale recalls over WaveMind baseline",
       "passed": true,
-      "evidence": "memory_os=0.0000, baseline=0.1250, uplift=0.1250",
+      "evidence": "memory_os=0.0000, baseline=0.6111, uplift=0.6111",
       "source": "benchmarks/memory_os_ab_results.json"
     },
     {
       "id": "memory-os-adaptation-fired",
       "title": "Priority learning and adaptive forgetting both changed state",
       "passed": true,
-      "evidence": "priority_predictions=40, forgetting_demotions=40",
+      "evidence": "priority_predictions=90, forgetting_demotions=90",
       "source": "benchmarks/memory_os_ab_results.json"
     },
     {
@@ -68,14 +68,14 @@
       "id": "memory-os-p95-latency",
       "title": "Memory OS p95 stays within both the 20 percent and 5 ms regression limits",
       "passed": true,
-      "evidence": "memory_os=3.2509ms, baseline=3.3573ms, delta=-0.1064ms, ratio=-0.0317",
+      "evidence": "memory_os=4.7283ms, baseline=5.2480ms, delta=-0.5197ms, ratio=-0.0990",
       "source": "benchmarks/memory_os_ab_results.json"
     },
     {
       "id": "memory-os-cold-p95-latency",
       "title": "Cold p95 stays within both the 20 percent and 5 ms regression limits",
       "passed": true,
-      "evidence": "memory_os=3.3730ms, baseline=3.3479ms, delta=0.0251ms, ratio=0.0075",
+      "evidence": "memory_os=4.9421ms, baseline=5.2668ms, delta=-0.3247ms, ratio=-0.0617",
       "source": "benchmarks/memory_os_ab_results.json"
     }
   ],

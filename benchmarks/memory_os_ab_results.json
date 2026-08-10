@@ -1,11 +1,23 @@
 {
   "schema": "wavemind.memory_os_ab_benchmark.v1",
-  "generated_at": "2026-07-20T08:26:51Z",
-  "source_ref": "edade872efde8f8d63d4115cf677a74a5650b9fd",
+  "generated_at": "2026-08-10T22:50:48Z",
+  "source_ref": "a9e41e8a7fe6bcd35bdff4366039c7f3663bec34",
   "protocol": {
-    "hash": "0e684ccabc796c7d1d7ea00805e2e64208900f847b6253170bd026e72e326730",
+    "hash": "e9604ec394c706aa734f1699740b5351a0ffd0ee5ab7782c2fda6f4768835572",
     "workload": "sequential_adaptive_recall",
-    "case_count": 8,
+    "case_count": 18,
+    "categories": [
+      "knowledge_update",
+      "preference_update",
+      "state_tracking",
+      "workflow_gotcha"
+    ],
+    "category_case_counts": {
+      "knowledge_update": 9,
+      "preference_update": 1,
+      "state_tracking": 2,
+      "workflow_gotcha": 6
+    },
     "observed_repetitions": 8,
     "evaluation_repetitions": 25,
     "cold_repetitions": 10,
@@ -15,16 +27,18 @@
     "same_memories": true,
     "same_observed_queries": true,
     "same_evaluation_queries": true,
-    "difference": "Memory OS worker policies and hot-query cache only"
+    "difference": "Memory OS worker policies and hot-query cache only",
+    "retrieval_mode": "raw_non_production",
+    "production_abstention_admission_eligible": false
   },
-  "claim_boundary": "This direct A/B uses identical memories and sequential query histories. It measures the incremental effect of Memory OS adaptation over WaveMind baseline.",
+  "claim_boundary": "This direct A/B uses identical memories and sequential query histories. It measures the incremental effect of Memory OS adaptation over WaveMind baseline. Confidence abstention is disabled for benchmark mechanics, so this raw profile cannot satisfy production false-memory admission.",
   "results": [
     {
       "engine": "WaveMind baseline",
-      "task_success_rate": 0.875,
-      "stale_error_rate": 0.125,
-      "query_count": 1000,
-      "queries_per_trial": 200,
+      "task_success_rate": 0.3888888888888889,
+      "stale_error_rate": 0.6111111111111112,
+      "query_count": 2250,
+      "queries_per_trial": 450,
       "measurement_trials": 5,
       "context_items_per_query": 1,
       "cache_hits": 0,
@@ -32,88 +46,1566 @@
       "priority_predictions": 0,
       "forgetting_demotions": 0,
       "worker_runs": 0,
+      "context_tokens_returned": 20625,
+      "full_context_tokens": 41375,
+      "trial_task_success_rates": [
+        0.3888888888888889,
+        0.3888888888888889,
+        0.3888888888888889,
+        0.3888888888888889,
+        0.3888888888888889
+      ],
+      "trial_stale_error_rates": [
+        0.6111111111111112,
+        0.6111111111111112,
+        0.6111111111111112,
+        0.6111111111111112,
+        0.6111111111111112
+      ],
+      "trial_category_success": [
+        {
+          "knowledge_update": 0.4444444444444444,
+          "preference_update": 1.0,
+          "state_tracking": 1.0,
+          "workflow_gotcha": 0.0
+        },
+        {
+          "knowledge_update": 0.4444444444444444,
+          "preference_update": 1.0,
+          "state_tracking": 1.0,
+          "workflow_gotcha": 0.0
+        },
+        {
+          "knowledge_update": 0.4444444444444444,
+          "preference_update": 1.0,
+          "state_tracking": 1.0,
+          "workflow_gotcha": 0.0
+        },
+        {
+          "knowledge_update": 0.4444444444444444,
+          "preference_update": 1.0,
+          "state_tracking": 1.0,
+          "workflow_gotcha": 0.0
+        },
+        {
+          "knowledge_update": 0.4444444444444444,
+          "preference_update": 1.0,
+          "state_tracking": 1.0,
+          "workflow_gotcha": 0.0
+        }
+      ],
+      "trial_case_outcomes": [
+        [
+          {
+            "namespace": "role",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "city",
+            "category": "knowledge_update",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "budget",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "style",
+            "category": "preference_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "project",
+            "category": "state_tracking",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "token",
+            "category": "state_tracking",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "language",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "exchange",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "updated-budget",
+            "category": "knowledge_update",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "updated-region",
+            "category": "knowledge_update",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "updated-owner",
+            "category": "knowledge_update",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "updated-port",
+            "category": "knowledge_update",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "backup-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "merge-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "token-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "recovery-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "release-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "migration-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          }
+        ],
+        [
+          {
+            "namespace": "role",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "city",
+            "category": "knowledge_update",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "budget",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "style",
+            "category": "preference_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "project",
+            "category": "state_tracking",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "token",
+            "category": "state_tracking",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "language",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "exchange",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "updated-budget",
+            "category": "knowledge_update",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "updated-region",
+            "category": "knowledge_update",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "updated-owner",
+            "category": "knowledge_update",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "updated-port",
+            "category": "knowledge_update",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "backup-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "merge-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "token-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "recovery-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "release-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "migration-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          }
+        ],
+        [
+          {
+            "namespace": "role",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "city",
+            "category": "knowledge_update",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "budget",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "style",
+            "category": "preference_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "project",
+            "category": "state_tracking",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "token",
+            "category": "state_tracking",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "language",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "exchange",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "updated-budget",
+            "category": "knowledge_update",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "updated-region",
+            "category": "knowledge_update",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "updated-owner",
+            "category": "knowledge_update",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "updated-port",
+            "category": "knowledge_update",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "backup-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "merge-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "token-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "recovery-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "release-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "migration-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          }
+        ],
+        [
+          {
+            "namespace": "role",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "city",
+            "category": "knowledge_update",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "budget",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "style",
+            "category": "preference_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "project",
+            "category": "state_tracking",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "token",
+            "category": "state_tracking",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "language",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "exchange",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "updated-budget",
+            "category": "knowledge_update",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "updated-region",
+            "category": "knowledge_update",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "updated-owner",
+            "category": "knowledge_update",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "updated-port",
+            "category": "knowledge_update",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "backup-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "merge-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "token-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "recovery-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "release-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "migration-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          }
+        ],
+        [
+          {
+            "namespace": "role",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "city",
+            "category": "knowledge_update",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "budget",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "style",
+            "category": "preference_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "project",
+            "category": "state_tracking",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "token",
+            "category": "state_tracking",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "language",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "exchange",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "updated-budget",
+            "category": "knowledge_update",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "updated-region",
+            "category": "knowledge_update",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "updated-owner",
+            "category": "knowledge_update",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "updated-port",
+            "category": "knowledge_update",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "backup-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "merge-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "token-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "recovery-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "release-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          },
+          {
+            "namespace": "migration-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 0,
+            "stale_error_rate": 1
+          }
+        ]
+      ],
       "latency_trials_ms": {
         "avg_latency_ms": [
-          3.1590249999862863,
-          3.1023044997709803,
-          2.9383600001528976,
-          2.872303499971167,
-          2.892839999876742
+          4.4186315548399255,
+          4.4381455549349385,
+          4.434998664461697,
+          4.479850444089,
+          4.682300444692373
+        ],
+        "p50_latency_ms": [
+          4.192200023680925,
+          4.283200018107891,
+          4.1745000053197145,
+          4.25810000160709,
+          4.259900015313178
         ],
         "p95_latency_ms": [
-          3.7937999950372614,
-          3.3573000036994927,
-          3.3936000036192127,
-          3.29030000284547,
-          3.25140000495594
+          5.052699998486787,
+          5.138399952556938,
+          5.376100016292185,
+          5.401000031270087,
+          5.2479999721981585
+        ],
+        "p99_latency_ms": [
+          6.984099978581071,
+          6.385000015143305,
+          7.1360000292770565,
+          6.647600035648793,
+          6.857900007162243
         ],
         "cold_p95_latency_ms": [
-          3.7360999995144084,
-          3.3478999976068735,
-          3.137400002742652,
-          3.4836000049836002,
-          3.092899998591747
+          5.041700031142682,
+          5.1861999672837555,
+          5.376100016292185,
+          5.715200037229806,
+          5.266799998935312
         ],
         "steady_p95_latency_ms": [
-          3.7948000026517548,
-          3.3764999971026555,
-          3.415099999983795,
-          3.29030000284547,
-          3.2807000025059097
+          5.185399961192161,
+          5.103199975565076,
+          5.44479995733127,
+          5.142200039699674,
+          5.2479999721981585
         ]
       },
-      "avg_latency_ms": 2.9383600001528976,
-      "p95_latency_ms": 3.3573000036994927,
-      "cold_p95_latency_ms": 3.3478999976068735,
-      "steady_p95_latency_ms": 3.3764999971026555
+      "context_budget_saved": 0.5015105740181269,
+      "category_success": {
+        "knowledge_update": 0.4444444444444444,
+        "preference_update": 1.0,
+        "state_tracking": 1.0,
+        "workflow_gotcha": 0.0
+      },
+      "category_stale_error": {
+        "knowledge_update": 0.5555555555555556,
+        "preference_update": 0.0,
+        "state_tracking": 0.0,
+        "workflow_gotcha": 1.0
+      },
+      "case_outcomes": [
+        {
+          "namespace": "role",
+          "category": "knowledge_update",
+          "success_rate": 1,
+          "stale_error_rate": 0
+        },
+        {
+          "namespace": "city",
+          "category": "knowledge_update",
+          "success_rate": 0,
+          "stale_error_rate": 1
+        },
+        {
+          "namespace": "budget",
+          "category": "knowledge_update",
+          "success_rate": 1,
+          "stale_error_rate": 0
+        },
+        {
+          "namespace": "style",
+          "category": "preference_update",
+          "success_rate": 1,
+          "stale_error_rate": 0
+        },
+        {
+          "namespace": "project",
+          "category": "state_tracking",
+          "success_rate": 1,
+          "stale_error_rate": 0
+        },
+        {
+          "namespace": "token",
+          "category": "state_tracking",
+          "success_rate": 1,
+          "stale_error_rate": 0
+        },
+        {
+          "namespace": "language",
+          "category": "knowledge_update",
+          "success_rate": 1,
+          "stale_error_rate": 0
+        },
+        {
+          "namespace": "exchange",
+          "category": "knowledge_update",
+          "success_rate": 1,
+          "stale_error_rate": 0
+        },
+        {
+          "namespace": "updated-budget",
+          "category": "knowledge_update",
+          "success_rate": 0,
+          "stale_error_rate": 1
+        },
+        {
+          "namespace": "updated-region",
+          "category": "knowledge_update",
+          "success_rate": 0,
+          "stale_error_rate": 1
+        },
+        {
+          "namespace": "updated-owner",
+          "category": "knowledge_update",
+          "success_rate": 0,
+          "stale_error_rate": 1
+        },
+        {
+          "namespace": "updated-port",
+          "category": "knowledge_update",
+          "success_rate": 0,
+          "stale_error_rate": 1
+        },
+        {
+          "namespace": "backup-rule",
+          "category": "workflow_gotcha",
+          "success_rate": 0,
+          "stale_error_rate": 1
+        },
+        {
+          "namespace": "merge-rule",
+          "category": "workflow_gotcha",
+          "success_rate": 0,
+          "stale_error_rate": 1
+        },
+        {
+          "namespace": "token-rule",
+          "category": "workflow_gotcha",
+          "success_rate": 0,
+          "stale_error_rate": 1
+        },
+        {
+          "namespace": "recovery-rule",
+          "category": "workflow_gotcha",
+          "success_rate": 0,
+          "stale_error_rate": 1
+        },
+        {
+          "namespace": "release-rule",
+          "category": "workflow_gotcha",
+          "success_rate": 0,
+          "stale_error_rate": 1
+        },
+        {
+          "namespace": "migration-rule",
+          "category": "workflow_gotcha",
+          "success_rate": 0,
+          "stale_error_rate": 1
+        }
+      ],
+      "avg_latency_ms": 4.4381455549349385,
+      "p50_latency_ms": 4.25810000160709,
+      "p95_latency_ms": 5.2479999721981585,
+      "p99_latency_ms": 6.857900007162243,
+      "cold_p95_latency_ms": 5.266799998935312,
+      "steady_p95_latency_ms": 5.185399961192161
     },
     {
       "engine": "WaveMind + Memory OS",
       "task_success_rate": 1.0,
       "stale_error_rate": 0.0,
-      "query_count": 1000,
-      "queries_per_trial": 200,
+      "query_count": 2250,
+      "queries_per_trial": 450,
       "measurement_trials": 5,
       "context_items_per_query": 1,
-      "cache_hits": 600,
-      "cache_misses": 535,
-      "priority_predictions": 40,
-      "forgetting_demotions": 40,
-      "worker_runs": 40,
+      "cache_hits": 1350,
+      "cache_misses": 1220,
+      "priority_predictions": 90,
+      "forgetting_demotions": 90,
+      "worker_runs": 90,
+      "context_tokens_returned": 20625,
+      "full_context_tokens": 41375,
+      "trial_task_success_rates": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "trial_stale_error_rates": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "trial_category_success": [
+        {
+          "knowledge_update": 1.0,
+          "preference_update": 1.0,
+          "state_tracking": 1.0,
+          "workflow_gotcha": 1.0
+        },
+        {
+          "knowledge_update": 1.0,
+          "preference_update": 1.0,
+          "state_tracking": 1.0,
+          "workflow_gotcha": 1.0
+        },
+        {
+          "knowledge_update": 1.0,
+          "preference_update": 1.0,
+          "state_tracking": 1.0,
+          "workflow_gotcha": 1.0
+        },
+        {
+          "knowledge_update": 1.0,
+          "preference_update": 1.0,
+          "state_tracking": 1.0,
+          "workflow_gotcha": 1.0
+        },
+        {
+          "knowledge_update": 1.0,
+          "preference_update": 1.0,
+          "state_tracking": 1.0,
+          "workflow_gotcha": 1.0
+        }
+      ],
+      "trial_case_outcomes": [
+        [
+          {
+            "namespace": "role",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "city",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "budget",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "style",
+            "category": "preference_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "project",
+            "category": "state_tracking",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "token",
+            "category": "state_tracking",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "language",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "exchange",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "updated-budget",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "updated-region",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "updated-owner",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "updated-port",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "backup-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "merge-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "token-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "recovery-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "release-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "migration-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          }
+        ],
+        [
+          {
+            "namespace": "role",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "city",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "budget",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "style",
+            "category": "preference_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "project",
+            "category": "state_tracking",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "token",
+            "category": "state_tracking",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "language",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "exchange",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "updated-budget",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "updated-region",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "updated-owner",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "updated-port",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "backup-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "merge-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "token-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "recovery-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "release-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "migration-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          }
+        ],
+        [
+          {
+            "namespace": "role",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "city",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "budget",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "style",
+            "category": "preference_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "project",
+            "category": "state_tracking",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "token",
+            "category": "state_tracking",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "language",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "exchange",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "updated-budget",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "updated-region",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "updated-owner",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "updated-port",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "backup-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "merge-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "token-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "recovery-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "release-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "migration-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          }
+        ],
+        [
+          {
+            "namespace": "role",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "city",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "budget",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "style",
+            "category": "preference_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "project",
+            "category": "state_tracking",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "token",
+            "category": "state_tracking",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "language",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "exchange",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "updated-budget",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "updated-region",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "updated-owner",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "updated-port",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "backup-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "merge-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "token-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "recovery-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "release-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "migration-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          }
+        ],
+        [
+          {
+            "namespace": "role",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "city",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "budget",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "style",
+            "category": "preference_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "project",
+            "category": "state_tracking",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "token",
+            "category": "state_tracking",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "language",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "exchange",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "updated-budget",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "updated-region",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "updated-owner",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "updated-port",
+            "category": "knowledge_update",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "backup-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "merge-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "token-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "recovery-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "release-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          },
+          {
+            "namespace": "migration-rule",
+            "category": "workflow_gotcha",
+            "success_rate": 1,
+            "stale_error_rate": 0
+          }
+        ]
+      ],
       "latency_trials_ms": {
         "avg_latency_ms": [
-          1.149717000007513,
-          1.3787164999666857,
-          1.1290364996966673,
-          1.1557210002865759,
-          1.0724855001899414
+          1.770650666827957,
+          1.72589000275669,
+          1.7312362210618124,
+          1.8837826661506876,
+          1.7224155531989203
+        ],
+        "p50_latency_ms": [
+          0.00200001522898674,
+          0.00200001522898674,
+          0.00200001522898674,
+          0.00200001522898674,
+          0.002100015990436077
         ],
         "p95_latency_ms": [
-          3.3088999989558943,
-          3.8161999982548878,
-          3.1308999969041906,
-          3.2509000011486933,
-          2.9352999990805984
+          4.835699975956231,
+          4.575299972202629,
+          4.728300031274557,
+          5.26580004952848,
+          4.565900017041713
+        ],
+        "p99_latency_ms": [
+          5.223000014666468,
+          5.0119999796152115,
+          5.285500024911016,
+          5.968400044366717,
+          5.423899972811341
         ],
         "cold_p95_latency_ms": [
-          3.4446999998181127,
-          4.342200001701713,
-          3.221400002075825,
-          3.372999999555759,
-          3.015800000866875
+          5.079899972770363,
+          4.804899974260479,
+          4.942099971231073,
+          5.723599984776229,
+          4.840199952013791
         ],
         "steady_p95_latency_ms": [
-          0.0018999999156221747,
-          0.0029000002541579306,
-          0.001500004145782441,
-          0.001600004907231778,
-          0.001800006430130452
+          0.002300017513334751,
+          0.002200016751885414,
+          0.0027999631129205227,
+          0.002200016751885414,
+          0.0028999638743698597
         ]
       },
-      "avg_latency_ms": 1.149717000007513,
-      "p95_latency_ms": 3.2509000011486933,
-      "cold_p95_latency_ms": 3.372999999555759,
-      "steady_p95_latency_ms": 0.001800006430130452
+      "context_budget_saved": 0.5015105740181269,
+      "category_success": {
+        "knowledge_update": 1.0,
+        "preference_update": 1.0,
+        "state_tracking": 1.0,
+        "workflow_gotcha": 1.0
+      },
+      "category_stale_error": {
+        "knowledge_update": 0.0,
+        "preference_update": 0.0,
+        "state_tracking": 0.0,
+        "workflow_gotcha": 0.0
+      },
+      "case_outcomes": [
+        {
+          "namespace": "role",
+          "category": "knowledge_update",
+          "success_rate": 1,
+          "stale_error_rate": 0
+        },
+        {
+          "namespace": "city",
+          "category": "knowledge_update",
+          "success_rate": 1,
+          "stale_error_rate": 0
+        },
+        {
+          "namespace": "budget",
+          "category": "knowledge_update",
+          "success_rate": 1,
+          "stale_error_rate": 0
+        },
+        {
+          "namespace": "style",
+          "category": "preference_update",
+          "success_rate": 1,
+          "stale_error_rate": 0
+        },
+        {
+          "namespace": "project",
+          "category": "state_tracking",
+          "success_rate": 1,
+          "stale_error_rate": 0
+        },
+        {
+          "namespace": "token",
+          "category": "state_tracking",
+          "success_rate": 1,
+          "stale_error_rate": 0
+        },
+        {
+          "namespace": "language",
+          "category": "knowledge_update",
+          "success_rate": 1,
+          "stale_error_rate": 0
+        },
+        {
+          "namespace": "exchange",
+          "category": "knowledge_update",
+          "success_rate": 1,
+          "stale_error_rate": 0
+        },
+        {
+          "namespace": "updated-budget",
+          "category": "knowledge_update",
+          "success_rate": 1,
+          "stale_error_rate": 0
+        },
+        {
+          "namespace": "updated-region",
+          "category": "knowledge_update",
+          "success_rate": 1,
+          "stale_error_rate": 0
+        },
+        {
+          "namespace": "updated-owner",
+          "category": "knowledge_update",
+          "success_rate": 1,
+          "stale_error_rate": 0
+        },
+        {
+          "namespace": "updated-port",
+          "category": "knowledge_update",
+          "success_rate": 1,
+          "stale_error_rate": 0
+        },
+        {
+          "namespace": "backup-rule",
+          "category": "workflow_gotcha",
+          "success_rate": 1,
+          "stale_error_rate": 0
+        },
+        {
+          "namespace": "merge-rule",
+          "category": "workflow_gotcha",
+          "success_rate": 1,
+          "stale_error_rate": 0
+        },
+        {
+          "namespace": "token-rule",
+          "category": "workflow_gotcha",
+          "success_rate": 1,
+          "stale_error_rate": 0
+        },
+        {
+          "namespace": "recovery-rule",
+          "category": "workflow_gotcha",
+          "success_rate": 1,
+          "stale_error_rate": 0
+        },
+        {
+          "namespace": "release-rule",
+          "category": "workflow_gotcha",
+          "success_rate": 1,
+          "stale_error_rate": 0
+        },
+        {
+          "namespace": "migration-rule",
+          "category": "workflow_gotcha",
+          "success_rate": 1,
+          "stale_error_rate": 0
+        }
+      ],
+      "avg_latency_ms": 1.7312362210618124,
+      "p50_latency_ms": 0.00200001522898674,
+      "p95_latency_ms": 4.728300031274557,
+      "p99_latency_ms": 5.285500024911016,
+      "cold_p95_latency_ms": 4.942099971231073,
+      "steady_p95_latency_ms": 0.002300017513334751
     }
   ]
 }
