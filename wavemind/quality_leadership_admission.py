@@ -630,6 +630,7 @@ def write_quality_leadership_artifacts(
     *,
     root: str | Path = ".",
     expected_source_sha: str | None = None,
+    protocol_payload: Mapping[str, Any] | None = None,
     protocol_output: str | Path = DEFAULT_PROTOCOL_PATH,
     results_output: str | Path = DEFAULT_RESULTS_PATH,
     per_query_output: str | Path = DEFAULT_PER_QUERY_PATH,
@@ -644,7 +645,12 @@ def write_quality_leadership_artifacts(
     per_query_path = _resolve(root_path, per_query_output)
     admission_path = _resolve(root_path, admission_output)
     markdown_path = _resolve(root_path, markdown_output)
-    _write_json(protocol_path, quality_leadership_protocol_manifest(root=root_path))
+    _write_json(
+        protocol_path,
+        protocol_payload
+        if protocol_payload is not None
+        else quality_leadership_protocol_manifest(root=root_path),
+    )
     _write_json(results_path, quality_leadership_not_run_results(root=root_path))
     _write_text(
         per_query_path,

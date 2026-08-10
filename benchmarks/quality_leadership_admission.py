@@ -10,6 +10,11 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from benchmarks.quality_leadership_freeze_protocol import (
+    CANDIDATE2_LANE,
+    build_frozen_protocol,
+    fetch_memory_agent_bench_metadata,
+)
 from wavemind.quality_leadership_admission import write_quality_leadership_artifacts
 
 
@@ -18,6 +23,24 @@ def main() -> int:
     parser.add_argument("--expected-source-sha")
     parser.add_argument("--safe-product", type=Path, default=None)
     parser.add_argument("--workspace-experience", type=Path, default=None)
+    parser.add_argument(
+        "--protocol-lane",
+        choices=("gap-audit", "v1", CANDIDATE2_LANE),
+        default="gap-audit",
+        help=(
+            "Protocol snapshot to write. gap-audit preserves the legacy "
+            "fail-closed placeholder; v1/candidate2 freeze a concrete split "
+            "from MemoryAgentBench metadata without opening rows."
+        ),
+    )
+    parser.add_argument(
+        "--metadata-json",
+        type=Path,
+        help=(
+            "Optional Hugging Face dataset metadata JSON for frozen protocol "
+            "lanes. If omitted, public metadata is fetched."
+        ),
+    )
     parser.add_argument(
         "--protocol-output",
         type=Path,
@@ -45,9 +68,22 @@ def main() -> int:
     )
     parser.add_argument("--require-admitted", action="store_true")
     args = parser.parse_args()
+    protocol_payload = None
+    if args.protocol_lane != "gap-audit":
+        metadata = (
+            json.loads(args.metadata_json.read_text(encoding="utf-8"))
+            if args.metadata_json
+            else fetch_memory_agent_bench_metadata()
+        )
+        protocol_payload = build_frozen_protocol(
+            root=PROJECT_ROOT,
+            memory_agent_metadata=metadata,
+            lane=args.protocol_lane,
+        )
     payload = write_quality_leadership_artifacts(
         root=PROJECT_ROOT,
         expected_source_sha=args.expected_source_sha,
+        protocol_payload=protocol_payload,
         protocol_output=args.protocol_output,
         results_output=args.results_output,
         per_query_output=args.per_query_output,

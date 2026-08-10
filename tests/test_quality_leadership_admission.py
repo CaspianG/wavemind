@@ -15,6 +15,7 @@ from wavemind.quality_leadership_admission import (
     quality_leadership_results_from_diagnostics,
     quality_leadership_protocol_manifest,
     validate_goal4_failure_artifact,
+    write_quality_leadership_artifacts,
     write_quality_leadership_development_results,
 )
 from wavemind.evidence import (
@@ -760,6 +761,88 @@ def test_freeze_cli_can_write_candidate2_lane(tmp_path: Path) -> None:
     assert payload["new_quality_dataset"]["revision"] == CANDIDATE2_DATASET_REVISION
     assert payload["new_quality_dataset"]["development_split"]["case_count"] == 8
     assert payload["new_quality_dataset"]["held_out_split"]["case_count"] == 138
+
+
+def test_write_artifacts_accepts_preregistered_candidate2_protocol(
+    tmp_path: Path,
+) -> None:
+    protocol = build_frozen_protocol(
+        root=PROJECT_ROOT,
+        memory_agent_metadata=_memory_agent_metadata(),
+        lane=CANDIDATE2_LANE,
+    )
+
+    payload = write_quality_leadership_artifacts(
+        root=PROJECT_ROOT,
+        expected_source_sha=_source_sha(),
+        protocol_payload=protocol,
+        protocol_output=tmp_path / "protocol.json",
+        results_output=tmp_path / "results.json",
+        per_query_output=tmp_path / "per_query.jsonl",
+        admission_output=tmp_path / "admission.json",
+        markdown_output=tmp_path / "admission.md",
+    )
+
+    rows = {row["id"]: row for row in payload["rows"]}
+    persisted_protocol = json.loads((tmp_path / "protocol.json").read_text("utf-8"))
+    assert payload["status"] == "blocked"
+    assert payload["admitted"] is False
+    assert rows["protocol-snapshot-current"]["status"] == "implemented"
+    assert rows["protocol-frozen-before-heldout"]["status"] == "implemented"
+    assert rows["development-go-no-go"]["status"] == "blocked"
+    assert persisted_protocol["new_quality_dataset"]["lane"] == CANDIDATE2_LANE
+    assert persisted_protocol["new_quality_dataset"]["held_out_viewed"] is False
+
+
+def test_benchmark_wrapper_can_write_candidate2_exact_protocol(
+    tmp_path: Path,
+) -> None:
+    metadata = tmp_path / "memoryagentbench_metadata.json"
+    protocol = tmp_path / "protocol.json"
+    results = tmp_path / "results.json"
+    per_query = tmp_path / "per_query.jsonl"
+    admission = tmp_path / "admission.json"
+    markdown = tmp_path / "admission.md"
+    metadata.write_text(json.dumps(_memory_agent_metadata()), encoding="utf-8")
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "benchmarks/quality_leadership_admission.py",
+            "--metadata-json",
+            str(metadata),
+            "--protocol-lane",
+            CANDIDATE2_LANE,
+            "--expected-source-sha",
+            _source_sha(),
+            "--protocol-output",
+            str(protocol),
+            "--results-output",
+            str(results),
+            "--per-query-output",
+            str(per_query),
+            "--output",
+            str(admission),
+            "--markdown-output",
+            str(markdown),
+            "--require-admitted",
+        ],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        check=False,
+    )
+
+    assert completed.returncode == 2
+    payload = json.loads(admission.read_text(encoding="utf-8"))
+    rows = {row["id"]: row for row in payload["rows"]}
+    persisted_protocol = json.loads(protocol.read_text(encoding="utf-8"))
+    assert persisted_protocol["new_quality_dataset"]["lane"] == CANDIDATE2_LANE
+    assert rows["protocol-snapshot-current"]["status"] == "implemented"
+    assert rows["protocol-frozen-before-heldout"]["status"] == "implemented"
+    assert rows["development-go-no-go"]["status"] == "blocked"
+    assert payload["admitted"] is False
 
 
 def test_frozen_v1_protocol_rejects_post_result_development_refreeze(
