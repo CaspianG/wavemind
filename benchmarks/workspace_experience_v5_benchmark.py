@@ -338,6 +338,11 @@ def _train_positive(
                 "semantic_family": case["semantic_family"],
                 "workflow_group": case["workflow_group"],
                 "outcome_kind": outcome_kind,
+                "packet_excerpt": (
+                    f"Verify: {outcome_kind} {case['source_path']} -> "
+                    f"exit {case['expected_outcome']['expected_exit_code']}. "
+                    f"Symptom: {case['failure_symptom']}."
+                ),
             },
         )
         citation = f"experience:{edited['experience_id']}@v{edited['experience']['version']}"
