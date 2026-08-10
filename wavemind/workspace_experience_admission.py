@@ -5,7 +5,7 @@ import json
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 
 WORKSPACE_EXPERIENCE_ADMISSION_SCHEMA = "wavemind.workspace_experience_admission.v1"
@@ -201,17 +201,24 @@ def evaluate_workspace_experience_admission_matrix(
         },
         "rows": rows,
         "claim_boundary": (
-            "This matrix is a Goal 7 gap audit, not final production admission."
+            "This checked-in payload is a Goal 7 evidence snapshot. It is not an exact-current "
+            "PR or main admission; exact verdicts are produced by CI artifacts on the current SHA. "
+            "The goal remains blocked while Safe Product is required_current."
         ),
     }
 
 
-def render_workspace_experience_admission_markdown(payload: dict[str, Any]) -> str:
+def render_workspace_experience_admission_markdown(
+    payload: dict[str, Any],
+    *,
+    title: str = "Workspace Experience Admission Matrix",
+) -> str:
     lines = [
-        "# Workspace Experience Admission Matrix",
+        f"# {title}",
         "",
         f"- Status: `{payload['status']}`",
-        f"- Source SHA: `{payload.get('source_sha')}`",
+        f"- Evidence Snapshot Source SHA: `{payload.get('source_sha')}`",
+        "- Exact Current Verdict: CI artifact on the current PR/main SHA",
         f"- Protocol: `{payload['protocol']['revision']}`",
         f"- Protocol SHA-256: `{payload['protocol']['sha256']}`",
         "",
@@ -233,6 +240,38 @@ def render_workspace_experience_admission_markdown(payload: dict[str, Any]) -> s
     return "\n".join(lines) + "\n"
 
 
+def write_workspace_experience_admission_artifacts(
+    *,
+    root: str | Path = ".",
+    matrix_output: str | Path = "benchmarks/workspace_experience_admission_matrix.json",
+    matrix_markdown_output: str | Path = "benchmarks/WORKSPACE_EXPERIENCE_ADMISSION_MATRIX.md",
+    result_output: str | Path = "benchmarks/workspace_experience_admission_results.json",
+    report_output: str | Path = "benchmarks/WORKSPACE_EXPERIENCE_ADMISSION.md",
+    baseline_source_sha: str | None = None,
+) -> dict[str, Any]:
+    payload = evaluate_workspace_experience_admission_matrix(
+        root=root,
+        baseline_source_sha=baseline_source_sha,
+    )
+    _write_json(Path(matrix_output), payload)
+    _write_json(Path(result_output), payload)
+    _write_text(
+        Path(matrix_markdown_output),
+        render_workspace_experience_admission_markdown(
+            payload,
+            title="Workspace Experience Admission Matrix",
+        ),
+    )
+    _write_text(
+        Path(report_output),
+        render_workspace_experience_admission_markdown(
+            payload,
+            title="Workspace Experience Admission",
+        ),
+    )
+    return payload
+
+
 def write_workspace_experience_admission_matrix(
     *,
     root: str | Path = ".",
@@ -244,18 +283,28 @@ def write_workspace_experience_admission_matrix(
         root=root,
         baseline_source_sha=baseline_source_sha,
     )
-    output_path = Path(output)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(
+    _write_json(Path(output), payload)
+    _write_text(
+        Path(markdown_output),
+        render_workspace_experience_admission_markdown(
+            payload,
+            title="Workspace Experience Admission Matrix",
+        ),
+    )
+    return payload
+
+
+def _write_json(path: Path, payload: Mapping[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
         json.dumps(payload, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
         encoding="utf-8",
     )
-    markdown_path = Path(markdown_output)
-    markdown_path.write_text(
-        render_workspace_experience_admission_markdown(payload),
-        encoding="utf-8",
-    )
-    return payload
+
+
+def _write_text(path: Path, value: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(value, encoding="utf-8")
 
 
 def _row(
@@ -487,6 +536,7 @@ def _source_manifest(root: Path) -> dict[str, Any]:
         "tests/test_workspace_experience_benchmark.py",
         "tests/test_workspace_experience_v4_benchmark.py",
         "tests/test_workspace_experience_v5_benchmark.py",
+        "tests/test_workspace_experience_admission.py",
         "tests/test_experience_compiler.py",
         "tests/test_experience_runtime_contracts.py",
     ]
