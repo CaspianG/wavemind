@@ -35,8 +35,9 @@ def _record(
     confidence: float = 0.85,
     subject: str | None = None,
     protected: bool = False,
+    metadata: dict | None = None,
 ) -> ExperienceRecord:
-    metadata = {}
+    metadata = dict(metadata or {})
     if subject:
         metadata["subject"] = subject
     if protected:
@@ -282,6 +283,41 @@ def test_packet_is_budgeted_ranked_explainable_and_expandable(compiler):
     assert len(details) == 1
     assert details[0].content == relevant.content
     assert details[0].content_sha256 == relevant.content_sha256
+
+
+def test_packet_uses_compact_excerpt_without_losing_detail(compiler):
+    record = _record(
+        id="compact",
+        title="Run the verified workspace checker",
+        content=(
+            "Full operator runbook with preconditions, failure symptoms, expected "
+            "results, rollback notes, and long primary-source provenance that should "
+            "remain expandable but should not be injected into the minimal packet."
+        ),
+        trust=TrustClass.VERIFIED_OPERATOR,
+        status=ExperienceStatus.ACTIVE,
+        metadata={"packet_excerpt": "Verify: pytest tests/test_api.py -> exit 0."},
+    )
+    compiler.store.put(record)
+
+    packet = compiler.compile_packet(
+        "How should I recover a failed deployment?",
+        namespace="agent",
+        context=FirewallContext(namespace="agent"),
+        token_budget=160,
+        top_k=1,
+        domains=("release-engineering",),
+        tools=("kubectl", "git"),
+    )
+
+    assert packet.items[0].excerpt == "Verify: pytest tests/test_api.py -> exit 0."
+    assert "Full operator runbook" not in packet.as_prompt()
+    details = compiler.expand(
+        [packet.items[0].experience_id],
+        namespace="agent",
+        context=FirewallContext(namespace="agent"),
+    )
+    assert details[0].content == record.content
 
 
 def test_packet_excludes_quarantined_and_shadow_records(compiler):

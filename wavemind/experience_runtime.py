@@ -726,8 +726,12 @@ class AgentExperienceRuntime:
                     ),
                 )
             if verification is not None:
+                review_target = self._reviewable_candidate(stored)
+                if review_target is None:
+                    statuses[stored.id] = stored.status.value
+                    continue
                 review = self.compiler.review_candidate(
-                    stored.id,
+                    review_target.id,
                     evidence_id=f"{verification.evidence_id}:{stored.kind.value}",
                     successful=verification.success,
                     score=verification.score,
@@ -742,7 +746,9 @@ class AgentExperienceRuntime:
                         "verification_reference": verification.reference,
                     },
                 )
-                statuses[stored.id] = review.status.value
+                if review_target.id != stored.id:
+                    statuses[stored.id] = stored.status.value
+                statuses[review_target.id] = review.status.value
             else:
                 statuses[stored.id] = stored.status.value
 
@@ -777,20 +783,65 @@ class AgentExperienceRuntime:
         )
 
     def approve(self, experience_id: str, *, namespace: str, evidence_id: str, score: float = 1.0) -> str:
-        review = self.compiler.review_candidate(
-            experience_id,
-            evidence_id=evidence_id,
-            successful=True,
-            score=score,
-            context=FirewallContext(
-                namespace=namespace,
-                actor="operator",
-                actor_trust=TrustClass.VERIFIED_OPERATOR,
-                operator_override=True,
-            ),
-            metadata={"verification_source": VerificationSource.OPERATOR.value},
-        )
-        return review.status.value
+        status = ""
+        for index in range(self.compiler.policy.activation_validation_count):
+            review = self.compiler.review_candidate(
+                experience_id,
+                evidence_id=(
+                    evidence_id if index == 0 else f"{evidence_id}:operator:{index + 1}"
+                ),
+                successful=True,
+                score=score,
+                context=FirewallContext(
+                    namespace=namespace,
+                    actor="operator",
+                    actor_trust=TrustClass.VERIFIED_OPERATOR,
+                    operator_override=True,
+                ),
+                metadata={"verification_source": VerificationSource.OPERATOR.value},
+            )
+            status = review.status.value
+            if review.status is ExperienceStatus.ACTIVE:
+                break
+        return status
+
+    def _reviewable_candidate(self, record: ExperienceRecord) -> ExperienceRecord | None:
+        if record.status in {
+            ExperienceStatus.SHADOW,
+            ExperienceStatus.CANARY,
+            ExperienceStatus.ACTIVE,
+        }:
+            return record
+        if record.status is not ExperienceStatus.SUPERSEDED:
+            return None
+        seen = {record.id}
+        current = record
+        while True:
+            with self.store._lock:
+                row = self.store.conn.execute(
+                    """
+                    SELECT id FROM experience_records
+                    WHERE supersedes_id = ?
+                    ORDER BY version DESC, updated_at DESC, created_at DESC, id ASC
+                    LIMIT 1
+                    """,
+                    (current.id,),
+                ).fetchone()
+            if row is None:
+                return None
+            replacement = self.store.get(str(row["id"]))
+            if replacement is None or replacement.id in seen:
+                return None
+            if replacement.status in {
+                ExperienceStatus.SHADOW,
+                ExperienceStatus.CANARY,
+                ExperienceStatus.ACTIVE,
+            }:
+                return replacement
+            if replacement.status is not ExperienceStatus.SUPERSEDED:
+                return None
+            seen.add(replacement.id)
+            current = replacement
 
     def reject(self, experience_id: str, *, namespace: str, reason: str) -> ExperienceRecord:
         record = self.store.get(experience_id)
@@ -883,7 +934,17 @@ class AgentExperienceRuntime:
         source_type = "independently_verified_run" if verified else "unverified_run"
         kinds: list[tuple[ExperienceKind, str, str, dict[str, Any]]] = []
 
-        plan = tuple(step.name for step in calls if step.name)
+        declared_tools = tuple(
+            str(tool)
+            for tool in metadata.get("declared_tools", ())
+            if isinstance(tool, str) and tool.strip()
+        )
+        plan = tuple(
+            dict.fromkeys(
+                tuple(tool for tool in declared_tools if tool)
+                + tuple(step.name for step in calls if step.name)
+            )
+        )
         if plan:
             kinds.append(
                 (
@@ -1056,7 +1117,16 @@ class CapturedRun:
         self._capture(AgentEventKind.RUN_STARTED, {"objective": objective})
         self._capture(
             AgentEventKind.TASK_STARTED,
-            {"objective": objective, "domain": domain, "task_type": task_type},
+            {
+                "objective": objective,
+                "domain": domain,
+                "task_type": task_type,
+                "declared_tools": list(
+                    dict.fromkeys(
+                        str(tool) for tool in metadata.get("declared_tools", ())
+                    )
+                ),
+            },
         )
 
     def _capture(

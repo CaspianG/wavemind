@@ -492,7 +492,7 @@ class ExperienceCompiler:
                     self.policy.max_item_tokens,
                     max(8, remaining - 8),
                 )
-                excerpt = _truncate_tokens(record.content, excerpt_budget)
+                excerpt = _truncate_tokens(_packet_excerpt_source(record), excerpt_budget)
                 item_tokens = _estimated_tokens(
                     f"[E{index}] {record.title}{canary_label}: {excerpt} "
                     f"({citation})"
@@ -660,6 +660,13 @@ def _tokens(text: str) -> set[str]:
 
 def _estimated_tokens(text: str) -> int:
     return max(1, math.ceil(len(text) / 4))
+
+
+def _packet_excerpt_source(record: ExperienceRecord) -> str:
+    value = record.metadata.get("packet_excerpt")
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    return record.content
 
 
 def _truncate_tokens(text: str, token_budget: int) -> str:

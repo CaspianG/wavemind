@@ -1,0 +1,2784 @@
+{
+  "cases": [
+    {
+      "case_id": "case-requests-01-730337a1",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "requests-01-730337a1",
+      "query": "In psf/requests at pinned commit, work touches `.github/workflows/lint.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "split": "dev",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ]
+    },
+    {
+      "case_id": "case-requests-02-13a10941",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "requests-02-13a10941",
+      "query": "In psf/requests at pinned commit, work touches `.github/workflows/zizmor.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "split": "dev",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ]
+    },
+    {
+      "case_id": "case-requests-03-4639989a",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "requests-03-4639989a",
+      "query": "In psf/requests at pinned commit, work touches `.github/workflows/publish.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "split": "dev",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ]
+    },
+    {
+      "case_id": "case-requests-04-0ba9eefd",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "requests-04-0ba9eefd",
+      "query": "In psf/requests at pinned commit, work touches `.github/workflows/run-tests.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "split": "heldout",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ]
+    },
+    {
+      "case_id": "case-requests-05-a71c17a4",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "requests-05-a71c17a4",
+      "query": "In psf/requests at pinned commit, work touches `.github/workflows/typecheck.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "split": "heldout",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ]
+    },
+    {
+      "case_id": "case-requests-06-79dc97ed",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "requests-06-79dc97ed",
+      "query": "In psf/requests at pinned commit, work touches `.github/workflows/lock-issues.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "split": "heldout",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ]
+    },
+    {
+      "case_id": "case-requests-07-49d95483",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "requests-07-49d95483",
+      "query": "In psf/requests at pinned commit, work touches `.github/workflows/close-issues.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "split": "heldout",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ]
+    },
+    {
+      "case_id": "case-requests-08-c3aa8b7f",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "requests-08-c3aa8b7f",
+      "query": "In psf/requests at pinned commit, work touches `.github/workflows/codeql-analysis.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "split": "heldout",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ]
+    },
+    {
+      "case_id": "case-requests-09-5d07e7d7",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "requests-09-5d07e7d7",
+      "query": "In psf/requests at pinned commit, work touches `pyproject.toml` (configuration). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "split": "heldout",
+      "task_type": "configuration:toml",
+      "tools": [
+        "verify-source",
+        "configuration"
+      ]
+    },
+    {
+      "case_id": "case-requests-10-254a2da7",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "requests-10-254a2da7",
+      "query": "In psf/requests at pinned commit, work touches `docs/conf.py` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "split": "heldout",
+      "task_type": "documentation:py",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ]
+    },
+    {
+      "case_id": "case-requests-11-9dd51771",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "requests-11-9dd51771",
+      "query": "In psf/requests at pinned commit, work touches `docs/_themes/flask_theme_support.py` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "split": "dev",
+      "task_type": "documentation:py",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ]
+    },
+    {
+      "case_id": "case-requests-12-8ec9a00b",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "requests-12-8ec9a00b",
+      "query": "In psf/requests at pinned commit, work touches `README.md` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "split": "dev",
+      "task_type": "documentation:md",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ]
+    },
+    {
+      "case_id": "case-requests-13-e91aac6c",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "requests-13-e91aac6c",
+      "query": "In psf/requests at pinned commit, work touches `docs/api.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "split": "dev",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ]
+    },
+    {
+      "case_id": "case-requests-14-d0153cac",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "requests-14-d0153cac",
+      "query": "In psf/requests at pinned commit, work touches `docs/index.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "split": "heldout",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ]
+    },
+    {
+      "case_id": "case-requests-15-370a3ef6",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "requests-15-370a3ef6",
+      "query": "In psf/requests at pinned commit, work touches `docs/dev/authors.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "split": "heldout",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ]
+    },
+    {
+      "case_id": "case-requests-16-30404107",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "requests-16-30404107",
+      "query": "In psf/requests at pinned commit, work touches `docs/user/install.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "split": "heldout",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ]
+    },
+    {
+      "case_id": "case-requests-17-9f6816a4",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "requests-17-9f6816a4",
+      "query": "In psf/requests at pinned commit, work touches `docs/community/faq.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "split": "heldout",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ]
+    },
+    {
+      "case_id": "case-requests-18-7a246488",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "requests-18-7a246488",
+      "query": "In psf/requests at pinned commit, work touches `docs/user/advanced.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "split": "heldout",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ]
+    },
+    {
+      "case_id": "case-requests-19-d6e4ee91",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "requests-19-d6e4ee91",
+      "query": "In psf/requests at pinned commit, work touches `docs/user/quickstart.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "split": "heldout",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ]
+    },
+    {
+      "case_id": "case-requests-20-c39403d2",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "requests-20-c39403d2",
+      "query": "In psf/requests at pinned commit, work touches `docs/dev/contributing.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "split": "heldout",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ]
+    },
+    {
+      "case_id": "case-flask-01-a4f6c661",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "flask-01-a4f6c661",
+      "query": "In pallets/flask at pinned commit, work touches `.github/workflows/lock.yaml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "split": "dev",
+      "task_type": "ci-workflow:yaml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ]
+    },
+    {
+      "case_id": "case-flask-02-2dc58e3f",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "flask-02-2dc58e3f",
+      "query": "In pallets/flask at pinned commit, work touches `.github/workflows/tests.yaml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "split": "dev",
+      "task_type": "ci-workflow:yaml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ]
+    },
+    {
+      "case_id": "case-flask-03-25934851",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "flask-03-25934851",
+      "query": "In pallets/flask at pinned commit, work touches `.github/workflows/zizmor.yaml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "split": "dev",
+      "task_type": "ci-workflow:yaml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ]
+    },
+    {
+      "case_id": "case-flask-04-f190b24a",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "flask-04-f190b24a",
+      "query": "In pallets/flask at pinned commit, work touches `.github/workflows/publish.yaml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "split": "heldout",
+      "task_type": "ci-workflow:yaml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ]
+    },
+    {
+      "case_id": "case-flask-05-c67bcf45",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "flask-05-c67bcf45",
+      "query": "In pallets/flask at pinned commit, work touches `.github/workflows/pre-commit.yaml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "split": "heldout",
+      "task_type": "ci-workflow:yaml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ]
+    },
+    {
+      "case_id": "case-flask-06-5d07e7d7",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "flask-06-5d07e7d7",
+      "query": "In pallets/flask at pinned commit, work touches `pyproject.toml` (configuration). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "split": "heldout",
+      "task_type": "configuration:toml",
+      "tools": [
+        "verify-source",
+        "configuration"
+      ]
+    },
+    {
+      "case_id": "case-flask-07-ec7dd1f0",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "flask-07-ec7dd1f0",
+      "query": "In pallets/flask at pinned commit, work touches `examples/celery/pyproject.toml` (configuration). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "split": "heldout",
+      "task_type": "configuration:toml",
+      "tools": [
+        "verify-source",
+        "configuration"
+      ]
+    },
+    {
+      "case_id": "case-flask-08-18bac9a9",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "flask-08-18bac9a9",
+      "query": "In pallets/flask at pinned commit, work touches `examples/tutorial/pyproject.toml` (configuration). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "split": "heldout",
+      "task_type": "configuration:toml",
+      "tools": [
+        "verify-source",
+        "configuration"
+      ]
+    },
+    {
+      "case_id": "case-flask-09-8b82943c",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "flask-09-8b82943c",
+      "query": "In pallets/flask at pinned commit, work touches `examples/javascript/pyproject.toml` (configuration). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "split": "heldout",
+      "task_type": "configuration:toml",
+      "tools": [
+        "verify-source",
+        "configuration"
+      ]
+    },
+    {
+      "case_id": "case-flask-10-254a2da7",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "flask-10-254a2da7",
+      "query": "In pallets/flask at pinned commit, work touches `docs/conf.py` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "split": "heldout",
+      "task_type": "documentation:py",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ]
+    },
+    {
+      "case_id": "case-flask-11-8ec9a00b",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "flask-11-8ec9a00b",
+      "query": "In pallets/flask at pinned commit, work touches `README.md` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "split": "dev",
+      "task_type": "documentation:md",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ]
+    },
+    {
+      "case_id": "case-flask-12-e91aac6c",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "flask-12-e91aac6c",
+      "query": "In pallets/flask at pinned commit, work touches `docs/api.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "split": "dev",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ]
+    },
+    {
+      "case_id": "case-flask-13-0a2c9b13",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "flask-13-0a2c9b13",
+      "query": "In pallets/flask at pinned commit, work touches `docs/cli.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "split": "dev",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ]
+    },
+    {
+      "case_id": "case-flask-14-d0153cac",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "flask-14-d0153cac",
+      "query": "In pallets/flask at pinned commit, work touches `docs/index.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "split": "heldout",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ]
+    },
+    {
+      "case_id": "case-flask-15-a9e2d22b",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "flask-15-a9e2d22b",
+      "query": "In pallets/flask at pinned commit, work touches `docs/shell.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "split": "heldout",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ]
+    },
+    {
+      "case_id": "case-flask-16-7d339040",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "flask-16-7d339040",
+      "query": "In pallets/flask at pinned commit, work touches `docs/views.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "split": "heldout",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ]
+    },
+    {
+      "case_id": "case-flask-17-877cc255",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "flask-17-877cc255",
+      "query": "In pallets/flask at pinned commit, work touches `docs/config.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "split": "heldout",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ]
+    },
+    {
+      "case_id": "case-flask-18-3b706160",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "flask-18-3b706160",
+      "query": "In pallets/flask at pinned commit, work touches `docs/design.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "split": "heldout",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ]
+    },
+    {
+      "case_id": "case-flask-19-18077162",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "flask-19-18077162",
+      "query": "In pallets/flask at pinned commit, work touches `docs/gevent.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "split": "heldout",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ]
+    },
+    {
+      "case_id": "case-flask-20-f7e49b5a",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "flask-20-f7e49b5a",
+      "query": "In pallets/flask at pinned commit, work touches `docs/server.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "split": "heldout",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ]
+    },
+    {
+      "case_id": "case-vite-01-899ce9c2",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "vite-01-899ce9c2",
+      "query": "In vitejs/vite at pinned commit, work touches `.github/workflows/ci.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "split": "dev",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ]
+    },
+    {
+      "case_id": "case-vite-02-13a10941",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "vite-02-13a10941",
+      "query": "In vitejs/vite at pinned commit, work touches `.github/workflows/zizmor.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "split": "dev",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ]
+    },
+    {
+      "case_id": "case-vite-03-4639989a",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "vite-03-4639989a",
+      "query": "In vitejs/vite at pinned commit, work touches `.github/workflows/publish.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "split": "dev",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ]
+    },
+    {
+      "case_id": "case-vite-04-de372224",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "vite-04-de372224",
+      "query": "In vitejs/vite at pinned commit, work touches `.github/workflows/semgrep.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "split": "heldout",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ]
+    },
+    {
+      "case_id": "case-vite-05-120ed081",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "vite-05-120ed081",
+      "query": "In vitejs/vite at pinned commit, work touches `.github/workflows/release-tag.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "split": "heldout",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ]
+    },
+    {
+      "case_id": "case-vite-06-ed300bdd",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "vite-06-ed300bdd",
+      "query": "In vitejs/vite at pinned commit, work touches `.github/workflows/issue-labeled.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "split": "heldout",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ]
+    },
+    {
+      "case_id": "case-vite-07-b4595f5f",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "vite-07-b4595f5f",
+      "query": "In vitejs/vite at pinned commit, work touches `.github/workflows/preview-release.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "split": "heldout",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ]
+    },
+    {
+      "case_id": "case-vite-08-0fbff1d1",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "vite-08-0fbff1d1",
+      "query": "In vitejs/vite at pinned commit, work touches `.github/workflows/lock-closed-issues.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "split": "heldout",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ]
+    },
+    {
+      "case_id": "case-vite-09-e3c909df",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "vite-09-e3c909df",
+      "query": "In vitejs/vite at pinned commit, work touches `.github/workflows/copilot-setup-steps.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "split": "heldout",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ]
+    },
+    {
+      "case_id": "case-vite-10-bb2ab949",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "vite-10-bb2ab949",
+      "query": "In vitejs/vite at pinned commit, work touches `.github/workflows/issue-close-require.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "split": "heldout",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ]
+    },
+    {
+      "case_id": "case-vite-11-371ecc7d",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "vite-11-371ecc7d",
+      "query": "In vitejs/vite at pinned commit, work touches `.github/workflows/ecosystem-ci-trigger.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "split": "dev",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ]
+    },
+    {
+      "case_id": "case-vite-12-20a74c87",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "vite-12-20a74c87",
+      "query": "In vitejs/vite at pinned commit, work touches `.github/workflows/semantic-pull-request.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "split": "dev",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ]
+    },
+    {
+      "case_id": "case-vite-13-7030d0b2",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "vite-13-7030d0b2",
+      "query": "In vitejs/vite at pinned commit, work touches `package.json` (configuration). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "split": "dev",
+      "task_type": "configuration:json",
+      "tools": [
+        "verify-source",
+        "configuration"
+      ]
+    },
+    {
+      "case_id": "case-vite-14-ae068bcf",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "vite-14-ae068bcf",
+      "query": "In vitejs/vite at pinned commit, work touches `packages/plugin-legacy/package.json` (configuration). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "split": "heldout",
+      "task_type": "configuration:json",
+      "tools": [
+        "verify-source",
+        "configuration"
+      ]
+    },
+    {
+      "case_id": "case-vite-15-ee47adc0",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "vite-15-ee47adc0",
+      "query": "In vitejs/vite at pinned commit, work touches `packages/plugin-legacy/tsconfig.json` (configuration). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "split": "heldout",
+      "task_type": "configuration:json",
+      "tools": [
+        "verify-source",
+        "configuration"
+      ]
+    },
+    {
+      "case_id": "case-vite-16-b6efe0a2",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "vite-16-b6efe0a2",
+      "query": "In vitejs/vite at pinned commit, work touches `packages/vite/src/node/tsconfig.json` (configuration). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "split": "heldout",
+      "task_type": "configuration:json",
+      "tools": [
+        "verify-source",
+        "configuration"
+      ]
+    },
+    {
+      "case_id": "case-vite-17-2b76a90a",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "vite-17-2b76a90a",
+      "query": "In vitejs/vite at pinned commit, work touches `packages/vite/src/types/package.json` (configuration). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "split": "heldout",
+      "task_type": "configuration:json",
+      "tools": [
+        "verify-source",
+        "configuration"
+      ]
+    },
+    {
+      "case_id": "case-vite-18-94163aeb",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "vite-18-94163aeb",
+      "query": "In vitejs/vite at pinned commit, work touches `packages/vite/src/client/tsconfig.json` (configuration). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "split": "heldout",
+      "task_type": "configuration:json",
+      "tools": [
+        "verify-source",
+        "configuration"
+      ]
+    },
+    {
+      "case_id": "case-vite-19-a242ab4f",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "vite-19-a242ab4f",
+      "query": "In vitejs/vite at pinned commit, work touches `packages/vite/src/shared/tsconfig.json` (configuration). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "split": "heldout",
+      "task_type": "configuration:json",
+      "tools": [
+        "verify-source",
+        "configuration"
+      ]
+    },
+    {
+      "case_id": "case-vite-20-e380dc17",
+      "expected_behavior": "execute_verified_outcome",
+      "kind": "positive",
+      "procedure_id": "vite-20-e380dc17",
+      "query": "In vitejs/vite at pinned commit, work touches `packages/vite/src/module-runner/tsconfig.json` (configuration). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "split": "heldout",
+      "task_type": "configuration:json",
+      "tools": [
+        "verify-source",
+        "configuration"
+      ]
+    },
+    {
+      "case_id": "control-unverified-requests-01-730337a1",
+      "expected_behavior": "abstain",
+      "kind": "unverified",
+      "procedure_id": "requests-01-730337a1",
+      "query": "Control unverified: a raw trace mentions `.github/workflows/lint.yml` from psf/requests, but no verified active procedure should be injected here.",
+      "repo": "requests",
+      "source_repo": "requests",
+      "split": "dev",
+      "task_type": "control:unverified",
+      "tools": [
+        "control"
+      ]
+    },
+    {
+      "case_id": "control-stale-requests-02-13a10941",
+      "expected_behavior": "abstain",
+      "kind": "stale",
+      "procedure_id": "requests-02-13a10941",
+      "query": "Control stale: a raw trace mentions `.github/workflows/zizmor.yml` from psf/requests, but no verified active procedure should be injected here.",
+      "repo": "requests",
+      "source_repo": "requests",
+      "split": "dev",
+      "task_type": "control:stale",
+      "tools": [
+        "control"
+      ]
+    },
+    {
+      "case_id": "control-conflict-requests-03-4639989a",
+      "expected_behavior": "abstain",
+      "kind": "conflict",
+      "procedure_id": "requests-03-4639989a",
+      "query": "Control conflict: a raw trace mentions `.github/workflows/publish.yml` from psf/requests, but no verified active procedure should be injected here.",
+      "repo": "requests",
+      "source_repo": "requests",
+      "split": "heldout",
+      "task_type": "control:conflict",
+      "tools": [
+        "control"
+      ]
+    },
+    {
+      "case_id": "control-wrong_workspace-requests-04-0ba9eefd",
+      "expected_behavior": "abstain",
+      "kind": "wrong_workspace",
+      "procedure_id": "requests-04-0ba9eefd",
+      "query": "Control wrong_workspace: a raw trace mentions `.github/workflows/run-tests.yml` from psf/requests, but no verified active procedure should be injected here.",
+      "repo": "flask",
+      "source_repo": "requests",
+      "split": "heldout",
+      "task_type": "control:wrong_workspace",
+      "tools": [
+        "control"
+      ]
+    },
+    {
+      "case_id": "control-unverified-requests-05-a71c17a4",
+      "expected_behavior": "abstain",
+      "kind": "unverified",
+      "procedure_id": "requests-05-a71c17a4",
+      "query": "Control unverified: a raw trace mentions `.github/workflows/typecheck.yml` from psf/requests, but no verified active procedure should be injected here.",
+      "repo": "requests",
+      "source_repo": "requests",
+      "split": "heldout",
+      "task_type": "control:unverified",
+      "tools": [
+        "control"
+      ]
+    },
+    {
+      "case_id": "control-stale-requests-06-79dc97ed",
+      "expected_behavior": "abstain",
+      "kind": "stale",
+      "procedure_id": "requests-06-79dc97ed",
+      "query": "Control stale: a raw trace mentions `.github/workflows/lock-issues.yml` from psf/requests, but no verified active procedure should be injected here.",
+      "repo": "requests",
+      "source_repo": "requests",
+      "split": "heldout",
+      "task_type": "control:stale",
+      "tools": [
+        "control"
+      ]
+    },
+    {
+      "case_id": "control-conflict-requests-07-49d95483",
+      "expected_behavior": "abstain",
+      "kind": "conflict",
+      "procedure_id": "requests-07-49d95483",
+      "query": "Control conflict: a raw trace mentions `.github/workflows/close-issues.yml` from psf/requests, but no verified active procedure should be injected here.",
+      "repo": "requests",
+      "source_repo": "requests",
+      "split": "heldout",
+      "task_type": "control:conflict",
+      "tools": [
+        "control"
+      ]
+    },
+    {
+      "case_id": "control-wrong_workspace-requests-08-c3aa8b7f",
+      "expected_behavior": "abstain",
+      "kind": "wrong_workspace",
+      "procedure_id": "requests-08-c3aa8b7f",
+      "query": "Control wrong_workspace: a raw trace mentions `.github/workflows/codeql-analysis.yml` from psf/requests, but no verified active procedure should be injected here.",
+      "repo": "flask",
+      "source_repo": "requests",
+      "split": "heldout",
+      "task_type": "control:wrong_workspace",
+      "tools": [
+        "control"
+      ]
+    },
+    {
+      "case_id": "control-unverified-requests-09-5d07e7d7",
+      "expected_behavior": "abstain",
+      "kind": "unverified",
+      "procedure_id": "requests-09-5d07e7d7",
+      "query": "Control unverified: a raw trace mentions `pyproject.toml` from psf/requests, but no verified active procedure should be injected here.",
+      "repo": "requests",
+      "source_repo": "requests",
+      "split": "dev",
+      "task_type": "control:unverified",
+      "tools": [
+        "control"
+      ]
+    },
+    {
+      "case_id": "control-stale-requests-10-254a2da7",
+      "expected_behavior": "abstain",
+      "kind": "stale",
+      "procedure_id": "requests-10-254a2da7",
+      "query": "Control stale: a raw trace mentions `docs/conf.py` from psf/requests, but no verified active procedure should be injected here.",
+      "repo": "requests",
+      "source_repo": "requests",
+      "split": "dev",
+      "task_type": "control:stale",
+      "tools": [
+        "control"
+      ]
+    },
+    {
+      "case_id": "control-conflict-requests-11-9dd51771",
+      "expected_behavior": "abstain",
+      "kind": "conflict",
+      "procedure_id": "requests-11-9dd51771",
+      "query": "Control conflict: a raw trace mentions `docs/_themes/flask_theme_support.py` from psf/requests, but no verified active procedure should be injected here.",
+      "repo": "requests",
+      "source_repo": "requests",
+      "split": "heldout",
+      "task_type": "control:conflict",
+      "tools": [
+        "control"
+      ]
+    },
+    {
+      "case_id": "control-wrong_workspace-requests-12-8ec9a00b",
+      "expected_behavior": "abstain",
+      "kind": "wrong_workspace",
+      "procedure_id": "requests-12-8ec9a00b",
+      "query": "Control wrong_workspace: a raw trace mentions `README.md` from psf/requests, but no verified active procedure should be injected here.",
+      "repo": "flask",
+      "source_repo": "requests",
+      "split": "heldout",
+      "task_type": "control:wrong_workspace",
+      "tools": [
+        "control"
+      ]
+    },
+    {
+      "case_id": "control-unverified-requests-13-e91aac6c",
+      "expected_behavior": "abstain",
+      "kind": "unverified",
+      "procedure_id": "requests-13-e91aac6c",
+      "query": "Control unverified: a raw trace mentions `docs/api.rst` from psf/requests, but no verified active procedure should be injected here.",
+      "repo": "requests",
+      "source_repo": "requests",
+      "split": "heldout",
+      "task_type": "control:unverified",
+      "tools": [
+        "control"
+      ]
+    },
+    {
+      "case_id": "control-stale-requests-14-d0153cac",
+      "expected_behavior": "abstain",
+      "kind": "stale",
+      "procedure_id": "requests-14-d0153cac",
+      "query": "Control stale: a raw trace mentions `docs/index.rst` from psf/requests, but no verified active procedure should be injected here.",
+      "repo": "requests",
+      "source_repo": "requests",
+      "split": "heldout",
+      "task_type": "control:stale",
+      "tools": [
+        "control"
+      ]
+    },
+    {
+      "case_id": "control-conflict-requests-15-370a3ef6",
+      "expected_behavior": "abstain",
+      "kind": "conflict",
+      "procedure_id": "requests-15-370a3ef6",
+      "query": "Control conflict: a raw trace mentions `docs/dev/authors.rst` from psf/requests, but no verified active procedure should be injected here.",
+      "repo": "requests",
+      "source_repo": "requests",
+      "split": "heldout",
+      "task_type": "control:conflict",
+      "tools": [
+        "control"
+      ]
+    },
+    {
+      "case_id": "control-wrong_workspace-requests-16-30404107",
+      "expected_behavior": "abstain",
+      "kind": "wrong_workspace",
+      "procedure_id": "requests-16-30404107",
+      "query": "Control wrong_workspace: a raw trace mentions `docs/user/install.rst` from psf/requests, but no verified active procedure should be injected here.",
+      "repo": "flask",
+      "source_repo": "requests",
+      "split": "heldout",
+      "task_type": "control:wrong_workspace",
+      "tools": [
+        "control"
+      ]
+    },
+    {
+      "case_id": "control-unverified-requests-17-9f6816a4",
+      "expected_behavior": "abstain",
+      "kind": "unverified",
+      "procedure_id": "requests-17-9f6816a4",
+      "query": "Control unverified: a raw trace mentions `docs/community/faq.rst` from psf/requests, but no verified active procedure should be injected here.",
+      "repo": "requests",
+      "source_repo": "requests",
+      "split": "dev",
+      "task_type": "control:unverified",
+      "tools": [
+        "control"
+      ]
+    },
+    {
+      "case_id": "control-stale-requests-18-7a246488",
+      "expected_behavior": "abstain",
+      "kind": "stale",
+      "procedure_id": "requests-18-7a246488",
+      "query": "Control stale: a raw trace mentions `docs/user/advanced.rst` from psf/requests, but no verified active procedure should be injected here.",
+      "repo": "requests",
+      "source_repo": "requests",
+      "split": "dev",
+      "task_type": "control:stale",
+      "tools": [
+        "control"
+      ]
+    },
+    {
+      "case_id": "control-conflict-requests-19-d6e4ee91",
+      "expected_behavior": "abstain",
+      "kind": "conflict",
+      "procedure_id": "requests-19-d6e4ee91",
+      "query": "Control conflict: a raw trace mentions `docs/user/quickstart.rst` from psf/requests, but no verified active procedure should be injected here.",
+      "repo": "requests",
+      "source_repo": "requests",
+      "split": "heldout",
+      "task_type": "control:conflict",
+      "tools": [
+        "control"
+      ]
+    },
+    {
+      "case_id": "control-wrong_workspace-requests-20-c39403d2",
+      "expected_behavior": "abstain",
+      "kind": "wrong_workspace",
+      "procedure_id": "requests-20-c39403d2",
+      "query": "Control wrong_workspace: a raw trace mentions `docs/dev/contributing.rst` from psf/requests, but no verified active procedure should be injected here.",
+      "repo": "flask",
+      "source_repo": "requests",
+      "split": "heldout",
+      "task_type": "control:wrong_workspace",
+      "tools": [
+        "control"
+      ]
+    },
+    {
+      "case_id": "control-unverified-flask-01-a4f6c661",
+      "expected_behavior": "abstain",
+      "kind": "unverified",
+      "procedure_id": "flask-01-a4f6c661",
+      "query": "Control unverified: a raw trace mentions `.github/workflows/lock.yaml` from pallets/flask, but no verified active procedure should be injected here.",
+      "repo": "flask",
+      "source_repo": "flask",
+      "split": "heldout",
+      "task_type": "control:unverified",
+      "tools": [
+        "control"
+      ]
+    },
+    {
+      "case_id": "control-stale-flask-02-2dc58e3f",
+      "expected_behavior": "abstain",
+      "kind": "stale",
+      "procedure_id": "flask-02-2dc58e3f",
+      "query": "Control stale: a raw trace mentions `.github/workflows/tests.yaml` from pallets/flask, but no verified active procedure should be injected here.",
+      "repo": "flask",
+      "source_repo": "flask",
+      "split": "heldout",
+      "task_type": "control:stale",
+      "tools": [
+        "control"
+      ]
+    },
+    {
+      "case_id": "control-conflict-flask-03-25934851",
+      "expected_behavior": "abstain",
+      "kind": "conflict",
+      "procedure_id": "flask-03-25934851",
+      "query": "Control conflict: a raw trace mentions `.github/workflows/zizmor.yaml` from pallets/flask, but no verified active procedure should be injected here.",
+      "repo": "flask",
+      "source_repo": "flask",
+      "split": "heldout",
+      "task_type": "control:conflict",
+      "tools": [
+        "control"
+      ]
+    },
+    {
+      "case_id": "control-wrong_workspace-flask-04-f190b24a",
+      "expected_behavior": "abstain",
+      "kind": "wrong_workspace",
+      "procedure_id": "flask-04-f190b24a",
+      "query": "Control wrong_workspace: a raw trace mentions `.github/workflows/publish.yaml` from pallets/flask, but no verified active procedure should be injected here.",
+      "repo": "vite",
+      "source_repo": "flask",
+      "split": "heldout",
+      "task_type": "control:wrong_workspace",
+      "tools": [
+        "control"
+      ]
+    }
+  ],
+  "claim_boundary": "Historical failed checksum-selection experiment only. Task success uses source_sha256_check over pinned files, not reproduced workflow, test, CI, or environment outcomes. This artifact must not satisfy Goal 7 real-work admission.",
+  "methodology_status": "historical_failed_checksum_selection_not_real_work",
+  "not_admission_evidence_reason": "Unique source paths and checksum commands are provenance checks, not independent real workflow/gotcha outcomes.",
+  "procedures": [
+    {
+      "category": "ci-workflow",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/lint.yml",
+        "sha256": "72dd8ce7eaa3ec088ff730ba850f7fe18e0d4fd33699a32b4d96c1ef455e18ff"
+      },
+      "id": "requests-01-730337a1",
+      "query": "In psf/requests at pinned commit, work touches `.github/workflows/lint.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "source_bytes": 612,
+      "source_path": ".github/workflows/lint.yml",
+      "source_sha256": "72dd8ce7eaa3ec088ff730ba850f7fe18e0d4fd33699a32b4d96c1ef455e18ff",
+      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/.github/workflows/lint.yml",
+      "stack": "python",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/lint.yml",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "ci-workflow",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/zizmor.yml",
+        "sha256": "75c6293667c188ebf38eb98cb1b0f5af4bace9dd8c5ffd791abf17bd707b7279"
+      },
+      "id": "requests-02-13a10941",
+      "query": "In psf/requests at pinned commit, work touches `.github/workflows/zizmor.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "source_bytes": 616,
+      "source_path": ".github/workflows/zizmor.yml",
+      "source_sha256": "75c6293667c188ebf38eb98cb1b0f5af4bace9dd8c5ffd791abf17bd707b7279",
+      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/.github/workflows/zizmor.yml",
+      "stack": "python",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/zizmor.yml",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "ci-workflow",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/publish.yml",
+        "sha256": "bfb130e1b84b5f6fa353c8088c2176bac6f35ce622b5e238adb831999ddaae3b"
+      },
+      "id": "requests-03-4639989a",
+      "query": "In psf/requests at pinned commit, work touches `.github/workflows/publish.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "source_bytes": 2590,
+      "source_path": ".github/workflows/publish.yml",
+      "source_sha256": "bfb130e1b84b5f6fa353c8088c2176bac6f35ce622b5e238adb831999ddaae3b",
+      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/.github/workflows/publish.yml",
+      "stack": "python",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/publish.yml",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "ci-workflow",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/run-tests.yml",
+        "sha256": "274a93b31af95a00774def59c0b828e584f3268530079e535fd4d3612d807d41"
+      },
+      "id": "requests-04-0ba9eefd",
+      "query": "In psf/requests at pinned commit, work touches `.github/workflows/run-tests.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "source_bytes": 2388,
+      "source_path": ".github/workflows/run-tests.yml",
+      "source_sha256": "274a93b31af95a00774def59c0b828e584f3268530079e535fd4d3612d807d41",
+      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/.github/workflows/run-tests.yml",
+      "stack": "python",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/run-tests.yml",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "ci-workflow",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/typecheck.yml",
+        "sha256": "81db19ab04cfae8f39b9c67827fc7adfc26954e3b12a6551cf6c39af48aa43a4"
+      },
+      "id": "requests-05-a71c17a4",
+      "query": "In psf/requests at pinned commit, work touches `.github/workflows/typecheck.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "source_bytes": 768,
+      "source_path": ".github/workflows/typecheck.yml",
+      "source_sha256": "81db19ab04cfae8f39b9c67827fc7adfc26954e3b12a6551cf6c39af48aa43a4",
+      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/.github/workflows/typecheck.yml",
+      "stack": "python",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/typecheck.yml",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "ci-workflow",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/lock-issues.yml",
+        "sha256": "287438df0032fc26ec81952c7de7f0ae0557ddc040007add9a3d9d342441b423"
+      },
+      "id": "requests-06-79dc97ed",
+      "query": "In psf/requests at pinned commit, work touches `.github/workflows/lock-issues.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "source_bytes": 408,
+      "source_path": ".github/workflows/lock-issues.yml",
+      "source_sha256": "287438df0032fc26ec81952c7de7f0ae0557ddc040007add9a3d9d342441b423",
+      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/.github/workflows/lock-issues.yml",
+      "stack": "python",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/lock-issues.yml",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "ci-workflow",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/close-issues.yml",
+        "sha256": "ac073f269e0f5e013a38dde8925948e354dcda8ccb14316418cb98085a20adf3"
+      },
+      "id": "requests-07-49d95483",
+      "query": "In psf/requests at pinned commit, work touches `.github/workflows/close-issues.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "source_bytes": 1203,
+      "source_path": ".github/workflows/close-issues.yml",
+      "source_sha256": "ac073f269e0f5e013a38dde8925948e354dcda8ccb14316418cb98085a20adf3",
+      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/.github/workflows/close-issues.yml",
+      "stack": "python",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/close-issues.yml",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "ci-workflow",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/codeql-analysis.yml",
+        "sha256": "41d6dd35e22f681b93d0d358aec811177b18c5104f796f1af178190ee8ff9cc1"
+      },
+      "id": "requests-08-c3aa8b7f",
+      "query": "In psf/requests at pinned commit, work touches `.github/workflows/codeql-analysis.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "source_bytes": 2746,
+      "source_path": ".github/workflows/codeql-analysis.yml",
+      "source_sha256": "41d6dd35e22f681b93d0d358aec811177b18c5104f796f1af178190ee8ff9cc1",
+      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/.github/workflows/codeql-analysis.yml",
+      "stack": "python",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/codeql-analysis.yml",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "configuration",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "pyproject.toml",
+        "sha256": "37e9930f62ed461c813456b322949ca9687fab0aa6c7e5c076ac3e006192a0e5"
+      },
+      "id": "requests-09-5d07e7d7",
+      "query": "In psf/requests at pinned commit, work touches `pyproject.toml` (configuration). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "source_bytes": 3529,
+      "source_path": "pyproject.toml",
+      "source_sha256": "37e9930f62ed461c813456b322949ca9687fab0aa6c7e5c076ac3e006192a0e5",
+      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/pyproject.toml",
+      "stack": "python",
+      "task_type": "configuration:toml",
+      "tools": [
+        "verify-source",
+        "configuration"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "pyproject.toml",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "documentation",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/conf.py",
+        "sha256": "ba7271074083cde611100ae4c0f74d448a90a8b6a6043926336989157d5a5783"
+      },
+      "id": "requests-10-254a2da7",
+      "query": "In psf/requests at pinned commit, work touches `docs/conf.py` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "source_bytes": 12533,
+      "source_path": "docs/conf.py",
+      "source_sha256": "ba7271074083cde611100ae4c0f74d448a90a8b6a6043926336989157d5a5783",
+      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/docs/conf.py",
+      "stack": "python",
+      "task_type": "documentation:py",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/conf.py",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "documentation",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/_themes/flask_theme_support.py",
+        "sha256": "afc582667afd86a1395d4d59ca976594446b9aca69bc5b21236c879a9a7ae9bc"
+      },
+      "id": "requests-11-9dd51771",
+      "query": "In psf/requests at pinned commit, work touches `docs/_themes/flask_theme_support.py` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "source_bytes": 4961,
+      "source_path": "docs/_themes/flask_theme_support.py",
+      "source_sha256": "afc582667afd86a1395d4d59ca976594446b9aca69bc5b21236c879a9a7ae9bc",
+      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/docs/_themes/flask_theme_support.py",
+      "stack": "python",
+      "task_type": "documentation:py",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/_themes/flask_theme_support.py",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "documentation",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "README.md",
+        "sha256": "15b3a5801783809a84a13d65ca0903f8445530451ee7a64499c52e595c150242"
+      },
+      "id": "requests-12-8ec9a00b",
+      "query": "In psf/requests at pinned commit, work touches `README.md` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "source_bytes": 2982,
+      "source_path": "README.md",
+      "source_sha256": "15b3a5801783809a84a13d65ca0903f8445530451ee7a64499c52e595c150242",
+      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/README.md",
+      "stack": "python",
+      "task_type": "documentation:md",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "README.md",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "documentation",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/api.rst",
+        "sha256": "8bcdf03dbf2ab3ab1028ceb372954932e5f42a01d704f49872581480420a2297"
+      },
+      "id": "requests-13-e91aac6c",
+      "query": "In psf/requests at pinned commit, work touches `docs/api.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "source_bytes": 7594,
+      "source_path": "docs/api.rst",
+      "source_sha256": "8bcdf03dbf2ab3ab1028ceb372954932e5f42a01d704f49872581480420a2297",
+      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/docs/api.rst",
+      "stack": "python",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/api.rst",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "documentation",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/index.rst",
+        "sha256": "4d58ea01c67755f482d81395b48bf3952aa74d4d2d3def9c921b0c4aa9e7f470"
+      },
+      "id": "requests-14-d0153cac",
+      "query": "In psf/requests at pinned commit, work touches `docs/index.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "source_bytes": 3779,
+      "source_path": "docs/index.rst",
+      "source_sha256": "4d58ea01c67755f482d81395b48bf3952aa74d4d2d3def9c921b0c4aa9e7f470",
+      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/docs/index.rst",
+      "stack": "python",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/index.rst",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "documentation",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/dev/authors.rst",
+        "sha256": "bf85da9f103cb1d35f294cc12f9d6677e56ac9c41366b29bb7faf88e33100653"
+      },
+      "id": "requests-15-370a3ef6",
+      "query": "In psf/requests at pinned commit, work touches `docs/dev/authors.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "source_bytes": 52,
+      "source_path": "docs/dev/authors.rst",
+      "source_sha256": "bf85da9f103cb1d35f294cc12f9d6677e56ac9c41366b29bb7faf88e33100653",
+      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/docs/dev/authors.rst",
+      "stack": "python",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/dev/authors.rst",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "documentation",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/user/install.rst",
+        "sha256": "c5606c4174189422bf71d5207befec38d6ccc835cb94b8e1731f8829bfe10de2"
+      },
+      "id": "requests-16-30404107",
+      "query": "In psf/requests at pinned commit, work touches `docs/user/install.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "source_bytes": 1074,
+      "source_path": "docs/user/install.rst",
+      "source_sha256": "c5606c4174189422bf71d5207befec38d6ccc835cb94b8e1731f8829bfe10de2",
+      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/docs/user/install.rst",
+      "stack": "python",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/user/install.rst",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "documentation",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/community/faq.rst",
+        "sha256": "ddf73b85d9992379b1be3426194dc319dc3598977d3217373762617fb64863ca"
+      },
+      "id": "requests-17-9f6816a4",
+      "query": "In psf/requests at pinned commit, work touches `docs/community/faq.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "source_bytes": 3835,
+      "source_path": "docs/community/faq.rst",
+      "source_sha256": "ddf73b85d9992379b1be3426194dc319dc3598977d3217373762617fb64863ca",
+      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/docs/community/faq.rst",
+      "stack": "python",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/community/faq.rst",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "documentation",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/user/advanced.rst",
+        "sha256": "3aeeb651268efd3d3dee2e41ad49829718ee0e05c7fa0c885df2385004855483"
+      },
+      "id": "requests-18-7a246488",
+      "query": "In psf/requests at pinned commit, work touches `docs/user/advanced.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "source_bytes": 43040,
+      "source_path": "docs/user/advanced.rst",
+      "source_sha256": "3aeeb651268efd3d3dee2e41ad49829718ee0e05c7fa0c885df2385004855483",
+      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/docs/user/advanced.rst",
+      "stack": "python",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/user/advanced.rst",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "documentation",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/user/quickstart.rst",
+        "sha256": "da3f09c4d16f5d8abb43891797c263b6b06cb175d3baa760686edfd63161c592"
+      },
+      "id": "requests-19-d6e4ee91",
+      "query": "In psf/requests at pinned commit, work touches `docs/user/quickstart.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "source_bytes": 19786,
+      "source_path": "docs/user/quickstart.rst",
+      "source_sha256": "da3f09c4d16f5d8abb43891797c263b6b06cb175d3baa760686edfd63161c592",
+      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/docs/user/quickstart.rst",
+      "stack": "python",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/user/quickstart.rst",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "documentation",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/dev/contributing.rst",
+        "sha256": "324b365329f20ff7d457dbfedcec846f68e57b5b6c4900273cfc1742d1edc158"
+      },
+      "id": "requests-20-c39403d2",
+      "query": "In psf/requests at pinned commit, work touches `docs/dev/contributing.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "requests",
+      "source_bytes": 6749,
+      "source_path": "docs/dev/contributing.rst",
+      "source_sha256": "324b365329f20ff7d457dbfedcec846f68e57b5b6c4900273cfc1742d1edc158",
+      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/docs/dev/contributing.rst",
+      "stack": "python",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/dev/contributing.rst",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "ci-workflow",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/lock.yaml",
+        "sha256": "182c5279b244fa550b6a1f7bdc3327f286578e09d197f56ed13d4916507b27fc"
+      },
+      "id": "flask-01-a4f6c661",
+      "query": "In pallets/flask at pinned commit, work touches `.github/workflows/lock.yaml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "source_bytes": 767,
+      "source_path": ".github/workflows/lock.yaml",
+      "source_sha256": "182c5279b244fa550b6a1f7bdc3327f286578e09d197f56ed13d4916507b27fc",
+      "source_url": "https://github.com/pallets/flask/blob/6a2f545bfd8ed31e19066a299296917e034aca58/.github/workflows/lock.yaml",
+      "stack": "python",
+      "task_type": "ci-workflow:yaml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/lock.yaml",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "ci-workflow",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/tests.yaml",
+        "sha256": "4086d81d29dd8f4afc6424ac8efe6667e93ec6ac0bcf62f61a51b5fd29a4a41a"
+      },
+      "id": "flask-02-2dc58e3f",
+      "query": "In pallets/flask at pinned commit, work touches `.github/workflows/tests.yaml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "source_bytes": 2461,
+      "source_path": ".github/workflows/tests.yaml",
+      "source_sha256": "4086d81d29dd8f4afc6424ac8efe6667e93ec6ac0bcf62f61a51b5fd29a4a41a",
+      "source_url": "https://github.com/pallets/flask/blob/6a2f545bfd8ed31e19066a299296917e034aca58/.github/workflows/tests.yaml",
+      "stack": "python",
+      "task_type": "ci-workflow:yaml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/tests.yaml",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "ci-workflow",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/zizmor.yaml",
+        "sha256": "ff8270d417eb3c91998d713f727af69d562a95788affe86b6b9eefdd8a74a0cd"
+      },
+      "id": "flask-03-25934851",
+      "query": "In pallets/flask at pinned commit, work touches `.github/workflows/zizmor.yaml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "source_bytes": 676,
+      "source_path": ".github/workflows/zizmor.yaml",
+      "source_sha256": "ff8270d417eb3c91998d713f727af69d562a95788affe86b6b9eefdd8a74a0cd",
+      "source_url": "https://github.com/pallets/flask/blob/6a2f545bfd8ed31e19066a299296917e034aca58/.github/workflows/zizmor.yaml",
+      "stack": "python",
+      "task_type": "ci-workflow:yaml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/zizmor.yaml",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "ci-workflow",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/publish.yaml",
+        "sha256": "0400cef7d950d295cb963d32ada63c39503474f5074565df95793178878b7535"
+      },
+      "id": "flask-04-f190b24a",
+      "query": "In pallets/flask at pinned commit, work touches `.github/workflows/publish.yaml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "source_bytes": 2103,
+      "source_path": ".github/workflows/publish.yaml",
+      "source_sha256": "0400cef7d950d295cb963d32ada63c39503474f5074565df95793178878b7535",
+      "source_url": "https://github.com/pallets/flask/blob/6a2f545bfd8ed31e19066a299296917e034aca58/.github/workflows/publish.yaml",
+      "stack": "python",
+      "task_type": "ci-workflow:yaml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/publish.yaml",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "ci-workflow",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/pre-commit.yaml",
+        "sha256": "3dadfd7cf806a1c7b5ecee22b0b5e0d61984aee18a1a7e1727b41329194df1b0"
+      },
+      "id": "flask-05-c67bcf45",
+      "query": "In pallets/flask at pinned commit, work touches `.github/workflows/pre-commit.yaml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "source_bytes": 1103,
+      "source_path": ".github/workflows/pre-commit.yaml",
+      "source_sha256": "3dadfd7cf806a1c7b5ecee22b0b5e0d61984aee18a1a7e1727b41329194df1b0",
+      "source_url": "https://github.com/pallets/flask/blob/6a2f545bfd8ed31e19066a299296917e034aca58/.github/workflows/pre-commit.yaml",
+      "stack": "python",
+      "task_type": "ci-workflow:yaml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/pre-commit.yaml",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "configuration",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "pyproject.toml",
+        "sha256": "2c5ccce1c8b4e87495c61c6942baec0f7f5530e414530bd8e35b8be63aacf3a8"
+      },
+      "id": "flask-06-5d07e7d7",
+      "query": "In pallets/flask at pinned commit, work touches `pyproject.toml` (configuration). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "source_bytes": 6833,
+      "source_path": "pyproject.toml",
+      "source_sha256": "2c5ccce1c8b4e87495c61c6942baec0f7f5530e414530bd8e35b8be63aacf3a8",
+      "source_url": "https://github.com/pallets/flask/blob/6a2f545bfd8ed31e19066a299296917e034aca58/pyproject.toml",
+      "stack": "python",
+      "task_type": "configuration:toml",
+      "tools": [
+        "verify-source",
+        "configuration"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "pyproject.toml",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "configuration",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "examples/celery/pyproject.toml",
+        "sha256": "9a763554247e3798ab22fb73787d3e8c0e929e800e56224b0c4a23920692a007"
+      },
+      "id": "flask-07-ec7dd1f0",
+      "query": "In pallets/flask at pinned commit, work touches `examples/celery/pyproject.toml` (configuration). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "source_bytes": 507,
+      "source_path": "examples/celery/pyproject.toml",
+      "source_sha256": "9a763554247e3798ab22fb73787d3e8c0e929e800e56224b0c4a23920692a007",
+      "source_url": "https://github.com/pallets/flask/blob/6a2f545bfd8ed31e19066a299296917e034aca58/examples/celery/pyproject.toml",
+      "stack": "python",
+      "task_type": "configuration:toml",
+      "tools": [
+        "verify-source",
+        "configuration"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "examples/celery/pyproject.toml",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "configuration",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "examples/tutorial/pyproject.toml",
+        "sha256": "374471e96eb8ce381f8d5556ec5596241a42754a3ffa0a2a958b47de4129d1f6"
+      },
+      "id": "flask-08-18bac9a9",
+      "query": "In pallets/flask at pinned commit, work touches `examples/tutorial/pyproject.toml` (configuration). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "source_bytes": 918,
+      "source_path": "examples/tutorial/pyproject.toml",
+      "source_sha256": "374471e96eb8ce381f8d5556ec5596241a42754a3ffa0a2a958b47de4129d1f6",
+      "source_url": "https://github.com/pallets/flask/blob/6a2f545bfd8ed31e19066a299296917e034aca58/examples/tutorial/pyproject.toml",
+      "stack": "python",
+      "task_type": "configuration:toml",
+      "tools": [
+        "verify-source",
+        "configuration"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "examples/tutorial/pyproject.toml",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "configuration",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "examples/javascript/pyproject.toml",
+        "sha256": "7f293c67b2e52383f14db199ba469f8e2d906b4ff722455d29ca20b665d36cd7"
+      },
+      "id": "flask-09-8b82943c",
+      "query": "In pallets/flask at pinned commit, work touches `examples/javascript/pyproject.toml` (configuration). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "source_bytes": 880,
+      "source_path": "examples/javascript/pyproject.toml",
+      "source_sha256": "7f293c67b2e52383f14db199ba469f8e2d906b4ff722455d29ca20b665d36cd7",
+      "source_url": "https://github.com/pallets/flask/blob/6a2f545bfd8ed31e19066a299296917e034aca58/examples/javascript/pyproject.toml",
+      "stack": "python",
+      "task_type": "configuration:toml",
+      "tools": [
+        "verify-source",
+        "configuration"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "examples/javascript/pyproject.toml",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "documentation",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/conf.py",
+        "sha256": "532e9e94ac685f8b8c847b8efcc1c637abc2f216e86297389508d4bf16e706fe"
+      },
+      "id": "flask-10-254a2da7",
+      "query": "In pallets/flask at pinned commit, work touches `docs/conf.py` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "source_bytes": 3487,
+      "source_path": "docs/conf.py",
+      "source_sha256": "532e9e94ac685f8b8c847b8efcc1c637abc2f216e86297389508d4bf16e706fe",
+      "source_url": "https://github.com/pallets/flask/blob/6a2f545bfd8ed31e19066a299296917e034aca58/docs/conf.py",
+      "stack": "python",
+      "task_type": "documentation:py",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/conf.py",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "documentation",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "README.md",
+        "sha256": "75fdeb6d2b353c8005e5f9ad18256713de3fdc11b836d03475a94dfe20b2975c"
+      },
+      "id": "flask-11-8ec9a00b",
+      "query": "In pallets/flask at pinned commit, work touches `README.md` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "source_bytes": 1692,
+      "source_path": "README.md",
+      "source_sha256": "75fdeb6d2b353c8005e5f9ad18256713de3fdc11b836d03475a94dfe20b2975c",
+      "source_url": "https://github.com/pallets/flask/blob/6a2f545bfd8ed31e19066a299296917e034aca58/README.md",
+      "stack": "python",
+      "task_type": "documentation:md",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "README.md",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "documentation",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/api.rst",
+        "sha256": "a088553c3c6e4297eb009bf2926c79db121a6fb6257eaf298f45273fddb38e09"
+      },
+      "id": "flask-12-e91aac6c",
+      "query": "In pallets/flask at pinned commit, work touches `docs/api.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "source_bytes": 21920,
+      "source_path": "docs/api.rst",
+      "source_sha256": "a088553c3c6e4297eb009bf2926c79db121a6fb6257eaf298f45273fddb38e09",
+      "source_url": "https://github.com/pallets/flask/blob/6a2f545bfd8ed31e19066a299296917e034aca58/docs/api.rst",
+      "stack": "python",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/api.rst",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "documentation",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/cli.rst",
+        "sha256": "32ced5762b2aa634de7b00e4c9af918932befef83484a79f28d0d0c37a03f353"
+      },
+      "id": "flask-13-0a2c9b13",
+      "query": "In pallets/flask at pinned commit, work touches `docs/cli.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "source_bytes": 17257,
+      "source_path": "docs/cli.rst",
+      "source_sha256": "32ced5762b2aa634de7b00e4c9af918932befef83484a79f28d0d0c37a03f353",
+      "source_url": "https://github.com/pallets/flask/blob/6a2f545bfd8ed31e19066a299296917e034aca58/docs/cli.rst",
+      "stack": "python",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/cli.rst",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "documentation",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/index.rst",
+        "sha256": "b1394d976cf832b9663815e5caaa2a41d52013fcc68b963211fac2ee0281bdc7"
+      },
+      "id": "flask-14-d0153cac",
+      "query": "In pallets/flask at pinned commit, work touches `docs/index.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "source_bytes": 2154,
+      "source_path": "docs/index.rst",
+      "source_sha256": "b1394d976cf832b9663815e5caaa2a41d52013fcc68b963211fac2ee0281bdc7",
+      "source_url": "https://github.com/pallets/flask/blob/6a2f545bfd8ed31e19066a299296917e034aca58/docs/index.rst",
+      "stack": "python",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/index.rst",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "documentation",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/shell.rst",
+        "sha256": "9c49cf8a0ecdb88ef4ad62889ed3dfc730b4a30df151e2933ee4d75c916053c7"
+      },
+      "id": "flask-15-a9e2d22b",
+      "query": "In pallets/flask at pinned commit, work touches `docs/shell.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "source_bytes": 2934,
+      "source_path": "docs/shell.rst",
+      "source_sha256": "9c49cf8a0ecdb88ef4ad62889ed3dfc730b4a30df151e2933ee4d75c916053c7",
+      "source_url": "https://github.com/pallets/flask/blob/6a2f545bfd8ed31e19066a299296917e034aca58/docs/shell.rst",
+      "stack": "python",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/shell.rst",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "documentation",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/views.rst",
+        "sha256": "17ddefc03d6962cf9b6f4855f4544355d78139f46db8905c6a560e303895b0b3"
+      },
+      "id": "flask-16-7d339040",
+      "query": "In pallets/flask at pinned commit, work touches `docs/views.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "source_bytes": 10594,
+      "source_path": "docs/views.rst",
+      "source_sha256": "17ddefc03d6962cf9b6f4855f4544355d78139f46db8905c6a560e303895b0b3",
+      "source_url": "https://github.com/pallets/flask/blob/6a2f545bfd8ed31e19066a299296917e034aca58/docs/views.rst",
+      "stack": "python",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/views.rst",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "documentation",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/config.rst",
+        "sha256": "4eb9e07d6f00175411457e4ee3796d6fd8bd51159d2f12d138c3504b395a9a77"
+      },
+      "id": "flask-17-877cc255",
+      "query": "In pallets/flask at pinned commit, work touches `docs/config.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "source_bytes": 29845,
+      "source_path": "docs/config.rst",
+      "source_sha256": "4eb9e07d6f00175411457e4ee3796d6fd8bd51159d2f12d138c3504b395a9a77",
+      "source_url": "https://github.com/pallets/flask/blob/6a2f545bfd8ed31e19066a299296917e034aca58/docs/config.rst",
+      "stack": "python",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/config.rst",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "documentation",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/design.rst",
+        "sha256": "6f3f886ab8a8977db4b13fc3dd5a03b8c5422aec6ab7d3bab183fc1a253e2cfe"
+      },
+      "id": "flask-18-3b706160",
+      "query": "In pallets/flask at pinned commit, work touches `docs/design.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "source_bytes": 11444,
+      "source_path": "docs/design.rst",
+      "source_sha256": "6f3f886ab8a8977db4b13fc3dd5a03b8c5422aec6ab7d3bab183fc1a253e2cfe",
+      "source_url": "https://github.com/pallets/flask/blob/6a2f545bfd8ed31e19066a299296917e034aca58/docs/design.rst",
+      "stack": "python",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/design.rst",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "documentation",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/gevent.rst",
+        "sha256": "7fed335dfed1b9fc324008d51e02832cadb5f4076e1e0471c867b95c7b6f83f8"
+      },
+      "id": "flask-19-18077162",
+      "query": "In pallets/flask at pinned commit, work touches `docs/gevent.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "source_bytes": 4200,
+      "source_path": "docs/gevent.rst",
+      "source_sha256": "7fed335dfed1b9fc324008d51e02832cadb5f4076e1e0471c867b95c7b6f83f8",
+      "source_url": "https://github.com/pallets/flask/blob/6a2f545bfd8ed31e19066a299296917e034aca58/docs/gevent.rst",
+      "stack": "python",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/gevent.rst",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "documentation",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/server.rst",
+        "sha256": "23fe9d124e5d2b8fc97e6679b6f4a49880d96044080eaa4b1b725661830cdda6"
+      },
+      "id": "flask-20-f7e49b5a",
+      "query": "In pallets/flask at pinned commit, work touches `docs/server.rst` (documentation). Which verified workspace procedure should run before editing?",
+      "repo": "flask",
+      "source_bytes": 3827,
+      "source_path": "docs/server.rst",
+      "source_sha256": "23fe9d124e5d2b8fc97e6679b6f4a49880d96044080eaa4b1b725661830cdda6",
+      "source_url": "https://github.com/pallets/flask/blob/6a2f545bfd8ed31e19066a299296917e034aca58/docs/server.rst",
+      "stack": "python",
+      "task_type": "documentation:rst",
+      "tools": [
+        "verify-source",
+        "documentation"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "docs/server.rst",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "ci-workflow",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/ci.yml",
+        "sha256": "de3107a80870e15c80ab5e2f485bebf12150c4738b0e6198002285196295d0c9"
+      },
+      "id": "vite-01-899ce9c2",
+      "query": "In vitejs/vite at pinned commit, work touches `.github/workflows/ci.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "source_bytes": 6679,
+      "source_path": ".github/workflows/ci.yml",
+      "source_sha256": "de3107a80870e15c80ab5e2f485bebf12150c4738b0e6198002285196295d0c9",
+      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/.github/workflows/ci.yml",
+      "stack": "typescript",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/ci.yml",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "ci-workflow",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/zizmor.yml",
+        "sha256": "6e6d55be82ade4c3a8583283dc605c8d5645f8f1d3a8c55ca1b342493fb284ae"
+      },
+      "id": "vite-02-13a10941",
+      "query": "In vitejs/vite at pinned commit, work touches `.github/workflows/zizmor.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "source_bytes": 749,
+      "source_path": ".github/workflows/zizmor.yml",
+      "source_sha256": "6e6d55be82ade4c3a8583283dc605c8d5645f8f1d3a8c55ca1b342493fb284ae",
+      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/.github/workflows/zizmor.yml",
+      "stack": "typescript",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/zizmor.yml",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "ci-workflow",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/publish.yml",
+        "sha256": "e3496d3b2181572b257870685043229dc6cada2399ff6c2b76aa4c90929a5c97"
+      },
+      "id": "vite-03-4639989a",
+      "query": "In vitejs/vite at pinned commit, work touches `.github/workflows/publish.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "source_bytes": 1519,
+      "source_path": ".github/workflows/publish.yml",
+      "source_sha256": "e3496d3b2181572b257870685043229dc6cada2399ff6c2b76aa4c90929a5c97",
+      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/.github/workflows/publish.yml",
+      "stack": "typescript",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/publish.yml",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "ci-workflow",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/semgrep.yml",
+        "sha256": "2c578d20a6f5acf2728056d5fd4f6fa56f947fe7d6d6b241337c341b967d7aa3"
+      },
+      "id": "vite-04-de372224",
+      "query": "In vitejs/vite at pinned commit, work touches `.github/workflows/semgrep.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "source_bytes": 1015,
+      "source_path": ".github/workflows/semgrep.yml",
+      "source_sha256": "2c578d20a6f5acf2728056d5fd4f6fa56f947fe7d6d6b241337c341b967d7aa3",
+      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/.github/workflows/semgrep.yml",
+      "stack": "typescript",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/semgrep.yml",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "ci-workflow",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/release-tag.yml",
+        "sha256": "6d877c649019589aabac5c48f423074dd63f7611e5eac60cf60d70b091543c27"
+      },
+      "id": "vite-05-120ed081",
+      "query": "In vitejs/vite at pinned commit, work touches `.github/workflows/release-tag.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "source_bytes": 1875,
+      "source_path": ".github/workflows/release-tag.yml",
+      "source_sha256": "6d877c649019589aabac5c48f423074dd63f7611e5eac60cf60d70b091543c27",
+      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/.github/workflows/release-tag.yml",
+      "stack": "typescript",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/release-tag.yml",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "ci-workflow",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/issue-labeled.yml",
+        "sha256": "d3facc92569c804b9793178c1336303277a63f4a287744e65fbb82dd31a36d53"
+      },
+      "id": "vite-06-ed300bdd",
+      "query": "In vitejs/vite at pinned commit, work touches `.github/workflows/issue-labeled.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "source_bytes": 2044,
+      "source_path": ".github/workflows/issue-labeled.yml",
+      "source_sha256": "d3facc92569c804b9793178c1336303277a63f4a287744e65fbb82dd31a36d53",
+      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/.github/workflows/issue-labeled.yml",
+      "stack": "typescript",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/issue-labeled.yml",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "ci-workflow",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/preview-release.yml",
+        "sha256": "4124d2695130d7c596596e943bcab48aa4441f88fcebb22dc221d0e4c04e8a07"
+      },
+      "id": "vite-07-b4595f5f",
+      "query": "In vitejs/vite at pinned commit, work touches `.github/workflows/preview-release.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "source_bytes": 1833,
+      "source_path": ".github/workflows/preview-release.yml",
+      "source_sha256": "4124d2695130d7c596596e943bcab48aa4441f88fcebb22dc221d0e4c04e8a07",
+      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/.github/workflows/preview-release.yml",
+      "stack": "typescript",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/preview-release.yml",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "ci-workflow",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/lock-closed-issues.yml",
+        "sha256": "4384e2a7c3998faebb613f43ffe2a79472209c9411f066bbe54ccf289794b6a8"
+      },
+      "id": "vite-08-0fbff1d1",
+      "query": "In vitejs/vite at pinned commit, work touches `.github/workflows/lock-closed-issues.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "source_bytes": 597,
+      "source_path": ".github/workflows/lock-closed-issues.yml",
+      "source_sha256": "4384e2a7c3998faebb613f43ffe2a79472209c9411f066bbe54ccf289794b6a8",
+      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/.github/workflows/lock-closed-issues.yml",
+      "stack": "typescript",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/lock-closed-issues.yml",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "ci-workflow",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/copilot-setup-steps.yml",
+        "sha256": "f40cb78a5a6b33aacb00f5033385be8f610248718f94441952335ae149d1c671"
+      },
+      "id": "vite-09-e3c909df",
+      "query": "In vitejs/vite at pinned commit, work touches `.github/workflows/copilot-setup-steps.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "source_bytes": 1927,
+      "source_path": ".github/workflows/copilot-setup-steps.yml",
+      "source_sha256": "f40cb78a5a6b33aacb00f5033385be8f610248718f94441952335ae149d1c671",
+      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/.github/workflows/copilot-setup-steps.yml",
+      "stack": "typescript",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/copilot-setup-steps.yml",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "ci-workflow",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/issue-close-require.yml",
+        "sha256": "493164478cf5e02fd92625dbc93e6f3dc5fa65ed59014f5bf77af5cfe7407f12"
+      },
+      "id": "vite-10-bb2ab949",
+      "query": "In vitejs/vite at pinned commit, work touches `.github/workflows/issue-close-require.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "source_bytes": 749,
+      "source_path": ".github/workflows/issue-close-require.yml",
+      "source_sha256": "493164478cf5e02fd92625dbc93e6f3dc5fa65ed59014f5bf77af5cfe7407f12",
+      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/.github/workflows/issue-close-require.yml",
+      "stack": "typescript",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/issue-close-require.yml",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "ci-workflow",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/ecosystem-ci-trigger.yml",
+        "sha256": "1385479a72ff953c429570030355e1e003a84844aa53c1f1abf23c81852aa047"
+      },
+      "id": "vite-11-371ecc7d",
+      "query": "In vitejs/vite at pinned commit, work touches `.github/workflows/ecosystem-ci-trigger.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "source_bytes": 10822,
+      "source_path": ".github/workflows/ecosystem-ci-trigger.yml",
+      "source_sha256": "1385479a72ff953c429570030355e1e003a84844aa53c1f1abf23c81852aa047",
+      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/.github/workflows/ecosystem-ci-trigger.yml",
+      "stack": "typescript",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/ecosystem-ci-trigger.yml",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "ci-workflow",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/semantic-pull-request.yml",
+        "sha256": "acb03a9e276f6b50d3d1a686de1bb89c1e4b7ef587352b668d639c2134abbbf3"
+      },
+      "id": "vite-12-20a74c87",
+      "query": "In vitejs/vite at pinned commit, work touches `.github/workflows/semantic-pull-request.yml` (ci-workflow). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "source_bytes": 984,
+      "source_path": ".github/workflows/semantic-pull-request.yml",
+      "source_sha256": "acb03a9e276f6b50d3d1a686de1bb89c1e4b7ef587352b668d639c2134abbbf3",
+      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/.github/workflows/semantic-pull-request.yml",
+      "stack": "typescript",
+      "task_type": "ci-workflow:yml",
+      "tools": [
+        "verify-source",
+        "ci-workflow"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": ".github/workflows/semantic-pull-request.yml",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "configuration",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "package.json",
+        "sha256": "9faaa2336adc6a949e012cd731211856a4dc15519c7c1af720ac65da5dfe038a"
+      },
+      "id": "vite-13-7030d0b2",
+      "query": "In vitejs/vite at pinned commit, work touches `package.json` (configuration). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "source_bytes": 3197,
+      "source_path": "package.json",
+      "source_sha256": "9faaa2336adc6a949e012cd731211856a4dc15519c7c1af720ac65da5dfe038a",
+      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/package.json",
+      "stack": "typescript",
+      "task_type": "configuration:json",
+      "tools": [
+        "verify-source",
+        "configuration"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "package.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "configuration",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "packages/plugin-legacy/package.json",
+        "sha256": "642e347dcb9b28b5342c7dde0adfb8b3eb4b8d56479c3c60b8398d78b2ceeaf3"
+      },
+      "id": "vite-14-ae068bcf",
+      "query": "In vitejs/vite at pinned commit, work touches `packages/plugin-legacy/package.json` (configuration). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "source_bytes": 1785,
+      "source_path": "packages/plugin-legacy/package.json",
+      "source_sha256": "642e347dcb9b28b5342c7dde0adfb8b3eb4b8d56479c3c60b8398d78b2ceeaf3",
+      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/packages/plugin-legacy/package.json",
+      "stack": "typescript",
+      "task_type": "configuration:json",
+      "tools": [
+        "verify-source",
+        "configuration"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "packages/plugin-legacy/package.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "configuration",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "packages/plugin-legacy/tsconfig.json",
+        "sha256": "29a96e47e7868492d8dec0a931f3f2400a3bf5af4d4e83299ac0036c03cfbe3a"
+      },
+      "id": "vite-15-ee47adc0",
+      "query": "In vitejs/vite at pinned commit, work touches `packages/plugin-legacy/tsconfig.json` (configuration). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "source_bytes": 369,
+      "source_path": "packages/plugin-legacy/tsconfig.json",
+      "source_sha256": "29a96e47e7868492d8dec0a931f3f2400a3bf5af4d4e83299ac0036c03cfbe3a",
+      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/packages/plugin-legacy/tsconfig.json",
+      "stack": "typescript",
+      "task_type": "configuration:json",
+      "tools": [
+        "verify-source",
+        "configuration"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "packages/plugin-legacy/tsconfig.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "configuration",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "packages/vite/src/node/tsconfig.json",
+        "sha256": "18c39ac0eedcc80a9056275f51897ed9cb89a36109102d0ac6d412e3b08f4ded"
+      },
+      "id": "vite-16-b6efe0a2",
+      "query": "In vitejs/vite at pinned commit, work touches `packages/vite/src/node/tsconfig.json` (configuration). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "source_bytes": 561,
+      "source_path": "packages/vite/src/node/tsconfig.json",
+      "source_sha256": "18c39ac0eedcc80a9056275f51897ed9cb89a36109102d0ac6d412e3b08f4ded",
+      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/packages/vite/src/node/tsconfig.json",
+      "stack": "typescript",
+      "task_type": "configuration:json",
+      "tools": [
+        "verify-source",
+        "configuration"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "packages/vite/src/node/tsconfig.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "configuration",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "packages/vite/src/types/package.json",
+        "sha256": "62a8041fbf95fec41ba12370beefc4b133c5a341619a90f71cc22bd02f7d8572"
+      },
+      "id": "vite-17-2b76a90a",
+      "query": "In vitejs/vite at pinned commit, work touches `packages/vite/src/types/package.json` (configuration). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "source_bytes": 101,
+      "source_path": "packages/vite/src/types/package.json",
+      "source_sha256": "62a8041fbf95fec41ba12370beefc4b133c5a341619a90f71cc22bd02f7d8572",
+      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/packages/vite/src/types/package.json",
+      "stack": "typescript",
+      "task_type": "configuration:json",
+      "tools": [
+        "verify-source",
+        "configuration"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "packages/vite/src/types/package.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "configuration",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "packages/vite/src/client/tsconfig.json",
+        "sha256": "68355a29a0987a947113350c84431ecf8fd77209db50c0ade0b1c25ff9d88a55"
+      },
+      "id": "vite-18-94163aeb",
+      "query": "In vitejs/vite at pinned commit, work touches `packages/vite/src/client/tsconfig.json` (configuration). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "source_bytes": 236,
+      "source_path": "packages/vite/src/client/tsconfig.json",
+      "source_sha256": "68355a29a0987a947113350c84431ecf8fd77209db50c0ade0b1c25ff9d88a55",
+      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/packages/vite/src/client/tsconfig.json",
+      "stack": "typescript",
+      "task_type": "configuration:json",
+      "tools": [
+        "verify-source",
+        "configuration"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "packages/vite/src/client/tsconfig.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "configuration",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "packages/vite/src/shared/tsconfig.json",
+        "sha256": "e90fcd7c6af91a70ed4c2b4a71fe4ccd0b7e60d3e7988f968777bc42e6718093"
+      },
+      "id": "vite-19-a242ab4f",
+      "query": "In vitejs/vite at pinned commit, work touches `packages/vite/src/shared/tsconfig.json` (configuration). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "source_bytes": 189,
+      "source_path": "packages/vite/src/shared/tsconfig.json",
+      "source_sha256": "e90fcd7c6af91a70ed4c2b4a71fe4ccd0b7e60d3e7988f968777bc42e6718093",
+      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/packages/vite/src/shared/tsconfig.json",
+      "stack": "typescript",
+      "task_type": "configuration:json",
+      "tools": [
+        "verify-source",
+        "configuration"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "packages/vite/src/shared/tsconfig.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "category": "configuration",
+      "expected_outcome": {
+        "kind": "source_sha256_check",
+        "path": "packages/vite/src/module-runner/tsconfig.json",
+        "sha256": "992ebd48379cf0e6e9a2e6d77ebae73b357e4e3f2a4be78b7f6d093963ed86c7"
+      },
+      "id": "vite-20-e380dc17",
+      "query": "In vitejs/vite at pinned commit, work touches `packages/vite/src/module-runner/tsconfig.json` (configuration). Which verified workspace procedure should run before editing?",
+      "repo": "vite",
+      "source_bytes": 229,
+      "source_path": "packages/vite/src/module-runner/tsconfig.json",
+      "source_sha256": "992ebd48379cf0e6e9a2e6d77ebae73b357e4e3f2a4be78b7f6d093963ed86c7",
+      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/packages/vite/src/module-runner/tsconfig.json",
+      "stack": "typescript",
+      "task_type": "configuration:json",
+      "tools": [
+        "verify-source",
+        "configuration"
+      ],
+      "wrong_outcome": {
+        "kind": "source_sha256_check",
+        "path": "packages/vite/src/module-runner/tsconfig.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    }
+  ],
+  "repositories": {
+    "flask": {
+      "commit": "6a2f545bfd8ed31e19066a299296917e034aca58",
+      "license": "BSD-3-Clause",
+      "name": "pallets/flask",
+      "remote": "https://github.com/pallets/flask.git",
+      "stack": "python"
+    },
+    "requests": {
+      "commit": "1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e",
+      "license": "Apache-2.0",
+      "name": "psf/requests",
+      "remote": "https://github.com/psf/requests.git",
+      "stack": "python"
+    },
+    "vite": {
+      "commit": "57fea001d154e7dd8d5d74d3082731f1dcfd31be",
+      "license": "MIT",
+      "name": "vitejs/vite",
+      "remote": "https://github.com/vitejs/vite.git",
+      "stack": "typescript"
+    }
+  },
+  "revision": "workspace-experience-v3-checksum-selection-historical-20260810",
+  "schema": "wavemind.workspace_experience_manifest.v1",
+  "sha256": "4f4d9c5f5dca3b0d4349a9e2d8b3af9768b8a603a924085bdd8c37f2076d6cf6",
+  "thresholds": {
+    "clean_onboarding_seconds_max": 300.0,
+    "context_reduction_min": 0.3,
+    "cross_client_citation_state_parity": 1.0,
+    "false_procedure_injection_max": 0.01,
+    "mandatory_event_capture_min": 0.99,
+    "packet_selection_p95_ms_max": 100.0,
+    "packet_selection_p99_ms_max": 250.0,
+    "repeated_known_error_reduction_min": 0.5,
+    "task_success_lift_pp_min": 15.0,
+    "unverified_injection": 0,
+    "workspace_namespace_leakage": 0
+  }
+}

@@ -11,7 +11,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from threading import Lock
-from typing import Any, Iterator
+from typing import Any, Iterator, Mapping, Sequence
 
 from fastapi import Body, Depends, FastAPI, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
@@ -63,6 +63,10 @@ from .memory_firewall import (
     MemoryFirewallPolicy,
 )
 from .studio import STUDIO_HTML, field_heatmap, studio_snapshot
+from .workspace_experience import (
+    WorkspaceEvent,
+    WorkspaceExperienceManager,
+)
 
 
 logger = logging.getLogger("wavemind.api")
@@ -180,6 +184,94 @@ class APIAuth:
             )
         if not all(principal.allows_namespace(namespace) for namespace in namespaces):
             raise HTTPException(status_code=403, detail="Namespace access denied")
+
+
+class WorkspaceRegistry:
+    def __init__(
+        self,
+        roots: Mapping[str, str | Path] | None = None,
+        *,
+        base_roots: Sequence[str | Path] | None = None,
+    ):
+        self.roots = {
+            str(workspace_id).strip(): Path(root)
+            for workspace_id, root in (roots or {}).items()
+            if str(workspace_id).strip()
+        }
+        self.base_roots = tuple(
+            Path(root).expanduser().resolve(strict=True)
+            for root in (base_roots or ())
+        )
+
+    def resolve(self, workspace_id: str) -> Path:
+        selected = str(workspace_id or "").strip()
+        if not selected or selected not in self.roots:
+            raise HTTPException(status_code=403, detail="Workspace is not registered")
+        try:
+            root = self.roots[selected].expanduser().resolve(strict=True)
+        except OSError as exc:
+            raise HTTPException(status_code=422, detail="Workspace root is not available") from exc
+        if not root.is_dir():
+            raise HTTPException(status_code=422, detail="Workspace root is not a directory")
+        if self.base_roots and not any(
+            _path_is_relative_to(root, base_root) for base_root in self.base_roots
+        ):
+            raise HTTPException(
+                status_code=403,
+                detail="Workspace root is outside configured allowlist",
+            )
+        state_dir = root / ".wavemind"
+        config_path = state_dir / "workspace.json"
+        try:
+            resolved_config = config_path.resolve(strict=True)
+        except OSError as exc:
+            raise HTTPException(status_code=422, detail="Workspace config is not available") from exc
+        if resolved_config.parent != state_dir.resolve(strict=True) or not _path_is_relative_to(
+            resolved_config,
+            root,
+        ):
+            raise HTTPException(status_code=403, detail="Workspace config escapes workspace root")
+        return root
+
+
+def _workspace_registry_from_env() -> WorkspaceRegistry:
+    roots: dict[str, str] = {}
+    raw_registry = os.environ.get("WAVEMIND_WORKSPACE_REGISTRY", "").strip()
+    if raw_registry:
+        try:
+            payload = json.loads(raw_registry)
+        except json.JSONDecodeError as exc:
+            raise ValueError("WAVEMIND_WORKSPACE_REGISTRY must be valid JSON") from exc
+        if not isinstance(payload, dict):
+            raise ValueError("WAVEMIND_WORKSPACE_REGISTRY must be a JSON object")
+        for workspace_id, root in payload.items():
+            if not isinstance(workspace_id, str) or not isinstance(root, str):
+                raise ValueError("WAVEMIND_WORKSPACE_REGISTRY maps string ids to string roots")
+            roots[workspace_id] = root
+    base_roots: list[str] = []
+    raw_base_roots = os.environ.get("WAVEMIND_WORKSPACE_BASE_ROOTS", "").strip()
+    if raw_base_roots:
+        if raw_base_roots.startswith("["):
+            try:
+                base_payload = json.loads(raw_base_roots)
+            except json.JSONDecodeError as exc:
+                raise ValueError("WAVEMIND_WORKSPACE_BASE_ROOTS must be valid JSON") from exc
+            if not isinstance(base_payload, list) or not all(
+                isinstance(item, str) for item in base_payload
+            ):
+                raise ValueError("WAVEMIND_WORKSPACE_BASE_ROOTS JSON must be a string array")
+            base_roots = base_payload
+        else:
+            base_roots = [item for item in raw_base_roots.split(os.pathsep) if item]
+    return WorkspaceRegistry(roots, base_roots=base_roots)
+
+
+def _path_is_relative_to(path: Path, parent: Path) -> bool:
+    try:
+        path.relative_to(parent)
+        return True
+    except ValueError:
+        return False
 
 
 class InMemoryRateLimiter:
@@ -714,11 +806,13 @@ async def _request_namespaces(request: Request) -> set[str]:
     return namespaces
 
 
-def require_role(role: str):
+def require_role(role: str, *, require_explicit_namespace: bool = True):
     async def dependency(request: Request) -> None:
         auth = request.app.state.auth
         principal = auth.check(request, role)
-        auth.check_namespaces(principal, await _request_namespaces(request))
+        namespaces = await _request_namespaces(request)
+        if namespaces or require_explicit_namespace:
+            auth.check_namespaces(principal, namespaces)
         request.state.wavemind_principal = principal
 
     return dependency
@@ -1336,6 +1430,79 @@ class ExperienceRuntimeLifecycleRequest(BaseModel):
     score: float = Field(default=1.0, ge=0.0, le=1.0)
 
 
+class WorkspaceRootRequest(BaseModel):
+    workspace_id: str = Field(
+        min_length=1,
+        validation_alias=AliasChoices("workspace_id", "workspaceId"),
+    )
+
+
+class WorkspaceRuntimeStartRequest(WorkspaceRootRequest):
+    query: str = Field(min_length=1)
+    objective: str = Field(min_length=1)
+    domain: str = Field(default="workspace", min_length=1)
+    task_type: str = Field(default="task", min_length=1)
+    session_id: str | None = None
+    run_id: str | None = None
+    task_id: str | None = None
+    tools: list[str] = Field(default_factory=list)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    token_budget: int = Field(default=400, ge=32)
+    top_k: int = Field(default=3, ge=1, le=100)
+    canary: bool = False
+
+
+class WorkspaceRuntimeEventRequest(WorkspaceRootRequest):
+    id: str = Field(min_length=1)
+    run_id: str = Field(min_length=1)
+    kind: str = Field(min_length=1)
+    sequence: int = Field(ge=0)
+    occurred_at: float | None = None
+    session_id: str | None = None
+    task_id: str | None = None
+    parent_event_id: str | None = None
+    tool_name: str | None = None
+    duration_ms: float | None = Field(default=None, ge=0.0)
+    payload: dict[str, Any] = Field(default_factory=dict)
+
+
+class WorkspaceRuntimeVerifyRequest(WorkspaceRootRequest):
+    evidence_id: str = Field(min_length=1)
+    source: str
+    verifier: str = Field(min_length=1)
+    success: bool
+    score: float | None = Field(default=None, ge=0.0, le=1.0)
+    reference: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    applied_experience_ids: list[str] = Field(default_factory=list)
+
+
+class WorkspacePacketRequest(WorkspaceRootRequest):
+    query: str = Field(min_length=1)
+    domain: str = Field(default="workspace", min_length=1)
+    task_type: str = Field(default="task", min_length=1)
+    tools: list[str] = Field(default_factory=list)
+    token_budget: int = Field(default=400, ge=32)
+    top_k: int = Field(default=3, ge=1, le=100)
+
+
+class WorkspaceReviewRequest(WorkspaceRootRequest):
+    limit: int = Field(default=100, ge=1, le=1000)
+
+
+class WorkspaceLifecycleRequest(WorkspaceRootRequest):
+    reason: str = Field(default="operator review", min_length=1)
+    evidence_id: str | None = None
+    score: float = Field(default=1.0, ge=0.0, le=1.0)
+    confirmation: str | None = None
+
+
+class WorkspaceEditApproveRequest(WorkspaceLifecycleRequest):
+    title: str | None = None
+    content: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
 def _remember_response_id(result: Any) -> int:
     if isinstance(result, int):
         return result
@@ -1490,6 +1657,8 @@ def create_app(
     mind: WaveMind | None = None,
     *,
     experience_store: SQLiteExperienceStore | None = None,
+    workspace_registry: Mapping[str, str | Path] | None = None,
+    workspace_base_roots: Sequence[str | Path] | None = None,
 ) -> FastAPI:
     logging.basicConfig(level=os.environ.get("WAVEMIND_LOG_LEVEL", "INFO"))
     app = FastAPI(title="WaveMind", version=__version__)
@@ -1504,6 +1673,11 @@ def create_app(
     app.state.rate_limiter = _rate_limiter_from_env()
     app.state.cache = _cache_from_env()
     app.state.vector_cache = _vector_cache_from_env()
+    app.state.workspace_registry = (
+        _workspace_registry_from_env()
+        if workspace_registry is None and workspace_base_roots is None
+        else WorkspaceRegistry(workspace_registry or {}, base_roots=workspace_base_roots)
+    )
     app.state.operation_lock = (
         None
         if os.environ.get("WAVEMIND_API_SERIALIZE_OPERATIONS", "1").lower()
@@ -1559,6 +1733,25 @@ def create_app(
                 runtime = AgentExperienceRuntime(compiler)
                 app.state.experience_runtimes[selected] = runtime
             return runtime
+
+    @contextmanager
+    def _workspace_manager(
+        workspace_id: str,
+        request: Request,
+    ) -> Iterator[WorkspaceExperienceManager]:
+        principal = getattr(request.state, "wavemind_principal", None)
+        if principal is None:
+            raise HTTPException(status_code=401, detail="Missing authenticated principal")
+        try:
+            root = app.state.workspace_registry.resolve(workspace_id)
+            manager = WorkspaceExperienceManager.open(root)
+        except (OSError, ValueError) as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        app.state.auth.check_namespaces(principal, {manager.identity.namespace})
+        try:
+            yield manager
+        finally:
+            manager.close()
 
     def _close_experience_store() -> None:
         if (
@@ -2343,6 +2536,251 @@ def create_app(
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
         return record.as_dict()
+
+    @app.post(
+        "/workspace/runtime/runs",
+        dependencies=[Depends(require_role("write", require_explicit_namespace=False))],
+    )
+    def start_workspace_runtime_run(request: WorkspaceRuntimeStartRequest, http_request: Request):
+        with _workspace_manager(request.workspace_id, http_request) as manager:
+            try:
+                return manager.start_run(
+                    query=request.query,
+                    objective=request.objective,
+                    domain=request.domain,
+                    task_type=request.task_type,
+                    run_id=request.run_id,
+                    session_id=request.session_id,
+                    task_id=request.task_id,
+                    tools=request.tools,
+                    metadata={"provider": "http", **request.metadata},
+                    token_budget=request.token_budget,
+                    top_k=request.top_k,
+                    canary=request.canary,
+                )
+            except (KeyError, ValueError) as exc:
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @app.post(
+        "/workspace/runtime/events",
+        dependencies=[Depends(require_role("write", require_explicit_namespace=False))],
+    )
+    def capture_workspace_runtime_event(
+        request: WorkspaceRuntimeEventRequest,
+        http_request: Request,
+    ):
+        with _workspace_manager(request.workspace_id, http_request) as manager:
+            try:
+                return manager.capture_event(
+                    WorkspaceEvent(
+                        id=request.id,
+                        run_id=request.run_id,
+                        kind=AgentEventKind(request.kind),
+                        sequence=request.sequence,
+                        occurred_at=request.occurred_at,
+                        session_id=request.session_id,
+                        task_id=request.task_id,
+                        parent_event_id=request.parent_event_id,
+                        tool_name=request.tool_name,
+                        duration_ms=request.duration_ms,
+                        payload=request.payload,
+                    )
+                )
+            except (KeyError, ValueError) as exc:
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @app.post(
+        "/workspace/runtime/runs/{run_id}/verify",
+        dependencies=[Depends(require_role("write", require_explicit_namespace=False))],
+    )
+    def verify_workspace_runtime_run(
+        run_id: str,
+        request: WorkspaceRuntimeVerifyRequest,
+        http_request: Request,
+    ):
+        with _workspace_manager(request.workspace_id, http_request) as manager:
+            try:
+                return manager.verify_run(
+                    run_id=run_id,
+                    evidence_id=request.evidence_id,
+                    source=request.source,
+                    verifier=request.verifier,
+                    success=request.success,
+                    score=request.score,
+                    reference=request.reference,
+                    metadata=request.metadata,
+                    applied_experience_ids=request.applied_experience_ids,
+                )
+            except KeyError as exc:
+                raise HTTPException(status_code=404, detail="Workspace run not found") from exc
+            except ValueError as exc:
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @app.post(
+        "/workspace/runtime/runs/{run_id}/cancel",
+        dependencies=[Depends(require_role("write", require_explicit_namespace=False))],
+    )
+    def cancel_workspace_runtime_run(
+        run_id: str,
+        request: WorkspaceLifecycleRequest,
+        http_request: Request,
+    ):
+        if not request.evidence_id:
+            raise HTTPException(status_code=422, detail="evidence_id is required")
+        with _workspace_manager(request.workspace_id, http_request) as manager:
+            try:
+                return manager.cancel_run(
+                    run_id=run_id,
+                    evidence_id=request.evidence_id,
+                    verifier="operator",
+                    reason=request.reason,
+                )
+            except KeyError as exc:
+                raise HTTPException(status_code=404, detail="Workspace run not found") from exc
+            except ValueError as exc:
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @app.post(
+        "/workspace/packet",
+        dependencies=[Depends(require_role("read", require_explicit_namespace=False))],
+    )
+    def compile_workspace_experience_packet(
+        request: WorkspacePacketRequest,
+        http_request: Request,
+    ):
+        with _workspace_manager(request.workspace_id, http_request) as manager:
+            try:
+                return manager.packet(
+                    request.query,
+                    domain=request.domain,
+                    task_type=request.task_type,
+                    tools=request.tools,
+                    token_budget=request.token_budget,
+                    top_k=request.top_k,
+                )
+            except ValueError as exc:
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @app.post(
+        "/workspace/review",
+        dependencies=[Depends(require_role("read", require_explicit_namespace=False))],
+    )
+    def list_workspace_review_queue(request: WorkspaceReviewRequest, http_request: Request):
+        with _workspace_manager(request.workspace_id, http_request) as manager:
+            return {
+                "schema": "wavemind.workspace_review_queue.v1",
+                "identity": manager.identity.as_dict(),
+                "items": manager.review_queue(limit=request.limit),
+            }
+
+    @app.post(
+        "/workspace/runtime/{experience_id}/approve",
+        dependencies=[Depends(require_role("admin", require_explicit_namespace=False))],
+    )
+    def approve_workspace_experience(
+        experience_id: str,
+        request: WorkspaceLifecycleRequest,
+        http_request: Request,
+    ):
+        if not request.evidence_id:
+            raise HTTPException(status_code=422, detail="evidence_id is required")
+        with _workspace_manager(request.workspace_id, http_request) as manager:
+            try:
+                return {
+                    "experience_id": experience_id,
+                    "status": manager.approve(
+                        experience_id,
+                        evidence_id=request.evidence_id,
+                        score=request.score,
+                    ),
+                }
+            except KeyError as exc:
+                raise HTTPException(status_code=404, detail="Experience not found") from exc
+
+    @app.post(
+        "/workspace/runtime/{experience_id}/edit-and-approve",
+        dependencies=[Depends(require_role("admin", require_explicit_namespace=False))],
+    )
+    def edit_and_approve_workspace_experience(
+        experience_id: str,
+        request: WorkspaceEditApproveRequest,
+        http_request: Request,
+    ):
+        if not request.evidence_id:
+            raise HTTPException(status_code=422, detail="evidence_id is required")
+        if request.title is None and request.content is None:
+            raise HTTPException(status_code=422, detail="title or content is required")
+        with _workspace_manager(request.workspace_id, http_request) as manager:
+            try:
+                return manager.edit_and_approve(
+                    experience_id,
+                    evidence_id=request.evidence_id,
+                    title=request.title,
+                    content=request.content,
+                    reason=request.reason,
+                    score=request.score,
+                    metadata=request.metadata,
+                )
+            except KeyError as exc:
+                raise HTTPException(status_code=404, detail="Experience not found") from exc
+            except ValueError as exc:
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @app.post(
+        "/workspace/runtime/{experience_id}/reject",
+        dependencies=[Depends(require_role("admin", require_explicit_namespace=False))],
+    )
+    def reject_workspace_experience(
+        experience_id: str,
+        request: WorkspaceLifecycleRequest,
+        http_request: Request,
+    ):
+        with _workspace_manager(request.workspace_id, http_request) as manager:
+            try:
+                return manager.reject(experience_id, reason=request.reason)
+            except KeyError as exc:
+                raise HTTPException(status_code=404, detail="Experience not found") from exc
+
+    @app.post(
+        "/workspace/runtime/{experience_id}/rollback",
+        dependencies=[Depends(require_role("admin", require_explicit_namespace=False))],
+    )
+    def rollback_workspace_experience(
+        experience_id: str,
+        request: WorkspaceLifecycleRequest,
+        http_request: Request,
+    ):
+        with _workspace_manager(request.workspace_id, http_request) as manager:
+            try:
+                return manager.rollback(experience_id, reason=request.reason)
+            except KeyError as exc:
+                raise HTTPException(status_code=404, detail="Experience not found") from exc
+            except ValueError as exc:
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @app.delete(
+        "/workspace/runtime/{experience_id}",
+        dependencies=[Depends(require_role("admin", require_explicit_namespace=False))],
+    )
+    def delete_workspace_experience(
+        experience_id: str,
+        request: WorkspaceLifecycleRequest,
+        http_request: Request,
+    ):
+        with _workspace_manager(request.workspace_id, http_request) as manager:
+            try:
+                return {
+                    "experience_id": experience_id,
+                    "deleted": manager.protected_delete(
+                        experience_id,
+                        reason=request.reason,
+                        confirmation=request.confirmation or "",
+                    ),
+                }
+            except KeyError as exc:
+                raise HTTPException(status_code=404, detail="Experience not found") from exc
+            except ValueError as exc:
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     @app.post(
         "/query/batch",

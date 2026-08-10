@@ -7,7 +7,9 @@ import json
 import os
 import sys
 import tempfile
+import time
 from pathlib import Path
+from typing import Any
 
 from . import __version__
 from .benchmark import BenchmarkCase, run_benchmark, synthetic_cases
@@ -17,6 +19,7 @@ from .active_active_drill import parse_active_active_regions, run_active_active_
 from .consensus import run_control_plane_consensus_profile
 from .core import WaveMind
 from .experience import SQLiteExperienceStore
+from .experience_runtime import AgentEventKind, VerificationSource
 from .encoders import create_text_encoder
 from .advisor import advise_memory_architecture, advice_status_meets_or_exceeds
 from .scale import (
@@ -139,6 +142,13 @@ from .production_evidence_ingest import (
 from .replication import ReplicatedWaveMind
 from .sharding import DistributedShardedWaveMind, HTTPNamespaceShardClient
 from .storage import SQLiteMemoryStore
+from .workspace_experience import (
+    WorkspaceEvent,
+    WorkspaceExperienceManager,
+    initialize_workspace,
+    load_workspace_config,
+    workspace_mcp_config,
+)
 
 
 def configure_stdio() -> None:
@@ -237,6 +247,59 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command")
 
     sub.add_parser("quickstart", help="Show the shortest CLI path")
+
+    workspace = sub.add_parser(
+        "workspace",
+        help="Initialize and manage verified workspace experience",
+    )
+    workspace.add_argument("--root", type=Path, default=Path.cwd())
+    workspace_sub = workspace.add_subparsers(dest="workspace_command", required=True)
+    workspace_init = workspace_sub.add_parser("init", help="Create .wavemind workspace config")
+    workspace_init.add_argument("--workspace-id")
+    workspace_init.add_argument("--tenant", default="local")
+    workspace_init.add_argument("--user", default="local")
+    workspace_init.add_argument("--force", action="store_true")
+    workspace_init.add_argument("--json", action="store_true")
+    workspace_doctor = workspace_sub.add_parser("doctor", help="Check workspace config and state paths")
+    workspace_doctor.add_argument("--json", action="store_true")
+    workspace_status = workspace_sub.add_parser("status", help="Show workspace identity and queue status")
+    workspace_status.add_argument("--json", action="store_true")
+    workspace_demo = workspace_sub.add_parser("demo", help="Run a local verified-experience demo")
+    workspace_demo.add_argument("--workspace-id")
+    workspace_demo.add_argument("--tenant", default="local")
+    workspace_demo.add_argument("--user", default="local")
+    workspace_demo.add_argument("--json", action="store_true")
+    workspace_packet = workspace_sub.add_parser("packet", help="Compile a cited Experience Packet")
+    workspace_packet.add_argument("query")
+    workspace_packet.add_argument("--domain", default="workspace")
+    workspace_packet.add_argument("--task-type", default="task")
+    workspace_packet.add_argument("--tool", action="append", default=[])
+    workspace_packet.add_argument("--top-k", type=int, default=3)
+    workspace_packet.add_argument("--token-budget", type=int, default=400)
+    workspace_packet.add_argument("--json", action="store_true")
+    workspace_review = workspace_sub.add_parser("review", help="List or control runbook candidates")
+    workspace_review.add_argument(
+        "--action",
+        choices=["list", "approve", "edit-approve", "reject", "rollback", "delete"],
+        default="list",
+    )
+    workspace_review.add_argument("--experience-id")
+    workspace_review.add_argument("--evidence-id")
+    workspace_review.add_argument("--reason", default="operator review")
+    workspace_review.add_argument("--title")
+    workspace_review.add_argument("--content")
+    workspace_review.add_argument("--content-file", type=Path)
+    workspace_review.add_argument("--confirmation")
+    workspace_review.add_argument("--json", action="store_true")
+    workspace_export = workspace_sub.add_parser("export", help="Export portable workspace experience")
+    workspace_export.add_argument("--out", type=Path, required=True)
+    workspace_export.add_argument("--json", action="store_true")
+    workspace_import = workspace_sub.add_parser("import", help="Import portable workspace experience")
+    workspace_import.add_argument("--file", type=Path, required=True)
+    workspace_import.add_argument("--json", action="store_true")
+    workspace_mcp = workspace_sub.add_parser("mcp-config", help="Print generic MCP config")
+    workspace_mcp.add_argument("--out", type=Path)
+    workspace_mcp.add_argument("--json", action="store_true")
 
     init = sub.add_parser("init", help="Create a runnable WaveMind starter project")
     init.add_argument("directory", nargs="?", default="wavemind-starter")
@@ -2785,6 +2848,264 @@ def run_interactive(args) -> int:
             print("unknown command")
 
 
+def handle_workspace_command(args: argparse.Namespace) -> int:
+    try:
+        if args.workspace_command in {"init", "demo"}:
+            config = initialize_workspace(
+                args.root,
+                workspace_id=args.workspace_id or Path(args.root).resolve().name,
+                tenant_id=args.tenant,
+                user_id=args.user,
+                force=getattr(args, "force", False),
+            )
+            if args.workspace_command == "demo":
+                suffix = f"{int(time.time() * 1000)}"
+                manager = WorkspaceExperienceManager(config)
+                try:
+                    started = manager.start_run(
+                        query="pytest cache permission failure",
+                        objective="fix pytest cache permission failure",
+                        domain="python",
+                        task_type="pytest-cache",
+                        run_id=f"workspace-demo-{suffix}",
+                        tools=("remove-cache", "pytest"),
+                        metadata={"demo": True},
+                    )
+                    call = manager.capture_event(
+                        WorkspaceEvent(
+                            id=f"workspace-demo-call-{suffix}",
+                            run_id=started["run_id"],
+                            session_id=started["session_id"],
+                            task_id=started["task_id"],
+                            kind=AgentEventKind.TOOL_CALL,
+                            sequence=started["next_sequence"],
+                            tool_name="remove-cache",
+                            payload={"input": {"path": ".pytest_cache"}},
+                        )
+                    )
+                    manager.capture_event(
+                        WorkspaceEvent(
+                            id=f"workspace-demo-result-{suffix}",
+                            run_id=started["run_id"],
+                            session_id=started["session_id"],
+                            task_id=started["task_id"],
+                            kind=AgentEventKind.TOOL_RESULT,
+                            sequence=started["next_sequence"] + 1,
+                            parent_event_id=call["event"]["id"],
+                            tool_name="remove-cache",
+                            payload={
+                                "success": True,
+                                "output": {"removed": ".pytest_cache"},
+                            },
+                        )
+                    )
+                    verified = manager.verify_run(
+                        run_id=started["run_id"],
+                        evidence_id=f"workspace-demo-pytest-{suffix}",
+                        source=VerificationSource.TEST,
+                        verifier="pytest",
+                        success=True,
+                        score=1.0,
+                        reference="local-demo://pytest",
+                    )
+                    candidate_id = verified["candidate_ids"][0]
+                    manager.approve(
+                        candidate_id,
+                        evidence_id=f"workspace-demo-operator-{suffix}",
+                    )
+                    packet = manager.packet(
+                        "pytest cache permission failure",
+                        domain="python",
+                        task_type="pytest-cache",
+                        tools=("remove-cache", "pytest"),
+                    )
+                    payload = {
+                        "schema": "wavemind.workspace_demo.v1",
+                        "identity": config.identity.as_dict(),
+                        "run": started,
+                        "verified": verified,
+                        "approved_experience_id": candidate_id,
+                        "packet": packet,
+                        "mcp": workspace_mcp_config(config),
+                    }
+                finally:
+                    manager.close()
+                if args.json:
+                    print(json.dumps(payload, ensure_ascii=False, indent=2))
+                else:
+                    print("workspace demo: ok")
+                    print(f"namespace: {config.identity.namespace}")
+                    print(f"citation: {payload['packet']['selected_citations'][0]}")
+                    print("mcp server: wavemind-workspace")
+                return 0
+            payload = config.as_dict()
+            if args.json:
+                print(json.dumps(payload, ensure_ascii=False, indent=2))
+            else:
+                print(f"workspace: {payload['identity']['workspace_id']}")
+                print(f"namespace: {payload['identity']['namespace']}")
+                print(f"config: {payload['config_path']}")
+                print(f"experience_db: {payload['experience_db_path']}")
+            return 0
+
+        config = load_workspace_config(args.root)
+
+        if args.workspace_command == "doctor":
+            checks = {
+                "config_exists": Path(config.config_path).is_file(),
+                "project_root_exists": Path(config.identity.project_root).is_dir(),
+                "state_dir_exists": Path(config.experience_db_path).parent.is_dir(),
+                "namespace_present": bool(config.identity.namespace),
+            }
+            payload = {
+                "schema": "wavemind.workspace_doctor.v1",
+                "status": "pass" if all(checks.values()) else "fail",
+                "identity": config.identity.as_dict(),
+                "checks": checks,
+            }
+            if args.json:
+                print(json.dumps(payload, ensure_ascii=False, indent=2))
+            else:
+                print(f"workspace_doctor: {payload['status']}")
+                for key, value in checks.items():
+                    print(f"{key}: {value}")
+            return 0 if payload["status"] == "pass" else 2
+
+        if args.workspace_command == "mcp-config":
+            payload = workspace_mcp_config(config)
+            rendered = json.dumps(payload, ensure_ascii=False, sort_keys=True, indent=2)
+            if args.out:
+                args.out.parent.mkdir(parents=True, exist_ok=True)
+                args.out.write_text(rendered + "\n", encoding="utf-8")
+            print(rendered if args.json or not args.out else f"wrote: {args.out}")
+            return 0
+
+        manager = WorkspaceExperienceManager(config)
+        try:
+            if args.workspace_command == "status":
+                queue = manager.review_queue()
+                payload = {
+                    "schema": "wavemind.workspace_status.v1",
+                    "identity": config.identity.as_dict(),
+                    "review_queue": len(queue),
+                    "candidates": [item["experience"]["id"] for item in queue],
+                }
+                if args.json:
+                    print(json.dumps(payload, ensure_ascii=False, indent=2))
+                else:
+                    print(f"workspace: {config.identity.workspace_id}")
+                    print(f"namespace: {config.identity.namespace}")
+                    print(f"review_queue: {len(queue)}")
+                return 0
+
+            if args.workspace_command == "packet":
+                payload = manager.packet(
+                    args.query,
+                    domain=args.domain,
+                    task_type=args.task_type,
+                    tools=tuple(args.tool),
+                    token_budget=args.token_budget,
+                    top_k=args.top_k,
+                )
+                if args.json:
+                    print(json.dumps(payload, ensure_ascii=False, indent=2))
+                elif payload["abstain"]:
+                    print(f"abstain: {payload['reason']}")
+                else:
+                    print(f"confidence: {payload['confidence']:.3f}")
+                    for citation in payload["selected_citations"]:
+                        print(f"citation: {citation}")
+                return 0
+
+            if args.workspace_command == "review":
+                if args.action == "list":
+                    payload: Any = {
+                        "schema": "wavemind.workspace_review_queue.v1",
+                        "items": manager.review_queue(),
+                    }
+                else:
+                    if not args.experience_id:
+                        raise ValueError("--experience-id is required for review actions")
+                    if args.action == "approve":
+                        if not args.evidence_id:
+                            raise ValueError("--evidence-id is required for approve")
+                        payload = {
+                            "experience_id": args.experience_id,
+                            "status": manager.approve(
+                                args.experience_id,
+                                evidence_id=args.evidence_id,
+                            ),
+                        }
+                    elif args.action == "edit-approve":
+                        if not args.evidence_id:
+                            raise ValueError("--evidence-id is required for edit-approve")
+                        content = args.content
+                        if args.content_file is not None:
+                            content = args.content_file.read_text(encoding="utf-8")
+                        if args.title is None and content is None:
+                            raise ValueError(
+                                "--title, --content, or --content-file is required"
+                            )
+                        payload = manager.edit_and_approve(
+                            args.experience_id,
+                            evidence_id=args.evidence_id,
+                            title=args.title,
+                            content=content,
+                            reason=args.reason,
+                        )
+                    elif args.action == "reject":
+                        payload = manager.reject(args.experience_id, reason=args.reason)
+                    elif args.action == "rollback":
+                        payload = manager.rollback(args.experience_id, reason=args.reason)
+                    else:
+                        payload = {
+                            "experience_id": args.experience_id,
+                            "deleted": manager.protected_delete(
+                                args.experience_id,
+                                reason=args.reason,
+                                confirmation=args.confirmation or "",
+                            ),
+                        }
+                print(json.dumps(payload, ensure_ascii=False, indent=2))
+                return 0
+
+            if args.workspace_command == "export":
+                payload = manager.export_bundle()
+                args.out.parent.mkdir(parents=True, exist_ok=True)
+                args.out.write_text(
+                    json.dumps(payload, ensure_ascii=False, sort_keys=True, indent=2)
+                    + "\n",
+                    encoding="utf-8",
+                )
+                if args.json:
+                    print(
+                        json.dumps(
+                            {"out": str(args.out), **payload},
+                            ensure_ascii=False,
+                            indent=2,
+                        )
+                    )
+                else:
+                    print(f"exported: {args.out}")
+                return 0
+
+            if args.workspace_command == "import":
+                payload = json.loads(args.file.read_text(encoding="utf-8"))
+                report = manager.import_bundle(payload)
+                if args.json:
+                    print(json.dumps(report, ensure_ascii=False, indent=2))
+                else:
+                    print(f"imported records: {report['record_count']}")
+                    print(f"parity: {report['parity']:.3f}")
+                return 0
+        finally:
+            manager.close()
+    except (OSError, ValueError, KeyError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    return 2
+
+
 def main(argv: list[str] | None = None) -> int:
     configure_stdio()
     parser = build_parser()
@@ -2794,6 +3115,9 @@ def main(argv: list[str] | None = None) -> int:
             parser.print_help()
             return 0
         return run_interactive(args)
+
+    if args.command == "workspace":
+        return handle_workspace_command(args)
 
     if args.command == "quickstart":
         print_quickstart()
