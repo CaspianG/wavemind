@@ -64,6 +64,18 @@
       }
     ],
     "candidate": "candidate-1",
+    "candidate_status": "failed",
+    "failed_candidates": [
+      {
+        "frozen_split_sha256": "e4345094922637414bec7f69a15cea9207380b1795b39eb53270da99b89965a2",
+        "held_out_policy": "not_opened",
+        "id": "candidate-1",
+        "improvement_ceiling_over_core": 2,
+        "reason": "bounded development evidence on the preregistered 18-case split cannot reach the four-category improvement gate",
+        "status": "failed",
+        "target": 4
+      }
+    ],
     "gate_errors": [
       "improved_category_count below threshold",
       "category_improvement_ceiling below threshold",
@@ -80,7 +92,7 @@
       "embedding_runtime_proof": null,
       "engine": "Chroma static",
       "family": "static_chroma_or_qdrant",
-      "p95_latency_ms": 3.7962999776937068,
+      "p95_latency_ms": 3.895499976351857,
       "reason": null,
       "simulated": false,
       "status": "pass",
@@ -92,7 +104,7 @@
       "embedding_runtime_proof": null,
       "engine": "Qdrant static",
       "family": "static_chroma_or_qdrant",
-      "p95_latency_ms": 2.529199991840869,
+      "p95_latency_ms": 2.682599995750934,
       "reason": null,
       "simulated": false,
       "status": "pass",
@@ -116,7 +128,7 @@
       },
       "engine": "Mem0 OSS",
       "family": "mem0_oss",
-      "p95_latency_ms": 5.689200013875961,
+      "p95_latency_ms": 5.514099961146712,
       "reason": null,
       "simulated": false,
       "status": "pass",
@@ -128,7 +140,7 @@
       "embedding_runtime_proof": null,
       "engine": "LangGraph persistent memory",
       "family": "langmem_or_langgraph",
-      "p95_latency_ms": 0.7263000006787479,
+      "p95_latency_ms": 0.9499999578110874,
       "reason": null,
       "simulated": false,
       "status": "pass",
@@ -197,7 +209,7 @@
     ],
     "status": "blocked"
   },
-  "generated_at": "2026-08-10T21:58:15Z",
+  "generated_at": "2026-08-10T22:05:00Z",
   "held_out_gate": {
     "reason": "held-out is forbidden until protocol freeze and development go/no-go",
     "status": "not_opened"
@@ -209,7 +221,7 @@
   },
   "integrity": {
     "algorithm": "sha256",
-    "payload_sha256": "afa03f2170cf96903c24fbff314911eb211fa4069bf78ab90ef39e99dc95a73f",
+    "payload_sha256": "430ca68d0907cef3e2ade354cfb2dd03932b5c1d9f7c48d71f9c24797d5ca7c0",
     "schema": "wavemind.artifact_integrity.v1"
   },
   "measurement_runs": 5,
@@ -325,8 +337,8 @@
     "improved_category_count": 2,
     "measurement_runs": 5,
     "memory_os_uplift_over_core": 0.6111111111111112,
-    "p95_overhead_ms": -0.23049995070323348,
-    "p95_overhead_ratio": -0.11581748321031254,
+    "p95_overhead_ms": -0.34149998100474477,
+    "p95_overhead_ratio": -0.15086586852536205,
     "stale_contradiction_error_rate": 0.0
   },
   "protocol_revision": "quality-leadership-v1-20260810",
@@ -335,14 +347,14 @@
       "artifact": "benchmarks/quality_leadership_agent_memory_advantage_dev_real_competitors.json",
       "claim_boundary": "Bounded development diagnostic only; it cannot replace public held-out quality evidence or real competitor execution.",
       "id": "controlled-sequential-agent-memory",
-      "source_sha": "be873e720fe3a9eba4b73566efb56e1c488c5f77",
+      "source_sha": "93b1fe0bd1dd3a07ecdb7b791c0bd42730800739",
       "status": "pass"
     }
   ],
   "schema": "wavemind.quality_leadership_results.v1",
   "source_manifest": {
     "algorithm": "sha256",
-    "digest": "c1b029b359f696f7ae024e283ce8261d60865378d9d636e804671599baabb2f8",
+    "digest": "9504c483cadf1f492d4a8ee563207a8daad6e82f5415f40aa8c01cc72f882cfb",
     "files": [
       {
         "path": "benchmarks/agent_memory_advantage_benchmark.py",
@@ -406,7 +418,7 @@
       },
       {
         "path": "wavemind/quality_leadership_admission.py",
-        "sha256": "dbd0175d3939623c13404cc6ccb05c8ad4bd8fddabb759c1d5af445d22f427cd"
+        "sha256": "c78f892d72a10e3043537b9e7274e4b30030b436c3ea123d241f6e38c563a4fc"
       },
       {
         "path": "wavemind/workspace_experience_admission.py",
@@ -415,6 +427,6 @@
     ],
     "schema": "wavemind.source_manifest.v1"
   },
-  "source_sha": "be873e720fe3a9eba4b73566efb56e1c488c5f77",
+  "source_sha": "93b1fe0bd1dd3a07ecdb7b791c0bd42730800739",
   "status": "development_blocked"
 }

@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.agent_memory_advantage_benchmark.v1",
-  "generated_at": "2026-08-10T21:57:55Z",
-  "source_sha": "be873e720fe3a9eba4b73566efb56e1c488c5f77",
+  "generated_at": "2026-08-10T22:04:50Z",
+  "source_sha": "93b1fe0bd1dd3a07ecdb7b791c0bd42730800739",
   "status": "pass",
   "protocol": {
     "hash": "c0379987ea9a72b81a6fa811de97ecad063252f7d6dd472064c12d799d97ea26",
@@ -104,9 +104,9 @@
           0.0
         ]
       },
-      "p50_latency_ms": 1.4069000026211143,
-      "p95_latency_ms": 1.9901999621652067,
-      "p99_latency_ms": 27.925899950787425,
+      "p50_latency_ms": 1.6017000307329,
+      "p95_latency_ms": 2.263600006699562,
+      "p99_latency_ms": 19.081900012679398,
       "combined_score": 0.4057821416582746,
       "cost_per_query_usd": 0.0,
       "trial_metrics": [
@@ -230,9 +230,9 @@
               "stale_error_rate": 1
             }
           ],
-          "p50_latency_ms": 1.4942999696359038,
-          "p95_latency_ms": 2.1782999974675477,
-          "p99_latency_ms": 32.89650002261624
+          "p50_latency_ms": 1.7400000360794365,
+          "p95_latency_ms": 2.6774999569170177,
+          "p99_latency_ms": 24.56479996908456
         },
         {
           "task_success_rate": 0.3888888888888889,
@@ -354,9 +354,9 @@
               "stale_error_rate": 1
             }
           ],
-          "p50_latency_ms": 1.4069000026211143,
-          "p95_latency_ms": 1.9901999621652067,
-          "p99_latency_ms": 31.48120001424104
+          "p50_latency_ms": 1.4588000485673547,
+          "p95_latency_ms": 2.0794000010937452,
+          "p99_latency_ms": 18.45939998747781
         },
         {
           "task_success_rate": 0.3888888888888889,
@@ -478,9 +478,9 @@
               "stale_error_rate": 1
             }
           ],
-          "p50_latency_ms": 1.4050000463612378,
-          "p95_latency_ms": 1.9466000376269221,
-          "p99_latency_ms": 26.688600017223507
+          "p50_latency_ms": 1.4599999994970858,
+          "p95_latency_ms": 2.1368999732658267,
+          "p99_latency_ms": 19.081900012679398
         },
         {
           "task_success_rate": 0.3888888888888889,
@@ -602,9 +602,9 @@
               "stale_error_rate": 1
             }
           ],
-          "p50_latency_ms": 1.356799970380962,
-          "p95_latency_ms": 1.8163000349886715,
-          "p99_latency_ms": 27.925899950787425
+          "p50_latency_ms": 1.602300035301596,
+          "p95_latency_ms": 2.263600006699562,
+          "p99_latency_ms": 18.38659995701164
         },
         {
           "task_success_rate": 0.3888888888888889,
@@ -726,9 +726,9 @@
               "stale_error_rate": 1
             }
           ],
-          "p50_latency_ms": 1.5666999970562756,
-          "p95_latency_ms": 2.72759998915717,
-          "p99_latency_ms": 27.91040000738576
+          "p50_latency_ms": 1.6017000307329,
+          "p95_latency_ms": 2.342799969483167,
+          "p99_latency_ms": 22.508900030516088
         }
       ],
       "execution_mode": "wavemind_core"
@@ -798,8 +798,8 @@
         ]
       },
       "p50_latency_ms": 0.00200001522898674,
-      "p95_latency_ms": 1.7597000114619732,
-      "p99_latency_ms": 2.1163999917916954,
+      "p95_latency_ms": 1.9221000256948173,
+      "p99_latency_ms": 2.3260999587364495,
       "combined_score": 0.925226586102719,
       "cost_per_query_usd": 0.0,
       "trial_metrics": [
@@ -924,8 +924,256 @@
             }
           ],
           "p50_latency_ms": 0.00200001522898674,
-          "p95_latency_ms": 1.6204999992623925,
-          "p99_latency_ms": 1.802199985831976
+          "p95_latency_ms": 1.7840000218711793,
+          "p99_latency_ms": 2.296700025908649
+        },
+        {
+          "task_success_rate": 1.0,
+          "stale_error_rate": 0.0,
+          "context_budget_saved": 0.5015105740181269,
+          "category_success": {
+            "knowledge_update": 1.0,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 1.0
+          },
+          "case_outcomes": [
+            {
+              "namespace": "role",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "city",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "budget",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "style",
+              "category": "preference_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "project",
+              "category": "state_tracking",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "token",
+              "category": "state_tracking",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "language",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "exchange",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-budget",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-region",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-owner",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-port",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "backup-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "merge-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "token-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "recovery-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "release-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "migration-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            }
+          ],
+          "p50_latency_ms": 0.0029999646358191967,
+          "p95_latency_ms": 1.9221000256948173,
+          "p99_latency_ms": 2.3260999587364495
+        },
+        {
+          "task_success_rate": 1.0,
+          "stale_error_rate": 0.0,
+          "context_budget_saved": 0.5015105740181269,
+          "category_success": {
+            "knowledge_update": 1.0,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 1.0
+          },
+          "case_outcomes": [
+            {
+              "namespace": "role",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "city",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "budget",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "style",
+              "category": "preference_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "project",
+              "category": "state_tracking",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "token",
+              "category": "state_tracking",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "language",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "exchange",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-budget",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-region",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-owner",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-port",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "backup-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "merge-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "token-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "recovery-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "release-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "migration-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            }
+          ],
+          "p50_latency_ms": 0.0023999600671231747,
+          "p95_latency_ms": 2.39129998954013,
+          "p99_latency_ms": 3.0892000067979097
         },
         {
           "task_success_rate": 1.0,
@@ -1048,256 +1296,8 @@
             }
           ],
           "p50_latency_ms": 0.00200001522898674,
-          "p95_latency_ms": 1.7597000114619732,
-          "p99_latency_ms": 2.1163999917916954
-        },
-        {
-          "task_success_rate": 1.0,
-          "stale_error_rate": 0.0,
-          "context_budget_saved": 0.5015105740181269,
-          "category_success": {
-            "knowledge_update": 1.0,
-            "preference_update": 1.0,
-            "state_tracking": 1.0,
-            "workflow_gotcha": 1.0
-          },
-          "case_outcomes": [
-            {
-              "namespace": "role",
-              "category": "knowledge_update",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "city",
-              "category": "knowledge_update",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "budget",
-              "category": "knowledge_update",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "style",
-              "category": "preference_update",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "project",
-              "category": "state_tracking",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "token",
-              "category": "state_tracking",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "language",
-              "category": "knowledge_update",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "exchange",
-              "category": "knowledge_update",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "updated-budget",
-              "category": "knowledge_update",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "updated-region",
-              "category": "knowledge_update",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "updated-owner",
-              "category": "knowledge_update",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "updated-port",
-              "category": "knowledge_update",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "backup-rule",
-              "category": "workflow_gotcha",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "merge-rule",
-              "category": "workflow_gotcha",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "token-rule",
-              "category": "workflow_gotcha",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "recovery-rule",
-              "category": "workflow_gotcha",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "release-rule",
-              "category": "workflow_gotcha",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "migration-rule",
-              "category": "workflow_gotcha",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            }
-          ],
-          "p50_latency_ms": 0.004600035026669502,
-          "p95_latency_ms": 1.5986000071279705,
-          "p99_latency_ms": 2.0975000225007534
-        },
-        {
-          "task_success_rate": 1.0,
-          "stale_error_rate": 0.0,
-          "context_budget_saved": 0.5015105740181269,
-          "category_success": {
-            "knowledge_update": 1.0,
-            "preference_update": 1.0,
-            "state_tracking": 1.0,
-            "workflow_gotcha": 1.0
-          },
-          "case_outcomes": [
-            {
-              "namespace": "role",
-              "category": "knowledge_update",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "city",
-              "category": "knowledge_update",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "budget",
-              "category": "knowledge_update",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "style",
-              "category": "preference_update",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "project",
-              "category": "state_tracking",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "token",
-              "category": "state_tracking",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "language",
-              "category": "knowledge_update",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "exchange",
-              "category": "knowledge_update",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "updated-budget",
-              "category": "knowledge_update",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "updated-region",
-              "category": "knowledge_update",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "updated-owner",
-              "category": "knowledge_update",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "updated-port",
-              "category": "knowledge_update",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "backup-rule",
-              "category": "workflow_gotcha",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "merge-rule",
-              "category": "workflow_gotcha",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "token-rule",
-              "category": "workflow_gotcha",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "recovery-rule",
-              "category": "workflow_gotcha",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "release-rule",
-              "category": "workflow_gotcha",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            },
-            {
-              "namespace": "migration-rule",
-              "category": "workflow_gotcha",
-              "success_rate": 1,
-              "stale_error_rate": 0
-            }
-          ],
-          "p50_latency_ms": 0.0026999623514711857,
-          "p95_latency_ms": 1.9931000424548984,
-          "p99_latency_ms": 2.552600053604692
+          "p95_latency_ms": 1.9334000535309315,
+          "p99_latency_ms": 2.3923999979160726
         },
         {
           "task_success_rate": 1.0,
@@ -1420,8 +1420,8 @@
             }
           ],
           "p50_latency_ms": 0.00200001522898674,
-          "p95_latency_ms": 1.8118000007234514,
-          "p99_latency_ms": 2.3187000188045204
+          "p95_latency_ms": 1.6919999616220593,
+          "p99_latency_ms": 2.0182000007480383
         }
       ],
       "execution_mode": "memory_os_direct_adaptive"
@@ -1490,9 +1490,9 @@
           0.0
         ]
       },
-      "p50_latency_ms": 0.004200031980872154,
-      "p95_latency_ms": 0.00790000194683671,
-      "p99_latency_ms": 0.00790000194683671,
+      "p50_latency_ms": 0.004100031219422817,
+      "p95_latency_ms": 0.007399998139590025,
+      "p99_latency_ms": 0.007399998139590025,
       "combined_score": 0.2641154749916079,
       "cost_per_query_usd": 0.0,
       "trial_metrics": [
@@ -1511,133 +1511,10 @@
           },
           "context_tokens_returned": 165,
           "context_budget_saved": 0.5015105740181269,
-          "avg_latency_ms": 0.004977780109685328,
-          "p50_latency_ms": 0.004399975296109915,
-          "p95_latency_ms": 0.012499978765845299,
-          "p99_latency_ms": 0.012499978765845299,
-          "queries": 18,
-          "execution_mode": "retrieval",
-          "worker_runs": 0,
-          "maintenance_total_ms": 0.0,
-          "maintenance_avg_ms": 0.0,
-          "end_to_end_p95_ms": 0.0,
-          "cache_hits": 0,
-          "cache_misses": 0,
-          "priority_predictions": 0,
-          "forgetting_demotions": 0,
-          "memory_os_policy_mode": "",
-          "prewarmed_queries": 0,
-          "predictive_prefetch_warmed": 0,
-          "worker_errors": 0,
-          "maintenance_interval_queries": 0,
-          "ingest_total_ms": 0.1238000113517046,
-          "ingest_avg_ms": 0.0034388892042140165,
-          "ingest_scope": "in_memory_index_from_precomputed_embeddings",
-          "embedding_runtime_proof": {},
-          "task_success_rate": 0.2222222222222222,
-          "stale_error_rate": 0.7777777777777778
-        },
-        {
-          "engine": "Static vector",
-          "evidence_recall_at_k": 0.2222222222222222,
-          "evidence_precision_at_k": 0.2222222222222222,
-          "mrr_at_k": 0.2222222222222222,
-          "precision_at_1": 0.2222222222222222,
-          "stale_suppression": 0.2222222222222222,
-          "category_success": {
-            "knowledge_update": 0.1111111111111111,
-            "preference_update": 1.0,
-            "state_tracking": 1.0,
-            "workflow_gotcha": 0.0
-          },
-          "context_tokens_returned": 165,
-          "context_budget_saved": 0.5015105740181269,
-          "avg_latency_ms": 0.004483338367814819,
-          "p50_latency_ms": 0.004200031980872154,
-          "p95_latency_ms": 0.008300004992634058,
-          "p99_latency_ms": 0.008300004992634058,
-          "queries": 18,
-          "execution_mode": "retrieval",
-          "worker_runs": 0,
-          "maintenance_total_ms": 0.0,
-          "maintenance_avg_ms": 0.0,
-          "end_to_end_p95_ms": 0.0,
-          "cache_hits": 0,
-          "cache_misses": 0,
-          "priority_predictions": 0,
-          "forgetting_demotions": 0,
-          "memory_os_policy_mode": "",
-          "prewarmed_queries": 0,
-          "predictive_prefetch_warmed": 0,
-          "worker_errors": 0,
-          "maintenance_interval_queries": 0,
-          "ingest_total_ms": 0.06719998782500625,
-          "ingest_avg_ms": 0.0018666663284723957,
-          "ingest_scope": "in_memory_index_from_precomputed_embeddings",
-          "embedding_runtime_proof": {},
-          "task_success_rate": 0.2222222222222222,
-          "stale_error_rate": 0.7777777777777778
-        },
-        {
-          "engine": "Static vector",
-          "evidence_recall_at_k": 0.2222222222222222,
-          "evidence_precision_at_k": 0.2222222222222222,
-          "mrr_at_k": 0.2222222222222222,
-          "precision_at_1": 0.2222222222222222,
-          "stale_suppression": 0.2222222222222222,
-          "category_success": {
-            "knowledge_update": 0.1111111111111111,
-            "preference_update": 1.0,
-            "state_tracking": 1.0,
-            "workflow_gotcha": 0.0
-          },
-          "context_tokens_returned": 165,
-          "context_budget_saved": 0.5015105740181269,
-          "avg_latency_ms": 0.004649996602286895,
-          "p50_latency_ms": 0.004200031980872154,
-          "p95_latency_ms": 0.00790000194683671,
-          "p99_latency_ms": 0.00790000194683671,
-          "queries": 18,
-          "execution_mode": "retrieval",
-          "worker_runs": 0,
-          "maintenance_total_ms": 0.0,
-          "maintenance_avg_ms": 0.0,
-          "end_to_end_p95_ms": 0.0,
-          "cache_hits": 0,
-          "cache_misses": 0,
-          "priority_predictions": 0,
-          "forgetting_demotions": 0,
-          "memory_os_policy_mode": "",
-          "prewarmed_queries": 0,
-          "predictive_prefetch_warmed": 0,
-          "worker_errors": 0,
-          "maintenance_interval_queries": 0,
-          "ingest_total_ms": 0.06160000339150429,
-          "ingest_avg_ms": 0.0017111112053195636,
-          "ingest_scope": "in_memory_index_from_precomputed_embeddings",
-          "embedding_runtime_proof": {},
-          "task_success_rate": 0.2222222222222222,
-          "stale_error_rate": 0.7777777777777778
-        },
-        {
-          "engine": "Static vector",
-          "evidence_recall_at_k": 0.2222222222222222,
-          "evidence_precision_at_k": 0.2222222222222222,
-          "mrr_at_k": 0.2222222222222222,
-          "precision_at_1": 0.2222222222222222,
-          "stale_suppression": 0.2222222222222222,
-          "category_success": {
-            "knowledge_update": 0.1111111111111111,
-            "preference_update": 1.0,
-            "state_tracking": 1.0,
-            "workflow_gotcha": 0.0
-          },
-          "context_tokens_returned": 165,
-          "context_budget_saved": 0.5015105740181269,
-          "avg_latency_ms": 0.0043833311388476025,
+          "avg_latency_ms": 0.00483333133161068,
           "p50_latency_ms": 0.004199973773211241,
-          "p95_latency_ms": 0.007599999662488699,
-          "p99_latency_ms": 0.007599999662488699,
+          "p95_latency_ms": 0.013200042303651571,
+          "p99_latency_ms": 0.013200042303651571,
           "queries": 18,
           "execution_mode": "retrieval",
           "worker_runs": 0,
@@ -1653,8 +1530,8 @@
           "predictive_prefetch_warmed": 0,
           "worker_errors": 0,
           "maintenance_interval_queries": 0,
-          "ingest_total_ms": 0.06160000339150429,
-          "ingest_avg_ms": 0.0017111112053195636,
+          "ingest_total_ms": 0.09849999332800508,
+          "ingest_avg_ms": 0.0027361109257779187,
           "ingest_scope": "in_memory_index_from_precomputed_embeddings",
           "embedding_runtime_proof": {},
           "task_success_rate": 0.2222222222222222,
@@ -1675,10 +1552,10 @@
           },
           "context_tokens_returned": 165,
           "context_budget_saved": 0.5015105740181269,
-          "avg_latency_ms": 0.004366667579031653,
-          "p50_latency_ms": 0.004199973773211241,
-          "p95_latency_ms": 0.007299997378140688,
-          "p99_latency_ms": 0.007299997378140688,
+          "avg_latency_ms": 0.004327781627782517,
+          "p50_latency_ms": 0.004100031219422817,
+          "p95_latency_ms": 0.008100003469735384,
+          "p99_latency_ms": 0.008100003469735384,
           "queries": 18,
           "execution_mode": "retrieval",
           "worker_runs": 0,
@@ -1694,8 +1571,131 @@
           "predictive_prefetch_warmed": 0,
           "worker_errors": 0,
           "maintenance_interval_queries": 0,
-          "ingest_total_ms": 0.05979998968541622,
-          "ingest_avg_ms": 0.0016611108245948951,
+          "ingest_total_ms": 0.06849999772384763,
+          "ingest_avg_ms": 0.001902777714551323,
+          "ingest_scope": "in_memory_index_from_precomputed_embeddings",
+          "embedding_runtime_proof": {},
+          "task_success_rate": 0.2222222222222222,
+          "stale_error_rate": 0.7777777777777778
+        },
+        {
+          "engine": "Static vector",
+          "evidence_recall_at_k": 0.2222222222222222,
+          "evidence_precision_at_k": 0.2222222222222222,
+          "mrr_at_k": 0.2222222222222222,
+          "precision_at_1": 0.2222222222222222,
+          "stale_suppression": 0.2222222222222222,
+          "category_success": {
+            "knowledge_update": 0.1111111111111111,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 165,
+          "context_budget_saved": 0.5015105740181269,
+          "avg_latency_ms": 0.004294444806873798,
+          "p50_latency_ms": 0.004099973011761904,
+          "p95_latency_ms": 0.007399998139590025,
+          "p99_latency_ms": 0.007399998139590025,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 0.06290001329034567,
+          "ingest_avg_ms": 0.0017472225913984908,
+          "ingest_scope": "in_memory_index_from_precomputed_embeddings",
+          "embedding_runtime_proof": {},
+          "task_success_rate": 0.2222222222222222,
+          "stale_error_rate": 0.7777777777777778
+        },
+        {
+          "engine": "Static vector",
+          "evidence_recall_at_k": 0.2222222222222222,
+          "evidence_precision_at_k": 0.2222222222222222,
+          "mrr_at_k": 0.2222222222222222,
+          "precision_at_1": 0.2222222222222222,
+          "stale_suppression": 0.2222222222222222,
+          "category_success": {
+            "knowledge_update": 0.1111111111111111,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 165,
+          "context_budget_saved": 0.5015105740181269,
+          "avg_latency_ms": 0.004422223557614618,
+          "p50_latency_ms": 0.004199973773211241,
+          "p95_latency_ms": 0.007399998139590025,
+          "p99_latency_ms": 0.007399998139590025,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 0.06249995203688741,
+          "ingest_avg_ms": 0.001736109778802428,
+          "ingest_scope": "in_memory_index_from_precomputed_embeddings",
+          "embedding_runtime_proof": {},
+          "task_success_rate": 0.2222222222222222,
+          "stale_error_rate": 0.7777777777777778
+        },
+        {
+          "engine": "Static vector",
+          "evidence_recall_at_k": 0.2222222222222222,
+          "evidence_precision_at_k": 0.2222222222222222,
+          "mrr_at_k": 0.2222222222222222,
+          "precision_at_1": 0.2222222222222222,
+          "stale_suppression": 0.2222222222222222,
+          "category_success": {
+            "knowledge_update": 0.1111111111111111,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 165,
+          "context_budget_saved": 0.5015105740181269,
+          "avg_latency_ms": 0.004305562470108271,
+          "p50_latency_ms": 0.004100031219422817,
+          "p95_latency_ms": 0.00700005330145359,
+          "p99_latency_ms": 0.00700005330145359,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 0.05960004637017846,
+          "ingest_avg_ms": 0.0016555568436160684,
           "ingest_scope": "in_memory_index_from_precomputed_embeddings",
           "embedding_runtime_proof": {},
           "task_success_rate": 0.2222222222222222,
@@ -2321,9 +2321,9 @@
           0.0
         ]
       },
-      "p50_latency_ms": 1.1393000022508204,
-      "p95_latency_ms": 3.7962999776937068,
-      "p99_latency_ms": 3.7962999776937068,
+      "p50_latency_ms": 1.462699961848557,
+      "p95_latency_ms": 3.895499976351857,
+      "p99_latency_ms": 3.895499976351857,
       "combined_score": 0.2641154749916079,
       "cost_per_query_usd": 0.0,
       "trial_metrics": [
@@ -2342,10 +2342,10 @@
           },
           "context_tokens_returned": 165,
           "context_budget_saved": 0.5015105740181269,
-          "avg_latency_ms": 1.1620944488741871,
-          "p50_latency_ms": 1.021499978378415,
-          "p95_latency_ms": 4.054900025948882,
-          "p99_latency_ms": 4.054900025948882,
+          "avg_latency_ms": 1.997905563459628,
+          "p50_latency_ms": 1.7263000481761992,
+          "p95_latency_ms": 5.643800017423928,
+          "p99_latency_ms": 5.643800017423928,
           "queries": 18,
           "execution_mode": "retrieval",
           "worker_runs": 0,
@@ -2361,8 +2361,8 @@
           "predictive_prefetch_warmed": 0,
           "worker_errors": 0,
           "maintenance_interval_queries": 0,
-          "ingest_total_ms": 236.64289998123422,
-          "ingest_avg_ms": 6.573413888367617,
+          "ingest_total_ms": 334.30450002197176,
+          "ingest_avg_ms": 9.286236111721438,
           "ingest_scope": "local_index_write_from_precomputed_embeddings",
           "embedding_runtime_proof": {},
           "task_success_rate": 0.2222222222222222,
@@ -2383,10 +2383,10 @@
           },
           "context_tokens_returned": 165,
           "context_budget_saved": 0.5015105740181269,
-          "avg_latency_ms": 1.2138833408243954,
-          "p50_latency_ms": 0.9936999995261431,
-          "p95_latency_ms": 3.7962999776937068,
-          "p99_latency_ms": 3.7962999776937068,
+          "avg_latency_ms": 1.4715500066005107,
+          "p50_latency_ms": 1.3703000149689615,
+          "p95_latency_ms": 3.753800003323704,
+          "p99_latency_ms": 3.753800003323704,
           "queries": 18,
           "execution_mode": "retrieval",
           "worker_runs": 0,
@@ -2402,8 +2402,8 @@
           "predictive_prefetch_warmed": 0,
           "worker_errors": 0,
           "maintenance_interval_queries": 0,
-          "ingest_total_ms": 26.209099974948913,
-          "ingest_avg_ms": 0.728030554859692,
+          "ingest_total_ms": 31.64269996341318,
+          "ingest_avg_ms": 0.8789638878725883,
           "ingest_scope": "local_index_write_from_precomputed_embeddings",
           "embedding_runtime_proof": {},
           "task_success_rate": 0.2222222222222222,
@@ -2424,10 +2424,10 @@
           },
           "context_tokens_returned": 165,
           "context_budget_saved": 0.5015105740181269,
-          "avg_latency_ms": 1.4120666698242228,
-          "p50_latency_ms": 1.2274999753572047,
-          "p95_latency_ms": 3.8772000116296113,
-          "p99_latency_ms": 3.8772000116296113,
+          "avg_latency_ms": 1.732366654323414,
+          "p50_latency_ms": 1.5434999950230122,
+          "p95_latency_ms": 5.086899967864156,
+          "p99_latency_ms": 5.086899967864156,
           "queries": 18,
           "execution_mode": "retrieval",
           "worker_runs": 0,
@@ -2443,8 +2443,8 @@
           "predictive_prefetch_warmed": 0,
           "worker_errors": 0,
           "maintenance_interval_queries": 0,
-          "ingest_total_ms": 27.271399972960353,
-          "ingest_avg_ms": 0.7575388881377876,
+          "ingest_total_ms": 33.20900001563132,
+          "ingest_avg_ms": 0.9224722226564255,
           "ingest_scope": "local_index_write_from_precomputed_embeddings",
           "embedding_runtime_proof": {},
           "task_success_rate": 0.2222222222222222,
@@ -2465,10 +2465,10 @@
           },
           "context_tokens_returned": 165,
           "context_budget_saved": 0.5015105740181269,
-          "avg_latency_ms": 1.3333499955479056,
-          "p50_latency_ms": 1.1393000022508204,
-          "p95_latency_ms": 3.750199975911528,
-          "p99_latency_ms": 3.750199975911528,
+          "avg_latency_ms": 1.531538886613109,
+          "p50_latency_ms": 1.3257000246085227,
+          "p95_latency_ms": 3.895499976351857,
+          "p99_latency_ms": 3.895499976351857,
           "queries": 18,
           "execution_mode": "retrieval",
           "worker_runs": 0,
@@ -2484,8 +2484,8 @@
           "predictive_prefetch_warmed": 0,
           "worker_errors": 0,
           "maintenance_interval_queries": 0,
-          "ingest_total_ms": 29.696699988562614,
-          "ingest_avg_ms": 0.8249083330156282,
+          "ingest_total_ms": 34.23420002218336,
+          "ingest_avg_ms": 0.9509500006162044,
           "ingest_scope": "local_index_write_from_precomputed_embeddings",
           "embedding_runtime_proof": {},
           "task_success_rate": 0.2222222222222222,
@@ -2506,10 +2506,10 @@
           },
           "context_tokens_returned": 165,
           "context_budget_saved": 0.5015105740181269,
-          "avg_latency_ms": 1.2596055554846923,
-          "p50_latency_ms": 1.205699983984232,
-          "p95_latency_ms": 3.1619000365026295,
-          "p99_latency_ms": 3.1619000365026295,
+          "avg_latency_ms": 1.6170944436453283,
+          "p50_latency_ms": 1.462699961848557,
+          "p95_latency_ms": 3.510700014885515,
+          "p99_latency_ms": 3.510700014885515,
           "queries": 18,
           "execution_mode": "retrieval",
           "worker_runs": 0,
@@ -2525,8 +2525,8 @@
           "predictive_prefetch_warmed": 0,
           "worker_errors": 0,
           "maintenance_interval_queries": 0,
-          "ingest_total_ms": 29.604899988044053,
-          "ingest_avg_ms": 0.8223583330012237,
+          "ingest_total_ms": 34.216800006106496,
+          "ingest_avg_ms": 0.9504666668362916,
           "ingest_scope": "local_index_write_from_precomputed_embeddings",
           "embedding_runtime_proof": {},
           "task_success_rate": 0.2222222222222222,
@@ -2598,9 +2598,9 @@
           0.0
         ]
       },
-      "p50_latency_ms": 1.5995000139810145,
-      "p95_latency_ms": 2.529199991840869,
-      "p99_latency_ms": 2.529199991840869,
+      "p50_latency_ms": 1.8718999926932156,
+      "p95_latency_ms": 2.682599995750934,
+      "p99_latency_ms": 2.682599995750934,
       "combined_score": 0.2641154749916079,
       "cost_per_query_usd": 0.0,
       "trial_metrics": [
@@ -2619,10 +2619,10 @@
           },
           "context_tokens_returned": 165,
           "context_budget_saved": 0.5015105740181269,
-          "avg_latency_ms": 1.6875888880652685,
-          "p50_latency_ms": 1.6101999790407717,
-          "p95_latency_ms": 2.9340999899432063,
-          "p99_latency_ms": 2.9340999899432063,
+          "avg_latency_ms": 1.5584444465477847,
+          "p50_latency_ms": 1.4797999756410718,
+          "p95_latency_ms": 2.6376000023446977,
+          "p99_latency_ms": 2.6376000023446977,
           "queries": 18,
           "execution_mode": "retrieval",
           "worker_runs": 0,
@@ -2638,8 +2638,8 @@
           "predictive_prefetch_warmed": 0,
           "worker_errors": 0,
           "maintenance_interval_queries": 0,
-          "ingest_total_ms": 25.655900011770427,
-          "ingest_avg_ms": 0.7126638892158452,
+          "ingest_total_ms": 28.016500000376254,
+          "ingest_avg_ms": 0.7782361111215627,
           "ingest_scope": "local_index_write_from_precomputed_embeddings",
           "embedding_runtime_proof": {},
           "task_success_rate": 0.2222222222222222,
@@ -2660,10 +2660,10 @@
           },
           "context_tokens_returned": 165,
           "context_budget_saved": 0.5015105740181269,
-          "avg_latency_ms": 1.6641555476881977,
-          "p50_latency_ms": 1.6268999897874892,
-          "p95_latency_ms": 3.0982999596744776,
-          "p99_latency_ms": 3.0982999596744776,
+          "avg_latency_ms": 1.5055722227164854,
+          "p50_latency_ms": 1.4096000231802464,
+          "p95_latency_ms": 2.570900018326938,
+          "p99_latency_ms": 2.570900018326938,
           "queries": 18,
           "execution_mode": "retrieval",
           "worker_runs": 0,
@@ -2679,8 +2679,8 @@
           "predictive_prefetch_warmed": 0,
           "worker_errors": 0,
           "maintenance_interval_queries": 0,
-          "ingest_total_ms": 21.227699995506555,
-          "ingest_avg_ms": 0.5896583332085155,
+          "ingest_total_ms": 34.76109995972365,
+          "ingest_avg_ms": 0.9655861099923236,
           "ingest_scope": "local_index_write_from_precomputed_embeddings",
           "embedding_runtime_proof": {},
           "task_success_rate": 0.2222222222222222,
@@ -2701,10 +2701,10 @@
           },
           "context_tokens_returned": 165,
           "context_budget_saved": 0.5015105740181269,
-          "avg_latency_ms": 1.6956166687628462,
-          "p50_latency_ms": 1.5995000139810145,
-          "p95_latency_ms": 2.529199991840869,
-          "p99_latency_ms": 2.529199991840869,
+          "avg_latency_ms": 1.8495499938985125,
+          "p50_latency_ms": 1.8718999926932156,
+          "p95_latency_ms": 2.7610999532043934,
+          "p99_latency_ms": 2.7610999532043934,
           "queries": 18,
           "execution_mode": "retrieval",
           "worker_runs": 0,
@@ -2720,8 +2720,8 @@
           "predictive_prefetch_warmed": 0,
           "worker_errors": 0,
           "maintenance_interval_queries": 0,
-          "ingest_total_ms": 33.04089995799586,
-          "ingest_avg_ms": 0.9178027766109962,
+          "ingest_total_ms": 27.699700032826513,
+          "ingest_avg_ms": 0.7694361120229587,
           "ingest_scope": "local_index_write_from_precomputed_embeddings",
           "embedding_runtime_proof": {},
           "task_success_rate": 0.2222222222222222,
@@ -2742,10 +2742,10 @@
           },
           "context_tokens_returned": 165,
           "context_budget_saved": 0.5015105740181269,
-          "avg_latency_ms": 1.5634833479351882,
-          "p50_latency_ms": 1.5205000527203083,
-          "p95_latency_ms": 2.404000028036535,
-          "p99_latency_ms": 2.404000028036535,
+          "avg_latency_ms": 1.972222222118742,
+          "p50_latency_ms": 2.074000018183142,
+          "p95_latency_ms": 2.682599995750934,
+          "p99_latency_ms": 2.682599995750934,
           "queries": 18,
           "execution_mode": "retrieval",
           "worker_runs": 0,
@@ -2761,8 +2761,8 @@
           "predictive_prefetch_warmed": 0,
           "worker_errors": 0,
           "maintenance_interval_queries": 0,
-          "ingest_total_ms": 23.36320001631975,
-          "ingest_avg_ms": 0.6489777782311043,
+          "ingest_total_ms": 29.930900025647134,
+          "ingest_avg_ms": 0.8314138896013092,
           "ingest_scope": "local_index_write_from_precomputed_embeddings",
           "embedding_runtime_proof": {},
           "task_success_rate": 0.2222222222222222,
@@ -2783,10 +2783,10 @@
           },
           "context_tokens_returned": 165,
           "context_budget_saved": 0.5015105740181269,
-          "avg_latency_ms": 1.3653333234186802,
-          "p50_latency_ms": 1.2465000036172569,
-          "p95_latency_ms": 2.473899978213012,
-          "p99_latency_ms": 2.473899978213012,
+          "avg_latency_ms": 1.8934833254509915,
+          "p50_latency_ms": 1.92760000936687,
+          "p95_latency_ms": 3.376699984073639,
+          "p99_latency_ms": 3.376699984073639,
           "queries": 18,
           "execution_mode": "retrieval",
           "worker_runs": 0,
@@ -2802,8 +2802,8 @@
           "predictive_prefetch_warmed": 0,
           "worker_errors": 0,
           "maintenance_interval_queries": 0,
-          "ingest_total_ms": 22.86430000094697,
-          "ingest_avg_ms": 0.6351194444707491,
+          "ingest_total_ms": 29.350999975576997,
+          "ingest_avg_ms": 0.8153055548771388,
           "ingest_scope": "local_index_write_from_precomputed_embeddings",
           "embedding_runtime_proof": {},
           "task_success_rate": 0.2222222222222222,
@@ -2875,9 +2875,9 @@
           0.0
         ]
       },
-      "p50_latency_ms": 1.9833999685943127,
-      "p95_latency_ms": 5.689200013875961,
-      "p99_latency_ms": 5.689200013875961,
+      "p50_latency_ms": 2.0599999697878957,
+      "p95_latency_ms": 5.514099961146712,
+      "p99_latency_ms": 5.514099961146712,
       "combined_score": 0.2641154749916079,
       "cost_per_query_usd": 0.0,
       "trial_metrics": [
@@ -2896,10 +2896,10 @@
           },
           "context_tokens_returned": 165,
           "context_budget_saved": 0.5015105740181269,
-          "avg_latency_ms": 3.121772218340387,
-          "p50_latency_ms": 2.629399998113513,
-          "p95_latency_ms": 9.3637999962084,
-          "p99_latency_ms": 9.3637999962084,
+          "avg_latency_ms": 2.788433336213024,
+          "p50_latency_ms": 2.583800000138581,
+          "p95_latency_ms": 7.2190999635495245,
+          "p99_latency_ms": 7.2190999635495245,
           "queries": 18,
           "execution_mode": "retrieval",
           "worker_runs": 0,
@@ -2949,10 +2949,10 @@
           },
           "context_tokens_returned": 165,
           "context_budget_saved": 0.5015105740181269,
-          "avg_latency_ms": 2.093877788865939,
-          "p50_latency_ms": 1.9098000484518707,
-          "p95_latency_ms": 5.689200013875961,
-          "p99_latency_ms": 5.689200013875961,
+          "avg_latency_ms": 2.2703555587213486,
+          "p50_latency_ms": 2.1573000121861696,
+          "p95_latency_ms": 4.875300044659525,
+          "p99_latency_ms": 4.875300044659525,
           "queries": 18,
           "execution_mode": "retrieval",
           "worker_runs": 0,
@@ -3002,10 +3002,10 @@
           },
           "context_tokens_returned": 165,
           "context_budget_saved": 0.5015105740181269,
-          "avg_latency_ms": 2.0891833345457496,
-          "p50_latency_ms": 1.9833999685943127,
-          "p95_latency_ms": 5.484500026796013,
-          "p99_latency_ms": 5.484500026796013,
+          "avg_latency_ms": 2.0060166716575623,
+          "p50_latency_ms": 1.8288000137545168,
+          "p95_latency_ms": 5.426899995654821,
+          "p99_latency_ms": 5.426899995654821,
           "queries": 18,
           "execution_mode": "retrieval",
           "worker_runs": 0,
@@ -3055,10 +3055,10 @@
           },
           "context_tokens_returned": 165,
           "context_budget_saved": 0.5015105740181269,
-          "avg_latency_ms": 2.3719166638329625,
-          "p50_latency_ms": 2.204999967943877,
-          "p95_latency_ms": 5.5207000114023685,
-          "p99_latency_ms": 5.5207000114023685,
+          "avg_latency_ms": 2.3360777833861195,
+          "p50_latency_ms": 2.0136000239290297,
+          "p95_latency_ms": 5.514099961146712,
+          "p99_latency_ms": 5.514099961146712,
           "queries": 18,
           "execution_mode": "retrieval",
           "worker_runs": 0,
@@ -3108,10 +3108,10 @@
           },
           "context_tokens_returned": 165,
           "context_budget_saved": 0.5015105740181269,
-          "avg_latency_ms": 2.0415388927277593,
-          "p50_latency_ms": 1.8740000086836517,
-          "p95_latency_ms": 5.9071999858133495,
-          "p99_latency_ms": 5.9071999858133495,
+          "avg_latency_ms": 2.241616654727194,
+          "p50_latency_ms": 2.0599999697878957,
+          "p95_latency_ms": 5.8642000076361,
+          "p99_latency_ms": 5.8642000076361,
           "queries": 18,
           "execution_mode": "retrieval",
           "worker_runs": 0,
@@ -3292,9 +3292,9 @@
           0.0
         ]
       },
-      "p50_latency_ms": 0.31159998616203666,
-      "p95_latency_ms": 0.7263000006787479,
-      "p99_latency_ms": 0.7263000006787479,
+      "p50_latency_ms": 0.3394000232219696,
+      "p95_latency_ms": 0.9499999578110874,
+      "p99_latency_ms": 0.9499999578110874,
       "combined_score": 0.2641154749916079,
       "cost_per_query_usd": 0.0,
       "trial_metrics": [
@@ -3313,10 +3313,10 @@
           },
           "context_tokens_returned": 165,
           "context_budget_saved": 0.5015105740181269,
-          "avg_latency_ms": 0.35348333120863473,
-          "p50_latency_ms": 0.3144999500364065,
-          "p95_latency_ms": 0.8676000288687646,
-          "p99_latency_ms": 0.8676000288687646,
+          "avg_latency_ms": 0.41862222456580234,
+          "p50_latency_ms": 0.3394000232219696,
+          "p95_latency_ms": 1.229099987540394,
+          "p99_latency_ms": 1.229099987540394,
           "queries": 18,
           "execution_mode": "retrieval",
           "worker_runs": 0,
@@ -3354,10 +3354,10 @@
           },
           "context_tokens_returned": 165,
           "context_budget_saved": 0.5015105740181269,
-          "avg_latency_ms": 0.3378833320716189,
-          "p50_latency_ms": 0.31159998616203666,
-          "p95_latency_ms": 0.698799965903163,
-          "p99_latency_ms": 0.698799965903163,
+          "avg_latency_ms": 0.5473333359178569,
+          "p50_latency_ms": 0.4839000175707042,
+          "p95_latency_ms": 1.0659000254236162,
+          "p99_latency_ms": 1.0659000254236162,
           "queries": 18,
           "execution_mode": "retrieval",
           "worker_runs": 0,
@@ -3395,10 +3395,10 @@
           },
           "context_tokens_returned": 165,
           "context_budget_saved": 0.5015105740181269,
-          "avg_latency_ms": 0.33371112011890447,
-          "p50_latency_ms": 0.3087000222876668,
-          "p95_latency_ms": 0.7263000006787479,
-          "p99_latency_ms": 0.7263000006787479,
+          "avg_latency_ms": 0.3444111013474564,
+          "p50_latency_ms": 0.31400000443682075,
+          "p95_latency_ms": 0.7139999652281404,
+          "p99_latency_ms": 0.7139999652281404,
           "queries": 18,
           "execution_mode": "retrieval",
           "worker_runs": 0,
@@ -3436,10 +3436,10 @@
           },
           "context_tokens_returned": 165,
           "context_budget_saved": 0.5015105740181269,
-          "avg_latency_ms": 0.35371111718834275,
-          "p50_latency_ms": 0.3174999728798866,
-          "p95_latency_ms": 0.8994999807327986,
-          "p99_latency_ms": 0.8994999807327986,
+          "avg_latency_ms": 0.4520611158416917,
+          "p50_latency_ms": 0.3603000077418983,
+          "p95_latency_ms": 0.9499999578110874,
+          "p99_latency_ms": 0.9499999578110874,
           "queries": 18,
           "execution_mode": "retrieval",
           "worker_runs": 0,
@@ -3477,10 +3477,10 @@
           },
           "context_tokens_returned": 165,
           "context_budget_saved": 0.5015105740181269,
-          "avg_latency_ms": 0.3315499925520271,
-          "p50_latency_ms": 0.30830001924186945,
-          "p95_latency_ms": 0.6797999958507717,
-          "p99_latency_ms": 0.6797999958507717,
+          "avg_latency_ms": 0.34779445074188214,
+          "p50_latency_ms": 0.3187000402249396,
+          "p95_latency_ms": 0.7245999877341092,
+          "p99_latency_ms": 0.7245999877341092,
           "queries": 18,
           "execution_mode": "retrieval",
           "worker_runs": 0,
