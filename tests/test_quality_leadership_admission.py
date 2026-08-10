@@ -277,21 +277,28 @@ def test_checked_in_quality_leadership_admission_blocks_without_new_evidence() -
     assert expected_freeze_status == "implemented"
     if protocol["source_sha"] == payload["source_sha"]:
         freeze_row = rows["protocol-frozen-before-heldout"]
-    else:
-        assert rows["protocol-snapshot-current"]["status"] == "blocked"
-        assert rows["results-artifact-current"]["status"] == "blocked"
-        snapshot_payload = evaluate_quality_leadership_admission(
-            root=PROJECT_ROOT,
-            expected_source_sha=protocol["source_sha"],
+        assert freeze_row["status"] == "blocked"
+        assert any(
+            "category improvement ceiling below threshold" in error
+            for error in freeze_row["details"]["errors"]
         )
-        freeze_row = {
-            row["id"]: row for row in snapshot_payload["rows"]
-        }["protocol-frozen-before-heldout"]
-    assert freeze_row["status"] == "blocked"
-    assert any(
-        "category improvement ceiling below threshold" in error
-        for error in freeze_row["details"]["errors"]
-    )
+    else:
+        assert rows["protocol-snapshot-current"]["status"] in {"blocked", "failed"}
+        assert rows["protocol-frozen-before-heldout"]["status"] == "blocked"
+        assert any(
+            "protocol snapshot is not current" in error
+            for error in rows["protocol-frozen-before-heldout"]["details"]["errors"]
+        )
+        assert rows["results-artifact-current"]["status"] == "blocked"
+        for stale_results_row in (
+            "memory-os-uplift-over-core",
+            "context-reduction",
+            "latency-budget",
+            "real-local-competitors",
+            "five-run-confidence-intervals",
+        ):
+            assert rows[stale_results_row]["status"] == "blocked"
+            assert rows[stale_results_row]["details"]["artifact_errors"]
     assert rows["development-go-no-go"]["status"] == "blocked"
     assert rows["heldout-opened-once"]["status"] == "blocked"
 

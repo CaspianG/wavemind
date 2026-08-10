@@ -341,12 +341,17 @@ def evaluate_quality_leadership_admission(
         root=root_path,
         expected_source_sha=expected_sha,
     )
-    protocol_frozen_errors.extend(
-        _validate_frozen_protocol_against_development_evidence(
-            results_payload,
-            expected_source_sha=expected_sha,
+    if protocol_errors:
+        protocol_frozen_errors.append(
+            "protocol snapshot is not current; cannot treat frozen protocol as current evidence"
         )
-    )
+    else:
+        protocol_frozen_errors.extend(
+            _validate_frozen_protocol_against_development_evidence(
+                results_payload,
+                expected_source_sha=expected_sha,
+            )
+        )
     goal4_errors = validate_goal4_failure_artifact(goal4_payload)
     safe_errors = _validate_safe_product(
         safe_payload,
@@ -426,6 +431,7 @@ def evaluate_quality_leadership_admission(
             results_payload,
             "development_gate",
             target="passed",
+            artifact_errors=results_errors,
         ),
         _metric_row(
             "heldout-opened-once",
@@ -433,6 +439,7 @@ def evaluate_quality_leadership_admission(
             results_payload,
             "held_out_gate",
             target="passed",
+            artifact_errors=results_errors,
         ),
         _threshold_row(
             "longmemeval-v2-quality",
@@ -441,6 +448,7 @@ def evaluate_quality_leadership_admission(
             "longmemeval_v2_quality",
             QUALITY_THRESHOLDS["longmemeval_v2_quality_min"],
             comparison=">=",
+            artifact_errors=results_errors,
         ),
         _threshold_row(
             "memory-os-uplift-over-core",
@@ -449,6 +457,7 @@ def evaluate_quality_leadership_admission(
             "memory_os_uplift_over_core",
             QUALITY_THRESHOLDS["memory_os_uplift_over_core_min"],
             comparison=">=",
+            artifact_errors=results_errors,
         ),
         _threshold_row(
             "category-improvements",
@@ -458,6 +467,7 @@ def evaluate_quality_leadership_admission(
             QUALITY_THRESHOLDS["improved_categories_min"],
             comparison=">=",
             extra_details_key="category_improvement_analysis",
+            artifact_errors=results_errors,
         ),
         _threshold_row(
             "context-reduction",
@@ -466,6 +476,7 @@ def evaluate_quality_leadership_admission(
             "context_reduction",
             QUALITY_THRESHOLDS["context_reduction_min"],
             comparison=">=",
+            artifact_errors=results_errors,
         ),
         _threshold_row(
             "stale-contradiction-control",
@@ -474,23 +485,36 @@ def evaluate_quality_leadership_admission(
             "stale_contradiction_error_rate",
             QUALITY_THRESHOLDS["stale_contradiction_error_rate_max"],
             comparison="<=",
+            artifact_errors=results_errors,
         ),
-        _latency_row(results_payload),
+        _latency_row(results_payload, artifact_errors=results_errors),
         _row(
             "locomo-longmemeval-dynamic-categories",
             "LoCoMo and LongMemEval have no significant overall regression and positive lift in at least two dynamic categories.",
-            _dynamic_public_status(results_payload),
+            _artifact_dependent_status(
+                results_errors,
+                _dynamic_public_status(results_payload),
+            ),
             DEFAULT_RESULTS_PATH.as_posix(),
             "tests/test_quality_leadership_admission.py",
-            details=_dynamic_public_details(results_payload),
+            details=_with_artifact_errors(
+                _dynamic_public_details(results_payload),
+                results_errors,
+            ),
         ),
         _row(
             "real-local-competitors",
             "Runnable local competitors are real packages/runs, not simulated baselines.",
-            _competitor_status(results_payload),
+            _artifact_dependent_status(
+                results_errors,
+                _competitor_status(results_payload),
+            ),
             DEFAULT_RESULTS_PATH.as_posix(),
             "tests/test_quality_leadership_admission.py",
-            details=_competitor_details(results_payload),
+            details=_with_artifact_errors(
+                _competitor_details(results_payload),
+                results_errors,
+            ),
         ),
         _threshold_row(
             "backend-recall-loss",
@@ -499,22 +523,35 @@ def evaluate_quality_leadership_admission(
             "backend_recall_loss",
             QUALITY_THRESHOLDS["backend_recall_loss_max"],
             comparison="<=",
+            artifact_errors=results_errors,
         ),
         _row(
             "five-run-confidence-intervals",
             "All mandatory results have at least five runs and 95 percent confidence intervals.",
-            _confidence_status(results_payload),
+            _artifact_dependent_status(
+                results_errors,
+                _confidence_status(results_payload),
+            ),
             DEFAULT_RESULTS_PATH.as_posix(),
             "tests/test_quality_leadership_admission.py",
-            details=_confidence_details(results_payload),
+            details=_with_artifact_errors(
+                _confidence_details(results_payload),
+                results_errors,
+            ),
         ),
         _row(
             "verdict-fingerprint-stability",
             "Three consecutive runs on one SHA produce the same verdict fingerprint.",
-            _fingerprint_status(results_payload),
+            _artifact_dependent_status(
+                results_errors,
+                _fingerprint_status(results_payload),
+            ),
             DEFAULT_RESULTS_PATH.as_posix(),
             "tests/test_quality_leadership_admission.py",
-            details=_fingerprint_details(results_payload),
+            details=_with_artifact_errors(
+                _fingerprint_details(results_payload),
+                results_errors,
+            ),
         ),
         _row(
             "per-query-artifact",
@@ -1358,10 +1395,11 @@ def _metric_row(
     key: str,
     *,
     target: str,
+    artifact_errors: list[str] | None = None,
 ) -> dict[str, Any]:
     value = payload.get(key) if isinstance(payload, Mapping) else None
     status = "blocked"
-    if isinstance(value, Mapping) and value.get("status") == target:
+    if not artifact_errors and isinstance(value, Mapping) and value.get("status") == target:
         status = "implemented"
     return _row(
         row_id,
@@ -1369,7 +1407,10 @@ def _metric_row(
         status,
         DEFAULT_RESULTS_PATH.as_posix(),
         "tests/test_quality_leadership_admission.py",
-        details={"observed": value, "target_status": target},
+        details=_with_artifact_errors(
+            {"observed": value, "target_status": target},
+            artifact_errors,
+        ),
     )
 
 
@@ -1382,10 +1423,11 @@ def _threshold_row(
     *,
     comparison: str,
     extra_details_key: str | None = None,
+    artifact_errors: list[str] | None = None,
 ) -> dict[str, Any]:
     metrics = payload.get("metrics") if isinstance(payload, Mapping) else {}
     value = metrics.get(metric) if isinstance(metrics, Mapping) else None
-    passed = _compare(value, target, comparison)
+    passed = not artifact_errors and _compare(value, target, comparison)
     details: dict[str, Any] = {
         "metric": metric,
         "observed": value,
@@ -1402,20 +1444,47 @@ def _threshold_row(
         "implemented" if passed else "blocked",
         DEFAULT_RESULTS_PATH.as_posix(),
         "tests/test_quality_leadership_admission.py",
-        details=details,
+        details=_with_artifact_errors(details, artifact_errors),
     )
 
 
-def _latency_row(payload: Mapping[str, Any] | None) -> dict[str, Any]:
+def _artifact_dependent_status(
+    artifact_errors: list[str] | None,
+    status: str,
+) -> str:
+    if artifact_errors and status == "implemented":
+        return "blocked"
+    return status
+
+
+def _with_artifact_errors(
+    details: Mapping[str, Any],
+    artifact_errors: list[str] | None,
+) -> dict[str, Any]:
+    payload = dict(details)
+    if artifact_errors:
+        payload["artifact_errors"] = list(artifact_errors)
+    return payload
+
+
+def _latency_row(
+    payload: Mapping[str, Any] | None,
+    *,
+    artifact_errors: list[str] | None = None,
+) -> dict[str, Any]:
     metrics = payload.get("metrics") if isinstance(payload, Mapping) else {}
     if not isinstance(metrics, Mapping):
         metrics = {}
     delta = metrics.get("p95_overhead_ms")
     ratio = metrics.get("p95_overhead_ratio")
-    passed = _compare(delta, QUALITY_THRESHOLDS["p95_overhead_ms_max"], "<=") and _compare(
-        ratio,
-        QUALITY_THRESHOLDS["p95_overhead_ratio_max"],
-        "<=",
+    passed = (
+        not artifact_errors
+        and _compare(delta, QUALITY_THRESHOLDS["p95_overhead_ms_max"], "<=")
+        and _compare(
+            ratio,
+            QUALITY_THRESHOLDS["p95_overhead_ratio_max"],
+            "<=",
+        )
     )
     return _row(
         "latency-budget",
@@ -1423,14 +1492,17 @@ def _latency_row(payload: Mapping[str, Any] | None) -> dict[str, Any]:
         "implemented" if passed else "blocked",
         DEFAULT_RESULTS_PATH.as_posix(),
         "tests/test_quality_leadership_admission.py",
-        details={
-            "p95_overhead_ms": delta,
-            "p95_overhead_ratio": ratio,
-            "targets": {
-                "p95_overhead_ms": QUALITY_THRESHOLDS["p95_overhead_ms_max"],
-                "p95_overhead_ratio": QUALITY_THRESHOLDS["p95_overhead_ratio_max"],
+        details=_with_artifact_errors(
+            {
+                "p95_overhead_ms": delta,
+                "p95_overhead_ratio": ratio,
+                "targets": {
+                    "p95_overhead_ms": QUALITY_THRESHOLDS["p95_overhead_ms_max"],
+                    "p95_overhead_ratio": QUALITY_THRESHOLDS["p95_overhead_ratio_max"],
+                },
             },
-        },
+            artifact_errors,
+        ),
     )
 
 
