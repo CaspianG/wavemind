@@ -371,9 +371,13 @@ def _source_manifest(root: Path) -> dict[str, Any]:
         "benchmarks/workspace_experience_benchmark.py",
         "benchmarks/workspace_experience_v4_manifest.json",
         "benchmarks/workspace_experience_v4_benchmark.py",
+        "benchmarks/workspace_experience_v5_manifest.json",
+        "benchmarks/workspace_experience_v5_manifest_builder.py",
+        "benchmarks/workspace_experience_v5_benchmark.py",
         "tests/test_workspace_experience.py",
         "tests/test_workspace_experience_benchmark.py",
         "tests/test_workspace_experience_v4_benchmark.py",
+        "tests/test_workspace_experience_v5_benchmark.py",
         "tests/test_experience_runtime_contracts.py",
     ]
     entries = []

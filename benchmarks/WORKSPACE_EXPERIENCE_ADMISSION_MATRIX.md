@@ -1,7 +1,7 @@
 # Workspace Experience Admission Matrix
 
 - Status: `blocked`
-- Source SHA: `8214d58f8a6e7671c3da9980d3512ca1634f51d5`
+- Source SHA: `9b00b8d73c9c7c934e2c83afca89ca187f486fe0`
 - Protocol: `workspace-experience-v1-frozen-20260810`
 - Protocol SHA-256: `fa2ebc36799b44ff54e74120da7dab3a475d40461a4963872069f5905beeb590`
 
