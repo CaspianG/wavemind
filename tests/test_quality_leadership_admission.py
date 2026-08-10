@@ -16,7 +16,11 @@ from wavemind.quality_leadership_admission import (
     quality_leadership_protocol_manifest,
     validate_goal4_failure_artifact,
 )
-from wavemind.evidence import attach_artifact_integrity
+from wavemind.evidence import (
+    attach_artifact_integrity,
+    canonical_json_bytes,
+    sha256_bytes,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -102,6 +106,86 @@ def _agent_memory_payload(*, source_sha: str | None = None) -> dict:
             },
         },
     }
+
+
+def _split_digest(split: dict) -> str:
+    return sha256_bytes(
+        canonical_json_bytes(
+            {
+                key: value
+                for key, value in split.items()
+                if key not in {"sha256", "digest", "generated_at"}
+            }
+        )
+    )
+
+
+def _frozen_protocol() -> dict:
+    development_split = {
+        "id": "quality-leadership-dev-controlled-sequential-v1",
+        "role": "development",
+        "view_status": "viewed_development_only",
+        "case_count": 2,
+        "categories": {
+            "knowledge_update": 1,
+            "workflow_gotcha": 1,
+        },
+        "primary_sources": [
+            {
+                "name": "WaveMind controlled sequential Memory OS dev fixture",
+                "path": "benchmarks/memory_os_ab_benchmark.py",
+                "license": "MIT",
+                "revision": "quality-leadership-dev-v1",
+            }
+        ],
+        "case_fingerprints": [
+            "dev:knowledge_update:role-current-vs-stale",
+            "dev:workflow_gotcha:backup-rule",
+        ],
+    }
+    held_out_split = {
+        "id": "quality-leadership-heldout-independent-v1",
+        "role": "held_out",
+        "view_status": "unopened",
+        "case_count": 2,
+        "categories": {
+            "temporal_update": 1,
+            "workflow_state": 1,
+        },
+        "primary_sources": [
+            {
+                "name": "Independent public quality hold-out manifest",
+                "url": "https://example.invalid/dataset-card",
+                "license": "dataset-specific-public-license",
+                "revision": "independent-heldout-v1",
+            }
+        ],
+        "case_fingerprints": [
+            "heldout:temporal_update:reserved-001",
+            "heldout:workflow_state:reserved-002",
+        ],
+    }
+    protocol = quality_leadership_protocol_manifest(root=PROJECT_ROOT)
+    protocol["status"] = "frozen_before_heldout"
+    protocol["new_quality_dataset"] = {
+        "schema": "wavemind.quality_leadership_split_manifest.v1",
+        "state": "frozen_before_heldout",
+        "revision": "quality-leadership-v1-test-freeze",
+        "development_split": development_split,
+        "held_out_split": held_out_split,
+        "development_split_sha256": _split_digest(development_split),
+        "held_out_split_sha256": _split_digest(held_out_split),
+        "held_out_viewed": False,
+        "licenses": {
+            "development": "MIT",
+            "held_out": "dataset-specific-public-license",
+        },
+        "dataset_revisions": {
+            "development": "quality-leadership-dev-v1",
+            "held_out": "independent-heldout-v1",
+        },
+    }
+    return attach_artifact_integrity(protocol)
 
 
 def test_checked_in_quality_leadership_admission_blocks_without_new_evidence() -> None:
@@ -289,6 +373,104 @@ def test_protocol_threshold_weakening_blocks_admission(tmp_path: Path) -> None:
     row = {row["id"]: row for row in result["rows"]}["protocol-snapshot-current"]
     assert row["status"] == "failed"
     assert any("threshold changed" in error for error in row["details"]["errors"])
+
+
+def test_frozen_protocol_requires_real_split_manifest(tmp_path: Path) -> None:
+    protocol = _frozen_protocol()
+    protocol_path = tmp_path / DEFAULT_PROTOCOL_PATH
+    protocol_path.parent.mkdir(parents=True, exist_ok=True)
+    protocol_path.write_text(json.dumps(protocol), encoding="utf-8")
+
+    result = evaluate_quality_leadership_admission(
+        root=PROJECT_ROOT,
+        protocol_path=protocol_path,
+    )
+
+    row = {row["id"]: row for row in result["rows"]}["protocol-frozen-before-heldout"]
+    assert row["status"] == "implemented"
+    assert row["details"]["errors"] == []
+
+
+def test_frozen_protocol_rejects_viewed_heldout(tmp_path: Path) -> None:
+    protocol = _frozen_protocol()
+    protocol["new_quality_dataset"]["held_out_viewed"] = True
+    protocol["new_quality_dataset"]["held_out_split"]["view_status"] = "viewed"
+    protocol = attach_artifact_integrity(protocol)
+    protocol_path = tmp_path / DEFAULT_PROTOCOL_PATH
+    protocol_path.parent.mkdir(parents=True, exist_ok=True)
+    protocol_path.write_text(json.dumps(protocol), encoding="utf-8")
+
+    result = evaluate_quality_leadership_admission(
+        root=PROJECT_ROOT,
+        protocol_path=protocol_path,
+    )
+
+    row = {row["id"]: row for row in result["rows"]}["protocol-frozen-before-heldout"]
+    assert row["status"] == "blocked"
+    errors = " ".join(row["details"]["errors"])
+    assert "held-out split must be unviewed" in errors
+    assert "held_out_split is not unopened" in errors
+
+
+def test_frozen_protocol_rejects_split_overlap(tmp_path: Path) -> None:
+    protocol = _frozen_protocol()
+    held_out = protocol["new_quality_dataset"]["held_out_split"]
+    held_out["case_fingerprints"][0] = protocol["new_quality_dataset"][
+        "development_split"
+    ]["case_fingerprints"][0]
+    protocol["new_quality_dataset"]["held_out_split_sha256"] = _split_digest(held_out)
+    protocol = attach_artifact_integrity(protocol)
+    protocol_path = tmp_path / DEFAULT_PROTOCOL_PATH
+    protocol_path.parent.mkdir(parents=True, exist_ok=True)
+    protocol_path.write_text(json.dumps(protocol), encoding="utf-8")
+
+    result = evaluate_quality_leadership_admission(
+        root=PROJECT_ROOT,
+        protocol_path=protocol_path,
+    )
+
+    row = {row["id"]: row for row in result["rows"]}["protocol-frozen-before-heldout"]
+    assert row["status"] == "blocked"
+    assert any("development/held-out overlap" in error for error in row["details"]["errors"])
+
+
+def test_frozen_protocol_rejects_split_digest_tampering(tmp_path: Path) -> None:
+    protocol = _frozen_protocol()
+    protocol["new_quality_dataset"]["development_split_sha256"] = "0" * 64
+    protocol = attach_artifact_integrity(protocol)
+    protocol_path = tmp_path / DEFAULT_PROTOCOL_PATH
+    protocol_path.parent.mkdir(parents=True, exist_ok=True)
+    protocol_path.write_text(json.dumps(protocol), encoding="utf-8")
+
+    result = evaluate_quality_leadership_admission(
+        root=PROJECT_ROOT,
+        protocol_path=protocol_path,
+    )
+
+    row = {row["id"]: row for row in result["rows"]}["protocol-frozen-before-heldout"]
+    assert row["status"] == "blocked"
+    assert any("development_split_sha256 mismatch" in error for error in row["details"]["errors"])
+
+
+def test_frozen_protocol_rejects_goal4_as_new_heldout(tmp_path: Path) -> None:
+    protocol = _frozen_protocol()
+    held_out = protocol["new_quality_dataset"]["held_out_split"]
+    held_out["primary_sources"][0]["path"] = "benchmarks/goal4_quality_experiment_results.json"
+    held_out["case_fingerprints"][0] = "full451"
+    protocol["new_quality_dataset"]["held_out_split_sha256"] = _split_digest(held_out)
+    protocol = attach_artifact_integrity(protocol)
+    protocol_path = tmp_path / DEFAULT_PROTOCOL_PATH
+    protocol_path.parent.mkdir(parents=True, exist_ok=True)
+    protocol_path.write_text(json.dumps(protocol), encoding="utf-8")
+
+    result = evaluate_quality_leadership_admission(
+        root=PROJECT_ROOT,
+        protocol_path=protocol_path,
+    )
+
+    row = {row["id"]: row for row in result["rows"]}["protocol-frozen-before-heldout"]
+    assert row["status"] == "blocked"
+    assert any("historical Goal 4 evidence" in error for error in row["details"]["errors"])
 
 
 def test_historical_goal4_cannot_be_declared_tuning_data(tmp_path: Path) -> None:

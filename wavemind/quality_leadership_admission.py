@@ -9,7 +9,9 @@ from typing import Any, Mapping
 from .evidence import (
     attach_artifact_integrity,
     build_source_manifest,
+    canonical_json_bytes,
     repository_commit,
+    sha256_bytes,
     validate_artifact_integrity,
     validate_source_manifest,
 )
@@ -19,6 +21,7 @@ QUALITY_LEADERSHIP_PROTOCOL_SCHEMA = "wavemind.quality_leadership_protocol.v1"
 QUALITY_LEADERSHIP_RESULTS_SCHEMA = "wavemind.quality_leadership_results.v1"
 QUALITY_LEADERSHIP_ADMISSION_SCHEMA = "wavemind.quality_leadership_admission.v1"
 QUALITY_LEADERSHIP_PER_QUERY_SCHEMA = "wavemind.quality_leadership_per_query.v1"
+QUALITY_LEADERSHIP_SPLIT_MANIFEST_SCHEMA = "wavemind.quality_leadership_split_manifest.v1"
 PROTOCOL_REVISION = "quality-leadership-v1-20260810"
 
 DEFAULT_PROTOCOL_PATH = Path("benchmarks/quality_leadership_protocol.json")
@@ -753,12 +756,133 @@ def _validate_protocol_frozen(payload: Mapping[str, Any] | None) -> list[str]:
     if not isinstance(dataset, Mapping):
         errors.append("new quality dataset manifest missing")
         return errors
+    if dataset.get("schema") != QUALITY_LEADERSHIP_SPLIT_MANIFEST_SCHEMA:
+        errors.append("new quality dataset schema mismatch")
+    if dataset.get("state") != "frozen_before_heldout":
+        errors.append("new quality dataset state is not frozen_before_heldout")
     for key in ("development_split_sha256", "held_out_split_sha256", "licenses", "dataset_revisions"):
         if not dataset.get(key):
             errors.append(f"new quality dataset {key} missing")
+    if not isinstance(dataset.get("licenses"), Mapping) or not dataset.get("licenses"):
+        errors.append("new quality dataset licenses must be a non-empty mapping")
+    if not isinstance(dataset.get("dataset_revisions"), Mapping) or not dataset.get("dataset_revisions"):
+        errors.append("new quality dataset dataset_revisions must be a non-empty mapping")
     if dataset.get("held_out_viewed") not in {False, "false"}:
         errors.append("held-out split must be unviewed at protocol freeze")
+    development_split = dataset.get("development_split")
+    held_out_split = dataset.get("held_out_split")
+    split_errors, split_digests = _validate_quality_split_pair(
+        development_split,
+        held_out_split,
+    )
+    errors.extend(split_errors)
+    expected_dev_digest = split_digests.get("development")
+    expected_heldout_digest = split_digests.get("held_out")
+    if expected_dev_digest and dataset.get("development_split_sha256") != expected_dev_digest:
+        errors.append("new quality dataset development_split_sha256 mismatch")
+    if expected_heldout_digest and dataset.get("held_out_split_sha256") != expected_heldout_digest:
+        errors.append("new quality dataset held_out_split_sha256 mismatch")
     return errors
+
+
+def _validate_quality_split_pair(
+    development_split: Any,
+    held_out_split: Any,
+) -> tuple[list[str], dict[str, str]]:
+    errors: list[str] = []
+    digests: dict[str, str] = {}
+    if not isinstance(development_split, Mapping):
+        errors.append("new quality dataset development_split manifest missing")
+    else:
+        errors.extend(
+            _validate_quality_split(
+                development_split,
+                name="development",
+                expected_role="development",
+                require_unviewed=False,
+            )
+        )
+        digests["development"] = _quality_split_digest(development_split)
+    if not isinstance(held_out_split, Mapping):
+        errors.append("new quality dataset held_out_split manifest missing")
+    else:
+        errors.extend(
+            _validate_quality_split(
+                held_out_split,
+                name="held_out",
+                expected_role="held_out",
+                require_unviewed=True,
+            )
+        )
+        digests["held_out"] = _quality_split_digest(held_out_split)
+    if isinstance(development_split, Mapping) and isinstance(held_out_split, Mapping):
+        development_ids = _split_fingerprints(development_split)
+        held_out_ids = _split_fingerprints(held_out_split)
+        overlap = sorted(development_ids & held_out_ids)
+        if overlap:
+            errors.append(
+                "new quality dataset development/held-out overlap: "
+                + ", ".join(overlap[:5])
+            )
+        forbidden_sources = {
+            "benchmarks/goal4_quality_experiment_results.json",
+            "full451",
+            "untouched419",
+            GOAL4_HISTORICAL_DECISION_SHA,
+        }
+        heldout_source = canonical_json_bytes(held_out_split).decode("utf-8")
+        if any(source in heldout_source for source in forbidden_sources):
+            errors.append("new quality held-out split reuses historical Goal 4 evidence")
+    return errors, digests
+
+
+def _validate_quality_split(
+    split: Mapping[str, Any],
+    *,
+    name: str,
+    expected_role: str,
+    require_unviewed: bool,
+) -> list[str]:
+    errors: list[str] = []
+    if split.get("role") != expected_role:
+        errors.append(f"new quality dataset {name}_split role mismatch")
+    case_count = _as_int(split.get("case_count"))
+    if case_count <= 0:
+        errors.append(f"new quality dataset {name}_split case_count missing")
+    categories = split.get("categories")
+    if not isinstance(categories, Mapping) or not categories:
+        errors.append(f"new quality dataset {name}_split categories missing")
+    primary_sources = split.get("primary_sources")
+    if not isinstance(primary_sources, list) or not primary_sources:
+        errors.append(f"new quality dataset {name}_split primary_sources missing")
+    fingerprints = _split_fingerprints(split)
+    if len(fingerprints) != case_count:
+        errors.append(f"new quality dataset {name}_split fingerprint count mismatch")
+    if require_unviewed and split.get("view_status") not in {"unopened", "not_opened"}:
+        errors.append(f"new quality dataset {name}_split is not unopened")
+    return errors
+
+
+def _quality_split_digest(split: Mapping[str, Any]) -> str:
+    digest_payload = {
+        key: value
+        for key, value in split.items()
+        if key not in {"sha256", "digest", "generated_at"}
+    }
+    return sha256_bytes(canonical_json_bytes(digest_payload))
+
+
+def _split_fingerprints(split: Mapping[str, Any]) -> set[str]:
+    rows = split.get("case_fingerprints")
+    if not isinstance(rows, list):
+        return set()
+    fingerprints: set[str] = set()
+    for row in rows:
+        if isinstance(row, str) and row:
+            fingerprints.add(row)
+        elif isinstance(row, Mapping) and row.get("fingerprint"):
+            fingerprints.add(str(row["fingerprint"]))
+    return fingerprints
 
 
 def _validate_results(
@@ -1198,6 +1322,13 @@ def _float_or_none(value: Any) -> float | None:
         return float(value)
     except (TypeError, ValueError):
         return None
+
+
+def _as_int(value: Any) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return 0
 
 
 def _next_actions(rows: list[dict[str, Any]]) -> list[str]:
