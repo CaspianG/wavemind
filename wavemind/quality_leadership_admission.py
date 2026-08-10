@@ -341,6 +341,12 @@ def evaluate_quality_leadership_admission(
         root=root_path,
         expected_source_sha=expected_sha,
     )
+    protocol_frozen_errors.extend(
+        _validate_frozen_protocol_against_development_evidence(
+            results_payload,
+            expected_source_sha=expected_sha,
+        )
+    )
     goal4_errors = validate_goal4_failure_artifact(goal4_payload)
     safe_errors = _validate_safe_product(
         safe_payload,
@@ -805,6 +811,33 @@ def _validate_protocol_frozen(payload: Mapping[str, Any] | None) -> list[str]:
     if expected_heldout_digest and dataset.get("held_out_split_sha256") != expected_heldout_digest:
         errors.append("new quality dataset held_out_split_sha256 mismatch")
     return errors
+
+
+def _validate_frozen_protocol_against_development_evidence(
+    results_payload: Mapping[str, Any] | None,
+    *,
+    expected_source_sha: str,
+) -> list[str]:
+    if not isinstance(results_payload, Mapping):
+        return []
+    if results_payload.get("source_sha") != expected_source_sha:
+        return []
+    metrics = results_payload.get("metrics")
+    if not isinstance(metrics, Mapping):
+        return []
+    analysis = metrics.get("category_improvement_analysis")
+    if not isinstance(analysis, Mapping):
+        return []
+    ceiling = _as_int(analysis.get("improvement_ceiling_over_core"))
+    target = QUALITY_THRESHOLDS["improved_categories_min"]
+    if ceiling >= target:
+        return []
+    return [
+        (
+            "bounded development evidence proves frozen development split "
+            f"category improvement ceiling below threshold: {ceiling} < {target}"
+        )
+    ]
 
 
 def _validate_quality_split_pair(

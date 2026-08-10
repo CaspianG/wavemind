@@ -586,14 +586,52 @@ def test_freeze_builder_reserves_memory_agent_bench_without_opening_rows(tmp_pat
 
     dataset = protocol["new_quality_dataset"]
     held_out = dataset["held_out_split"]
+    design = dataset["development_gate_design_analysis"]
     row = {row["id"]: row for row in result["rows"]}["protocol-frozen-before-heldout"]
     assert row["status"] == "implemented"
+    assert dataset["development_split_sha256"] == (
+        "e4345094922637414bec7f69a15cea9207380b1795b39eb53270da99b89965a2"
+    )
+    assert design["target_improved_categories"] == 4
+    assert design["development_category_count"] == 4
+    assert design["requires_runtime_ceiling_check"] is True
+    assert design["ceiling_risk"] == "no_spare_categories_for_strict_lift_gate"
     assert held_out["view_status"] == "unopened"
     assert held_out["case_count"] == 146
     assert len(held_out["case_fingerprints"]) == 146
     assert "row contents are not opened" in " ".join(held_out["leakage_controls"])
     assert result["status"] == "blocked"
     assert result["admitted"] is False
+
+
+def test_current_development_ceiling_blocks_frozen_protocol_before_heldout(
+    tmp_path: Path,
+) -> None:
+    protocol = _frozen_protocol()
+    protocol_path = tmp_path / DEFAULT_PROTOCOL_PATH
+    protocol_path.parent.mkdir(parents=True, exist_ok=True)
+    protocol_path.write_text(json.dumps(protocol), encoding="utf-8")
+    diagnostic = tmp_path / "agent.json"
+    diagnostic.write_text(json.dumps(_agent_memory_payload()), encoding="utf-8")
+    results = quality_leadership_results_from_diagnostics(
+        root=PROJECT_ROOT,
+        agent_memory_path=diagnostic,
+    )
+    results_path = tmp_path / "results.json"
+    results_path.write_text(json.dumps(results), encoding="utf-8")
+
+    result = evaluate_quality_leadership_admission(
+        root=PROJECT_ROOT,
+        protocol_path=protocol_path,
+        results_path=results_path,
+    )
+
+    row = {row["id"]: row for row in result["rows"]}["protocol-frozen-before-heldout"]
+    assert row["status"] == "blocked"
+    assert any(
+        "category improvement ceiling below threshold" in error
+        for error in row["details"]["errors"]
+    )
 
 
 def test_freeze_builder_requires_file_level_huggingface_lfs_hashes() -> None:

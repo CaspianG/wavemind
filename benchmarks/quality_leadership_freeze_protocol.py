@@ -22,6 +22,7 @@ from wavemind.evidence import (
 from wavemind.quality_leadership_admission import (
     QUALITY_LEADERSHIP_PROTOCOL_SCHEMA,
     QUALITY_LEADERSHIP_SPLIT_MANIFEST_SCHEMA,
+    QUALITY_THRESHOLDS,
     quality_leadership_protocol_manifest,
 )
 
@@ -71,6 +72,9 @@ def build_frozen_protocol(
         "held_out_split": held_out_split,
         "development_split_sha256": _split_digest(development_split),
         "held_out_split_sha256": _split_digest(held_out_split),
+        "development_gate_design_analysis": _development_gate_design_analysis(
+            development_split
+        ),
         "held_out_viewed": False,
         "licenses": {
             "development": "MIT",
@@ -131,6 +135,29 @@ def _development_split() -> dict[str, Any]:
             "development split is allowed for tuning",
             "old Goal 4 full451 and untouched419 are not part of this split",
         ],
+    }
+
+
+def _development_gate_design_analysis(split: Mapping[str, Any]) -> dict[str, Any]:
+    categories = split.get("categories")
+    category_count = len(categories) if isinstance(categories, Mapping) else 0
+    target = QUALITY_THRESHOLDS["improved_categories_min"]
+    return {
+        "target_improved_categories": target,
+        "development_category_count": category_count,
+        "spare_category_count": max(0, category_count - target),
+        "requires_runtime_ceiling_check": True,
+        "ceiling_risk": (
+            "no_spare_categories_for_strict_lift_gate"
+            if category_count <= target
+            else "has_spare_categories"
+        ),
+        "claim_boundary": (
+            "The split manifest alone cannot prove every category is improvable "
+            "over Core. Bounded development evidence must still show an "
+            "improvement ceiling at or above the category threshold before "
+            "held-out execution is allowed."
+        ),
     }
 
 
