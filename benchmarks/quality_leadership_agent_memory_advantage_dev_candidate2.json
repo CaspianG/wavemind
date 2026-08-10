@@ -1,0 +1,214 @@
+{
+  "claim_boundary": "Candidate2 bounded development diagnostic only. It opens only preregistered MemoryAgentBench development rows through the rows API. Held-out rows remain unopened and no public quality claim is allowed.",
+  "dataset_summary": {
+    "category_query_counts": {
+      "Accurate_Retrieval": 16,
+      "Conflict_Resolution": 16,
+      "Test_Time_Learning": 16
+    },
+    "memories": 13825,
+    "queries": 48,
+    "questions_per_row": 8,
+    "rows": 8,
+    "skipped": {
+      "answer_not_literal_in_context": 20
+    }
+  },
+  "generated_at": "2026-08-10T23:16:54Z",
+  "paired_lift": {
+    "categories": {
+      "Accurate_Retrieval": {
+        "lower": 0.0,
+        "mean": 0.0,
+        "observations": 5,
+        "upper": 0.0
+      },
+      "Conflict_Resolution": {
+        "lower": 0.0,
+        "mean": 0.0,
+        "observations": 5,
+        "upper": 0.0
+      },
+      "Test_Time_Learning": {
+        "lower": 0.0,
+        "mean": 0.0,
+        "observations": 5,
+        "upper": 0.0
+      }
+    },
+    "overall_task_success": {
+      "lower": 0.0,
+      "mean": 0.0,
+      "observations": 5,
+      "upper": 0.0
+    }
+  },
+  "protocol": {
+    "confidence_level": 0.95,
+    "dataset": "ai-hyz/MemoryAgentBench",
+    "dataset_revision": "quality-leadership-freeze-v2-20260811",
+    "development_split_sha256": "be36adbae742712f0d3fe485f74000438d809d530268e6cb365894db0c33a983",
+    "held_out_split_sha256": "6a1f4d78fc139844baa7c6de311581a63b2f9540ba90987bd067b7ee6beaf712",
+    "held_out_viewed": false,
+    "huggingface_revision": "7ea066982b140a19337e17e60d45d4076e042faf",
+    "lane": "candidate2-memoryagentbench-balanced",
+    "measurement_trials": 5,
+    "questions_per_row": 8,
+    "row_access": "huggingface_rows_api_development_rows_only",
+    "top_k": 3
+  },
+  "results": [
+    {
+      "cache_hits": 0,
+      "cache_misses": 0,
+      "category_success": {
+        "Accurate_Retrieval": 0.4375,
+        "Conflict_Resolution": 0.25,
+        "Test_Time_Learning": 0.3125
+      },
+      "context_budget_saved": 0.9901303912219694,
+      "context_budget_saved_ci95": {
+        "lower": 0.9901303912219694,
+        "mean": 0.9901303912219694,
+        "observations": 5,
+        "upper": 0.9901303912219694
+      },
+      "context_tokens_returned": 122595,
+      "eligible_for_comparison": false,
+      "embedding_comparable": true,
+      "engine": "WaveMind Core",
+      "measurement_trials": 5,
+      "p50_latency_ms": 8.568999997805804,
+      "p95_latency_ms": 26.56789997126907,
+      "p99_latency_ms": 57.52590001793578,
+      "queries": 240,
+      "same_embedding_as_wavemind": true,
+      "stale_error_ci95": {
+        "lower": 0.0,
+        "mean": 0.0,
+        "observations": 5,
+        "upper": 0.0
+      },
+      "stale_error_rate": 0.0,
+      "status": "pass",
+      "task_success_ci95": {
+        "lower": 0.3333333333333333,
+        "mean": 0.3333333333333333,
+        "observations": 5,
+        "upper": 0.3333333333333333
+      },
+      "task_success_rate": 0.3333333333333333,
+      "worker_runs": 0
+    },
+    {
+      "cache_hits": 200,
+      "cache_misses": 760,
+      "category_success": {
+        "Accurate_Retrieval": 0.4375,
+        "Conflict_Resolution": 0.25,
+        "Test_Time_Learning": 0.3125
+      },
+      "context_budget_saved": 0.9901303912219694,
+      "context_budget_saved_ci95": {
+        "lower": 0.9901303912219694,
+        "mean": 0.9901303912219694,
+        "observations": 5,
+        "upper": 0.9901303912219694
+      },
+      "context_tokens_returned": 122595,
+      "eligible_for_comparison": false,
+      "embedding_comparable": true,
+      "engine": "WaveMind + Memory OS",
+      "measurement_trials": 5,
+      "p50_latency_ms": 8.313700032886118,
+      "p95_latency_ms": 42.004199989605695,
+      "p99_latency_ms": 459.5070999930613,
+      "queries": 240,
+      "same_embedding_as_wavemind": true,
+      "stale_error_ci95": {
+        "lower": 0.0,
+        "mean": 0.0,
+        "observations": 5,
+        "upper": 0.0
+      },
+      "stale_error_rate": 0.0,
+      "status": "pass",
+      "task_success_ci95": {
+        "lower": 0.3333333333333333,
+        "mean": 0.3333333333333333,
+        "observations": 5,
+        "upper": 0.3333333333333333
+      },
+      "task_success_rate": 0.3333333333333333,
+      "worker_runs": 30
+    },
+    {
+      "cache_hits": 0,
+      "cache_misses": 0,
+      "category_success": {
+        "Accurate_Retrieval": 0.125,
+        "Conflict_Resolution": 0.1875,
+        "Test_Time_Learning": 0.3125
+      },
+      "context_budget_saved": 0.9899432152326638,
+      "context_budget_saved_ci95": {
+        "lower": 0.9899432152326638,
+        "mean": 0.9899432152326638,
+        "observations": 5,
+        "upper": 0.9899432152326638
+      },
+      "context_tokens_returned": 124920,
+      "eligible_for_comparison": true,
+      "embedding_comparable": true,
+      "engine": "Static vector",
+      "family": "static_vector_reference_not_required_competitor",
+      "measurement_trials": 5,
+      "p50_latency_ms": 1.8500000005587935,
+      "p95_latency_ms": 15.86080004926771,
+      "p99_latency_ms": 17.821099958382547,
+      "queries": 240,
+      "same_embedding_as_wavemind": true,
+      "stale_error_ci95": {
+        "lower": 0.0,
+        "mean": 0.0,
+        "observations": 5,
+        "upper": 0.0
+      },
+      "stale_error_rate": 0.0,
+      "status": "pass",
+      "task_success_ci95": {
+        "lower": 0.20833333333333334,
+        "mean": 0.20833333333333334,
+        "observations": 5,
+        "upper": 0.20833333333333334
+      },
+      "task_success_rate": 0.20833333333333334,
+      "worker_runs": 0
+    }
+  ],
+  "schema": "wavemind.agent_memory_advantage_benchmark.v1",
+  "skipped": [
+    {
+      "engine": "Chroma static",
+      "reason": "not_run_in_candidate2_bounded_dev; use same protocol before admission",
+      "status": "skipped"
+    },
+    {
+      "engine": "Qdrant static",
+      "reason": "not_run_in_candidate2_bounded_dev; use same protocol before admission",
+      "status": "skipped"
+    },
+    {
+      "engine": "Mem0 OSS",
+      "reason": "not_run_in_candidate2_bounded_dev; equal-embedding adapter required",
+      "status": "skipped"
+    },
+    {
+      "engine": "LangMem / LangGraph",
+      "reason": "not_run_in_candidate2_bounded_dev; same-protocol run required",
+      "status": "skipped"
+    }
+  ],
+  "source_sha": "1b104eea10c2b0f759af900dfe3fbafbc62fc04b",
+  "status": "pass"
+}

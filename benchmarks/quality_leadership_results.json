@@ -5,55 +5,76 @@
       {
         "allowed_next_step": "pre-register a genuinely new independent protocol/split or record this architecture lane as blocked; do not tune or refreeze using viewed results",
         "analysis": {
-          "baseline_ceiling_categories": [
-            "preference_update",
-            "state_tracking"
-          ],
+          "baseline_ceiling_categories": [],
           "category_details": {
-            "knowledge_update": {
-              "core_success": 0.4444444444444444,
+            "Accurate_Retrieval": {
+              "core_success": 0.4375,
               "improvable_over_core": true,
-              "improved": true,
-              "memory_os_success": 1.0,
-              "paired_lift_lower": 0.2222222222222222,
+              "improved": false,
+              "memory_os_success": 0.4375,
+              "paired_lift_lower": 0.0,
               "reason": "improvable"
             },
-            "preference_update": {
-              "core_success": 1.0,
-              "improvable_over_core": false,
-              "improved": false,
-              "memory_os_success": 1.0,
-              "paired_lift_lower": 0.0,
-              "reason": "core_already_at_ceiling"
-            },
-            "state_tracking": {
-              "core_success": 1.0,
-              "improvable_over_core": false,
-              "improved": false,
-              "memory_os_success": 1.0,
-              "paired_lift_lower": 0.0,
-              "reason": "core_already_at_ceiling"
-            },
-            "workflow_gotcha": {
-              "core_success": 0.0,
+            "Conflict_Resolution": {
+              "core_success": 0.25,
               "improvable_over_core": true,
-              "improved": true,
-              "memory_os_success": 1.0,
-              "paired_lift_lower": 1.0,
+              "improved": false,
+              "memory_os_success": 0.25,
+              "paired_lift_lower": 0.0,
+              "reason": "improvable"
+            },
+            "Test_Time_Learning": {
+              "core_success": 0.3125,
+              "improvable_over_core": true,
+              "improved": false,
+              "memory_os_success": 0.3125,
+              "paired_lift_lower": 0.0,
               "reason": "improvable"
             }
           },
           "claim_boundary": "A category where Core already has 1.0 success cannot show a strictly positive Memory OS-over-Core lift without changing the frozen split or degrading the baseline.",
-          "improvement_ceiling_over_core": 2,
+          "improvement_ceiling_over_core": 3,
           "methodology_status": "blocked_unsatisfiable_without_split_change_or_baseline_degradation",
-          "observed_improved_categories": [
-            "knowledge_update",
-            "workflow_gotcha"
-          ],
+          "observed_improved_categories": [],
           "target": 4
         },
         "id": "category_improvement_ceiling",
         "reason": "the frozen development split cannot demonstrate four strictly positive category improvements over Core because Core is already perfect in some categories",
+        "status": "blocked"
+      },
+      {
+        "allowed_next_step": "run Chroma or Qdrant, Mem0 OSS, and LangGraph/LangMem through the same protocol and embedding space; Mem0 must include runtime proof that ingest and search used hash-384",
+        "id": "real_local_competitors_missing",
+        "missing_families": [
+          "langmem_or_langgraph",
+          "mem0_oss",
+          "static_chroma_or_qdrant"
+        ],
+        "non_comparable": [],
+        "passing_families": [],
+        "reason": "same-protocol local competitor evidence is missing or not comparable under the frozen embedding/runtime policy",
+        "skipped": [
+          {
+            "engine": "Chroma static",
+            "family": "static_chroma_or_qdrant",
+            "reason": "not_run_in_candidate2_bounded_dev; use same protocol before admission"
+          },
+          {
+            "engine": "Qdrant static",
+            "family": "static_chroma_or_qdrant",
+            "reason": "not_run_in_candidate2_bounded_dev; use same protocol before admission"
+          },
+          {
+            "engine": "Mem0 OSS",
+            "family": "mem0_oss",
+            "reason": "not_run_in_candidate2_bounded_dev; equal-embedding adapter required"
+          },
+          {
+            "engine": "LangMem / LangGraph",
+            "family": "langmem_or_langgraph",
+            "reason": "not_run_in_candidate2_bounded_dev; same-protocol run required"
+          }
+        ],
         "status": "blocked"
       },
       {
@@ -63,22 +84,25 @@
         "status": "blocked"
       }
     ],
-    "candidate": "candidate-1",
+    "candidate": "candidate-2-memoryagentbench-balanced",
     "candidate_status": "failed",
     "failed_candidates": [
       {
-        "frozen_split_sha256": "e4345094922637414bec7f69a15cea9207380b1795b39eb53270da99b89965a2",
+        "frozen_split_sha256": "be36adbae742712f0d3fe485f74000438d809d530268e6cb365894db0c33a983",
         "held_out_policy": "not_opened",
-        "id": "candidate-1",
-        "improvement_ceiling_over_core": 2,
-        "reason": "bounded development evidence on the preregistered 18-case split cannot reach the four-category improvement gate",
+        "id": "candidate-2-memoryagentbench-balanced",
+        "improvement_ceiling_over_core": 3,
+        "reason": "bounded development evidence on the preregistered MemoryAgentBench-balanced split cannot reach the four-category improvement gate",
         "status": "failed",
         "target": 4
       }
     ],
     "gate_errors": [
+      "memory_os_uplift_over_core below threshold",
       "improved_category_count below threshold",
       "category_improvement_ceiling below threshold",
+      "latency overhead exceeds threshold",
+      "missing real local competitors: langmem_or_langgraph, mem0_oss, static_chroma_or_qdrant",
       "LongMemEval-V2 quality gate has not been run on this protocol"
     ],
     "held_out_policy": "not_opened; remains forbidden while development gate is blocked",
@@ -87,104 +111,74 @@
   "claim_boundary": "Development diagnostic evidence only. A blocked development gate forbids heavy/full held-out execution and forbids public quality-leadership claims.",
   "competitor_runs": [
     {
-      "eligible_for_comparison": true,
-      "embedding_comparable": true,
-      "embedding_runtime_proof": null,
+      "eligible_for_comparison": false,
+      "embedding_comparable": false,
       "engine": "Chroma static",
       "family": "static_chroma_or_qdrant",
-      "p95_latency_ms": 3.895499976351857,
-      "reason": null,
+      "reason": "not_run_in_candidate2_bounded_dev; use same protocol before admission",
       "simulated": false,
-      "status": "pass",
-      "task_success_rate": 0.2222222222222222
+      "status": "skipped"
     },
     {
-      "eligible_for_comparison": true,
-      "embedding_comparable": true,
-      "embedding_runtime_proof": null,
+      "eligible_for_comparison": false,
+      "embedding_comparable": false,
       "engine": "Qdrant static",
       "family": "static_chroma_or_qdrant",
-      "p95_latency_ms": 2.682599995750934,
-      "reason": null,
+      "reason": "not_run_in_candidate2_bounded_dev; use same protocol before admission",
       "simulated": false,
-      "status": "pass",
-      "task_success_rate": 0.2222222222222222
+      "status": "skipped"
     },
     {
-      "eligible_for_comparison": true,
-      "embedding_comparable": true,
-      "embedding_runtime_proof": {
-        "embed_batch_calls": 0,
-        "embed_calls": 56,
-        "expected_min_calls": 54,
-        "kind": "hash",
-        "matches_shared_encoder": true,
-        "probe_sha256": "20afc27786ce5e5b052ae10bac83f141387054a0886b04008df8f3894a313ce9",
-        "probe_vector_sha256": "e354573b9db236b774048147b6af12b767fcffe0e5e12ec79c2d1864a2b6f3f8",
-        "provider": "wavemind-shared",
-        "runtime_class": "_Mem0SharedEmbeddingFactory",
-        "used_for_ingest_and_search": true,
-        "vector_dim": 384
-      },
+      "eligible_for_comparison": false,
+      "embedding_comparable": false,
       "engine": "Mem0 OSS",
       "family": "mem0_oss",
-      "p95_latency_ms": 5.514099961146712,
-      "reason": null,
+      "reason": "not_run_in_candidate2_bounded_dev; equal-embedding adapter required",
       "simulated": false,
-      "status": "pass",
-      "task_success_rate": 0.2222222222222222
+      "status": "skipped"
     },
     {
-      "eligible_for_comparison": true,
-      "embedding_comparable": true,
-      "embedding_runtime_proof": null,
-      "engine": "LangGraph persistent memory",
+      "eligible_for_comparison": false,
+      "embedding_comparable": false,
+      "engine": "LangMem / LangGraph",
       "family": "langmem_or_langgraph",
-      "p95_latency_ms": 0.9499999578110874,
-      "reason": null,
+      "reason": "not_run_in_candidate2_bounded_dev; same-protocol run required",
       "simulated": false,
-      "status": "pass",
-      "task_success_rate": 0.2222222222222222
+      "status": "skipped"
     }
   ],
   "confidence_intervals": {
     "context_reduction": {
-      "lower": 0.5015105740181269,
-      "mean": 0.5015105740181269,
+      "lower": 0.9901303912219694,
+      "mean": 0.9901303912219694,
       "observations": 5,
-      "upper": 0.5015105740181269
+      "upper": 0.9901303912219694
     },
     "paired_categories": {
-      "knowledge_update": {
-        "lower": 0.2222222222222222,
-        "mean": 0.5555555555555556,
-        "observations": 9,
-        "upper": 0.8888888888888888
-      },
-      "preference_update": {
+      "Accurate_Retrieval": {
         "lower": 0.0,
         "mean": 0.0,
-        "observations": 1,
+        "observations": 5,
         "upper": 0.0
       },
-      "state_tracking": {
+      "Conflict_Resolution": {
         "lower": 0.0,
         "mean": 0.0,
-        "observations": 2,
+        "observations": 5,
         "upper": 0.0
       },
-      "workflow_gotcha": {
-        "lower": 1.0,
-        "mean": 1.0,
-        "observations": 6,
-        "upper": 1.0
+      "Test_Time_Learning": {
+        "lower": 0.0,
+        "mean": 0.0,
+        "observations": 5,
+        "upper": 0.0
       }
     },
     "paired_overall": {
-      "lower": 0.3888888888888889,
-      "mean": 0.6111111111111112,
-      "observations": 18,
-      "upper": 0.8333333333333334
+      "lower": 0.0,
+      "mean": 0.0,
+      "observations": 5,
+      "upper": 0.0
     },
     "stale_error": {
       "lower": 0.0,
@@ -193,23 +187,26 @@
       "upper": 0.0
     },
     "task_success": {
-      "lower": 1.0,
-      "mean": 1.0,
+      "lower": 0.3333333333333333,
+      "mean": 0.3333333333333333,
       "observations": 5,
-      "upper": 1.0
+      "upper": 0.3333333333333333
     }
   },
   "confidence_level": 0.95,
   "development_gate": {
-    "diagnostic": "benchmarks/quality_leadership_agent_memory_advantage_dev_real_competitors.json",
+    "diagnostic": ".tmp/candidate2/candidate2.json",
     "errors": [
+      "memory_os_uplift_over_core below threshold",
       "improved_category_count below threshold",
       "category_improvement_ceiling below threshold",
+      "latency overhead exceeds threshold",
+      "missing real local competitors: langmem_or_langgraph, mem0_oss, static_chroma_or_qdrant",
       "LongMemEval-V2 quality gate has not been run on this protocol"
     ],
     "status": "blocked"
   },
-  "generated_at": "2026-08-10T22:05:00Z",
+  "generated_at": "2026-08-10T23:19:12Z",
   "held_out_gate": {
     "reason": "held-out is forbidden until protocol freeze and development go/no-go",
     "status": "not_opened"
@@ -221,97 +218,77 @@
   },
   "integrity": {
     "algorithm": "sha256",
-    "payload_sha256": "430ca68d0907cef3e2ade354cfb2dd03932b5c1d9f7c48d71f9c24797d5ca7c0",
+    "payload_sha256": "f84a4920c9a7924e8354ad95a0093831749bd33d7874419769740149875a9fe2",
     "schema": "wavemind.artifact_integrity.v1"
   },
   "measurement_runs": 5,
   "metrics": {
     "category_improvement_analysis": {
-      "baseline_ceiling_categories": [
-        "preference_update",
-        "state_tracking"
-      ],
+      "baseline_ceiling_categories": [],
       "category_details": {
-        "knowledge_update": {
-          "core_success": 0.4444444444444444,
+        "Accurate_Retrieval": {
+          "core_success": 0.4375,
           "improvable_over_core": true,
-          "improved": true,
-          "memory_os_success": 1.0,
-          "paired_lift_lower": 0.2222222222222222,
+          "improved": false,
+          "memory_os_success": 0.4375,
+          "paired_lift_lower": 0.0,
           "reason": "improvable"
         },
-        "preference_update": {
-          "core_success": 1.0,
-          "improvable_over_core": false,
-          "improved": false,
-          "memory_os_success": 1.0,
-          "paired_lift_lower": 0.0,
-          "reason": "core_already_at_ceiling"
-        },
-        "state_tracking": {
-          "core_success": 1.0,
-          "improvable_over_core": false,
-          "improved": false,
-          "memory_os_success": 1.0,
-          "paired_lift_lower": 0.0,
-          "reason": "core_already_at_ceiling"
-        },
-        "workflow_gotcha": {
-          "core_success": 0.0,
+        "Conflict_Resolution": {
+          "core_success": 0.25,
           "improvable_over_core": true,
-          "improved": true,
-          "memory_os_success": 1.0,
-          "paired_lift_lower": 1.0,
+          "improved": false,
+          "memory_os_success": 0.25,
+          "paired_lift_lower": 0.0,
+          "reason": "improvable"
+        },
+        "Test_Time_Learning": {
+          "core_success": 0.3125,
+          "improvable_over_core": true,
+          "improved": false,
+          "memory_os_success": 0.3125,
+          "paired_lift_lower": 0.0,
           "reason": "improvable"
         }
       },
       "claim_boundary": "A category where Core already has 1.0 success cannot show a strictly positive Memory OS-over-Core lift without changing the frozen split or degrading the baseline.",
-      "improvement_ceiling_over_core": 2,
+      "improvement_ceiling_over_core": 3,
       "methodology_status": "blocked_unsatisfiable_without_split_change_or_baseline_degradation",
-      "observed_improved_categories": [
-        "knowledge_update",
-        "workflow_gotcha"
-      ],
+      "observed_improved_categories": [],
       "target": 4
     },
     "confidence_intervals": {
       "context_reduction": {
-        "lower": 0.5015105740181269,
-        "mean": 0.5015105740181269,
+        "lower": 0.9901303912219694,
+        "mean": 0.9901303912219694,
         "observations": 5,
-        "upper": 0.5015105740181269
+        "upper": 0.9901303912219694
       },
       "paired_categories": {
-        "knowledge_update": {
-          "lower": 0.2222222222222222,
-          "mean": 0.5555555555555556,
-          "observations": 9,
-          "upper": 0.8888888888888888
-        },
-        "preference_update": {
+        "Accurate_Retrieval": {
           "lower": 0.0,
           "mean": 0.0,
-          "observations": 1,
+          "observations": 5,
           "upper": 0.0
         },
-        "state_tracking": {
+        "Conflict_Resolution": {
           "lower": 0.0,
           "mean": 0.0,
-          "observations": 2,
+          "observations": 5,
           "upper": 0.0
         },
-        "workflow_gotcha": {
-          "lower": 1.0,
-          "mean": 1.0,
-          "observations": 6,
-          "upper": 1.0
+        "Test_Time_Learning": {
+          "lower": 0.0,
+          "mean": 0.0,
+          "observations": 5,
+          "upper": 0.0
         }
       },
       "paired_overall": {
-        "lower": 0.3888888888888889,
-        "mean": 0.6111111111111112,
-        "observations": 18,
-        "upper": 0.8333333333333334
+        "lower": 0.0,
+        "mean": 0.0,
+        "observations": 5,
+        "upper": 0.0
       },
       "stale_error": {
         "lower": 0.0,
@@ -320,41 +297,38 @@
         "upper": 0.0
       },
       "task_success": {
-        "lower": 1.0,
-        "mean": 1.0,
+        "lower": 0.3333333333333333,
+        "mean": 0.3333333333333333,
         "observations": 5,
-        "upper": 1.0
+        "upper": 0.3333333333333333
       }
     },
     "confidence_level": 0.95,
-    "context_reduction": 0.5015105740181269,
-    "controlled_core_task_success": 0.3888888888888889,
-    "controlled_memory_os_task_success": 1.0,
-    "improved_categories": [
-      "knowledge_update",
-      "workflow_gotcha"
-    ],
-    "improved_category_count": 2,
+    "context_reduction": 0.9901303912219694,
+    "controlled_core_task_success": 0.3333333333333333,
+    "controlled_memory_os_task_success": 0.3333333333333333,
+    "improved_categories": [],
+    "improved_category_count": 0,
     "measurement_runs": 5,
-    "memory_os_uplift_over_core": 0.6111111111111112,
-    "p95_overhead_ms": -0.34149998100474477,
-    "p95_overhead_ratio": -0.15086586852536205,
+    "memory_os_uplift_over_core": 0.0,
+    "p95_overhead_ms": 15.436300018336624,
+    "p95_overhead_ratio": 0.5810131788748705,
     "stale_contradiction_error_rate": 0.0
   },
   "protocol_revision": "quality-leadership-v1-20260810",
   "runs": [
     {
-      "artifact": "benchmarks/quality_leadership_agent_memory_advantage_dev_real_competitors.json",
+      "artifact": ".tmp/candidate2/candidate2.json",
       "claim_boundary": "Bounded development diagnostic only; it cannot replace public held-out quality evidence or real competitor execution.",
       "id": "controlled-sequential-agent-memory",
-      "source_sha": "93b1fe0bd1dd3a07ecdb7b791c0bd42730800739",
+      "source_sha": "1b104eea10c2b0f759af900dfe3fbafbc62fc04b",
       "status": "pass"
     }
   ],
   "schema": "wavemind.quality_leadership_results.v1",
   "source_manifest": {
     "algorithm": "sha256",
-    "digest": "9504c483cadf1f492d4a8ee563207a8daad6e82f5415f40aa8c01cc72f882cfb",
+    "digest": "9573d024d4945fc15984582faa23e0f33fbb24271a9b90ca273bd5a87780cc6e",
     "files": [
       {
         "path": "benchmarks/agent_memory_advantage_benchmark.py",
@@ -378,15 +352,15 @@
       },
       {
         "path": "benchmarks/quality_leadership_admission.py",
-        "sha256": "e3ce98a26b0bf0773a01c8cf0c1b857f004116edb6d1f9c56cd3fcbf6088862d"
+        "sha256": "3a39fe199a4297e5f863b397fc205beeff18718be116f45e84e29ca54aec8115"
       },
       {
         "path": "benchmarks/quality_leadership_freeze_protocol.py",
-        "sha256": "2c8a7cc0d1fdb0e94f53f7a276715f2bbc42b209e3015045c0f4cab32da13476"
+        "sha256": "5714a9182d3c92c67ce1edc6d14fd6353385c9faae0604583663ced23446002c"
       },
       {
         "path": "benchmarks/quality_leadership_results.py",
-        "sha256": "db03350eb68fff8090c7fb54f5fed5dcb7f99ec0d9856353519189b9204ca143"
+        "sha256": "9f39f8aeacb119fb734f238d6ba25a81a05cbc269fccc4a0ad8604182a3b8276"
       },
       {
         "path": "wavemind/agent_memory_admission.py",
@@ -418,7 +392,7 @@
       },
       {
         "path": "wavemind/quality_leadership_admission.py",
-        "sha256": "c78f892d72a10e3043537b9e7274e4b30030b436c3ea123d241f6e38c563a4fc"
+        "sha256": "033304aec3e57a97995245644ff392fc5486458c0efed85810fc80d1c678b68b"
       },
       {
         "path": "wavemind/workspace_experience_admission.py",
@@ -427,6 +401,6 @@
     ],
     "schema": "wavemind.source_manifest.v1"
   },
-  "source_sha": "93b1fe0bd1dd3a07ecdb7b791c0bd42730800739",
+  "source_sha": "1b104eea10c2b0f759af900dfe3fbafbc62fc04b",
   "status": "development_blocked"
 }

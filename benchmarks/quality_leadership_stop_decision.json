@@ -1,0 +1,85 @@
+{
+  "schema": "wavemind.quality_leadership_stop_decision.v1",
+  "status": "blocked",
+  "decision": "stop_after_two_failed_bounded_development_candidates",
+  "generated_at": "2026-08-10T23:22:07Z",
+  "evaluated_source_sha": "1b104eea10c2b0f759af900dfe3fbafbc62fc04b",
+  "go_no_go": {
+    "max_architecture_candidates_before_blocked": 2,
+    "attempted_candidates": 2,
+    "failed_candidates": 2,
+    "tuning_allowed": false,
+    "candidate_3_allowed": false,
+    "held_out_opened": false,
+    "gpu_or_full_run_allowed": false
+  },
+  "candidates": [
+    {
+      "id": "candidate-1",
+      "status": "failed",
+      "artifact": "benchmarks/quality_leadership_agent_memory_advantage_dev_real_competitors.json",
+      "artifact_sha256": "a52d59fb813ca2bfabe72609ae567c14a743c43fee6a8da93af7d146181af63e",
+      "artifact_source_sha": "93b1fe0bd1dd3a07ecdb7b791c0bd42730800739",
+      "frozen_development_split_sha256": "e4345094922637414bec7f69a15cea9207380b1795b39eb53270da99b89965a2",
+      "metrics": {
+        "memory_os_uplift_over_core": 0.6111111111111112,
+        "improved_category_count": 2,
+        "improvement_ceiling_over_core": 2,
+        "p95_overhead_ms": -0.34149998100474477,
+        "p95_overhead_ratio": -0.15086586852536205
+      },
+      "failed_gates": [
+        "improved_category_count >= 4",
+        "improvement_ceiling_over_core >= 4"
+      ],
+      "held_out_policy": "not_opened"
+    },
+    {
+      "id": "candidate-2-memoryagentbench-balanced",
+      "status": "failed",
+      "artifact": "benchmarks/quality_leadership_agent_memory_advantage_dev_candidate2.json",
+      "artifact_sha256": "0fe6f146ac772bfa2d848b64b635fc13c15e37c55408d3e0bade615b61376949",
+      "per_query_artifact": "benchmarks/quality_leadership_candidate2_dev_per_query.jsonl",
+      "per_query_artifact_sha256": "f1a390d8a75176cf5a8aa4ab10e5b16697c47bdbb9d7df506812dec2747c90df",
+      "protocol_artifact": "benchmarks/quality_leadership_protocol.json",
+      "protocol_artifact_sha256": "928044913825b7e3a6066a322c4b930dc1140efb73527ff26ffac8d91acf3f05",
+      "artifact_source_sha": "1b104eea10c2b0f759af900dfe3fbafbc62fc04b",
+      "frozen_development_split_sha256": "be36adbae742712f0d3fe485f74000438d809d530268e6cb365894db0c33a983",
+      "metrics": {
+        "core_task_success": 0.3333333333333333,
+        "memory_os_task_success": 0.3333333333333333,
+        "memory_os_uplift_over_core": 0.0,
+        "improved_category_count": 0,
+        "improvement_ceiling_over_core": 3,
+        "context_reduction": 0.9901303912219694,
+        "stale_contradiction_error_rate": 0.0,
+        "p95_overhead_ms": 15.436300018336624,
+        "p95_overhead_ratio": 0.5810131788748705
+      },
+      "failed_gates": [
+        "memory_os_uplift_over_core >= 0.01",
+        "improved_category_count >= 4",
+        "improvement_ceiling_over_core >= 4",
+        "p95_overhead_ms <= 5 and p95_overhead_ratio <= 0.20"
+      ],
+      "protocol_review": {
+        "fixable_runner_or_protocol_defect": false,
+        "reason": "The frozen Long_Range_Understanding development rows are generative summarization cases without literal retrieval evidence labels, while the feedback-free Memory OS contract does not mutate ranking. Repair would require changing frozen data, task semantics, or feedback evidence, so a repeat under the existing protocol would not be an independent architecture test."
+      },
+      "held_out_policy": "not_opened"
+    }
+  ],
+  "canonical_taxonomy_artifact": "benchmarks/quality_leadership_results.json",
+  "canonical_taxonomy_artifact_sha256": "c33cd7d8cc9282254847158aed05f5e9eda75a5091146b2b460c89747ece33cd",
+  "blocker": {
+    "id": "quality_admission_after_two_failed_bounded_dev_candidates",
+    "status": "blocked",
+    "reason": "Two genuinely different bounded-development architecture candidates failed preregistered quality gates. The stop rule forbids candidate 3, held-out access, further tuning, and GPU/full runs in this goal."
+  },
+  "claim_boundary": "This is a bounded-development stopping decision, not a public quality claim. Goal 4 historical failure remains preserved. Safe Product and Workspace Experience are not invalidated by this blocked quality-leadership result.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "99d5d7f23379f443e29c6fb64dcd892e69ff4990a2047f57ca3675af012b5934"
+  }
+}
