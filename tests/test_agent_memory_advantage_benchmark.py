@@ -71,3 +71,5 @@ def test_mem0_shared_embedding_adapter_uses_frozen_encoder():
     assert adapter.config["vector_dim"] == 384
     assert adapter.embed(text, "search") == encoder.encode_vector(text).astype(float).tolist()
     assert adapter.embed_batch([text], "add") == [adapter.embed(text, "add")]
+    assert adapter.embed_calls == 3
+    assert adapter.embed_batch_calls == 1

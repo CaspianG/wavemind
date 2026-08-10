@@ -110,6 +110,18 @@ def _agent_memory_payload(*, source_sha: str | None = None) -> dict:
     }
 
 
+def _mem0_runtime_proof() -> dict:
+    return {
+        "provider": "wavemind-shared",
+        "kind": "hash",
+        "vector_dim": 384,
+        "matches_shared_encoder": True,
+        "used_for_ingest_and_search": True,
+        "embed_calls": 54,
+        "expected_min_calls": 54,
+    }
+
+
 def _split_digest(split: dict) -> str:
     return sha256_bytes(
         canonical_json_bytes(
@@ -343,6 +355,7 @@ def test_development_results_recognizes_real_competitor_families(tmp_path: Path)
                 "eligible_for_comparison": True,
                 "embedding_comparable": True,
                 "same_embedding_as_wavemind": True,
+                "embedding_runtime_proof": _mem0_runtime_proof(),
                 "task_success_rate": 0.35,
                 "p95_latency_ms": 5.0,
             },
@@ -414,6 +427,56 @@ def test_development_results_rejects_competitor_without_same_embedding_proof(
     assert "missing real local competitors" in errors
     assert "mem0_oss" in payload["competitor_runs"][1]["family"]
     assert payload["competitor_runs"][1]["embedding_comparable"] is False
+
+
+def test_development_results_rejects_mem0_without_runtime_embedding_proof(
+    tmp_path: Path,
+) -> None:
+    source = _agent_memory_payload()
+    source["results"].extend(
+        [
+            {
+                "engine": "Chroma static",
+                "status": "pass",
+                "eligible_for_comparison": True,
+                "embedding_comparable": True,
+                "same_embedding_as_wavemind": True,
+                "task_success_rate": 0.40,
+                "p95_latency_ms": 2.0,
+            },
+            {
+                "engine": "Mem0 OSS",
+                "status": "pass",
+                "eligible_for_comparison": True,
+                "embedding_comparable": True,
+                "same_embedding_as_wavemind": True,
+                "task_success_rate": 0.35,
+                "p95_latency_ms": 5.0,
+            },
+            {
+                "engine": "LangGraph persistent memory",
+                "status": "pass",
+                "eligible_for_comparison": True,
+                "embedding_comparable": True,
+                "same_embedding_as_wavemind": True,
+                "task_success_rate": 0.30,
+                "p95_latency_ms": 3.0,
+            },
+        ]
+    )
+    diagnostic = tmp_path / "agent.json"
+    diagnostic.write_text(json.dumps(source), encoding="utf-8")
+
+    payload = quality_leadership_results_from_diagnostics(
+        root=PROJECT_ROOT,
+        agent_memory_path=diagnostic,
+    )
+
+    errors = " ".join(payload["development_gate"]["errors"])
+    assert "missing real local competitors" in errors
+    mem0 = next(row for row in payload["competitor_runs"] if row["engine"] == "Mem0 OSS")
+    assert mem0["embedding_comparable"] is False
+    assert "runtime proof" in mem0["reason"]
 
 
 def test_in_repo_development_diagnostic_path_stays_relative() -> None:

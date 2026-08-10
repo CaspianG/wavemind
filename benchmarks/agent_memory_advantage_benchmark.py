@@ -244,7 +244,13 @@ def _aggregate_trials(
     task_success = statistics.mean(task_values)
     stale_error = statistics.mean(stale_values)
     context_saved = statistics.mean(context_values)
-    return {
+    runtime_proofs = [
+        row.get("embedding_runtime_proof")
+        for row in trials
+        if isinstance(row.get("embedding_runtime_proof"), dict)
+        and row.get("embedding_runtime_proof")
+    ]
+    result = {
         "engine": engine,
         "status": "pass",
         "eligible_for_comparison": True,
@@ -277,6 +283,10 @@ def _aggregate_trials(
         "cost_per_query_usd": 0.0,
         "trial_metrics": trials,
     }
+    if runtime_proofs:
+        result["embedding_runtime_proof"] = runtime_proofs[0]
+        result["embedding_runtime_proof_trials"] = runtime_proofs
+    return result
 
 
 def _metric_trial(
@@ -311,6 +321,8 @@ def _run_real_baseline(
 class _Mem0SharedEmbedding:
     def __init__(self, encoder: Any):
         self.encoder = encoder
+        self.embed_calls = 0
+        self.embed_batch_calls = 0
         self.config = {
             "provider": "wavemind-shared",
             "kind": "hash",
@@ -319,6 +331,7 @@ class _Mem0SharedEmbedding:
 
     def embed(self, text: str, memory_action: str | None = None) -> list[float]:
         del memory_action
+        self.embed_calls += 1
         return self.encoder.encode_vector(str(text)).astype(float).tolist()
 
     def embed_batch(
@@ -326,7 +339,16 @@ class _Mem0SharedEmbedding:
         texts: list[str],
         memory_action: str = "add",
     ) -> list[list[float]]:
+        self.embed_batch_calls += 1
         return [self.embed(text, memory_action) for text in texts]
+
+
+def _vector_sha256(values: list[float]) -> str:
+    payload = json.dumps(
+        [round(float(value), 8) for value in values],
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
 
 
 def _mem0_rows(response: Any) -> list[dict[str, Any]]:
@@ -390,7 +412,13 @@ def run_mem0_oss(
             "history_db_path": str(root / "history.db"),
         }
         memory = Memory.from_config(config)
-        memory.embedding_model = _Mem0SharedEmbedding(encoder)
+        shared_embedding = _Mem0SharedEmbedding(encoder)
+        memory.embedding_model = shared_embedding
+        probe_text = "wavemind shared embedding runtime proof"
+        expected_probe = shared_embedding.embed(probe_text)
+        actual_probe = memory.embedding_model.embed(probe_text)
+        runtime_class = type(memory.embedding_model).__name__
+        probe_matches = actual_probe == expected_probe
         try:
             for item in dataset.memories:
                 memory.add(
@@ -417,11 +445,17 @@ def run_mem0_oss(
                 latencies.append((time.perf_counter() - started) * 1000.0)
                 rankings[query.id] = _mem0_evidence_ids(response)
                 texts[query.id] = _mem0_texts(response)
+            expected_min_calls = len(dataset.memories) + len(dataset.queries)
+            used_for_ingest_and_search = shared_embedding.embed_calls >= expected_min_calls
+            if not probe_matches or not used_for_ingest_and_search:
+                raise RuntimeError(
+                    "Mem0 did not use the shared WaveMind embedding runtime"
+                )
         finally:
             memory.close()
             del memory
             gc.collect()
-    return compute_evidence_metrics(
+    metrics = compute_evidence_metrics(
         dataset.queries,
         rankings,
         texts,
@@ -430,6 +464,21 @@ def run_mem0_oss(
         top_k,
         "Mem0 OSS",
     )
+    values = asdict(metrics)
+    values["embedding_runtime_proof"] = {
+        "provider": "wavemind-shared",
+        "kind": "hash",
+        "vector_dim": int(encoder.vector_dim),
+        "probe_sha256": hashlib.sha256(probe_text.encode("utf-8")).hexdigest(),
+        "probe_vector_sha256": _vector_sha256(actual_probe),
+        "matches_shared_encoder": probe_matches,
+        "embed_calls": int(shared_embedding.embed_calls),
+        "embed_batch_calls": int(shared_embedding.embed_batch_calls),
+        "expected_min_calls": int(expected_min_calls),
+        "used_for_ingest_and_search": used_for_ingest_and_search,
+        "runtime_class": runtime_class,
+    }
+    return EvidenceMetrics(**values)
 
 
 def run_langgraph_persistent(
@@ -763,6 +812,8 @@ def run_benchmark(
         for row in rows
         if row["engine"] != "WaveMind + Memory OS"
         and row.get("eligible_for_comparison") is not False
+        and row.get("embedding_comparable") is True
+        and row.get("same_embedding_as_wavemind") is True
     ]
     strongest_baseline = max(
         comparable_baselines,

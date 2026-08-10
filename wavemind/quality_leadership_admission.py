@@ -1023,9 +1023,14 @@ def _competitors_from_agent_memory(payload: Mapping[str, Any] | None) -> list[di
         if not family:
             continue
         eligible = row.get("eligible_for_comparison") is True
-        embedding_comparable = (
+        base_embedding_comparable = (
             row.get("embedding_comparable") is True
             and row.get("same_embedding_as_wavemind") is True
+        )
+        runtime_proof = row.get("embedding_runtime_proof")
+        embedding_comparable = base_embedding_comparable and _same_embedding_runtime_proof(
+            engine,
+            runtime_proof,
         )
         rows.append(
             {
@@ -1034,13 +1039,18 @@ def _competitors_from_agent_memory(payload: Mapping[str, Any] | None) -> list[di
                 "status": row.get("status", "pass"),
                 "eligible_for_comparison": eligible,
                 "embedding_comparable": embedding_comparable,
+                "embedding_runtime_proof": runtime_proof,
                 "simulated": False,
                 "task_success_rate": row.get("task_success_rate"),
                 "p95_latency_ms": row.get("p95_latency_ms"),
                 "reason": (
                     row.get("reason")
                     if eligible and embedding_comparable
-                    else "competitor row lacks same-embedding comparability proof"
+                    else _competitor_non_comparable_reason(
+                        engine,
+                        base_embedding_comparable=base_embedding_comparable,
+                        runtime_proof=runtime_proof,
+                    )
                 ),
             }
         )
@@ -1063,6 +1073,39 @@ def _competitors_from_agent_memory(payload: Mapping[str, Any] | None) -> list[di
             }
         )
     return rows
+
+
+def _same_embedding_runtime_proof(
+    engine: str,
+    runtime_proof: Any,
+) -> bool:
+    if engine != "Mem0 OSS":
+        return True
+    if not isinstance(runtime_proof, Mapping):
+        return False
+    return (
+        runtime_proof.get("provider") == "wavemind-shared"
+        and runtime_proof.get("kind") == "hash"
+        and _as_int(runtime_proof.get("vector_dim")) == 384
+        and runtime_proof.get("matches_shared_encoder") is True
+        and runtime_proof.get("used_for_ingest_and_search") is True
+        and _as_int(runtime_proof.get("embed_calls")) >= _as_int(
+            runtime_proof.get("expected_min_calls")
+        )
+    )
+
+
+def _competitor_non_comparable_reason(
+    engine: str,
+    *,
+    base_embedding_comparable: bool,
+    runtime_proof: Any,
+) -> str:
+    if not base_embedding_comparable:
+        return "competitor row lacks same-embedding comparability proof"
+    if engine == "Mem0 OSS" and not _same_embedding_runtime_proof(engine, runtime_proof):
+        return "Mem0 row lacks runtime proof that ingest/search used the shared hash-384 encoder"
+    return "competitor row is not eligible for comparison"
 
 
 def _validate_safe_product(

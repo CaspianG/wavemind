@@ -10,9 +10,9 @@ import tempfile
 import time
 from collections import Counter
 from collections.abc import Iterable as IterableABC
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Iterable
 
 import numpy as np
 
@@ -110,6 +110,7 @@ class EvidenceMetrics:
     ingest_total_ms: float = 0.0
     ingest_avg_ms: float = 0.0
     ingest_scope: str = ""
+    embedding_runtime_proof: dict[str, Any] = field(default_factory=dict)
 
 
 class CachedTextEncoder:
