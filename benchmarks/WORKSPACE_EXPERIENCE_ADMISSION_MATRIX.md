@@ -1,7 +1,7 @@
 # Workspace Experience Admission Matrix
 
 - Status: `blocked`
-- Evidence Snapshot Source SHA: `1b2e6bcba2a5c75fbf2b9364d4e1b2e7f0174069`
+- Evidence Snapshot Source SHA: `e3e540c7c60324300050a241b5e90ffcde3b688b`
 - Exact Current Verdict: CI artifact on the current PR/main SHA
 - Protocol: `workspace-experience-v1-frozen-20260810`
 - Protocol SHA-256: `fa2ebc36799b44ff54e74120da7dab3a475d40461a4963872069f5905beeb590`
@@ -19,9 +19,10 @@
 | `historical-v3-checksum-selection-experiment` | `historical` | `benchmarks/workspace_experience_benchmark_results.json` | `tests/test_workspace_experience_benchmark.py` |
 | `frozen-real-work-benchmark-v4` | `historical` | `benchmarks/workspace_experience_v4_manifest.json` | `tests/test_workspace_experience_v4_benchmark.py` |
 | `frozen-real-work-benchmark-v5` | `implemented` | `benchmarks/workspace_experience_v5_benchmark_results.json` | `tests/test_workspace_experience_v5_benchmark.py` |
-| `workspace-experience-admission` | `implemented` | `benchmarks/workspace_experience_admission_results.json` | `tests/test_workspace_experience_admission.py` |
+| `current-workspace-operational-evidence` | `required_current` | `benchmarks/workspace_experience_operational_results.json` | `tests/test_workspace_experience_admission.py` |
+| `workspace-experience-admission` | `blocked` | `benchmarks/workspace_experience_admission_results.json` | `tests/test_workspace_experience_admission.py` |
 | `safe-product-regression` | `required_current` | `benchmarks/safe_product_admission_results.json` | `.github/workflows/safe-product.yml` |
 
 ## Claim Boundary
 
-This checked-in payload is a Goal 7 evidence snapshot. It is not an exact-current PR or main admission; exact verdicts are produced by CI artifacts on the current SHA. The goal remains blocked while Safe Product is required_current.
+This checked-in payload is a Goal 7 evidence snapshot. It is not an exact-current PR or main admission; exact verdicts are produced by CI artifacts on the current SHA. The goal remains blocked while current operational evidence or Safe Product is required_current.

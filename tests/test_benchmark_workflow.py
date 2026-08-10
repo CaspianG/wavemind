@@ -494,6 +494,8 @@ def test_release_requires_exact_sha_safe_product_before_building():
     assert "uses: ./.github/workflows/safe-product.yml" in workflow
     assert "needs: safe-product" in workflow
     assert "needs: [safe-product, build]" in workflow
+    assert "workspace-experience-admission-${{ github.sha }}" in workflow
+    assert "workspace-experience-evidence/*" in workflow
     assert "benchmarks/validate_benchmark_artifacts.py" in workflow
     assert "scripts/sync_product_status.py --check" in workflow
     assert "benchmarks/production_readiness_gate.py" in workflow

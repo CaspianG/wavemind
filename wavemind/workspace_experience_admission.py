@@ -7,8 +7,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
 
+from .evidence import validate_artifact_integrity, validate_source_manifest
+from .safe_product_admission import validate_safe_product_artifact
+
 
 WORKSPACE_EXPERIENCE_ADMISSION_SCHEMA = "wavemind.workspace_experience_admission.v1"
+WORKSPACE_OPERATIONAL_EVIDENCE_SCHEMA = "wavemind.workspace_experience_operational.v1"
 WORKSPACE_EXPERIENCE_PROTOCOL_REVISION = "workspace-experience-v1-frozen-20260810"
 WORKSPACE_EXPERIENCE_PROTOCOL_SHA256 = "fa2ebc36799b44ff54e74120da7dab3a475d40461a4963872069f5905beeb590"
 V4_INVALID_REASONS = [
@@ -17,6 +21,27 @@ V4_INVALID_REASONS = [
     "positive task success accepts outcome-kind matches without exact case/procedure validation",
     "cross-client parity reopens the same Python manager instead of cross-surface client A to restart to client B replay",
 ]
+FROZEN_V5_QUALITY_SOURCE_SHA = "eb27a54c001a9169e7baf4bc299ee49fa86468bd"
+FROZEN_V5_RESULT_BLOB = "2ed5b4f9d20c68ed2f24d1d92cd69ff1bc70baaf"
+FROZEN_V5_MANIFEST_SHA256 = "9fa1d31b4085b723baf2e4dacd6ea4be8b894e734ecc475329fdc53d5cd888b8"
+QUALITY_CRITICAL_BLOBS = {
+    "wavemind/experience_compiler.py": "e5c6281f1f3968937243d23d45f2d622472b184a",
+    "wavemind/experience_runtime.py": "4ef356bd7ee78a2d20648675c6596f9ba9764d16",
+    "wavemind/workspace_experience.py": "6cf07bb1a8fad1cc6c73143590d90aac3ba52991",
+    "wavemind/experience.py": "e66d6cbfba2b42f767380790484bab947f870f90",
+    "wavemind/memory_firewall.py": "ea9c9fb8968eb11fe597a406beec7c16596927df",
+    "benchmarks/workspace_experience_v5_manifest.json": "9597ae4f24a6e06b675adbbe78245dbcf26c4ab6",
+    "benchmarks/workspace_experience_v5_manifest_builder.py": "84c638469fd5b8e8f0971fd811ba56afe34441f2",
+    "benchmarks/workspace_experience_v5_benchmark.py": "4b0fc7cf78df9499114f9e4da3bea54a4a3babcc",
+    "tests/test_workspace_experience_v5_benchmark.py": "2a86995c02f7eca57a82283b37be4294b9e2be8b",
+}
+QUALITY_FRESHNESS_ALLOWLIST = {
+    (
+        "wavemind/workspace_experience.py",
+        "6cf07bb1a8fad1cc6c73143590d90aac3ba52991",
+        "527c070dc3a528dcda559779098ad5659e841d82",
+    ): "workspace config path hardening only; packet selection, compiler, runtime, firewall, and v5 protocol are unchanged",
+}
 
 
 def workspace_experience_protocol_manifest() -> dict[str, Any]:
@@ -66,12 +91,29 @@ def evaluate_workspace_experience_admission_matrix(
     *,
     root: str | Path = ".",
     baseline_source_sha: str | None = None,
+    safe_product_path: str | Path | None = None,
+    operational_evidence_path: str | Path | None = None,
 ) -> dict[str, Any]:
     root_path = Path(root)
     _, benchmark_details = _benchmark_status(root_path)
     v5_status, v5_details = _v5_benchmark_status(root_path)
-    safe_product_status, safe_product_details = _safe_product_status(root_path)
-    admission_status = "implemented" if v5_status == "implemented" else "blocked"
+    operational_status, operational_details = _operational_evidence_status(
+        root_path,
+        operational_evidence_path,
+    )
+    safe_product_status, safe_product_details = _safe_product_status(
+        root_path,
+        safe_product_path,
+    )
+    admission_status = (
+        "implemented"
+        if (
+            v5_status == "implemented"
+            and operational_status == "implemented"
+            and safe_product_status == "implemented"
+        )
+        else "blocked"
+    )
     rows = [
         _row(
             "baseline-gap-audit",
@@ -154,11 +196,19 @@ def evaluate_workspace_experience_admission_matrix(
         ),
         _row(
             "frozen-real-work-benchmark-v5",
-            "New independent real workflow benchmark with exact case/procedure success, strongest static baseline, measured onboarding, and cross-surface replay.",
+            "Frozen real workflow quality benchmark with exact case/procedure success, strongest static baseline, measured onboarding, and cross-surface replay.",
             v5_status,
             "benchmarks/workspace_experience_v5_benchmark_results.json",
             "tests/test_workspace_experience_v5_benchmark.py",
             details=v5_details,
+        ),
+        _row(
+            "current-workspace-operational-evidence",
+            "Current-SHA HTTP workspace registry, authenticated namespace, restart persistence, and cross-surface replay evidence.",
+            operational_status,
+            "benchmarks/workspace_experience_operational_results.json",
+            "tests/test_workspace_experience_admission.py",
+            details=operational_details,
         ),
         _row(
             "workspace-experience-admission",
@@ -203,7 +253,7 @@ def evaluate_workspace_experience_admission_matrix(
         "claim_boundary": (
             "This checked-in payload is a Goal 7 evidence snapshot. It is not an exact-current "
             "PR or main admission; exact verdicts are produced by CI artifacts on the current SHA. "
-            "The goal remains blocked while Safe Product is required_current."
+            "The goal remains blocked while current operational evidence or Safe Product is required_current."
         ),
     }
 
@@ -248,10 +298,14 @@ def write_workspace_experience_admission_artifacts(
     result_output: str | Path = "benchmarks/workspace_experience_admission_results.json",
     report_output: str | Path = "benchmarks/WORKSPACE_EXPERIENCE_ADMISSION.md",
     baseline_source_sha: str | None = None,
+    safe_product_path: str | Path | None = None,
+    operational_evidence_path: str | Path | None = None,
 ) -> dict[str, Any]:
     payload = evaluate_workspace_experience_admission_matrix(
         root=root,
         baseline_source_sha=baseline_source_sha,
+        safe_product_path=safe_product_path,
+        operational_evidence_path=operational_evidence_path,
     )
     _write_json(Path(matrix_output), payload)
     _write_json(Path(result_output), payload)
@@ -278,10 +332,14 @@ def write_workspace_experience_admission_matrix(
     output: str | Path = "benchmarks/workspace_experience_admission_matrix.json",
     markdown_output: str | Path = "benchmarks/WORKSPACE_EXPERIENCE_ADMISSION_MATRIX.md",
     baseline_source_sha: str | None = None,
+    safe_product_path: str | Path | None = None,
+    operational_evidence_path: str | Path | None = None,
 ) -> dict[str, Any]:
     payload = evaluate_workspace_experience_admission_matrix(
         root=root,
         baseline_source_sha=baseline_source_sha,
+        safe_product_path=safe_product_path,
+        operational_evidence_path=operational_evidence_path,
     )
     _write_json(Path(output), payload)
     _write_text(
@@ -419,6 +477,7 @@ def _v5_benchmark_status(root: Path) -> tuple[str, dict[str, Any]]:
     metrics = payload.get("metrics", {}).get("admission", {})
     thresholds = workspace_experience_protocol_manifest()["thresholds"]
     failed_gates = _admission_gate_failures(metrics, thresholds)
+    freshness = _quality_freshness_status(root)
     details = {
         "result_status": payload.get("status"),
         "split": payload.get("split"),
@@ -435,17 +494,73 @@ def _v5_benchmark_status(root: Path) -> tuple[str, dict[str, Any]]:
             "packet_selection_p99_ms": metrics.get("packet_selection_p99_ms"),
             "clean_onboarding_seconds": metrics.get("clean_onboarding_seconds"),
         },
+        "evidence_scope": "frozen_quality",
+        "freshness": freshness,
     }
     if payload.get("split") != "heldout":
         details["not_admission_evidence_reason"] = "v5 result is a development diagnostic, not untouched held-out evidence"
+        return "blocked", details
+    if payload.get("source_sha") != FROZEN_V5_QUALITY_SOURCE_SHA:
+        details["not_admission_evidence_reason"] = "v5 source SHA is not the frozen accepted quality source"
+        return "blocked", details
+    if payload.get("manifest", {}).get("sha256") != FROZEN_V5_MANIFEST_SHA256:
+        details["not_admission_evidence_reason"] = "v5 manifest hash differs from the frozen accepted quality manifest"
+        return "blocked", details
+    if not freshness["quality_fresh"]:
+        details["not_admission_evidence_reason"] = "quality-critical source changed; new independent quality evidence required"
         return "blocked", details
     if payload.get("status") == "passed" and not failed_gates:
         return "implemented", details
     return "failed", details
 
 
-def _safe_product_status(root: Path) -> tuple[str, dict[str, Any]]:
-    path = root / "benchmarks" / "safe_product_admission_results.json"
+def _operational_evidence_status(
+    root: Path,
+    operational_evidence_path: str | Path | None,
+) -> tuple[str, dict[str, Any]]:
+    path = (
+        Path(operational_evidence_path)
+        if operational_evidence_path is not None
+        else root / "benchmarks" / "workspace_experience_operational_results.json"
+    )
+    if not path.is_absolute():
+        path = root / path
+    current_sha = _git_sha(root)
+    if not path.exists():
+        return "required_current", {
+            "reason": "current workspace operational evidence artifact missing",
+            "current_source_sha": current_sha,
+        }
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    errors = _validate_operational_evidence_payload(
+        payload,
+        root=root,
+        expected_source_sha=current_sha,
+    )
+    details = {
+        "result_status": payload.get("status"),
+        "source_sha": payload.get("source_sha"),
+        "current_source_sha": current_sha,
+        "summary": payload.get("summary"),
+        "metrics": payload.get("metrics"),
+        "validator_errors": errors,
+    }
+    if errors:
+        return "failed", details
+    return "implemented", details
+
+
+def _safe_product_status(
+    root: Path,
+    safe_product_path: str | Path | None = None,
+) -> tuple[str, dict[str, Any]]:
+    path = (
+        Path(safe_product_path)
+        if safe_product_path is not None
+        else root / "benchmarks" / "safe_product_admission_results.json"
+    )
+    if not path.is_absolute():
+        path = root / path
     if not path.exists():
         return "required_current", {"reason": "safe product artifact missing"}
     payload = json.loads(path.read_text(encoding="utf-8"))
@@ -456,10 +571,158 @@ def _safe_product_status(root: Path) -> tuple[str, dict[str, Any]]:
         "current_source_sha": current_sha,
         "summary": payload.get("summary"),
     }
-    if payload.get("status") == "admitted" and payload.get("source_sha") == current_sha:
+    validation_errors = validate_safe_product_artifact(
+        payload,
+        project_root=root,
+        expected_source_sha=current_sha,
+    )
+    details["validator_errors"] = validation_errors
+    if not validation_errors:
         return "implemented", details
-    details["reason"] = "safe product admission is not current for this source SHA"
+    details["reason"] = "safe product admission is not current or failed validation for this source SHA"
     return "required_current", details
+
+
+def _validate_operational_evidence_payload(
+    payload: Mapping[str, Any],
+    *,
+    root: Path,
+    expected_source_sha: str,
+) -> list[str]:
+    errors = validate_artifact_integrity(payload)
+    if payload.get("schema") != WORKSPACE_OPERATIONAL_EVIDENCE_SCHEMA:
+        errors.append("workspace operational schema is invalid")
+    if payload.get("status") != "admitted" or payload.get("admitted") is not True:
+        errors.append("workspace operational evidence is not admitted")
+    if payload.get("source_sha") != expected_source_sha:
+        errors.append("workspace operational source SHA mismatch")
+    checks = {
+        str(check.get("id")): check
+        for check in payload.get("checks") or []
+        if isinstance(check, Mapping)
+    }
+    required_checks = {
+        "python-write-http-restart-replay",
+        "registered-workspace-http-packet",
+        "namespace-auth-denies-cross-workspace",
+        "arbitrary-workspace-id-denied",
+        "root-field-without-workspace-id-denied",
+        "missing-registry-denied",
+        "registry-escape-denied",
+        "mandatory-events-captured-idempotently",
+        "secrets-redacted",
+    }
+    missing = sorted(required_checks - set(checks))
+    if missing:
+        errors.append(f"workspace operational checks missing: {', '.join(missing)}")
+    failed = sorted(
+        check_id
+        for check_id, check in checks.items()
+        if check.get("passed") is not True
+    )
+    if failed:
+        errors.append(f"workspace operational checks failed: {', '.join(failed)}")
+    metrics = payload.get("metrics") or {}
+    if int(metrics.get("workspace_namespace_leakage", -1)) != 0:
+        errors.append("workspace operational namespace leakage is not zero")
+    if float(metrics.get("mandatory_event_capture", 0.0)) < 0.99:
+        errors.append("workspace operational mandatory event capture is below threshold")
+    if float(metrics.get("cross_client_citation_state_parity", 0.0)) != 1.0:
+        errors.append("workspace operational cross-client parity is not 1.0")
+    if float(metrics.get("packet_selection_p95_ms", 999999.0)) > 100.0:
+        errors.append("workspace operational p95 latency exceeds threshold")
+    if float(metrics.get("packet_selection_p99_ms", 999999.0)) > 250.0:
+        errors.append("workspace operational p99 latency exceeds threshold")
+    manifest = payload.get("source_manifest")
+    if not isinstance(manifest, Mapping):
+        errors.append("workspace operational source manifest is missing")
+    else:
+        errors.extend(validate_source_manifest(root, manifest, require_current_files=True))
+    return errors
+
+
+def _quality_freshness_status(root: Path) -> dict[str, Any]:
+    current_sha = _git_sha(root)
+    changed: list[dict[str, Any]] = []
+    allowed: list[dict[str, Any]] = []
+    dirty: list[str] = []
+    for relative, frozen_blob in QUALITY_CRITICAL_BLOBS.items():
+        current_blob = _git_blob_id(root, current_sha, relative)
+        if _git_worktree_dirty(root, relative):
+            dirty.append(relative)
+        if current_blob == frozen_blob:
+            continue
+        allow_reason = QUALITY_FRESHNESS_ALLOWLIST.get(
+            (relative, frozen_blob, current_blob)
+        )
+        item = {
+            "path": relative,
+            "frozen_blob": frozen_blob,
+            "current_blob": current_blob,
+        }
+        if allow_reason:
+            allowed.append({**item, "reason": allow_reason})
+        else:
+            changed.append(item)
+    result_blob = _git_blob_id(
+        root,
+        current_sha,
+        "benchmarks/workspace_experience_v5_benchmark_results.json",
+    )
+    if _git_worktree_dirty(
+        root,
+        "benchmarks/workspace_experience_v5_benchmark_results.json",
+    ):
+        dirty.append("benchmarks/workspace_experience_v5_benchmark_results.json")
+    result_ok = result_blob == FROZEN_V5_RESULT_BLOB
+    protocol_ok = workspace_experience_protocol_manifest()["sha256"] == WORKSPACE_EXPERIENCE_PROTOCOL_SHA256
+    quality_fresh = not changed and not dirty and result_ok and protocol_ok
+    return {
+        "quality_fresh": quality_fresh,
+        "status": "fresh" if quality_fresh else "blocked_new_independent_quality_evidence_required",
+        "frozen_source_sha": FROZEN_V5_QUALITY_SOURCE_SHA,
+        "current_source_sha": current_sha,
+        "critical_files": [
+            {"path": path, "frozen_blob": blob}
+            for path, blob in QUALITY_CRITICAL_BLOBS.items()
+        ],
+        "allowed_operational_changes": allowed,
+        "unallowed_quality_changes": changed,
+        "dirty_quality_files": dirty,
+        "v5_result_blob": result_blob,
+        "frozen_v5_result_blob": FROZEN_V5_RESULT_BLOB,
+        "v5_result_blob_ok": result_ok,
+        "protocol_sha256": WORKSPACE_EXPERIENCE_PROTOCOL_SHA256,
+        "protocol_ok": protocol_ok,
+    }
+
+
+def _git_blob_id(root: Path, source_sha: str, relative: str) -> str:
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", f"{source_sha}:{relative}"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    return result.stdout.strip() if result.returncode == 0 else ""
+
+
+def _git_worktree_dirty(root: Path, relative: str) -> bool:
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(root), "diff", "--quiet", "--", relative],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=5,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return True
+    return result.returncode != 0
 
 
 def _admission_gate_failures(metrics: dict[str, Any], thresholds: dict[str, Any]) -> list[str]:

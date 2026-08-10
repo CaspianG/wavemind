@@ -120,9 +120,15 @@ jobs:
           name: safe-product-admission-${{ github.sha }}
           path: safe-product-evidence
 
+      - uses: actions/download-artifact@v5
+        with:
+          name: workspace-experience-admission-${{ github.sha }}
+          path: workspace-experience-evidence
+
       - uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
           files: |
             dist/*
             safe-product-evidence/*
+            workspace-experience-evidence/*

@@ -1,8 +1,8 @@
 {
   "admitted": false,
-  "baseline_source_sha": "origin/main",
-  "claim_boundary": "This checked-in payload is a Goal 7 evidence snapshot. It is not an exact-current PR or main admission; exact verdicts are produced by CI artifacts on the current SHA. The goal remains blocked while Safe Product is required_current.",
-  "generated_at": "2026-08-10T02:15:02.518908+00:00",
+  "baseline_source_sha": null,
+  "claim_boundary": "This checked-in payload is a Goal 7 evidence snapshot. It is not an exact-current PR or main admission; exact verdicts are produced by CI artifacts on the current SHA. The goal remains blocked while current operational evidence or Safe Product is required_current.",
+  "generated_at": "2026-08-10T08:46:36.545244+00:00",
   "protocol": {
     "claim_boundary": "Local, provider-neutral workspace experience proof. No GPU, paid API, private client history, universal model-quality, or external service claim.",
     "comparison_modes": [
@@ -132,7 +132,7 @@
         "methodology_status": "historical_invalid_not_admission_evidence",
         "next_protocol": "v5",
         "protocol_commit": "8214d58",
-        "source_sha": "1b2e6bcba2a5c75fbf2b9364d4e1b2e7f0174069"
+        "source_sha": "e3e540c7c60324300050a241b5e90ffcde3b688b"
       },
       "id": "frozen-real-work-benchmark-v4",
       "requirement": "Historical invalid v4 protocol; not admission evidence.",
@@ -142,7 +142,67 @@
     {
       "artifact": "benchmarks/workspace_experience_v5_benchmark_results.json",
       "details": {
+        "evidence_scope": "frozen_quality",
         "failed_gates": [],
+        "freshness": {
+          "allowed_operational_changes": [
+            {
+              "current_blob": "527c070dc3a528dcda559779098ad5659e841d82",
+              "frozen_blob": "6cf07bb1a8fad1cc6c73143590d90aac3ba52991",
+              "path": "wavemind/workspace_experience.py",
+              "reason": "workspace config path hardening only; packet selection, compiler, runtime, firewall, and v5 protocol are unchanged"
+            }
+          ],
+          "critical_files": [
+            {
+              "frozen_blob": "e5c6281f1f3968937243d23d45f2d622472b184a",
+              "path": "wavemind/experience_compiler.py"
+            },
+            {
+              "frozen_blob": "4ef356bd7ee78a2d20648675c6596f9ba9764d16",
+              "path": "wavemind/experience_runtime.py"
+            },
+            {
+              "frozen_blob": "6cf07bb1a8fad1cc6c73143590d90aac3ba52991",
+              "path": "wavemind/workspace_experience.py"
+            },
+            {
+              "frozen_blob": "e66d6cbfba2b42f767380790484bab947f870f90",
+              "path": "wavemind/experience.py"
+            },
+            {
+              "frozen_blob": "ea9c9fb8968eb11fe597a406beec7c16596927df",
+              "path": "wavemind/memory_firewall.py"
+            },
+            {
+              "frozen_blob": "9597ae4f24a6e06b675adbbe78245dbcf26c4ab6",
+              "path": "benchmarks/workspace_experience_v5_manifest.json"
+            },
+            {
+              "frozen_blob": "84c638469fd5b8e8f0971fd811ba56afe34441f2",
+              "path": "benchmarks/workspace_experience_v5_manifest_builder.py"
+            },
+            {
+              "frozen_blob": "4b0fc7cf78df9499114f9e4da3bea54a4a3babcc",
+              "path": "benchmarks/workspace_experience_v5_benchmark.py"
+            },
+            {
+              "frozen_blob": "2a86995c02f7eca57a82283b37be4294b9e2be8b",
+              "path": "tests/test_workspace_experience_v5_benchmark.py"
+            }
+          ],
+          "current_source_sha": "e3e540c7c60324300050a241b5e90ffcde3b688b",
+          "dirty_quality_files": [],
+          "frozen_source_sha": "eb27a54c001a9169e7baf4bc299ee49fa86468bd",
+          "frozen_v5_result_blob": "2ed5b4f9d20c68ed2f24d1d92cd69ff1bc70baaf",
+          "protocol_ok": true,
+          "protocol_sha256": "fa2ebc36799b44ff54e74120da7dab3a475d40461a4963872069f5905beeb590",
+          "quality_fresh": true,
+          "status": "fresh",
+          "unallowed_quality_changes": [],
+          "v5_result_blob": "2ed5b4f9d20c68ed2f24d1d92cd69ff1bc70baaf",
+          "v5_result_blob_ok": true
+        },
         "manifest_sha256": "9fa1d31b4085b723baf2e4dacd6ea4be8b894e734ecc475329fdc53d5cd888b8",
         "metrics": {
           "clean_onboarding_seconds": 1.4325614000263158,
@@ -159,28 +219,53 @@
         "split": "heldout"
       },
       "id": "frozen-real-work-benchmark-v5",
-      "requirement": "New independent real workflow benchmark with exact case/procedure success, strongest static baseline, measured onboarding, and cross-surface replay.",
+      "requirement": "Frozen real workflow quality benchmark with exact case/procedure success, strongest static baseline, measured onboarding, and cross-surface replay.",
       "status": "implemented",
       "test": "tests/test_workspace_experience_v5_benchmark.py"
+    },
+    {
+      "artifact": "benchmarks/workspace_experience_operational_results.json",
+      "details": {
+        "current_source_sha": "e3e540c7c60324300050a241b5e90ffcde3b688b",
+        "reason": "current workspace operational evidence artifact missing"
+      },
+      "id": "current-workspace-operational-evidence",
+      "requirement": "Current-SHA HTTP workspace registry, authenticated namespace, restart persistence, and cross-surface replay evidence.",
+      "status": "required_current",
+      "test": "tests/test_workspace_experience_admission.py"
     },
     {
       "artifact": "benchmarks/workspace_experience_admission_results.json",
       "id": "workspace-experience-admission",
       "requirement": "Exact-SHA JSON/Markdown admission with all mandatory rows green.",
-      "status": "implemented",
+      "status": "blocked",
       "test": "tests/test_workspace_experience_admission.py"
     },
     {
       "artifact": "benchmarks/safe_product_admission_results.json",
       "details": {
-        "current_source_sha": "1b2e6bcba2a5c75fbf2b9364d4e1b2e7f0174069",
-        "reason": "safe product admission is not current for this source SHA",
+        "current_source_sha": "e3e540c7c60324300050a241b5e90ffcde3b688b",
+        "reason": "safe product admission is not current or failed validation for this source SHA",
         "result_status": "admitted",
         "source_sha": "92c539d0a0696c2dcb1a02d130a3be3bd5020635",
         "summary": {
           "checks_passed": 18,
           "checks_total": 18
-        }
+        },
+        "validator_errors": [
+          "safe product source SHA mismatch",
+          "source manifest file hash mismatch: .github/workflows/benchmark-leaderboard.yml",
+          "source manifest file hash mismatch: Dockerfile",
+          "source manifest file hash mismatch: docker-compose.yml",
+          "source manifest file hash mismatch: wavemind/api.py",
+          "source manifest file hash mismatch: wavemind/cli.py",
+          "source manifest file hash mismatch: wavemind/core.py",
+          "source manifest file hash mismatch: wavemind/evidence.py",
+          "source manifest file hash mismatch: wavemind/onboarding.py",
+          "source manifest file hash mismatch: wavemind/product_backup.py",
+          "source manifest file hash mismatch: wavemind/safe_product_admission.py",
+          "safe product mandatory checks are not all passing"
+        ]
       },
       "id": "safe-product-regression",
       "requirement": "Safe Product admission remains admitted on the same final source SHA.",
@@ -191,19 +276,19 @@
   "schema": "wavemind.workspace_experience_admission.v1",
   "source_manifest": {
     "algorithm": "sha256",
-    "digest": "1b4bca674f1ae3af4fb0c6ff87f35bf68e0054095ee99e1fd6f58ba9948fc586",
+    "digest": "1b8cf039061aa72b175b012eca121d2b56965721f4b070b3f40fcdbed481a301",
     "files": [
       {
         "path": "wavemind/workspace_experience.py",
-        "sha256": "577732e5231589e0d12c7736fabb16a221ba72fd8a1e04f5b656e3d468f2fc68"
+        "sha256": "f35a85c8f8c9da34d8f38bb6c9bfe6f9a921f8dda844da4b6ce8b3ac981d0744"
       },
       {
         "path": "wavemind/experience_runtime.py",
-        "sha256": "2744752efd3ae5ebb66cb6a44f31902f18087d1f860a9f76f030c7f6f5b6f001"
+        "sha256": "7b5469d7b7e885903c347b7a276f90c4d94043d0c5476c1452099df27737da6d"
       },
       {
         "path": "wavemind/experience_compiler.py",
-        "sha256": "502a16a3fa38b4d24fce31c8f0404d5be2fdc687d438523b694b85b06f7a94a4"
+        "sha256": "3b6c183002f57309dacf5c3b71f86a752b2c258f5454e65e0e1ee4d8c3c5d724"
       },
       {
         "path": "wavemind/experience.py",
@@ -211,15 +296,15 @@
       },
       {
         "path": "wavemind/workspace_experience_admission.py",
-        "sha256": "e5eb16cc9dd1b2155c33843acee0782e72c399aadac27766f0939f9a213133b8"
+        "sha256": "2c92e0cb502bba2836be444227b17fce06e01927d0d36b37e32ec2db3e323db4"
       },
       {
         "path": "wavemind/cli.py",
-        "sha256": "f5d12b52b0404abe4d696bdd031d6b9f1b7e57b2f89b0f4dcada07d486c840f7"
+        "sha256": "8b502c992f35daa133a21c0677f0aed5b549d0b0dbd7a4a146bcde4bd07bceb5"
       },
       {
         "path": "wavemind/api.py",
-        "sha256": "824afc8e4cc37cc907acaa0ec4aa0d5057d2d2cc10a0beecf439e394bb8781ac"
+        "sha256": "af08ac45772eaca3e7acc921bc9c86ac1f3d81b7efc19ba48a138dfdc1101e39"
       },
       {
         "path": "wavemind/integrations/mcp_experience.py",
@@ -231,7 +316,7 @@
       },
       {
         "path": "docs/WORKSPACE_EXPERIENCE_QUICKSTART.md",
-        "sha256": "e561f335ad858494ff9caf00a2202df7e72222f14ad0f177b42bd73aa3c9fbe8"
+        "sha256": "93a433c8524717bda6648275fef28c45ea340ac7d1d3aaacc60d3bd4336785f5"
       },
       {
         "path": "benchmarks/workspace_experience_manifest.json",
@@ -239,7 +324,7 @@
       },
       {
         "path": "benchmarks/workspace_experience_benchmark.py",
-        "sha256": "765b499fbbe96e238ff61a4a94958de5ae71ad5474c6557e6478714d8c1451aa"
+        "sha256": "aa4e8b81b3befab7d12591e95d61020eef25c2ced336978b7342242ed3cd196e"
       },
       {
         "path": "benchmarks/workspace_experience_v4_manifest.json",
@@ -247,7 +332,7 @@
       },
       {
         "path": "benchmarks/workspace_experience_v4_benchmark.py",
-        "sha256": "d128684f1d8a81610cc56067163a0b13d043e62a86aeaaf9d4bd97a54508b6fe"
+        "sha256": "fe4fc969142b242bcf6bebacce9f562398de0ff51c1c28aaa9b4165868cfc3aa"
       },
       {
         "path": "benchmarks/workspace_experience_v5_manifest.json",
@@ -255,35 +340,35 @@
       },
       {
         "path": "benchmarks/workspace_experience_v5_manifest_builder.py",
-        "sha256": "845a49fa8b03d7ff9d00b03d772d4ca9b2e77a8f7e1d8647dd99aad4565f8c80"
+        "sha256": "f5ee3527e37c743b7c2a8a6889576f1a098520bf5bd7cfcfcf039c227d0a7daf"
       },
       {
         "path": "benchmarks/workspace_experience_v5_benchmark.py",
-        "sha256": "03ed4cde142626a45bab98437c487a43c66b683b5b534eebfd9cd9e05bdfa016"
+        "sha256": "26d3e8b5544f2e140a416d53fbe45eb003435f52dc6fad20d2254f372a47e600"
       },
       {
         "path": "tests/test_workspace_experience.py",
-        "sha256": "339bdf1571e52d8b0a222ed0f7cbb377e9a642559f6d7dda9f56857fbd3840b0"
+        "sha256": "0b3fb895adb61446c793d4f0857657455c92cf93877b7fd44d797ec1534ee475"
       },
       {
         "path": "tests/test_workspace_experience_benchmark.py",
-        "sha256": "dc72d0d01dd35501869fe2afa17df1a3973bac1834a41e91e35cc91e65e2792d"
+        "sha256": "88dad8579d8899150431029f98be993a3e80d68809e5e740aa4732c8cd8e8187"
       },
       {
         "path": "tests/test_workspace_experience_v4_benchmark.py",
-        "sha256": "54efa1d4f82eb566800627ec2af98eac0882752c2edf565e30d58fddede7239d"
+        "sha256": "f3f0863e9a7c92b50398977df819dfbf3c60d4ecffe5a99d9d8a3e9bf98bde52"
       },
       {
         "path": "tests/test_workspace_experience_v5_benchmark.py",
-        "sha256": "c6830ba51331cd775750e94fa605fdc2d742ffd39c05683d479c440e38a4896a"
+        "sha256": "55cec234d2df40b243534b191eaa4d63f1e24cd5d220b2e13318b8df051afa22"
       },
       {
         "path": "tests/test_workspace_experience_admission.py",
-        "sha256": "eb12b66432bc7c95fafec60357e1369858e52e2d225e0072d140b769bd4a69e2"
+        "sha256": "8cadcf8d472a4cb2faa2788684dca0cc2f69f38279b5bdf7689a7c51c2399321"
       },
       {
         "path": "tests/test_experience_compiler.py",
-        "sha256": "8d4faeda094d06f2e99fa7b77aac0a65726ff22feead3e05ea3651c7af467b3c"
+        "sha256": "91720e2aefe5ad9b4f29b0d44f6d6eab13d15fa5c2d20b85d5d622b2ad2c45c5"
       },
       {
         "path": "tests/test_experience_runtime_contracts.py",
@@ -292,16 +377,16 @@
     ],
     "schema": "wavemind.workspace_experience_source_manifest.v1"
   },
-  "source_sha": "1b2e6bcba2a5c75fbf2b9364d4e1b2e7f0174069",
+  "source_sha": "e3e540c7c60324300050a241b5e90ffcde3b688b",
   "status": "blocked",
   "summary": {
-    "blocked": 0,
+    "blocked": 1,
     "failed": 0,
     "historical": 2,
-    "implemented": 10,
+    "implemented": 9,
     "missing": 0,
     "partial": 0,
-    "required_current": 1,
-    "total": 13
+    "required_current": 2,
+    "total": 14
   }
 }

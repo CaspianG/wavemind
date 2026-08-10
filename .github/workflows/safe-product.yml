@@ -143,3 +143,56 @@ jobs:
             ${{ runner.temp }}/quickstarts.json
             ${{ runner.temp }}/safe-product.json
             ${{ runner.temp }}/SAFE_PRODUCT_ADMISSION.md
+
+  workspace-experience:
+    name: workspace-experience exact-SHA admission
+    needs: admission
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install workspace admission dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,bench]"
+
+      - uses: actions/download-artifact@v5
+        with:
+          name: safe-product-admission-${{ github.sha }}
+          path: ${{ runner.temp }}/safe-product
+
+      - name: Generate exact-current workspace operational evidence
+        run: |
+          python benchmarks/workspace_experience_operational_evidence.py \
+            --output "${RUNNER_TEMP}/workspace-operational.json" \
+            --temp-root "${RUNNER_TEMP}/workspace-operational" \
+            --require-admitted
+
+      - name: Enforce Workspace Experience Admission
+        run: |
+          python benchmarks/workspace_experience_admission.py \
+            --safe-product "${RUNNER_TEMP}/safe-product/safe-product.json" \
+            --operational-evidence "${RUNNER_TEMP}/workspace-operational.json" \
+            --matrix-output "${RUNNER_TEMP}/workspace-experience-matrix.json" \
+            --matrix-markdown-output "${RUNNER_TEMP}/WORKSPACE_EXPERIENCE_ADMISSION_MATRIX.md" \
+            --output "${RUNNER_TEMP}/workspace-experience.json" \
+            --markdown-output "${RUNNER_TEMP}/WORKSPACE_EXPERIENCE_ADMISSION.md" \
+            --require-admitted
+
+      - name: Upload exact-current Workspace Experience evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: workspace-experience-admission-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/workspace-operational.json
+            ${{ runner.temp }}/workspace-experience-matrix.json
+            ${{ runner.temp }}/WORKSPACE_EXPERIENCE_ADMISSION_MATRIX.md
+            ${{ runner.temp }}/workspace-experience.json
+            ${{ runner.temp }}/WORKSPACE_EXPERIENCE_ADMISSION.md
