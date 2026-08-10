@@ -23,6 +23,17 @@ QUALITY_LEADERSHIP_ADMISSION_SCHEMA = "wavemind.quality_leadership_admission.v1"
 QUALITY_LEADERSHIP_PER_QUERY_SCHEMA = "wavemind.quality_leadership_per_query.v1"
 QUALITY_LEADERSHIP_SPLIT_MANIFEST_SCHEMA = "wavemind.quality_leadership_split_manifest.v1"
 PROTOCOL_REVISION = "quality-leadership-v1-20260810"
+FROZEN_V1_DATASET_REVISION = "quality-leadership-freeze-v1-20260810"
+FROZEN_V1_DEVELOPMENT_SPLIT_SHA256 = (
+    "e4345094922637414bec7f69a15cea9207380b1795b39eb53270da99b89965a2"
+)
+FROZEN_V1_DEVELOPMENT_CASE_COUNT = 18
+FROZEN_V1_DEVELOPMENT_CATEGORIES = {
+    "knowledge_update": 9,
+    "preference_update": 1,
+    "state_tracking": 2,
+    "workflow_gotcha": 6,
+}
 
 DEFAULT_PROTOCOL_PATH = Path("benchmarks/quality_leadership_protocol.json")
 DEFAULT_RESULTS_PATH = Path("benchmarks/quality_leadership_results.json")
@@ -847,6 +858,35 @@ def _validate_protocol_frozen(payload: Mapping[str, Any] | None) -> list[str]:
         errors.append("new quality dataset development_split_sha256 mismatch")
     if expected_heldout_digest and dataset.get("held_out_split_sha256") != expected_heldout_digest:
         errors.append("new quality dataset held_out_split_sha256 mismatch")
+    if dataset.get("revision") == FROZEN_V1_DATASET_REVISION:
+        errors.extend(
+            _validate_frozen_v1_development_split(
+                development_split,
+                declared_digest=dataset.get("development_split_sha256"),
+                computed_digest=expected_dev_digest,
+            )
+        )
+    return errors
+
+
+def _validate_frozen_v1_development_split(
+    split: Any,
+    *,
+    declared_digest: Any,
+    computed_digest: str | None,
+) -> list[str]:
+    errors: list[str] = []
+    if declared_digest != FROZEN_V1_DEVELOPMENT_SPLIT_SHA256:
+        errors.append("frozen v1 development_split_sha256 differs from preregistered split")
+    if computed_digest and computed_digest != FROZEN_V1_DEVELOPMENT_SPLIT_SHA256:
+        errors.append("frozen v1 development split content differs from preregistered split")
+    if not isinstance(split, Mapping):
+        return errors
+    if _as_int(split.get("case_count")) != FROZEN_V1_DEVELOPMENT_CASE_COUNT:
+        errors.append("frozen v1 development split case_count changed")
+    categories = split.get("categories")
+    if dict(categories or {}) != FROZEN_V1_DEVELOPMENT_CATEGORIES:
+        errors.append("frozen v1 development split categories changed")
     return errors
 
 

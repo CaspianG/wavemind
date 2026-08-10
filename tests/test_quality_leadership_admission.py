@@ -616,6 +616,13 @@ def test_freeze_builder_reserves_memory_agent_bench_without_opening_rows(tmp_pat
     design = dataset["development_gate_design_analysis"]
     row = {row["id"]: row for row in result["rows"]}["protocol-frozen-before-heldout"]
     assert row["status"] == "implemented"
+    assert dataset["development_split"]["case_count"] == 18
+    assert dataset["development_split"]["categories"] == {
+        "knowledge_update": 9,
+        "preference_update": 1,
+        "state_tracking": 2,
+        "workflow_gotcha": 6,
+    }
     assert dataset["development_split_sha256"] == (
         "e4345094922637414bec7f69a15cea9207380b1795b39eb53270da99b89965a2"
     )
@@ -629,6 +636,46 @@ def test_freeze_builder_reserves_memory_agent_bench_without_opening_rows(tmp_pat
     assert "row contents are not opened" in " ".join(held_out["leakage_controls"])
     assert result["status"] == "blocked"
     assert result["admitted"] is False
+
+
+def test_frozen_v1_protocol_rejects_post_result_development_refreeze(
+    tmp_path: Path,
+) -> None:
+    protocol = build_frozen_protocol(
+        root=PROJECT_ROOT,
+        memory_agent_metadata=_memory_agent_metadata(),
+    )
+    dataset = protocol["new_quality_dataset"]
+    development_split = dataset["development_split"]
+    development_split["case_count"] = 24
+    development_split["categories"] = {
+        "knowledge_update": 9,
+        "preference_update": 3,
+        "state_tracking": 6,
+        "workflow_gotcha": 6,
+    }
+    development_split["case_fingerprints"] = [
+        *development_split["case_fingerprints"],
+        *[f"wavemind-dev:post-result-added-{index}" for index in range(6)],
+    ]
+    dataset["development_split_sha256"] = _split_digest(development_split)
+    protocol = attach_artifact_integrity(protocol)
+    protocol_path = tmp_path / DEFAULT_PROTOCOL_PATH
+    protocol_path.parent.mkdir(parents=True, exist_ok=True)
+    protocol_path.write_text(json.dumps(protocol), encoding="utf-8")
+
+    result = evaluate_quality_leadership_admission(
+        root=PROJECT_ROOT,
+        protocol_path=protocol_path,
+    )
+
+    row = {row["id"]: row for row in result["rows"]}["protocol-frozen-before-heldout"]
+    assert row["status"] == "blocked"
+    errors = " ".join(row["details"]["errors"])
+    assert "frozen v1 development_split_sha256 differs" in errors
+    assert "frozen v1 development split content differs" in errors
+    assert "frozen v1 development split case_count changed" in errors
+    assert "frozen v1 development split categories changed" in errors
 
 
 def test_current_development_ceiling_blocks_frozen_protocol_before_heldout(
