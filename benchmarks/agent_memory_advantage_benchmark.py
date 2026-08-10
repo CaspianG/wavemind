@@ -42,6 +42,13 @@ Runner = Callable[[EvidenceDataset, Any, int], EvidenceMetrics]
 MEASUREMENT_TRIALS = 5
 BOOTSTRAP_SAMPLES = 10_000
 BOOTSTRAP_SEED = 20260728
+MEM0_NON_COMPARABLE_REASON = (
+    "Mem0 OSS is installed, but this Mem0 version only accepts configured "
+    "embedder providers for Memory.from_config; the shared WaveMind hash-384 "
+    "encoder is not available as a Mem0 provider in this benchmark. The Mem0 "
+    "row is therefore excluded from same-embedding comparison until a verified "
+    "adapter exists."
+)
 
 
 def _utc_now() -> str:
@@ -247,6 +254,9 @@ def _aggregate_trials(
     return {
         "engine": engine,
         "status": "pass",
+        "eligible_for_comparison": True,
+        "embedding_comparable": True,
+        "same_embedding_as_wavemind": True,
         "measurement_trials": len(trials),
         "task_success_rate": task_success,
         "task_success_ci95": _bootstrap_ci(task_values),
@@ -685,6 +695,8 @@ def run_benchmark(
                     "status": "skipped",
                     "reason": "disabled_by_cli",
                     "eligible_for_comparison": False,
+                    "embedding_comparable": False,
+                    "same_embedding_as_wavemind": False,
                 }
             )
             continue
@@ -699,6 +711,20 @@ def run_benchmark(
                         "no imitation substituted"
                     ),
                     "eligible_for_comparison": False,
+                    "embedding_comparable": False,
+                    "same_embedding_as_wavemind": False,
+                }
+            )
+            continue
+        if engine == "Mem0 OSS":
+            skipped.append(
+                {
+                    "engine": engine,
+                    "status": "skipped",
+                    "reason": MEM0_NON_COMPARABLE_REASON,
+                    "eligible_for_comparison": False,
+                    "embedding_comparable": False,
+                    "same_embedding_as_wavemind": False,
                 }
             )
             continue
@@ -720,6 +746,8 @@ def run_benchmark(
                     "status": "skipped",
                     "reason": f"same-protocol adapter failed: {type(exc).__name__}: {exc}",
                     "eligible_for_comparison": False,
+                    "embedding_comparable": False,
+                    "same_embedding_as_wavemind": False,
                 }
             )
 
@@ -727,8 +755,14 @@ def run_benchmark(
         memory_os,
         wavemind_core,
     )
+    comparable_baselines = [
+        row
+        for row in rows
+        if row["engine"] != "WaveMind + Memory OS"
+        and row.get("eligible_for_comparison") is not False
+    ]
     strongest_baseline = max(
-        (row for row in rows if row["engine"] != "WaveMind + Memory OS"),
+        comparable_baselines,
         key=lambda row: float(row["combined_score"]),
     )
     return {
@@ -749,6 +783,12 @@ def run_benchmark(
             "same_memories": True,
             "same_queries": True,
             "same_embeddings": True,
+            "same_embeddings_scope": (
+                "WaveMind Core, WaveMind + Memory OS, Static vector, Full "
+                "context, No memory, Chroma static, Qdrant static, and "
+                "LangGraph persistent memory. Mem0 OSS is skipped until it "
+                "can consume the same frozen encoder."
+            ),
             "same_top_k": True,
             "embedding": {
                 "kind": "hash",

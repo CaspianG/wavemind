@@ -221,7 +221,10 @@ def quality_leadership_results_from_diagnostics(
     missing_competitors = sorted(REQUIRED_LOCAL_COMPETITORS - {
         str(row.get("family"))
         for row in competitor_runs
-        if row.get("status") == "pass" and row.get("simulated") is not True
+        if row.get("status") == "pass"
+        and row.get("simulated") is not True
+        and row.get("eligible_for_comparison") is True
+        and row.get("embedding_comparable") is True
     })
     if missing_competitors:
         gate_errors.append(f"missing real local competitors: {', '.join(missing_competitors)}")
@@ -876,14 +879,26 @@ def _competitors_from_agent_memory(payload: Mapping[str, Any] | None) -> list[di
         family = family_by_engine.get(engine)
         if not family:
             continue
+        eligible = row.get("eligible_for_comparison") is True
+        embedding_comparable = (
+            row.get("embedding_comparable") is True
+            and row.get("same_embedding_as_wavemind") is True
+        )
         rows.append(
             {
                 "engine": engine,
                 "family": family,
                 "status": row.get("status", "pass"),
+                "eligible_for_comparison": eligible,
+                "embedding_comparable": embedding_comparable,
                 "simulated": False,
                 "task_success_rate": row.get("task_success_rate"),
                 "p95_latency_ms": row.get("p95_latency_ms"),
+                "reason": (
+                    row.get("reason")
+                    if eligible and embedding_comparable
+                    else "competitor row lacks same-embedding comparability proof"
+                ),
             }
         )
     for row in payload.get("skipped") or []:
@@ -898,6 +913,8 @@ def _competitors_from_agent_memory(payload: Mapping[str, Any] | None) -> list[di
                 "engine": engine,
                 "family": family,
                 "status": "skipped",
+                "eligible_for_comparison": False,
+                "embedding_comparable": False,
                 "simulated": False,
                 "reason": row.get("reason"),
             }
@@ -1071,24 +1088,43 @@ def _dynamic_public_details(payload: Mapping[str, Any] | None) -> dict[str, Any]
 
 def _competitor_status(payload: Mapping[str, Any] | None) -> str:
     details = _competitor_details(payload)
-    return "implemented" if not details["missing"] and not details["simulated"] else "blocked"
+    return (
+        "implemented"
+        if not details["missing"]
+        and not details["simulated"]
+        and not details["non_comparable"]
+        else "blocked"
+    )
 
 
 def _competitor_details(payload: Mapping[str, Any] | None) -> dict[str, Any]:
     rows = payload.get("competitor_runs") if isinstance(payload, Mapping) else []
     observed: set[str] = set()
     simulated: list[str] = []
+    non_comparable: list[str] = []
     if isinstance(rows, list):
         for row in rows:
             if not isinstance(row, Mapping):
                 continue
             family = str(row.get("family") or "")
-            if row.get("status") == "pass" and row.get("simulated") is not True:
+            if (
+                row.get("status") == "pass"
+                and row.get("simulated") is not True
+                and row.get("eligible_for_comparison") is True
+                and row.get("embedding_comparable") is True
+            ):
                 observed.add(family)
+            elif row.get("status") == "pass" and family:
+                non_comparable.append(family)
             if row.get("simulated") is True:
                 simulated.append(family or str(row.get("engine") or "unknown"))
     missing = sorted(REQUIRED_LOCAL_COMPETITORS - observed)
-    return {"observed": sorted(observed), "missing": missing, "simulated": simulated}
+    return {
+        "observed": sorted(observed),
+        "missing": missing,
+        "simulated": simulated,
+        "non_comparable": sorted(set(non_comparable)),
+    }
 
 
 def _confidence_status(payload: Mapping[str, Any] | None) -> str:

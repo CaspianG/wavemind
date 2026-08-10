@@ -57,3 +57,29 @@ def test_advantage_benchmark_reports_paired_confidence_and_honest_skips():
     assert skipped["Qdrant static"]["reason"] == "disabled_by_cli"
     assert skipped["Mem0 OSS"]["reason"] == "disabled_by_cli"
     assert skipped["LangGraph persistent memory"]["reason"] == "disabled_by_cli"
+
+
+def test_mem0_is_not_comparable_without_shared_embedding_adapter(monkeypatch):
+    from benchmarks import agent_memory_advantage_benchmark as benchmark
+
+    monkeypatch.setattr(
+        benchmark,
+        "_module_available",
+        lambda module: module in {"mem0", "fastembed", "qdrant_client"},
+    )
+
+    payload = benchmark.run_benchmark(
+        measurement_trials=5,
+        include_chroma=False,
+        include_qdrant=False,
+        include_mem0=True,
+        include_langgraph=False,
+    )
+
+    skipped = {row["engine"]: row for row in payload["skipped"]}
+    mem0 = skipped["Mem0 OSS"]
+    assert mem0["eligible_for_comparison"] is False
+    assert mem0["embedding_comparable"] is False
+    assert mem0["same_embedding_as_wavemind"] is False
+    assert "shared WaveMind hash-384 encoder" in mem0["reason"]
+    assert payload["strongest_local_baseline"]["engine"] != "Mem0 OSS"
