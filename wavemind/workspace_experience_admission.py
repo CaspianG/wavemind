@@ -68,9 +68,10 @@ def evaluate_workspace_experience_admission_matrix(
     baseline_source_sha: str | None = None,
 ) -> dict[str, Any]:
     root_path = Path(root)
-    benchmark_status, benchmark_details = _benchmark_status(root_path)
+    _, benchmark_details = _benchmark_status(root_path)
     v5_status, v5_details = _v5_benchmark_status(root_path)
-    admission_status = "blocked" if benchmark_status == "failed" else "missing"
+    safe_product_status, safe_product_details = _safe_product_status(root_path)
+    admission_status = "implemented" if v5_status == "implemented" else "blocked"
     rows = [
         _row(
             "baseline-gap-audit",
@@ -131,7 +132,7 @@ def evaluate_workspace_experience_admission_matrix(
         _row(
             "historical-v3-checksum-selection-experiment",
             "Historical failed v3 checksum-selection experiment; not real-work proof.",
-            benchmark_status,
+            "historical",
             "benchmarks/workspace_experience_benchmark_results.json",
             "tests/test_workspace_experience_benchmark.py",
             details=benchmark_details,
@@ -139,7 +140,7 @@ def evaluate_workspace_experience_admission_matrix(
         _row(
             "frozen-real-work-benchmark-v4",
             "Historical invalid v4 protocol; not admission evidence.",
-            "failed",
+            "historical",
             "benchmarks/workspace_experience_v4_manifest.json",
             "tests/test_workspace_experience_v4_benchmark.py",
             details={
@@ -169,16 +170,19 @@ def evaluate_workspace_experience_admission_matrix(
         _row(
             "safe-product-regression",
             "Safe Product admission remains admitted on the same final source SHA.",
-            "required_current",
+            safe_product_status,
             "benchmarks/safe_product_admission_results.json",
             ".github/workflows/safe-product.yml",
+            details=safe_product_details,
         ),
     ]
-    complete = all(row["status"] == "implemented" for row in rows)
-    failed = any(row["status"] == "failed" for row in rows)
+    mandatory_rows = [row for row in rows if row["status"] != "historical"]
+    complete = all(row["status"] == "implemented" for row in mandatory_rows)
+    failed = any(row["status"] == "failed" for row in mandatory_rows)
+    blocked = any(row["status"] in {"blocked", "required_current"} for row in mandatory_rows)
     return {
         "schema": WORKSPACE_EXPERIENCE_ADMISSION_SCHEMA,
-        "status": "admitted" if complete else ("blocked" if failed else "gap_audit"),
+        "status": "admitted" if complete else ("blocked" if failed or blocked else "gap_audit"),
         "admitted": complete,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "baseline_source_sha": baseline_source_sha,
@@ -191,6 +195,7 @@ def evaluate_workspace_experience_admission_matrix(
             "missing": sum(row["status"] == "missing" for row in rows),
             "failed": sum(row["status"] == "failed" for row in rows),
             "blocked": sum(row["status"] == "blocked" for row in rows),
+            "historical": sum(row["status"] == "historical" for row in rows),
             "required_current": sum(row["status"] == "required_current" for row in rows),
             "total": len(rows),
         },
@@ -390,6 +395,24 @@ def _v5_benchmark_status(root: Path) -> tuple[str, dict[str, Any]]:
     return "failed", details
 
 
+def _safe_product_status(root: Path) -> tuple[str, dict[str, Any]]:
+    path = root / "benchmarks" / "safe_product_admission_results.json"
+    if not path.exists():
+        return "required_current", {"reason": "safe product artifact missing"}
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    current_sha = _git_sha(root)
+    details = {
+        "result_status": payload.get("status"),
+        "source_sha": payload.get("source_sha"),
+        "current_source_sha": current_sha,
+        "summary": payload.get("summary"),
+    }
+    if payload.get("status") == "admitted" and payload.get("source_sha") == current_sha:
+        return "implemented", details
+    details["reason"] = "safe product admission is not current for this source SHA"
+    return "required_current", details
+
+
 def _admission_gate_failures(metrics: dict[str, Any], thresholds: dict[str, Any]) -> list[str]:
     failed_gates: list[str] = []
     if float(metrics.get("task_success_lift_pp", -1.0)) < thresholds["task_success_lift_pp_min"]:
@@ -464,6 +487,7 @@ def _source_manifest(root: Path) -> dict[str, Any]:
         "tests/test_workspace_experience_benchmark.py",
         "tests/test_workspace_experience_v4_benchmark.py",
         "tests/test_workspace_experience_v5_benchmark.py",
+        "tests/test_experience_compiler.py",
         "tests/test_experience_runtime_contracts.py",
     ]
     entries = []

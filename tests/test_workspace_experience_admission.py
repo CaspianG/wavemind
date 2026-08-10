@@ -34,16 +34,17 @@ def test_workspace_experience_gap_matrix_is_not_final_admission() -> None:
     assert payload["admitted"] is False
     assert payload["baseline_source_sha"] == "baseline-sha"
     assert payload["summary"] == {
-        "implemented": 8,
+        "implemented": 10,
         "partial": 0,
         "missing": 0,
-        "failed": 2,
-        "blocked": 2,
+        "failed": 0,
+        "blocked": 0,
+        "historical": 2,
         "required_current": 1,
         "total": 13,
     }
     rows = {row["id"]: row for row in payload["rows"]}
-    assert rows["historical-v3-checksum-selection-experiment"]["status"] == "failed"
+    assert rows["historical-v3-checksum-selection-experiment"]["status"] == "historical"
     assert rows["historical-v3-checksum-selection-experiment"]["details"]["failed_gates"] == [
         "task_success_lift_pp",
         "repeated_known_error_reduction",
@@ -54,7 +55,7 @@ def test_workspace_experience_gap_matrix_is_not_final_admission() -> None:
         ]
         == "historical_failed_checksum_selection_not_real_work"
     )
-    assert rows["frozen-real-work-benchmark-v4"]["status"] == "failed"
+    assert rows["frozen-real-work-benchmark-v4"]["status"] == "historical"
     assert (
         rows["frozen-real-work-benchmark-v4"]["details"]["methodology_status"]
         == "historical_invalid_not_admission_evidence"
@@ -62,13 +63,13 @@ def test_workspace_experience_gap_matrix_is_not_final_admission() -> None:
     assert "hardcoded" in " ".join(
         rows["frozen-real-work-benchmark-v4"]["details"]["invalid_reasons"]
     )
-    assert rows["frozen-real-work-benchmark-v5"]["status"] == "blocked"
+    assert rows["frozen-real-work-benchmark-v5"]["status"] == "implemented"
     assert rows["frozen-real-work-benchmark-v5"]["details"]["result_status"] == "passed"
-    assert rows["frozen-real-work-benchmark-v5"]["details"]["split"] == "dev"
+    assert rows["frozen-real-work-benchmark-v5"]["details"]["split"] == "heldout"
     assert rows["frozen-real-work-benchmark-v5"]["details"]["failed_gates"] == []
-    assert "development diagnostic" in rows["frozen-real-work-benchmark-v5"]["details"]["not_admission_evidence_reason"]
-    assert rows["workspace-experience-admission"]["status"] == "blocked"
+    assert rows["workspace-experience-admission"]["status"] == "implemented"
     assert rows["safe-product-regression"]["status"] == "required_current"
+    assert "not current" in rows["safe-product-regression"]["details"]["reason"]
     assert rows["workspace-identity-isolation"]["artifact"]
     assert rows["workspace-identity-isolation"]["test"]
     assert payload["source_manifest"]["files"]
@@ -89,6 +90,7 @@ def test_workspace_experience_admission_markdown_and_write(tmp_path: Path) -> No
     written = json.loads(json_path.read_text(encoding="utf-8"))
     markdown = md_path.read_text(encoding="utf-8")
     assert written["source_manifest"]["digest"] == payload["source_manifest"]["digest"]
-    assert "| `workspace-experience-admission` | `blocked` |" in markdown
+    assert "| `workspace-experience-admission` | `implemented` |" in markdown
+    assert "| `safe-product-regression` | `required_current` |" in markdown
     assert "Goal 7 gap audit" in markdown
     assert render_workspace_experience_admission_markdown(payload) == markdown
