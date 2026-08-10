@@ -4,6 +4,21 @@ Notable user-facing and operational changes are recorded here. Git tags,
 GitHub Releases, checked evidence artifacts, and package versions remain the
 authoritative release sources.
 
+## [2.12.1] - 2026-08-10
+
+- Added exact-current Workspace Experience admission to the Safe Product
+  workflow, producing JSON, Markdown, manifest, and operational evidence
+  artifacts for the current source SHA.
+- Preserved frozen v5 real-work quality evidence as immutable historical
+  quality proof while adding a freshness gate for quality-critical files.
+- Added current operational replay evidence for server-side workspace registry,
+  namespace authorization, restart persistence, and HTTP cross-client packet
+  retrieval.
+- Redacted operational benchmark CLI stdout so evidence JSON stays in the
+  artifact file without logging secret-bearing payloads.
+
+Release: [WaveMind v2.12.1](https://github.com/CaspianG/wavemind/releases/tag/v2.12.1)
+
 ## [2.12.0] - 2026-08-10
 
 - Added Verified Workspace Experience for coding and work agents: stable
@@ -122,6 +137,7 @@ Release: [WaveMind v2.6.3](https://github.com/CaspianG/wavemind/releases/tag/v2.
 
 | Version | Published | Notes |
 |---|---|---|
+| [v2.12.1](https://github.com/CaspianG/wavemind/releases/tag/v2.12.1) | 2026-08-10 | Exact-current Workspace Experience admission and release evidence |
 | [v2.12.0](https://github.com/CaspianG/wavemind/releases/tag/v2.12.0) | 2026-08-10 | Verified Workspace Experience and secure workspace HTTP isolation |
 | [v2.11.0](https://github.com/CaspianG/wavemind/releases/tag/v2.11.0) | 2026-08-09 | Safe Trusted Product foundation and secure service runtimes |
 | [v2.10.0](https://github.com/CaspianG/wavemind/releases/tag/v2.10.0) | 2026-08-03 | Verified Agent Experience Runtime and honest quality evidence |
@@ -137,6 +153,7 @@ Release: [WaveMind v2.6.3](https://github.com/CaspianG/wavemind/releases/tag/v2.
 See the complete [release archive](https://github.com/CaspianG/wavemind/releases)
 for earlier versions and attached evidence bundles.
 
+[2.12.1]: https://github.com/CaspianG/wavemind/compare/v2.12.0...v2.12.1
 [2.12.0]: https://github.com/CaspianG/wavemind/compare/v2.11.0...v2.12.0
 [2.11.0]: https://github.com/CaspianG/wavemind/compare/v2.10.0...v2.11.0
 [2.10.0]: https://github.com/CaspianG/wavemind/compare/v2.9.0...v2.10.0
