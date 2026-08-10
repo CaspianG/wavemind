@@ -8,11 +8,11 @@
     "results": "benchmarks/quality_leadership_results.json"
   },
   "claim_boundary": "Quality leadership is blocked until a new frozen protocol, bounded development gate, single untouched held-out run, real local competitors, current Safe Product and Workspace Experience evidence, and exact-main CI evidence all pass. The historical Goal 4 failure remains public.",
-  "expected_source_sha": "28c18b96d546b0d3e4fbeb321c30b8963e2e3be6",
-  "generated_at": "2026-08-10T21:40:15Z",
+  "expected_source_sha": "be873e720fe3a9eba4b73566efb56e1c488c5f77",
+  "generated_at": "2026-08-10T21:58:16Z",
   "integrity": {
     "algorithm": "sha256",
-    "payload_sha256": "88d8c4857808d952fbe574b0a8ce1c682356b1881b5fb9923345d359e00da8ea",
+    "payload_sha256": "915753c75b3a00ed87d5e90ece55cd3348675a1d81acc32694a864db18f2e917",
     "schema": "wavemind.artifact_integrity.v1"
   },
   "next_actions": [
@@ -26,8 +26,8 @@
     {
       "artifact": "git rev-parse HEAD",
       "details": {
-        "expected_source_sha": "28c18b96d546b0d3e4fbeb321c30b8963e2e3be6",
-        "source_sha": "28c18b96d546b0d3e4fbeb321c30b8963e2e3be6"
+        "expected_source_sha": "be873e720fe3a9eba4b73566efb56e1c488c5f77",
+        "source_sha": "be873e720fe3a9eba4b73566efb56e1c488c5f77"
       },
       "id": "source-sha-exact",
       "requirement": "Admission is evaluated against the exact current source SHA.",
@@ -263,8 +263,8 @@
     {
       "artifact": "benchmarks/quality_leadership_results.json",
       "details": {
-        "p95_overhead_ms": -1.1677999864332378,
-        "p95_overhead_ratio": -0.36354013690279435,
+        "p95_overhead_ms": -0.23049995070323348,
+        "p95_overhead_ratio": -0.11581748321031254,
         "targets": {
           "p95_overhead_ms": 5.0,
           "p95_overhead_ratio": 0.2
@@ -366,7 +366,7 @@
   "schema": "wavemind.quality_leadership_admission.v1",
   "source_manifest": {
     "algorithm": "sha256",
-    "digest": "e7635cbffb378cfc894fdd6bc514e8189d772c7f5b4f58c89a966845ada12672",
+    "digest": "c1b029b359f696f7ae024e283ce8261d60865378d9d636e804671599baabb2f8",
     "files": [
       {
         "path": "benchmarks/agent_memory_advantage_benchmark.py",
@@ -430,7 +430,7 @@
       },
       {
         "path": "wavemind/quality_leadership_admission.py",
-        "sha256": "3c51b268cb3cc5d6567144424ea367b7f86ada49dc098e92b42f7f26c236aa59"
+        "sha256": "dbd0175d3939623c13404cc6ccb05c8ad4bd8fddabb759c1d5af445d22f427cd"
       },
       {
         "path": "wavemind/workspace_experience_admission.py",
@@ -439,7 +439,7 @@
     ],
     "schema": "wavemind.source_manifest.v1"
   },
-  "source_sha": "28c18b96d546b0d3e4fbeb321c30b8963e2e3be6",
+  "source_sha": "be873e720fe3a9eba4b73566efb56e1c488c5f77",
   "status": "blocked",
   "summary": {
     "blocked": 9,
