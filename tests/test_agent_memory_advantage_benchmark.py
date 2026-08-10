@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 
 def test_dynamic_dataset_has_two_provable_memory_categories():
     from benchmarks.agent_memory_advantage_benchmark import build_dynamic_dataset
@@ -60,7 +62,10 @@ def test_advantage_benchmark_reports_paired_confidence_and_honest_skips():
 
 
 def test_mem0_shared_embedding_adapter_uses_frozen_encoder():
-    from benchmarks.agent_memory_advantage_benchmark import _Mem0SharedEmbedding
+    from benchmarks.agent_memory_advantage_benchmark import (
+        _Mem0SharedEmbedding,
+        _Mem0SharedEmbeddingFactory,
+    )
     from wavemind.encoders import create_text_encoder
 
     encoder = create_text_encoder(kind="hash", vector_dim=384)
@@ -73,3 +78,10 @@ def test_mem0_shared_embedding_adapter_uses_frozen_encoder():
     assert adapter.embed_batch([text], "add") == [adapter.embed(text, "add")]
     assert adapter.embed_calls == 3
     assert adapter.embed_batch_calls == 1
+
+    factory_adapter = _Mem0SharedEmbeddingFactory(
+        SimpleNamespace(model=encoder, embedding_dims=384)
+    )
+    assert factory_adapter.config["provider"] == "wavemind-shared"
+    assert factory_adapter.config["vector_dim"] == 384
+    assert factory_adapter.embed(text, "search") == encoder.encode_vector(text).astype(float).tolist()

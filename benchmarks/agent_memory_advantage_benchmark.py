@@ -343,6 +343,11 @@ class _Mem0SharedEmbedding:
         return [self.embed(text, memory_action) for text in texts]
 
 
+class _Mem0SharedEmbeddingFactory(_Mem0SharedEmbedding):
+    def __init__(self, config: Any):
+        super().__init__(config.model)
+
+
 def _vector_sha256(values: list[float]) -> str:
     payload = json.dumps(
         [round(float(value), 8) for value in values],
@@ -389,37 +394,42 @@ def run_mem0_oss(
     logging.getLogger("mem0.utils.spacy_models").setLevel(logging.ERROR)
 
     from mem0 import Memory
+    from mem0.utils.factory import EmbedderFactory
 
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
-        config = {
-            "llm": {
-                "provider": "openai",
-                "config": {"api_key": "dummy-not-used-with-infer-false"},
-            },
-            "embedder": {
-                "provider": "fastembed",
-                "config": {"model": "BAAI/bge-small-en-v1.5"},
-            },
-            "vector_store": {
-                "provider": "qdrant",
-                "config": {
-                    "path": str(root / "qdrant"),
-                    "collection_name": "wavemind_quality_leadership_mem0",
-                    "embedding_model_dims": 384,
-                },
-            },
-            "history_db_path": str(root / "history.db"),
-        }
-        memory = Memory.from_config(config)
-        shared_embedding = _Mem0SharedEmbedding(encoder)
-        memory.embedding_model = shared_embedding
-        probe_text = "wavemind shared embedding runtime proof"
-        expected_probe = shared_embedding.embed(probe_text)
-        actual_probe = memory.embedding_model.embed(probe_text)
-        runtime_class = type(memory.embedding_model).__name__
-        probe_matches = actual_probe == expected_probe
+        original_fastembed_factory = EmbedderFactory.provider_to_class.get("fastembed")
+        EmbedderFactory.provider_to_class["fastembed"] = (
+            f"{_Mem0SharedEmbeddingFactory.__module__}."
+            f"{_Mem0SharedEmbeddingFactory.__name__}"
+        )
+        memory: Any | None = None
         try:
+            config = {
+                "llm": {
+                    "provider": "openai",
+                    "config": {"api_key": "dummy-not-used-with-infer-false"},
+                },
+                "embedder": {
+                    "provider": "fastembed",
+                    "config": {"model": encoder, "embedding_dims": 384},
+                },
+                "vector_store": {
+                    "provider": "chroma",
+                    "config": {
+                        "path": str(root / "chroma"),
+                        "collection_name": "wavemind_quality_leadership_mem0",
+                    },
+                },
+                "history_db_path": str(root / "history.db"),
+            }
+            memory = Memory.from_config(config)
+            shared_embedding = memory.embedding_model
+            probe_text = "wavemind shared embedding runtime proof"
+            expected_probe = shared_embedding.embed(probe_text)
+            actual_probe = memory.embedding_model.embed(probe_text)
+            runtime_class = type(memory.embedding_model).__name__
+            probe_matches = actual_probe == expected_probe
             for item in dataset.memories:
                 memory.add(
                     item.text,
@@ -452,8 +462,13 @@ def run_mem0_oss(
                     "Mem0 did not use the shared WaveMind embedding runtime"
                 )
         finally:
-            memory.close()
-            del memory
+            if original_fastembed_factory is not None:
+                EmbedderFactory.provider_to_class["fastembed"] = original_fastembed_factory
+            else:
+                EmbedderFactory.provider_to_class.pop("fastembed", None)
+            if memory is not None:
+                memory.close()
+                del memory
             gc.collect()
     metrics = compute_evidence_metrics(
         dataset.queries,
@@ -739,7 +754,7 @@ def run_benchmark(
         ("Qdrant static", ("qdrant_client",), run_qdrant_static, include_qdrant),
         (
             "Mem0 OSS",
-            ("mem0", "fastembed", "qdrant_client"),
+            ("mem0", "chromadb"),
             run_mem0_oss,
             include_mem0,
         ),

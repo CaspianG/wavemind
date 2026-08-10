@@ -274,7 +274,12 @@ def test_checked_in_quality_leadership_admission_blocks_without_new_evidence() -
     assert payload["status"] == "blocked"
     assert payload["admitted"] is False
     assert rows["goal4-failure-preserved"]["status"] == "implemented"
-    assert rows["protocol-frozen-before-heldout"]["status"] == expected_freeze_status
+    assert rows["protocol-frozen-before-heldout"]["status"] == "blocked"
+    assert any(
+        "category improvement ceiling below threshold" in error
+        for error in rows["protocol-frozen-before-heldout"]["details"]["errors"]
+    )
+    assert expected_freeze_status == "implemented"
     assert rows["development-go-no-go"]["status"] == "blocked"
     assert rows["heldout-opened-once"]["status"] == "blocked"
 
@@ -547,6 +552,7 @@ def test_protocol_threshold_weakening_blocks_admission(tmp_path: Path) -> None:
     result = evaluate_quality_leadership_admission(
         root=PROJECT_ROOT,
         protocol_path=protocol_path,
+        results_path=tmp_path / "missing-results.json",
     )
 
     row = {row["id"]: row for row in result["rows"]}["protocol-snapshot-current"]
@@ -563,6 +569,7 @@ def test_frozen_protocol_requires_real_split_manifest(tmp_path: Path) -> None:
     result = evaluate_quality_leadership_admission(
         root=PROJECT_ROOT,
         protocol_path=protocol_path,
+        results_path=tmp_path / "missing-results.json",
     )
 
     row = {row["id"]: row for row in result["rows"]}["protocol-frozen-before-heldout"]
@@ -582,6 +589,7 @@ def test_freeze_builder_reserves_memory_agent_bench_without_opening_rows(tmp_pat
     result = evaluate_quality_leadership_admission(
         root=PROJECT_ROOT,
         protocol_path=protocol_path,
+        results_path=tmp_path / "missing-results.json",
     )
 
     dataset = protocol["new_quality_dataset"]
