@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from benchmarks.workspace_experience_operational_evidence import (
+    main,
     run_workspace_operational_evidence,
     validate_workspace_operational_evidence,
 )
@@ -42,3 +43,28 @@ def test_workspace_operational_evidence_validator_rejects_tampering(
 
     assert "artifact payload digest mismatch" in errors
     assert "workspace operational namespace leakage is not zero" in errors
+
+
+def test_workspace_operational_evidence_cli_stdout_is_secret_safe(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    output = tmp_path / "operational.json"
+
+    exit_code = main(
+        [
+            "--output",
+            str(output),
+            "--temp-root",
+            str(tmp_path),
+            "--require-admitted",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert output.exists()
+    assert "sk-operational-secret" not in captured.out
+    assert "api_key" not in captured.out
+    assert "token" not in captured.out.lower()
+    assert "artifact_path" in captured.out

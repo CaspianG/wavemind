@@ -557,8 +557,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--require-admitted", action="store_true")
     args = parser.parse_args(argv)
     payload = write_artifact(output=args.output, temp_root=args.temp_root)
-    print(json.dumps(payload, ensure_ascii=False, indent=2))
-    return 2 if args.require_admitted and not payload["admitted"] else 0
+    admitted = bool(payload["admitted"])
+    summary = {
+        "schema": "wavemind.workspace_experience_operational_stdout.v1",
+        "status": "admitted" if admitted else "blocked",
+        "artifact_path": str(args.output),
+    }
+    print(json.dumps(summary, ensure_ascii=False, indent=2))
+    return 2 if args.require_admitted and not admitted else 0
 
 
 if __name__ == "__main__":
