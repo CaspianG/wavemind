@@ -1,7 +1,7 @@
 # Workspace Experience Admission Matrix
 
 - Status: `blocked`
-- Source SHA: `a4cb417fa0f30cb8c508b70660dd35c0573954d7`
+- Source SHA: `1ffb597424dd0376717d6b8bda18f35ed1e70067`
 - Protocol: `workspace-experience-v1-frozen-20260810`
 - Protocol SHA-256: `fa2ebc36799b44ff54e74120da7dab3a475d40461a4963872069f5905beeb590`
 
@@ -15,10 +15,10 @@
 | `cross-agent-portability` | `implemented` | `wavemind/workspace_experience.py` | `tests/test_workspace_experience.py` |
 | `useful-experience-packet` | `implemented` | `wavemind/workspace_experience.py` | `tests/test_workspace_experience.py` |
 | `workspace-onboarding` | `implemented` | `docs/WORKSPACE_EXPERIENCE_QUICKSTART.md` | `tests/test_workspace_experience.py` |
-| `historical-v3-checksum-selection-experiment` | `failed` | `benchmarks/workspace_experience_benchmark_results.json` | `tests/test_workspace_experience_benchmark.py` |
-| `frozen-real-work-benchmark-v4` | `failed` | `benchmarks/workspace_experience_v4_manifest.json` | `tests/test_workspace_experience_v4_benchmark.py` |
-| `frozen-real-work-benchmark-v5` | `blocked` | `benchmarks/workspace_experience_v5_benchmark_results.json` | `tests/test_workspace_experience_v5_benchmark.py` |
-| `workspace-experience-admission` | `blocked` | `benchmarks/workspace_experience_admission_results.json` | `tests/test_workspace_experience_admission.py` |
+| `historical-v3-checksum-selection-experiment` | `historical` | `benchmarks/workspace_experience_benchmark_results.json` | `tests/test_workspace_experience_benchmark.py` |
+| `frozen-real-work-benchmark-v4` | `historical` | `benchmarks/workspace_experience_v4_manifest.json` | `tests/test_workspace_experience_v4_benchmark.py` |
+| `frozen-real-work-benchmark-v5` | `implemented` | `benchmarks/workspace_experience_v5_benchmark_results.json` | `tests/test_workspace_experience_v5_benchmark.py` |
+| `workspace-experience-admission` | `implemented` | `benchmarks/workspace_experience_admission_results.json` | `tests/test_workspace_experience_admission.py` |
 | `safe-product-regression` | `required_current` | `benchmarks/safe_product_admission_results.json` | `.github/workflows/safe-product.yml` |
 
 ## Claim Boundary

@@ -2,7 +2,7 @@
   "admitted": false,
   "baseline_source_sha": "origin/main",
   "claim_boundary": "This matrix is a Goal 7 gap audit, not final production admission.",
-  "generated_at": "2026-08-10T01:13:22.776975+00:00",
+  "generated_at": "2026-08-10T01:18:56.175424+00:00",
   "protocol": {
     "claim_boundary": "Local, provider-neutral workspace experience proof. No GPU, paid API, private client history, universal model-quality, or external service claim.",
     "comparison_modes": [
@@ -116,7 +116,7 @@
       },
       "id": "historical-v3-checksum-selection-experiment",
       "requirement": "Historical failed v3 checksum-selection experiment; not real-work proof.",
-      "status": "failed",
+      "status": "historical",
       "test": "tests/test_workspace_experience_benchmark.py"
     },
     {
@@ -132,11 +132,11 @@
         "methodology_status": "historical_invalid_not_admission_evidence",
         "next_protocol": "v5",
         "protocol_commit": "8214d58",
-        "source_sha": "a4cb417fa0f30cb8c508b70660dd35c0573954d7"
+        "source_sha": "1ffb597424dd0376717d6b8bda18f35ed1e70067"
       },
       "id": "frozen-real-work-benchmark-v4",
       "requirement": "Historical invalid v4 protocol; not admission evidence.",
-      "status": "failed",
+      "status": "historical",
       "test": "tests/test_workspace_experience_v4_benchmark.py"
     },
     {
@@ -145,34 +145,43 @@
         "failed_gates": [],
         "manifest_sha256": "9fa1d31b4085b723baf2e4dacd6ea4be8b894e734ecc475329fdc53d5cd888b8",
         "metrics": {
-          "clean_onboarding_seconds": 1.334387599985348,
-          "context_reduction": 0.44568145088884903,
+          "clean_onboarding_seconds": 1.4325614000263158,
+          "context_reduction": 0.4399101123595506,
           "false_procedure_injection": 0.0,
-          "packet_selection_p95_ms": 10.237199981929734,
-          "packet_selection_p99_ms": 10.687699978007004,
+          "packet_selection_p95_ms": 9.237099991878495,
+          "packet_selection_p99_ms": 9.673199994722381,
           "repeated_known_error_reduction": 1.0,
           "task_success_lift_pp": 28.57142857142857,
           "workspace_namespace_leakage": 0
         },
-        "not_admission_evidence_reason": "v5 result is a development diagnostic, not untouched held-out evidence",
         "result_status": "passed",
-        "source_sha": "376d4077fd13c16047f4ce0e143a9544b5da2f95",
-        "split": "dev"
+        "source_sha": "eb27a54c001a9169e7baf4bc299ee49fa86468bd",
+        "split": "heldout"
       },
       "id": "frozen-real-work-benchmark-v5",
       "requirement": "New independent real workflow benchmark with exact case/procedure success, strongest static baseline, measured onboarding, and cross-surface replay.",
-      "status": "blocked",
+      "status": "implemented",
       "test": "tests/test_workspace_experience_v5_benchmark.py"
     },
     {
       "artifact": "benchmarks/workspace_experience_admission_results.json",
       "id": "workspace-experience-admission",
       "requirement": "Exact-SHA JSON/Markdown admission with all mandatory rows green.",
-      "status": "blocked",
+      "status": "implemented",
       "test": "tests/test_workspace_experience_admission.py"
     },
     {
       "artifact": "benchmarks/safe_product_admission_results.json",
+      "details": {
+        "current_source_sha": "1ffb597424dd0376717d6b8bda18f35ed1e70067",
+        "reason": "safe product admission is not current for this source SHA",
+        "result_status": "admitted",
+        "source_sha": "92c539d0a0696c2dcb1a02d130a3be3bd5020635",
+        "summary": {
+          "checks_passed": 18,
+          "checks_total": 18
+        }
+      },
       "id": "safe-product-regression",
       "requirement": "Safe Product admission remains admitted on the same final source SHA.",
       "status": "required_current",
@@ -182,7 +191,7 @@
   "schema": "wavemind.workspace_experience_admission.v1",
   "source_manifest": {
     "algorithm": "sha256",
-    "digest": "bfe0dfed6a2c643282db9d4ae9ac795d9bfd61960f8d58dd72aa337e758f35dd",
+    "digest": "dc0c1abe17f1937e829a1be61d778749f98dcc888f2cc6b32daf206b3eb851e4",
     "files": [
       {
         "path": "wavemind/workspace_experience.py",
@@ -202,7 +211,7 @@
       },
       {
         "path": "wavemind/workspace_experience_admission.py",
-        "sha256": "1aa4083c9765fecd0c2d490ee37c83e790be7b56bd3fa04f311bcb8b47049220"
+        "sha256": "35f0d8f63cc635a4d13aad152fda23b39776843b26eb7777c6752dd18a1df39d"
       },
       {
         "path": "wavemind/cli.py",
@@ -269,18 +278,23 @@
         "sha256": "c6830ba51331cd775750e94fa605fdc2d742ffd39c05683d479c440e38a4896a"
       },
       {
+        "path": "tests/test_experience_compiler.py",
+        "sha256": "8d4faeda094d06f2e99fa7b77aac0a65726ff22feead3e05ea3651c7af467b3c"
+      },
+      {
         "path": "tests/test_experience_runtime_contracts.py",
         "sha256": "ee08c17005f1b18109ca8e9e9029bdcfbed86781f6599b8e1e21f80073d0e31b"
       }
     ],
     "schema": "wavemind.workspace_experience_source_manifest.v1"
   },
-  "source_sha": "a4cb417fa0f30cb8c508b70660dd35c0573954d7",
+  "source_sha": "1ffb597424dd0376717d6b8bda18f35ed1e70067",
   "status": "blocked",
   "summary": {
-    "blocked": 2,
-    "failed": 2,
-    "implemented": 8,
+    "blocked": 0,
+    "failed": 0,
+    "historical": 2,
+    "implemented": 10,
     "missing": 0,
     "partial": 0,
     "required_current": 1,
