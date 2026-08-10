@@ -2,7 +2,7 @@
   "admitted": false,
   "baseline_source_sha": "origin/main",
   "claim_boundary": "This matrix is a Goal 7 gap audit, not final production admission.",
-  "generated_at": "2026-08-10T01:00:18.428051+00:00",
+  "generated_at": "2026-08-10T01:13:22.776975+00:00",
   "protocol": {
     "claim_boundary": "Local, provider-neutral workspace experience proof. No GPU, paid API, private client history, universal model-quality, or external service claim.",
     "comparison_modes": [
@@ -132,7 +132,7 @@
         "methodology_status": "historical_invalid_not_admission_evidence",
         "next_protocol": "v5",
         "protocol_commit": "8214d58",
-        "source_sha": "c1dc8eb4e25ce5290def04ac851c846c6b33d13d"
+        "source_sha": "a4cb417fa0f30cb8c508b70660dd35c0573954d7"
       },
       "id": "frozen-real-work-benchmark-v4",
       "requirement": "Historical invalid v4 protocol; not admission evidence.",
@@ -142,23 +142,21 @@
     {
       "artifact": "benchmarks/workspace_experience_v5_benchmark_results.json",
       "details": {
-        "failed_gates": [
-          "context_reduction"
-        ],
+        "failed_gates": [],
         "manifest_sha256": "9fa1d31b4085b723baf2e4dacd6ea4be8b894e734ecc475329fdc53d5cd888b8",
         "metrics": {
-          "clean_onboarding_seconds": 1.3520551999972668,
-          "context_reduction": -0.17741066618782542,
+          "clean_onboarding_seconds": 1.334387599985348,
+          "context_reduction": 0.44568145088884903,
           "false_procedure_injection": 0.0,
-          "packet_selection_p95_ms": 9.32069998816587,
-          "packet_selection_p99_ms": 9.80379999964498,
+          "packet_selection_p95_ms": 10.237199981929734,
+          "packet_selection_p99_ms": 10.687699978007004,
           "repeated_known_error_reduction": 1.0,
           "task_success_lift_pp": 28.57142857142857,
           "workspace_namespace_leakage": 0
         },
         "not_admission_evidence_reason": "v5 result is a development diagnostic, not untouched held-out evidence",
-        "result_status": "failed",
-        "source_sha": "c5d0dd46441a8bb95daf89fe747c1a620bfa2144",
+        "result_status": "passed",
+        "source_sha": "376d4077fd13c16047f4ce0e143a9544b5da2f95",
         "split": "dev"
       },
       "id": "frozen-real-work-benchmark-v5",
@@ -184,7 +182,7 @@
   "schema": "wavemind.workspace_experience_admission.v1",
   "source_manifest": {
     "algorithm": "sha256",
-    "digest": "216d957731d8f33df7a22775af1e398344309d741abc37959f7cadbd548748fc",
+    "digest": "bfe0dfed6a2c643282db9d4ae9ac795d9bfd61960f8d58dd72aa337e758f35dd",
     "files": [
       {
         "path": "wavemind/workspace_experience.py",
@@ -196,7 +194,7 @@
       },
       {
         "path": "wavemind/experience_compiler.py",
-        "sha256": "a8e5ae77fc1065711347b56628bf1091c4c2a896098f061c327e13ee6bfdfe41"
+        "sha256": "502a16a3fa38b4d24fce31c8f0404d5be2fdc687d438523b694b85b06f7a94a4"
       },
       {
         "path": "wavemind/experience.py",
@@ -252,7 +250,7 @@
       },
       {
         "path": "benchmarks/workspace_experience_v5_benchmark.py",
-        "sha256": "d4f703a231cc40205bc25c9fd910ba4891ca1316a2cd49390444023246662c07"
+        "sha256": "03ed4cde142626a45bab98437c487a43c66b683b5b534eebfd9cd9e05bdfa016"
       },
       {
         "path": "tests/test_workspace_experience.py",
@@ -277,7 +275,7 @@
     ],
     "schema": "wavemind.workspace_experience_source_manifest.v1"
   },
-  "source_sha": "c1dc8eb4e25ce5290def04ac851c846c6b33d13d",
+  "source_sha": "a4cb417fa0f30cb8c508b70660dd35c0573954d7",
   "status": "blocked",
   "summary": {
     "blocked": 2,
