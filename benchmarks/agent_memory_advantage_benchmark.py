@@ -396,7 +396,7 @@ def run_mem0_oss(
     from mem0 import Memory
     from mem0.utils.factory import EmbedderFactory
 
-    with tempfile.TemporaryDirectory() as tmp:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
         root = Path(tmp)
         original_fastembed_factory = EmbedderFactory.provider_to_class.get("fastembed")
         EmbedderFactory.provider_to_class["fastembed"] = (
