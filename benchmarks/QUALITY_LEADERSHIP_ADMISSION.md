@@ -1,16 +1,16 @@
 # Quality Leadership Admission
 
 Status: **blocked**
-Source SHA: `d2201beff75723486e18acc45368c919d9f4bd93`
+Source SHA: `527ec84c2c42cfc107d75e9ed6b4df62769491dc`
 Protocol: `quality-leadership-v1-20260810`
-Rows: **12/22 implemented**, 8 blocked, 2 required-current, 0 failed
+Rows: **11/22 implemented**, 9 blocked, 2 required-current, 0 failed
 
 | Row | Status | Artifact | Test |
 |---|---:|---|---|
 | `source-sha-exact` | `implemented` | `git rev-parse HEAD` | `tests/test_quality_leadership_admission.py` |
 | `goal4-failure-preserved` | `implemented` | `benchmarks/goal4_quality_experiment_results.json` | `tests/test_goal4_quality_experiment.py` |
 | `protocol-snapshot-current` | `implemented` | `benchmarks/quality_leadership_protocol.json` | `tests/test_quality_leadership_admission.py` |
-| `protocol-frozen-before-heldout` | `implemented` | `benchmarks/quality_leadership_protocol.json` | `tests/test_quality_leadership_admission.py` |
+| `protocol-frozen-before-heldout` | `blocked` | `benchmarks/quality_leadership_protocol.json` | `tests/test_quality_leadership_admission.py` |
 | `safe-product-current` | `required_current` | `benchmarks/safe_product_admission_results.json` | `.github/workflows/safe-product.yml` |
 | `workspace-experience-current` | `required_current` | `benchmarks/workspace_experience_admission_results.json` | `.github/workflows/safe-product.yml` |
 | `results-artifact-current` | `implemented` | `benchmarks/quality_leadership_results.json` | `tests/test_quality_leadership_admission.py` |
@@ -32,6 +32,7 @@ Rows: **12/22 implemented**, 8 blocked, 2 required-current, 0 failed
 
 ## Next Actions
 
+- Freeze a new independent quality-leadership development/held-out protocol before tuning.
 - Run a bounded development benchmark and stop unless the go/no-go gate passes.
 - Use exact-current CI artifacts for Safe Product and Workspace Experience on the final SHA.
 - Open the new held-out split exactly once only after protocol freeze and dev go/no-go.

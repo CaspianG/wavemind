@@ -80,7 +80,7 @@
       "embedding_runtime_proof": null,
       "engine": "Chroma static",
       "family": "static_chroma_or_qdrant",
-      "p95_latency_ms": 3.090400015935302,
+      "p95_latency_ms": 3.1290999613702297,
       "reason": null,
       "simulated": false,
       "status": "pass",
@@ -92,7 +92,7 @@
       "embedding_runtime_proof": null,
       "engine": "Qdrant static",
       "family": "static_chroma_or_qdrant",
-      "p95_latency_ms": 1.4762000064365566,
+      "p95_latency_ms": 1.5835000085644424,
       "reason": null,
       "simulated": false,
       "status": "pass",
@@ -110,13 +110,13 @@
         "probe_sha256": "20afc27786ce5e5b052ae10bac83f141387054a0886b04008df8f3894a313ce9",
         "probe_vector_sha256": "e354573b9db236b774048147b6af12b767fcffe0e5e12ec79c2d1864a2b6f3f8",
         "provider": "wavemind-shared",
-        "runtime_class": "_Mem0SharedEmbedding",
+        "runtime_class": "_Mem0SharedEmbeddingFactory",
         "used_for_ingest_and_search": true,
         "vector_dim": 384
       },
       "engine": "Mem0 OSS",
       "family": "mem0_oss",
-      "p95_latency_ms": 2.772799984086305,
+      "p95_latency_ms": 6.369499955326319,
       "reason": null,
       "simulated": false,
       "status": "pass",
@@ -128,7 +128,7 @@
       "embedding_runtime_proof": null,
       "engine": "LangGraph persistent memory",
       "family": "langmem_or_langgraph",
-      "p95_latency_ms": 0.7601999677717686,
+      "p95_latency_ms": 0.8002000395208597,
       "reason": null,
       "simulated": false,
       "status": "pass",
@@ -197,7 +197,7 @@
     ],
     "status": "blocked"
   },
-  "generated_at": "2026-08-10T20:57:07Z",
+  "generated_at": "2026-08-10T21:25:48Z",
   "held_out_gate": {
     "reason": "held-out is forbidden until protocol freeze and development go/no-go",
     "status": "not_opened"
@@ -209,7 +209,7 @@
   },
   "integrity": {
     "algorithm": "sha256",
-    "payload_sha256": "ef0586d3b9b3b6710eceff43120838be0f8054633671ccabd22cc79b3cbbd5cd",
+    "payload_sha256": "e3bbeea9b9554f49cb2d5398f96adcd5ed774ff1148d88bacf8d4d96ee71ec21",
     "schema": "wavemind.artifact_integrity.v1"
   },
   "measurement_runs": 5,
@@ -325,8 +325,8 @@
     "improved_category_count": 2,
     "measurement_runs": 5,
     "memory_os_uplift_over_core": 0.6111111111111112,
-    "p95_overhead_ms": -0.08450000314041972,
-    "p95_overhead_ratio": -0.05360314796952967,
+    "p95_overhead_ms": -0.20870001753792167,
+    "p95_overhead_ratio": -0.10885667577843866,
     "stale_contradiction_error_rate": 0.0
   },
   "protocol_revision": "quality-leadership-v1-20260810",
@@ -335,18 +335,18 @@
       "artifact": "benchmarks/quality_leadership_agent_memory_advantage_dev_real_competitors.json",
       "claim_boundary": "Bounded development diagnostic only; it cannot replace public held-out quality evidence or real competitor execution.",
       "id": "controlled-sequential-agent-memory",
-      "source_sha": "d2201beff75723486e18acc45368c919d9f4bd93",
+      "source_sha": "527ec84c2c42cfc107d75e9ed6b4df62769491dc",
       "status": "pass"
     }
   ],
   "schema": "wavemind.quality_leadership_results.v1",
   "source_manifest": {
     "algorithm": "sha256",
-    "digest": "e34fb9afd24d395a73feb6cfe4088f4c5fb760d669f2a4661f8574b025ce4292",
+    "digest": "5df5308397a75f9bfba089dd40cad26d5dc0cce3e1a372874611086c3b4d7a9f",
     "files": [
       {
         "path": "benchmarks/agent_memory_advantage_benchmark.py",
-        "sha256": "1cf175ae961947e3aca49ff9a79285cf59ee780c8a645e8924c51dd6b821798e"
+        "sha256": "ca2e18c0ba87e9628c786e06031dedf300e30eafa2e0fd1d36dd60123ff41d23"
       },
       {
         "path": "benchmarks/goal4_quality_experiment_results.json",
@@ -370,7 +370,7 @@
       },
       {
         "path": "benchmarks/quality_leadership_freeze_protocol.py",
-        "sha256": "beffe15e36e2baf626f4fa799fbba8c82150942185332bc4985d0c99f9ac2fa7"
+        "sha256": "2c8a7cc0d1fdb0e94f53f7a276715f2bbc42b209e3015045c0f4cab32da13476"
       },
       {
         "path": "benchmarks/quality_leadership_results.py",
@@ -406,7 +406,7 @@
       },
       {
         "path": "wavemind/quality_leadership_admission.py",
-        "sha256": "54744597d0e54b113e54094afda72b262664e60a1a88728fbd3a0ffebc216aea"
+        "sha256": "464a296c0c76b61f09e8ed4b6ca455942f7a9b224171e513a16d3b4d6085d480"
       },
       {
         "path": "wavemind/workspace_experience_admission.py",
@@ -415,6 +415,6 @@
     ],
     "schema": "wavemind.source_manifest.v1"
   },
-  "source_sha": "d2201beff75723486e18acc45368c919d9f4bd93",
+  "source_sha": "527ec84c2c42cfc107d75e9ed6b4df62769491dc",
   "status": "development_blocked"
 }

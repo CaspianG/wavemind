@@ -8,14 +8,15 @@
     "results": "benchmarks/quality_leadership_results.json"
   },
   "claim_boundary": "Quality leadership is blocked until a new frozen protocol, bounded development gate, single untouched held-out run, real local competitors, current Safe Product and Workspace Experience evidence, and exact-main CI evidence all pass. The historical Goal 4 failure remains public.",
-  "expected_source_sha": "d2201beff75723486e18acc45368c919d9f4bd93",
-  "generated_at": "2026-08-10T20:57:08Z",
+  "expected_source_sha": "527ec84c2c42cfc107d75e9ed6b4df62769491dc",
+  "generated_at": "2026-08-10T21:25:49Z",
   "integrity": {
     "algorithm": "sha256",
-    "payload_sha256": "c3d9b66dbc21a255b59b036de5dcf644f8d92ef6eea6d8b2e9b69e19b24d10f0",
+    "payload_sha256": "02641625494ce4ddef8d45996f2df1ce654a20e92600aa082ef3a0a3642d7dac",
     "schema": "wavemind.artifact_integrity.v1"
   },
   "next_actions": [
+    "Freeze a new independent quality-leadership development/held-out protocol before tuning.",
     "Run a bounded development benchmark and stop unless the go/no-go gate passes.",
     "Use exact-current CI artifacts for Safe Product and Workspace Experience on the final SHA.",
     "Open the new held-out split exactly once only after protocol freeze and dev go/no-go."
@@ -25,8 +26,8 @@
     {
       "artifact": "git rev-parse HEAD",
       "details": {
-        "expected_source_sha": "d2201beff75723486e18acc45368c919d9f4bd93",
-        "source_sha": "d2201beff75723486e18acc45368c919d9f4bd93"
+        "expected_source_sha": "527ec84c2c42cfc107d75e9ed6b4df62769491dc",
+        "source_sha": "527ec84c2c42cfc107d75e9ed6b4df62769491dc"
       },
       "id": "source-sha-exact",
       "requirement": "Admission is evaluated against the exact current source SHA.",
@@ -56,11 +57,13 @@
     {
       "artifact": "benchmarks/quality_leadership_protocol.json",
       "details": {
-        "errors": []
+        "errors": [
+          "bounded development evidence proves frozen development split category improvement ceiling below threshold: 2 < 4"
+        ]
       },
       "id": "protocol-frozen-before-heldout",
       "requirement": "A new independent protocol, dataset split, thresholds, and hashes are frozen before held-out.",
-      "status": "implemented",
+      "status": "blocked",
       "test": "tests/test_quality_leadership_admission.py"
     },
     {
@@ -260,8 +263,8 @@
     {
       "artifact": "benchmarks/quality_leadership_results.json",
       "details": {
-        "p95_overhead_ms": -0.08450000314041972,
-        "p95_overhead_ratio": -0.05360314796952967,
+        "p95_overhead_ms": -0.20870001753792167,
+        "p95_overhead_ratio": -0.10885667577843866,
         "targets": {
           "p95_overhead_ms": 5.0,
           "p95_overhead_ratio": 0.2
@@ -363,11 +366,11 @@
   "schema": "wavemind.quality_leadership_admission.v1",
   "source_manifest": {
     "algorithm": "sha256",
-    "digest": "e34fb9afd24d395a73feb6cfe4088f4c5fb760d669f2a4661f8574b025ce4292",
+    "digest": "5df5308397a75f9bfba089dd40cad26d5dc0cce3e1a372874611086c3b4d7a9f",
     "files": [
       {
         "path": "benchmarks/agent_memory_advantage_benchmark.py",
-        "sha256": "1cf175ae961947e3aca49ff9a79285cf59ee780c8a645e8924c51dd6b821798e"
+        "sha256": "ca2e18c0ba87e9628c786e06031dedf300e30eafa2e0fd1d36dd60123ff41d23"
       },
       {
         "path": "benchmarks/goal4_quality_experiment_results.json",
@@ -391,7 +394,7 @@
       },
       {
         "path": "benchmarks/quality_leadership_freeze_protocol.py",
-        "sha256": "beffe15e36e2baf626f4fa799fbba8c82150942185332bc4985d0c99f9ac2fa7"
+        "sha256": "2c8a7cc0d1fdb0e94f53f7a276715f2bbc42b209e3015045c0f4cab32da13476"
       },
       {
         "path": "benchmarks/quality_leadership_results.py",
@@ -427,7 +430,7 @@
       },
       {
         "path": "wavemind/quality_leadership_admission.py",
-        "sha256": "54744597d0e54b113e54094afda72b262664e60a1a88728fbd3a0ffebc216aea"
+        "sha256": "464a296c0c76b61f09e8ed4b6ca455942f7a9b224171e513a16d3b4d6085d480"
       },
       {
         "path": "wavemind/workspace_experience_admission.py",
@@ -436,13 +439,13 @@
     ],
     "schema": "wavemind.source_manifest.v1"
   },
-  "source_sha": "d2201beff75723486e18acc45368c919d9f4bd93",
+  "source_sha": "527ec84c2c42cfc107d75e9ed6b4df62769491dc",
   "status": "blocked",
   "summary": {
-    "blocked": 8,
+    "blocked": 9,
     "failed": 0,
     "historical": 0,
-    "implemented": 12,
+    "implemented": 11,
     "required_current": 2,
     "total": 22
   }

@@ -15,7 +15,7 @@
       "static_chroma_or_qdrant"
     ]
   },
-  "generated_at": "2026-08-10T20:54:26Z",
+  "generated_at": "2026-08-10T21:21:33Z",
   "go_no_go": {
     "dev_gate_required_before_full_run": true,
     "max_architecture_candidates_before_blocked": 2,
@@ -43,7 +43,7 @@
   },
   "integrity": {
     "algorithm": "sha256",
-    "payload_sha256": "a606dc37741e1c89b70162171d19c50dbce13fdd400a8b890d6c634be62a9fd2",
+    "payload_sha256": "b61223bc26c704e5ad89d9ca998fcbd954c5a8da046ad6f81e0537aa263dcf1a",
     "schema": "wavemind.artifact_integrity.v1"
   },
   "new_quality_dataset": {
@@ -52,6 +52,14 @@
       "development": "wavemind-controlled-sequential-memory-os-v1",
       "held_out_github": "455306dcabc3842526eb83cd4e225e5d486c5c5d",
       "held_out_huggingface": "7ea066982b140a19337e17e60d45d4076e042faf"
+    },
+    "development_gate_design_analysis": {
+      "ceiling_risk": "no_spare_categories_for_strict_lift_gate",
+      "claim_boundary": "The split manifest alone cannot prove every category is improvable over Core. Bounded development evidence must still show an improvement ceiling at or above the category threshold before held-out execution is allowed.",
+      "development_category_count": 4,
+      "requires_runtime_ceiling_check": true,
+      "spare_category_count": 0,
+      "target_improved_categories": 4
     },
     "development_split": {
       "case_count": 18,
@@ -327,11 +335,11 @@
   "schema": "wavemind.quality_leadership_protocol.v1",
   "source_manifest": {
     "algorithm": "sha256",
-    "digest": "e34fb9afd24d395a73feb6cfe4088f4c5fb760d669f2a4661f8574b025ce4292",
+    "digest": "5df5308397a75f9bfba089dd40cad26d5dc0cce3e1a372874611086c3b4d7a9f",
     "files": [
       {
         "path": "benchmarks/agent_memory_advantage_benchmark.py",
-        "sha256": "1cf175ae961947e3aca49ff9a79285cf59ee780c8a645e8924c51dd6b821798e"
+        "sha256": "ca2e18c0ba87e9628c786e06031dedf300e30eafa2e0fd1d36dd60123ff41d23"
       },
       {
         "path": "benchmarks/goal4_quality_experiment_results.json",
@@ -355,7 +363,7 @@
       },
       {
         "path": "benchmarks/quality_leadership_freeze_protocol.py",
-        "sha256": "beffe15e36e2baf626f4fa799fbba8c82150942185332bc4985d0c99f9ac2fa7"
+        "sha256": "2c8a7cc0d1fdb0e94f53f7a276715f2bbc42b209e3015045c0f4cab32da13476"
       },
       {
         "path": "benchmarks/quality_leadership_results.py",
@@ -391,7 +399,7 @@
       },
       {
         "path": "wavemind/quality_leadership_admission.py",
-        "sha256": "54744597d0e54b113e54094afda72b262664e60a1a88728fbd3a0ffebc216aea"
+        "sha256": "464a296c0c76b61f09e8ed4b6ca455942f7a9b224171e513a16d3b4d6085d480"
       },
       {
         "path": "wavemind/workspace_experience_admission.py",
@@ -400,7 +408,7 @@
     ],
     "schema": "wavemind.source_manifest.v1"
   },
-  "source_sha": "d2201beff75723486e18acc45368c919d9f4bd93",
+  "source_sha": "527ec84c2c42cfc107d75e9ed6b4df62769491dc",
   "status": "frozen_before_heldout",
   "thresholds": {
     "backend_recall_loss_max": 0.01,
