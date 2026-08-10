@@ -2,7 +2,7 @@
   "admitted": false,
   "baseline_source_sha": "origin/main",
   "claim_boundary": "This matrix is a Goal 7 gap audit, not final production admission.",
-  "generated_at": "2026-08-10T00:29:47.229735+00:00",
+  "generated_at": "2026-08-10T00:53:10.850471+00:00",
   "protocol": {
     "claim_boundary": "Local, provider-neutral workspace experience proof. No GPU, paid API, private client history, universal model-quality, or external service claim.",
     "comparison_modes": [
@@ -132,7 +132,7 @@
         "methodology_status": "historical_invalid_not_admission_evidence",
         "next_protocol": "v5",
         "protocol_commit": "8214d58",
-        "source_sha": "9b00b8d73c9c7c934e2c83afca89ca187f486fe0"
+        "source_sha": "530e8362b8356f2b6e9563572ac665f7420f234f"
       },
       "id": "frozen-real-work-benchmark-v4",
       "requirement": "Historical invalid v4 protocol; not admission evidence.",
@@ -164,7 +164,7 @@
   "schema": "wavemind.workspace_experience_admission.v1",
   "source_manifest": {
     "algorithm": "sha256",
-    "digest": "c7a500519cfdce2ed912a3a1767d31a175e93c7e21f6f62590fd7a81e754de54",
+    "digest": "a6903a5eeec6cb2e27c38b4f28726cdfacc4c4f376f1f509443ead7f823a6511",
     "files": [
       {
         "path": "wavemind/workspace_experience.py",
@@ -224,15 +224,15 @@
       },
       {
         "path": "benchmarks/workspace_experience_v5_manifest.json",
-        "sha256": "1374edb3f214d33a60e9c5d906a1bd915d0cf5a0ead0220d9e45e31c837dcf49"
+        "sha256": "518b73ac94843f011703b74d40be35facb287c2b7f3137fe01adfdb8f953a327"
       },
       {
         "path": "benchmarks/workspace_experience_v5_manifest_builder.py",
-        "sha256": "86215039918ec2e979360a8d4bc30bffc960bd2289b52108910fcf7d6e5dd446"
+        "sha256": "845a49fa8b03d7ff9d00b03d772d4ca9b2e77a8f7e1d8647dd99aad4565f8c80"
       },
       {
         "path": "benchmarks/workspace_experience_v5_benchmark.py",
-        "sha256": "60923596698d1b92803223cf7dd6074f02b66bdec5b780a8ea25a20a1f24faa9"
+        "sha256": "d4f703a231cc40205bc25c9fd910ba4891ca1316a2cd49390444023246662c07"
       },
       {
         "path": "tests/test_workspace_experience.py",
@@ -248,7 +248,7 @@
       },
       {
         "path": "tests/test_workspace_experience_v5_benchmark.py",
-        "sha256": "5093742845d948fd60cbe8aeac62c2f230af37591b63c28b8a0bd3a2da0b506e"
+        "sha256": "c6830ba51331cd775750e94fa605fdc2d742ffd39c05683d479c440e38a4896a"
       },
       {
         "path": "tests/test_experience_runtime_contracts.py",
@@ -257,7 +257,7 @@
     ],
     "schema": "wavemind.workspace_experience_source_manifest.v1"
   },
-  "source_sha": "9b00b8d73c9c7c934e2c83afca89ca187f486fe0",
+  "source_sha": "530e8362b8356f2b6e9563572ac665f7420f234f",
   "status": "blocked",
   "summary": {
     "blocked": 1,
