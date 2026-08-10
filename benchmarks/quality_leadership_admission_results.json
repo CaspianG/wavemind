@@ -8,17 +8,16 @@
     "results": "benchmarks/quality_leadership_results.json"
   },
   "claim_boundary": "Quality leadership is blocked until a new frozen protocol, bounded development gate, single untouched held-out run, real local competitors, current Safe Product and Workspace Experience evidence, and exact-main CI evidence all pass. The historical Goal 4 failure remains public.",
-  "expected_source_sha": "c53c1aad38b51fe703c15eef15ce9ccca164c0ee",
-  "generated_at": "2026-08-10T19:21:59Z",
+  "expected_source_sha": "9504ae76c05ff75a5a6adf3edb8c271dc0f88f73",
+  "generated_at": "2026-08-10T19:38:54Z",
   "integrity": {
     "algorithm": "sha256",
-    "payload_sha256": "295d762eea82da6f81c538bf91f572e2baf9483782e041a0f73910e63d31ef14",
+    "payload_sha256": "c700c61058ba91db6a9b98928873511e0b2af39fbfabf3021b4f1dd355ec0c41",
     "schema": "wavemind.artifact_integrity.v1"
   },
   "next_actions": [
     "Freeze a new independent quality-leadership development/held-out protocol before tuning.",
     "Run a bounded development benchmark and stop unless the go/no-go gate passes.",
-    "Run real local Chroma/Qdrant, Mem0 OSS, and LangMem/LangGraph comparators on the same protocol.",
     "Use exact-current CI artifacts for Safe Product and Workspace Experience on the final SHA.",
     "Open the new held-out split exactly once only after protocol freeze and dev go/no-go."
   ],
@@ -27,8 +26,8 @@
     {
       "artifact": "git rev-parse HEAD",
       "details": {
-        "expected_source_sha": "c53c1aad38b51fe703c15eef15ce9ccca164c0ee",
-        "source_sha": "c53c1aad38b51fe703c15eef15ce9ccca164c0ee"
+        "expected_source_sha": "9504ae76c05ff75a5a6adf3edb8c271dc0f88f73",
+        "source_sha": "9504ae76c05ff75a5a6adf3edb8c271dc0f88f73"
       },
       "id": "source-sha-exact",
       "requirement": "Admission is evaluated against the exact current source SHA.",
@@ -127,7 +126,6 @@
           "diagnostic": "benchmarks/quality_leadership_agent_memory_advantage_dev_real_competitors.json",
           "errors": [
             "improved_category_count below threshold",
-            "missing real local competitors: mem0_oss",
             "LongMemEval-V2 quality gate has not been run on this protocol"
           ],
           "status": "blocked"
@@ -221,8 +219,8 @@
     {
       "artifact": "benchmarks/quality_leadership_results.json",
       "details": {
-        "p95_overhead_ms": -0.03370002377778292,
-        "p95_overhead_ratio": -0.015348191269253866,
+        "p95_overhead_ms": -0.44319999869912863,
+        "p95_overhead_ratio": -0.18599966276785512,
         "targets": {
           "p95_overhead_ms": 5.0,
           "p95_overhead_ratio": 0.2
@@ -248,19 +246,18 @@
     {
       "artifact": "benchmarks/quality_leadership_results.json",
       "details": {
-        "missing": [
-          "mem0_oss"
-        ],
+        "missing": [],
         "non_comparable": [],
         "observed": [
           "langmem_or_langgraph",
+          "mem0_oss",
           "static_chroma_or_qdrant"
         ],
         "simulated": []
       },
       "id": "real-local-competitors",
       "requirement": "Runnable local competitors are real packages/runs, not simulated baselines.",
-      "status": "blocked",
+      "status": "implemented",
       "test": "tests/test_quality_leadership_admission.py"
     },
     {
@@ -325,11 +322,11 @@
   "schema": "wavemind.quality_leadership_admission.v1",
   "source_manifest": {
     "algorithm": "sha256",
-    "digest": "ae9238643de3fbd1f0f52c4123f34b8171597c9dd183c2f60342659f166b1aa0",
+    "digest": "52b16bd856a94d701e9d04d65d5e2499fc9fd4f36ad240b2acbfd16f11c8a37e",
     "files": [
       {
         "path": "benchmarks/agent_memory_advantage_benchmark.py",
-        "sha256": "8fd087fb48842ed37e114be392464b57292ee4e16041890c6923828ea07cd9ba"
+        "sha256": "c2c9243398e3ca62833fda68b3d5dd6ea888f409636f23fde27691a112103eb7"
       },
       {
         "path": "benchmarks/goal4_quality_experiment_results.json",
@@ -394,13 +391,13 @@
     ],
     "schema": "wavemind.source_manifest.v1"
   },
-  "source_sha": "c53c1aad38b51fe703c15eef15ce9ccca164c0ee",
+  "source_sha": "9504ae76c05ff75a5a6adf3edb8c271dc0f88f73",
   "status": "blocked",
   "summary": {
-    "blocked": 10,
+    "blocked": 9,
     "failed": 0,
     "historical": 0,
-    "implemented": 10,
+    "implemented": 11,
     "required_current": 2,
     "total": 22
   }
