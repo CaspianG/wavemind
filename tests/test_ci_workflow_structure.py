@@ -121,6 +121,18 @@ def test_safe_product_admission_depends_on_real_compatibility_and_sast_jobs():
     ):
         assert command in commands
 
+    workspace = jobs["workspace-experience"]
+    assert workspace["name"] == "workspace-experience exact-SHA admission"
+    assert workspace["needs"] == "admission"
+    workspace_commands = "\n".join(
+        step.get("run", "") for step in workspace["steps"]
+    )
+    assert "workspace_experience_operational_evidence.py" in workspace_commands
+    assert "workspace_experience_admission.py" in workspace_commands
+    assert "--safe-product" in workspace_commands
+    assert "--operational-evidence" in workspace_commands
+    assert "workspace-experience-admission-${{ github.sha }}" in str(workspace["steps"])
+
 
 def test_full_check_container_smoke_uses_authenticated_explicit_public_bind():
     workflow = load_yaml(WORKFLOWS / "full-check.yml")
