@@ -7,7 +7,7 @@
       "embedding_comparable": true,
       "engine": "Chroma static",
       "family": "static_chroma_or_qdrant",
-      "p95_latency_ms": 3.0338999931700528,
+      "p95_latency_ms": 2.9418999911285937,
       "reason": null,
       "simulated": false,
       "status": "pass",
@@ -18,7 +18,7 @@
       "embedding_comparable": true,
       "engine": "Qdrant static",
       "family": "static_chroma_or_qdrant",
-      "p95_latency_ms": 1.9601999956648797,
+      "p95_latency_ms": 1.5708999999333173,
       "reason": null,
       "simulated": false,
       "status": "pass",
@@ -29,7 +29,7 @@
       "embedding_comparable": true,
       "engine": "Mem0 OSS",
       "family": "mem0_oss",
-      "p95_latency_ms": 4.575500002829358,
+      "p95_latency_ms": 3.288499981863424,
       "reason": null,
       "simulated": false,
       "status": "pass",
@@ -40,7 +40,7 @@
       "embedding_comparable": true,
       "engine": "LangGraph persistent memory",
       "family": "langmem_or_langgraph",
-      "p95_latency_ms": 0.8484999998472631,
+      "p95_latency_ms": 0.746300007449463,
       "reason": null,
       "simulated": false,
       "status": "pass",
@@ -108,7 +108,7 @@
     ],
     "status": "blocked"
   },
-  "generated_at": "2026-08-10T19:51:56Z",
+  "generated_at": "2026-08-10T20:14:23Z",
   "held_out_gate": {
     "reason": "held-out is forbidden until protocol freeze and development go/no-go",
     "status": "not_opened"
@@ -120,7 +120,7 @@
   },
   "integrity": {
     "algorithm": "sha256",
-    "payload_sha256": "b45b923b580757e29ca6a57c35d6545680a3b76f13b462ccbe5e417539e2421c",
+    "payload_sha256": "2188ace2341d8aa5c12ee6e1b931eb688ab707891d3fd534b6c3800876e7b187",
     "schema": "wavemind.artifact_integrity.v1"
   },
   "measurement_runs": 5,
@@ -188,8 +188,8 @@
     "improved_category_count": 2,
     "measurement_runs": 5,
     "memory_os_uplift_over_core": 0.6111111111111112,
-    "p95_overhead_ms": -0.13949995627626777,
-    "p95_overhead_ratio": -0.0598917900282819,
+    "p95_overhead_ms": -0.34539998159743845,
+    "p95_overhead_ratio": -0.17828016010621953,
     "stale_contradiction_error_rate": 0.0
   },
   "protocol_revision": "quality-leadership-v1-20260810",
@@ -198,14 +198,14 @@
       "artifact": "benchmarks/quality_leadership_agent_memory_advantage_dev_real_competitors.json",
       "claim_boundary": "Bounded development diagnostic only; it cannot replace public held-out quality evidence or real competitor execution.",
       "id": "controlled-sequential-agent-memory",
-      "source_sha": "dd729e9fe731d85794e06929ba7d34ec6540373a",
+      "source_sha": "034e98b0f5309f42c603e79bd24cc19fdbaef10a",
       "status": "pass"
     }
   ],
   "schema": "wavemind.quality_leadership_results.v1",
   "source_manifest": {
     "algorithm": "sha256",
-    "digest": "9d95572aa66792b73b3f405b5e5a38bf025dc891d1e6d27cf36348b9fa2cf741",
+    "digest": "0f917ec479cbc8403459271f0276b3c746683790316109978a6af3a624d66568",
     "files": [
       {
         "path": "benchmarks/agent_memory_advantage_benchmark.py",
@@ -232,8 +232,12 @@
         "sha256": "e3ce98a26b0bf0773a01c8cf0c1b857f004116edb6d1f9c56cd3fcbf6088862d"
       },
       {
+        "path": "benchmarks/quality_leadership_freeze_protocol.py",
+        "sha256": "beffe15e36e2baf626f4fa799fbba8c82150942185332bc4985d0c99f9ac2fa7"
+      },
+      {
         "path": "benchmarks/quality_leadership_results.py",
-        "sha256": "5494bb43924c60d759c1829fa53139270c19fb6194c7d9b09e5531808f7f5712"
+        "sha256": "db03350eb68fff8090c7fb54f5fed5dcb7f99ec0d9856353519189b9204ca143"
       },
       {
         "path": "wavemind/agent_memory_admission.py",
@@ -265,7 +269,7 @@
       },
       {
         "path": "wavemind/quality_leadership_admission.py",
-        "sha256": "b6ad282dae98ddc8b1956f4933cc9fe5250d66d61ffc1d017d5090d21aa802b8"
+        "sha256": "86ccc64e8a0fb526f6eaa3fe1eab49f8bd38400e26992d11d1c560162e9847f6"
       },
       {
         "path": "wavemind/workspace_experience_admission.py",
@@ -274,6 +278,6 @@
     ],
     "schema": "wavemind.source_manifest.v1"
   },
-  "source_sha": "dd729e9fe731d85794e06929ba7d34ec6540373a",
+  "source_sha": "034e98b0f5309f42c603e79bd24cc19fdbaef10a",
   "status": "development_blocked"
 }

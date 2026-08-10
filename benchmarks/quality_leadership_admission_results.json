@@ -8,15 +8,14 @@
     "results": "benchmarks/quality_leadership_results.json"
   },
   "claim_boundary": "Quality leadership is blocked until a new frozen protocol, bounded development gate, single untouched held-out run, real local competitors, current Safe Product and Workspace Experience evidence, and exact-main CI evidence all pass. The historical Goal 4 failure remains public.",
-  "expected_source_sha": "dd729e9fe731d85794e06929ba7d34ec6540373a",
-  "generated_at": "2026-08-10T19:51:57Z",
+  "expected_source_sha": "034e98b0f5309f42c603e79bd24cc19fdbaef10a",
+  "generated_at": "2026-08-10T20:14:24Z",
   "integrity": {
     "algorithm": "sha256",
-    "payload_sha256": "ce5d75ad212ca9e88a0b9cc3d568fcd33faf7b84706a6b0eaf6d08752a069af9",
+    "payload_sha256": "e32b0c10fefa7fb8d1cb41e6e9a681f650e64499c34cf9986797fff51e794180",
     "schema": "wavemind.artifact_integrity.v1"
   },
   "next_actions": [
-    "Freeze a new independent quality-leadership development/held-out protocol before tuning.",
     "Run a bounded development benchmark and stop unless the go/no-go gate passes.",
     "Use exact-current CI artifacts for Safe Product and Workspace Experience on the final SHA.",
     "Open the new held-out split exactly once only after protocol freeze and dev go/no-go."
@@ -26,8 +25,8 @@
     {
       "artifact": "git rev-parse HEAD",
       "details": {
-        "expected_source_sha": "dd729e9fe731d85794e06929ba7d34ec6540373a",
-        "source_sha": "dd729e9fe731d85794e06929ba7d34ec6540373a"
+        "expected_source_sha": "034e98b0f5309f42c603e79bd24cc19fdbaef10a",
+        "source_sha": "034e98b0f5309f42c603e79bd24cc19fdbaef10a"
       },
       "id": "source-sha-exact",
       "requirement": "Admission is evaluated against the exact current source SHA.",
@@ -57,24 +56,11 @@
     {
       "artifact": "benchmarks/quality_leadership_protocol.json",
       "details": {
-        "errors": [
-          "protocol status is not frozen_before_heldout",
-          "new quality dataset schema mismatch",
-          "new quality dataset state is not frozen_before_heldout",
-          "new quality dataset development_split_sha256 missing",
-          "new quality dataset held_out_split_sha256 missing",
-          "new quality dataset licenses missing",
-          "new quality dataset dataset_revisions missing",
-          "new quality dataset licenses must be a non-empty mapping",
-          "new quality dataset dataset_revisions must be a non-empty mapping",
-          "held-out split must be unviewed at protocol freeze",
-          "new quality dataset development_split manifest missing",
-          "new quality dataset held_out_split manifest missing"
-        ]
+        "errors": []
       },
       "id": "protocol-frozen-before-heldout",
       "requirement": "A new independent protocol, dataset split, thresholds, and hashes are frozen before held-out.",
-      "status": "blocked",
+      "status": "implemented",
       "test": "tests/test_quality_leadership_admission.py"
     },
     {
@@ -225,8 +211,8 @@
     {
       "artifact": "benchmarks/quality_leadership_results.json",
       "details": {
-        "p95_overhead_ms": -0.13949995627626777,
-        "p95_overhead_ratio": -0.0598917900282819,
+        "p95_overhead_ms": -0.34539998159743845,
+        "p95_overhead_ratio": -0.17828016010621953,
         "targets": {
           "p95_overhead_ms": 5.0,
           "p95_overhead_ratio": 0.2
@@ -328,7 +314,7 @@
   "schema": "wavemind.quality_leadership_admission.v1",
   "source_manifest": {
     "algorithm": "sha256",
-    "digest": "9d95572aa66792b73b3f405b5e5a38bf025dc891d1e6d27cf36348b9fa2cf741",
+    "digest": "0f917ec479cbc8403459271f0276b3c746683790316109978a6af3a624d66568",
     "files": [
       {
         "path": "benchmarks/agent_memory_advantage_benchmark.py",
@@ -355,8 +341,12 @@
         "sha256": "e3ce98a26b0bf0773a01c8cf0c1b857f004116edb6d1f9c56cd3fcbf6088862d"
       },
       {
+        "path": "benchmarks/quality_leadership_freeze_protocol.py",
+        "sha256": "beffe15e36e2baf626f4fa799fbba8c82150942185332bc4985d0c99f9ac2fa7"
+      },
+      {
         "path": "benchmarks/quality_leadership_results.py",
-        "sha256": "5494bb43924c60d759c1829fa53139270c19fb6194c7d9b09e5531808f7f5712"
+        "sha256": "db03350eb68fff8090c7fb54f5fed5dcb7f99ec0d9856353519189b9204ca143"
       },
       {
         "path": "wavemind/agent_memory_admission.py",
@@ -388,7 +378,7 @@
       },
       {
         "path": "wavemind/quality_leadership_admission.py",
-        "sha256": "b6ad282dae98ddc8b1956f4933cc9fe5250d66d61ffc1d017d5090d21aa802b8"
+        "sha256": "86ccc64e8a0fb526f6eaa3fe1eab49f8bd38400e26992d11d1c560162e9847f6"
       },
       {
         "path": "wavemind/workspace_experience_admission.py",
@@ -397,13 +387,13 @@
     ],
     "schema": "wavemind.source_manifest.v1"
   },
-  "source_sha": "dd729e9fe731d85794e06929ba7d34ec6540373a",
+  "source_sha": "034e98b0f5309f42c603e79bd24cc19fdbaef10a",
   "status": "blocked",
   "summary": {
-    "blocked": 9,
+    "blocked": 8,
     "failed": 0,
     "historical": 0,
-    "implemented": 11,
+    "implemented": 12,
     "required_current": 2,
     "total": 22
   }

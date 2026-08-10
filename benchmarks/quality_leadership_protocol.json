@@ -1,5 +1,5 @@
 {
-  "claim_boundary": "This protocol is a quality-leadership recovery gate. Until it is frozen with a new independent development/held-out split and passing exact-SHA evidence, it authorizes no public best, SOTA, or universal quality claim.",
+  "claim_boundary": "This frozen quality-leadership protocol reserves an independent MemoryAgentBench held-out source before row-level inspection. It authorizes development work only; no public quality claim is allowed until development, held-out, competitor, Safe Product, and Workspace Experience admission rows pass on exact-main evidence.",
   "competitors": {
     "forbidden": [
       "self-simulated competitor",
@@ -15,7 +15,7 @@
       "static_chroma_or_qdrant"
     ]
   },
-  "generated_at": "2026-08-10T19:48:41Z",
+  "generated_at": "2026-08-10T20:10:42Z",
   "go_no_go": {
     "dev_gate_required_before_full_run": true,
     "max_architecture_candidates_before_blocked": 2,
@@ -43,25 +43,291 @@
   },
   "integrity": {
     "algorithm": "sha256",
-    "payload_sha256": "77566c23f7a6b1693d97bf53a5a7b58342ff5fc89c96313556c54a806421f0c5",
+    "payload_sha256": "3d8c01b40c2dd3261406224de3e2e237a2b7cbb5483bef12dea7bfcb70007211",
     "schema": "wavemind.artifact_integrity.v1"
   },
   "new_quality_dataset": {
-    "development_split": "required_before_tuning",
-    "held_out_split": "required_untouched_after_protocol_freeze",
-    "leakage_controls": [
-      "old full451 and untouched419 are forbidden tuning sets",
-      "held-out rows cannot be used for error analysis before final verdict",
-      "dataset ids, filenames, or metadata cannot encode answers"
-    ],
-    "minimum_repeats": 5,
-    "state": "required_before_heldout"
+    "claim_boundary": "The development split is a local controlled diagnostic. The held-out split is reserved from MemoryAgentBench using public metadata only; parquet rows are not opened by this freeze step.",
+    "dataset_revisions": {
+      "development": "wavemind-controlled-sequential-memory-os-v1",
+      "held_out_github": "455306dcabc3842526eb83cd4e225e5d486c5c5d",
+      "held_out_huggingface": "7ea066982b140a19337e17e60d45d4076e042faf"
+    },
+    "development_split": {
+      "case_count": 18,
+      "case_fingerprints": [
+        "wavemind-dev:0923aae13c07a57be5452250",
+        "wavemind-dev:101a3e62c91ecbbcc2969c7c",
+        "wavemind-dev:1a23a911da2d1a3bfa2f5be5",
+        "wavemind-dev:1c9d3df4daa9c19164808977",
+        "wavemind-dev:1fffe2da148c6fbb2e5653a9",
+        "wavemind-dev:25ac627eaac0c9fb92efe9d1",
+        "wavemind-dev:2fc4446468e2029d9ec4bb15",
+        "wavemind-dev:4f865a233a97ae2691fb5763",
+        "wavemind-dev:563db984b95e5804bc5ee6d3",
+        "wavemind-dev:7eae30d45a1269ebd29af2d3",
+        "wavemind-dev:8f5d3ebb95c1d5ad24c3be27",
+        "wavemind-dev:8f849cc712f7d120e03ce089",
+        "wavemind-dev:9e27052f99247066295bdcf0",
+        "wavemind-dev:a29420adabc13dec817a3222",
+        "wavemind-dev:a5c168b7f1f5f944ad8610b0",
+        "wavemind-dev:abb6ff6ad88002cf084cd260",
+        "wavemind-dev:b0946e50ea9dd2af0d586bad",
+        "wavemind-dev:c59e99f80e64dcc036a27931"
+      ],
+      "categories": {
+        "knowledge_update": 9,
+        "preference_update": 1,
+        "state_tracking": 2,
+        "workflow_gotcha": 6
+      },
+      "id": "wavemind-controlled-sequential-memory-os-v1",
+      "leakage_controls": [
+        "development split is allowed for tuning",
+        "old Goal 4 full451 and untouched419 are not part of this split"
+      ],
+      "primary_sources": [
+        {
+          "license": "MIT",
+          "name": "WaveMind controlled sequential Memory OS diagnostic",
+          "path": "benchmarks/memory_os_ab_benchmark.py",
+          "revision": "repository-source-manifest"
+        }
+      ],
+      "role": "development",
+      "view_status": "viewed_development_only"
+    },
+    "development_split_sha256": "e4345094922637414bec7f69a15cea9207380b1795b39eb53270da99b89965a2",
+    "held_out_split": {
+      "case_count": 146,
+      "case_fingerprints": [
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Accurate_Retrieval:row:0000",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Accurate_Retrieval:row:0001",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Accurate_Retrieval:row:0002",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Accurate_Retrieval:row:0003",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Accurate_Retrieval:row:0004",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Accurate_Retrieval:row:0005",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Accurate_Retrieval:row:0006",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Accurate_Retrieval:row:0007",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Accurate_Retrieval:row:0008",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Accurate_Retrieval:row:0009",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Accurate_Retrieval:row:0010",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Accurate_Retrieval:row:0011",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Accurate_Retrieval:row:0012",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Accurate_Retrieval:row:0013",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Accurate_Retrieval:row:0014",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Accurate_Retrieval:row:0015",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Accurate_Retrieval:row:0016",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Accurate_Retrieval:row:0017",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Accurate_Retrieval:row:0018",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Accurate_Retrieval:row:0019",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Accurate_Retrieval:row:0020",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Accurate_Retrieval:row:0021",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Test_Time_Learning:row:0000",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Test_Time_Learning:row:0001",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Test_Time_Learning:row:0002",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Test_Time_Learning:row:0003",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Test_Time_Learning:row:0004",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Test_Time_Learning:row:0005",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0000",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0001",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0002",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0003",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0004",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0005",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0006",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0007",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0008",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0009",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0010",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0011",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0012",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0013",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0014",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0015",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0016",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0017",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0018",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0019",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0020",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0021",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0022",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0023",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0024",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0025",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0026",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0027",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0028",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0029",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0030",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0031",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0032",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0033",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0034",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0035",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0036",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0037",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0038",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0039",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0040",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0041",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0042",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0043",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0044",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0045",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0046",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0047",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0048",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0049",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0050",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0051",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0052",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0053",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0054",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0055",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0056",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0057",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0058",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0059",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0060",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0061",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0062",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0063",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0064",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0065",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0066",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0067",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0068",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0069",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0070",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0071",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0072",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0073",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0074",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0075",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0076",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0077",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0078",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0079",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0080",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0081",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0082",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0083",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0084",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0085",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0086",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0087",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0088",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0089",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0090",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0091",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0092",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0093",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0094",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0095",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0096",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0097",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0098",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0099",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0100",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0101",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0102",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0103",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0104",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0105",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0106",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0107",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0108",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Long_Range_Understanding:row:0109",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Conflict_Resolution:row:0000",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Conflict_Resolution:row:0001",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Conflict_Resolution:row:0002",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Conflict_Resolution:row:0003",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Conflict_Resolution:row:0004",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Conflict_Resolution:row:0005",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Conflict_Resolution:row:0006",
+        "memoryagentbench:7ea066982b140a19337e17e60d45d4076e042faf:Conflict_Resolution:row:0007"
+      ],
+      "categories": {
+        "Accurate_Retrieval": 22,
+        "Conflict_Resolution": 8,
+        "Long_Range_Understanding": 110,
+        "Test_Time_Learning": 6
+      },
+      "id": "memoryagentbench-reserved-heldout-v1",
+      "leakage_controls": [
+        "held-out rows are reserved by split metadata only",
+        "parquet row contents are not opened during protocol freeze",
+        "old Goal 4 full451 and untouched419 are excluded"
+      ],
+      "primary_sources": [
+        {
+          "files": {
+            ".gitattributes": {
+              "blob_id": "1ef325f1b111266a6b26e0196871bd78baa8c2f3",
+              "size": 2461
+            },
+            "README.md": {
+              "blob_id": "8c0fbca5f5583bee4f702935af95a46c484cf75a",
+              "size": 9883
+            },
+            "data/Accurate_Retrieval-00000-of-00001.parquet": {
+              "blob_id": "26fc42f09a508c57eced7f2c9d655e67b00288df",
+              "lfs_sha256": "56c3cd80fb6731a3e53cd1a6be3148f54df60ff2d290ee50e28f8acebf9655c1",
+              "lfs_size": 20024386,
+              "size": 20024386
+            },
+            "data/Conflict_Resolution-00000-of-00001.parquet": {
+              "blob_id": "a9af91839926e5e53984fcab1f00232b6117299b",
+              "lfs_sha256": "24d5c3f09ce0ce15625cb9f8a98f44f0d864ca6c94d7b4ad04eb697ca3a5ff45",
+              "lfs_size": 1491588,
+              "size": 1491588
+            },
+            "data/Long_Range_Understanding-00000-of-00001.parquet": {
+              "blob_id": "1f98ae9d5df82d1f265939c23233dada7a1d5918",
+              "lfs_sha256": "5ab175461954db67770d4a4cb69e569b513ebb96aceb9ee79b57f67488bcd539",
+              "lfs_size": 49342452,
+              "size": 49342452
+            },
+            "data/Test_Time_Learning-00000-of-00001.parquet": {
+              "blob_id": "648d10c78d16aa0916ae9c66ed04e2901d5ae5e5",
+              "lfs_sha256": "5338753be48f925d03318eed66117286e3489025fabe050a547bd086cd7d79c0",
+              "lfs_size": 3947476,
+              "size": 3947476
+            },
+            "entity2id.json": {
+              "blob_id": "e606112a016723934f796127fb5784c4a430a0d2",
+              "size": 1758081
+            }
+          },
+          "github_revision": "455306dcabc3842526eb83cd4e225e5d486c5c5d",
+          "github_url": "https://github.com/HUST-AI-HYZ/MemoryAgentBench",
+          "huggingface_dataset": "ai-hyz/MemoryAgentBench",
+          "huggingface_revision": "7ea066982b140a19337e17e60d45d4076e042faf",
+          "huggingface_url": "https://huggingface.co/datasets/ai-hyz/MemoryAgentBench",
+          "license": "MIT",
+          "name": "MemoryAgentBench",
+          "paper": "https://arxiv.org/abs/2507.05257"
+        }
+      ],
+      "role": "held_out",
+      "view_status": "unopened"
+    },
+    "held_out_split_sha256": "e8107da6629a9199ef62f4a4638f9f5f2184f3b41181cd5cefb9d36b40c6553c",
+    "held_out_viewed": false,
+    "licenses": {
+      "development": "MIT",
+      "held_out": "MIT"
+    },
+    "revision": "quality-leadership-freeze-v1-20260810",
+    "schema": "wavemind.quality_leadership_split_manifest.v1",
+    "state": "frozen_before_heldout"
   },
   "revision": "quality-leadership-v1-20260810",
   "schema": "wavemind.quality_leadership_protocol.v1",
   "source_manifest": {
     "algorithm": "sha256",
-    "digest": "9d95572aa66792b73b3f405b5e5a38bf025dc891d1e6d27cf36348b9fa2cf741",
+    "digest": "0f917ec479cbc8403459271f0276b3c746683790316109978a6af3a624d66568",
     "files": [
       {
         "path": "benchmarks/agent_memory_advantage_benchmark.py",
@@ -88,8 +354,12 @@
         "sha256": "e3ce98a26b0bf0773a01c8cf0c1b857f004116edb6d1f9c56cd3fcbf6088862d"
       },
       {
+        "path": "benchmarks/quality_leadership_freeze_protocol.py",
+        "sha256": "beffe15e36e2baf626f4fa799fbba8c82150942185332bc4985d0c99f9ac2fa7"
+      },
+      {
         "path": "benchmarks/quality_leadership_results.py",
-        "sha256": "5494bb43924c60d759c1829fa53139270c19fb6194c7d9b09e5531808f7f5712"
+        "sha256": "db03350eb68fff8090c7fb54f5fed5dcb7f99ec0d9856353519189b9204ca143"
       },
       {
         "path": "wavemind/agent_memory_admission.py",
@@ -121,7 +391,7 @@
       },
       {
         "path": "wavemind/quality_leadership_admission.py",
-        "sha256": "b6ad282dae98ddc8b1956f4933cc9fe5250d66d61ffc1d017d5090d21aa802b8"
+        "sha256": "86ccc64e8a0fb526f6eaa3fe1eab49f8bd38400e26992d11d1c560162e9847f6"
       },
       {
         "path": "wavemind/workspace_experience_admission.py",
@@ -130,8 +400,8 @@
     ],
     "schema": "wavemind.source_manifest.v1"
   },
-  "source_sha": "dd729e9fe731d85794e06929ba7d34ec6540373a",
-  "status": "gap_audit",
+  "source_sha": "034e98b0f5309f42c603e79bd24cc19fdbaef10a",
+  "status": "frozen_before_heldout",
   "thresholds": {
     "backend_recall_loss_max": 0.01,
     "confidence_level": 0.95,
