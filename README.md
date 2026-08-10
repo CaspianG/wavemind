@@ -665,17 +665,17 @@ Release history: [`CHANGELOG.md`](CHANGELOG.md).
 
 Near-term priorities:
 
-- strengthen independent multimodal and agent-quality evidence;
-- improve re-ranking latency and context efficiency without weakening safety;
-- expand index-health, alerting, and disaster-recovery evidence;
+- close the published Quality Leadership Recovery gates on LongMemEval-V2, LoCoMo, LongMemEval, and fair local competitor baselines;
+- combine fast FAISS, Qdrant, or pgvector retrieval with bounded WaveMind reranking;
+- after quality admission, deliver WaveMind Connect for opt-in cross-agent replay, review, and rollback;
 - complete multi-region and 100M scale claims only on matching infrastructure.
 
 Longer-term direction:
 
-Make adaptive memory improve real workflows, preserve one provenance-aware
-lifecycle across modalities, and scale without changing the application-level
-contract. Every public capability remains tied to an artifact, gate, or locked
-claim boundary.
+Make adaptive memory improve real workflows, then carry verified experience
+across agents through one provenance-aware lifecycle that scales without
+changing the application-level contract. Every public capability remains tied
+to an artifact, gate, or locked claim boundary.
 
 ## Contributing
 
