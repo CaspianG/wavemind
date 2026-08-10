@@ -801,7 +801,13 @@ def _normalize(text: str) -> str:
 
 
 def _packet_context_chars(packet: dict[str, Any]) -> int:
-    return len(json.dumps(packet, ensure_ascii=False, sort_keys=True))
+    inner = packet.get("packet") or {}
+    items = inner.get("items") or []
+    prompt = "\n".join(
+        f"{item.get('title', '')}: {item.get('excerpt', '')} ({item.get('citation', '')})"
+        for item in items
+    )
+    return len(prompt)
 
 
 def _repo_stack(repo_id: str, citation_to_case: dict[str, dict[str, Any]]) -> str:
