@@ -63,8 +63,9 @@ def test_workspace_experience_gap_matrix_is_not_final_admission() -> None:
         rows["frozen-real-work-benchmark-v4"]["details"]["invalid_reasons"]
     )
     assert rows["frozen-real-work-benchmark-v5"]["status"] == "blocked"
+    assert rows["frozen-real-work-benchmark-v5"]["details"]["result_status"] == "passed"
     assert rows["frozen-real-work-benchmark-v5"]["details"]["split"] == "dev"
-    assert rows["frozen-real-work-benchmark-v5"]["details"]["failed_gates"] == ["context_reduction"]
+    assert rows["frozen-real-work-benchmark-v5"]["details"]["failed_gates"] == []
     assert "development diagnostic" in rows["frozen-real-work-benchmark-v5"]["details"]["not_admission_evidence_reason"]
     assert rows["workspace-experience-admission"]["status"] == "blocked"
     assert rows["safe-product-regression"]["status"] == "required_current"

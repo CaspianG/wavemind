@@ -1,6 +1,6 @@
 {
-  "duration_seconds": 12.78580559999682,
-  "generated_at": "2026-08-10T00:58:09Z",
+  "duration_seconds": 12.852121600008104,
+  "generated_at": "2026-08-10T01:12:22Z",
   "manifest": {
     "case_count": 84,
     "revision": "workspace-experience-v5-real-work-freeze-candidate-20260810",
@@ -8,13 +8,13 @@
   },
   "metrics": {
     "admission": {
-      "clean_onboarding_seconds": 1.3520551999972668,
-      "context_reduction": -0.17741066618782542,
+      "clean_onboarding_seconds": 1.334387599985348,
+      "context_reduction": 0.44568145088884903,
       "cross_client_citation_state_parity": 1.0,
       "false_procedure_injection": 0.0,
       "mandatory_event_capture": 1.0,
-      "packet_selection_p95_ms": 9.32069998816587,
-      "packet_selection_p99_ms": 9.80379999964498,
+      "packet_selection_p95_ms": 10.237199981929734,
+      "packet_selection_p99_ms": 10.687699978007004,
       "repeated_known_error_reduction": 1.0,
       "task_success_lift_pp": 28.57142857142857,
       "unverified_injection": 0,
@@ -36,7 +36,7 @@
         "task_success_rate": 0.7142857142857143
       },
       "wavemind_verified_workspace_experience": {
-        "context_chars": 13114,
+        "context_chars": 6174,
         "control_failure_rate": 0.0,
         "control_success_rate": 1.0,
         "positive_success_rate": 1.0,
@@ -111,10 +111,10 @@
           "stdout_tail": ""
         },
         "context_chars": 319,
-        "latency_ms": 83.38479997473769,
+        "latency_ms": 83.22030000272207,
         "selected_case_id": "requests-v5-00-api-surface-smoke",
         "selected_citations": [
-          "experience:exp_edit_cc7070a343ee23a0a866b0ad@v2"
+          "experience:exp_edit_651ff3e47bff18177a77bb6f@v2"
         ],
         "selected_procedure_id": "proc-requests-api-surface-smoke",
         "task_success": true
@@ -130,11 +130,11 @@
           "stderr_tail": "",
           "stdout_tail": ""
         },
-        "context_chars": 434,
-        "latency_ms": 8.453599992208183,
+        "context_chars": 203,
+        "latency_ms": 8.624700014479458,
         "selected_case_id": "requests-v5-00-api-surface-smoke",
         "selected_citations": [
-          "experience:exp_edit_cc7070a343ee23a0a866b0ad@v2"
+          "experience:exp_edit_651ff3e47bff18177a77bb6f@v2"
         ],
         "selected_procedure_id": "proc-requests-api-surface-smoke",
         "task_success": true
@@ -195,10 +195,10 @@
           "stdout_tail": ""
         },
         "context_chars": 345,
-        "latency_ms": 83.6915000109002,
+        "latency_ms": 82.81940000597388,
         "selected_case_id": "requests-v5-02-adapter-transport-smoke",
         "selected_citations": [
-          "experience:exp_edit_91fe2a7988b0bec63eb28241@v2"
+          "experience:exp_edit_796dbb1a0aa583f472e8f4d2@v2"
         ],
         "selected_procedure_id": "proc-requests-adapter-transport-smoke",
         "task_success": true
@@ -214,11 +214,11 @@
           "stderr_tail": "",
           "stdout_tail": ""
         },
-        "context_chars": 454,
-        "latency_ms": 8.382400003029034,
+        "context_chars": 217,
+        "latency_ms": 8.756499999435619,
         "selected_case_id": "requests-v5-02-adapter-transport-smoke",
         "selected_citations": [
-          "experience:exp_edit_91fe2a7988b0bec63eb28241@v2"
+          "experience:exp_edit_796dbb1a0aa583f472e8f4d2@v2"
         ],
         "selected_procedure_id": "proc-requests-adapter-transport-smoke",
         "task_success": true
@@ -279,10 +279,10 @@
           "stdout_tail": ""
         },
         "context_chars": 321,
-        "latency_ms": 73.71419999981299,
+        "latency_ms": 86.48349999566562,
         "selected_case_id": "requests-v5-04-cookie-policy-smoke",
         "selected_citations": [
-          "experience:exp_edit_df740cbbfaf723b05b4f2984@v2"
+          "experience:exp_edit_bfe48416e136ba0f11107149@v2"
         ],
         "selected_procedure_id": "proc-requests-cookie-policy-smoke",
         "task_success": true
@@ -298,11 +298,11 @@
           "stderr_tail": "",
           "stdout_tail": ""
         },
-        "context_chars": 434,
-        "latency_ms": 8.085599984042346,
+        "context_chars": 201,
+        "latency_ms": 8.573200000682846,
         "selected_case_id": "requests-v5-04-cookie-policy-smoke",
         "selected_citations": [
-          "experience:exp_edit_df740cbbfaf723b05b4f2984@v2"
+          "experience:exp_edit_bfe48416e136ba0f11107149@v2"
         ],
         "selected_procedure_id": "proc-requests-cookie-policy-smoke",
         "task_success": true
@@ -363,10 +363,10 @@
           "stdout_tail": ""
         },
         "context_chars": 331,
-        "latency_ms": 74.05259998631664,
+        "latency_ms": 79.36899998458102,
         "selected_case_id": "requests-v5-06-utils-regression-smoke",
         "selected_citations": [
-          "experience:exp_edit_4dec2bfe458bc0c23832eae2@v2"
+          "experience:exp_edit_8d2d91dca1baebce7a461a1e@v2"
         ],
         "selected_procedure_id": "proc-requests-utils-regression-smoke",
         "task_success": true
@@ -382,11 +382,11 @@
           "stderr_tail": "",
           "stdout_tail": ""
         },
-        "context_chars": 441,
-        "latency_ms": 8.304100017994642,
+        "context_chars": 205,
+        "latency_ms": 9.126199991442263,
         "selected_case_id": "requests-v5-06-utils-regression-smoke",
         "selected_citations": [
-          "experience:exp_edit_4dec2bfe458bc0c23832eae2@v2"
+          "experience:exp_edit_8d2d91dca1baebce7a461a1e@v2"
         ],
         "selected_procedure_id": "proc-requests-utils-regression-smoke",
         "task_success": true
@@ -447,10 +447,10 @@
           "stdout_tail": ""
         },
         "context_chars": 329,
-        "latency_ms": 73.48210000782274,
+        "latency_ms": 74.20170001569204,
         "selected_case_id": "requests-v5-08-exception-path-smoke",
         "selected_citations": [
-          "experience:exp_edit_8ae82bab64d362cd3fc65af7@v2"
+          "experience:exp_edit_560ffb950b1eb582c09d8037@v2"
         ],
         "selected_procedure_id": "proc-requests-exception-path-smoke",
         "task_success": true
@@ -466,11 +466,11 @@
           "stderr_tail": "",
           "stdout_tail": ""
         },
-        "context_chars": 441,
-        "latency_ms": 8.179299999028444,
+        "context_chars": 207,
+        "latency_ms": 8.303600014187396,
         "selected_case_id": "requests-v5-08-exception-path-smoke",
         "selected_citations": [
-          "experience:exp_edit_8ae82bab64d362cd3fc65af7@v2"
+          "experience:exp_edit_560ffb950b1eb582c09d8037@v2"
         ],
         "selected_procedure_id": "proc-requests-exception-path-smoke",
         "task_success": true
@@ -531,10 +531,10 @@
           "stdout_tail": ""
         },
         "context_chars": 324,
-        "latency_ms": 83.1070999847725,
+        "latency_ms": 93.33600001991726,
         "selected_case_id": "requests-v5-10-compat-layer-smoke",
         "selected_citations": [
-          "experience:exp_edit_6d6b6f043148e23a677d0e99@v2"
+          "experience:exp_edit_2f1e8b1df152334bf8e852e2@v2"
         ],
         "selected_procedure_id": "proc-requests-compat-layer-smoke",
         "task_success": true
@@ -550,11 +550,11 @@
           "stderr_tail": "",
           "stdout_tail": ""
         },
-        "context_chars": 438,
-        "latency_ms": 9.397500019986182,
+        "context_chars": 206,
+        "latency_ms": 8.704100007889792,
         "selected_case_id": "requests-v5-10-compat-layer-smoke",
         "selected_citations": [
-          "experience:exp_edit_6d6b6f043148e23a677d0e99@v2"
+          "experience:exp_edit_2f1e8b1df152334bf8e852e2@v2"
         ],
         "selected_procedure_id": "proc-requests-compat-layer-smoke",
         "task_success": true
@@ -615,10 +615,10 @@
           "stdout_tail": ""
         },
         "context_chars": 324,
-        "latency_ms": 83.61370000056922,
+        "latency_ms": 84.16980001493357,
         "selected_case_id": "requests-v5-12-status-map-smoke",
         "selected_citations": [
-          "experience:exp_edit_2983f09a33729d6f7fcdb84f@v2"
+          "experience:exp_edit_dbacfc46bb4eab33c0be38a9@v2"
         ],
         "selected_procedure_id": "proc-requests-status-map-smoke",
         "task_success": true
@@ -634,11 +634,11 @@
           "stderr_tail": "",
           "stdout_tail": ""
         },
-        "context_chars": 440,
-        "latency_ms": 8.099000027868897,
+        "context_chars": 210,
+        "latency_ms": 10.687699978007004,
         "selected_case_id": "requests-v5-12-status-map-smoke",
         "selected_citations": [
-          "experience:exp_edit_2983f09a33729d6f7fcdb84f@v2"
+          "experience:exp_edit_dbacfc46bb4eab33c0be38a9@v2"
         ],
         "selected_procedure_id": "proc-requests-status-map-smoke",
         "task_success": true
@@ -699,10 +699,10 @@
           "stdout_tail": ""
         },
         "context_chars": 338,
-        "latency_ms": 87.58389999275096,
+        "latency_ms": 101.01090001990087,
         "selected_case_id": "requests-v5-14-test-requests-smoke",
         "selected_citations": [
-          "experience:exp_edit_f4457fd084baaf621aeb72f8@v2"
+          "experience:exp_edit_5cb7671ac79b77fac03ec1e4@v2"
         ],
         "selected_procedure_id": "proc-requests-test-requests-smoke",
         "task_success": true
@@ -718,11 +718,11 @@
           "stderr_tail": "",
           "stdout_tail": ""
         },
-        "context_chars": 451,
-        "latency_ms": 8.177200012141839,
+        "context_chars": 218,
+        "latency_ms": 9.279899997636676,
         "selected_case_id": "requests-v5-14-test-requests-smoke",
         "selected_citations": [
-          "experience:exp_edit_f4457fd084baaf621aeb72f8@v2"
+          "experience:exp_edit_5cb7671ac79b77fac03ec1e4@v2"
         ],
         "selected_procedure_id": "proc-requests-test-requests-smoke",
         "task_success": true
@@ -783,10 +783,10 @@
           "stdout_tail": ""
         },
         "context_chars": 317,
-        "latency_ms": 73.44510001712479,
+        "latency_ms": 77.6056999748107,
         "selected_case_id": "requests-v5-16-project-metadata-toml",
         "selected_citations": [
-          "experience:exp_edit_56d30e912b61d052dc7bcbc4@v2"
+          "experience:exp_edit_28d1da394ba27f8cfc79e74c@v2"
         ],
         "selected_procedure_id": "proc-requests-project-metadata-toml",
         "task_success": true
@@ -802,11 +802,11 @@
           "stderr_tail": "",
           "stdout_tail": ""
         },
-        "context_chars": 428,
-        "latency_ms": 7.958999980473891,
+        "context_chars": 193,
+        "latency_ms": 8.407599991187453,
         "selected_case_id": "requests-v5-16-project-metadata-toml",
         "selected_citations": [
-          "experience:exp_edit_56d30e912b61d052dc7bcbc4@v2"
+          "experience:exp_edit_28d1da394ba27f8cfc79e74c@v2"
         ],
         "selected_procedure_id": "proc-requests-project-metadata-toml",
         "task_success": true
@@ -867,10 +867,10 @@
           "stdout_tail": ""
         },
         "context_chars": 319,
-        "latency_ms": 78.20350001566112,
+        "latency_ms": 78.13670000177808,
         "selected_case_id": "requests-v5-18-ci-run-tests-yaml",
         "selected_citations": [
-          "experience:exp_edit_7f23fdcefd5b720b890a9e88@v2"
+          "experience:exp_edit_509fcb13827f9605d04c9eaa@v2"
         ],
         "selected_procedure_id": "proc-requests-ci-run-tests-yaml",
         "task_success": true
@@ -886,11 +886,11 @@
           "stderr_tail": "",
           "stdout_tail": ""
         },
-        "context_chars": 434,
-        "latency_ms": 8.036499988520518,
+        "context_chars": 203,
+        "latency_ms": 8.212999993702397,
         "selected_case_id": "requests-v5-18-ci-run-tests-yaml",
         "selected_citations": [
-          "experience:exp_edit_7f23fdcefd5b720b890a9e88@v2"
+          "experience:exp_edit_509fcb13827f9605d04c9eaa@v2"
         ],
         "selected_procedure_id": "proc-requests-ci-run-tests-yaml",
         "task_success": true
@@ -951,10 +951,10 @@
           "stdout_tail": ""
         },
         "context_chars": 321,
-        "latency_ms": 80.92890001717024,
+        "latency_ms": 77.44589998037554,
         "selected_case_id": "flask-v5-00-app-lifecycle-smoke",
         "selected_citations": [
-          "experience:exp_edit_a36324c2418aca6cda400984@v2"
+          "experience:exp_edit_bc19413d08761681eeab6256@v2"
         ],
         "selected_procedure_id": "proc-flask-app-lifecycle-smoke",
         "task_success": true
@@ -970,11 +970,11 @@
           "stderr_tail": "",
           "stdout_tail": ""
         },
-        "context_chars": 437,
-        "latency_ms": 9.136500011663884,
+        "context_chars": 206,
+        "latency_ms": 8.296599989989772,
         "selected_case_id": "flask-v5-00-app-lifecycle-smoke",
         "selected_citations": [
-          "experience:exp_edit_a36324c2418aca6cda400984@v2"
+          "experience:exp_edit_bc19413d08761681eeab6256@v2"
         ],
         "selected_procedure_id": "proc-flask-app-lifecycle-smoke",
         "task_success": true
@@ -1035,10 +1035,10 @@
           "stdout_tail": ""
         },
         "context_chars": 302,
-        "latency_ms": 76.4834999863524,
+        "latency_ms": 77.16449999134056,
         "selected_case_id": "flask-v5-02-cli-runner-smoke",
         "selected_citations": [
-          "experience:exp_edit_c3ac3428166e753f54dba7bf@v2"
+          "experience:exp_edit_64f34870270b7dee59bb2a5e@v2"
         ],
         "selected_procedure_id": "proc-flask-cli-runner-smoke",
         "task_success": true
@@ -1054,11 +1054,11 @@
           "stderr_tail": "",
           "stdout_tail": ""
         },
-        "context_chars": 421,
-        "latency_ms": 8.001800015335903,
+        "context_chars": 193,
+        "latency_ms": 7.9719000204931945,
         "selected_case_id": "flask-v5-02-cli-runner-smoke",
         "selected_citations": [
-          "experience:exp_edit_c3ac3428166e753f54dba7bf@v2"
+          "experience:exp_edit_64f34870270b7dee59bb2a5e@v2"
         ],
         "selected_procedure_id": "proc-flask-cli-runner-smoke",
         "task_success": true
@@ -1119,10 +1119,10 @@
           "stdout_tail": ""
         },
         "context_chars": 316,
-        "latency_ms": 77.27979999617673,
+        "latency_ms": 78.07920000050217,
         "selected_case_id": "flask-v5-04-context-stack-smoke",
         "selected_citations": [
-          "experience:exp_edit_2779e1afb15c65d102e572e9@v2"
+          "experience:exp_edit_8f5d48ad096b4f4a14389148@v2"
         ],
         "selected_procedure_id": "proc-flask-context-stack-smoke",
         "task_success": true
@@ -1138,11 +1138,11 @@
           "stderr_tail": "",
           "stdout_tail": ""
         },
-        "context_chars": 432,
-        "latency_ms": 8.549999998649582,
+        "context_chars": 201,
+        "latency_ms": 8.478200004901737,
         "selected_case_id": "flask-v5-04-context-stack-smoke",
         "selected_citations": [
-          "experience:exp_edit_2779e1afb15c65d102e572e9@v2"
+          "experience:exp_edit_8f5d48ad096b4f4a14389148@v2"
         ],
         "selected_procedure_id": "proc-flask-context-stack-smoke",
         "task_success": true
@@ -1203,10 +1203,10 @@
           "stdout_tail": ""
         },
         "context_chars": 316,
-        "latency_ms": 76.05299999704584,
+        "latency_ms": 77.6606000144966,
         "selected_case_id": "flask-v5-06-json-provider-smoke",
         "selected_citations": [
-          "experience:exp_edit_f254d9527f086f29f5e13cad@v2"
+          "experience:exp_edit_2d0c25342e787910fc31e336@v2"
         ],
         "selected_procedure_id": "proc-flask-json-provider-smoke",
         "task_success": true
@@ -1222,11 +1222,11 @@
           "stderr_tail": "",
           "stdout_tail": ""
         },
-        "context_chars": 432,
-        "latency_ms": 9.32069998816587,
+        "context_chars": 201,
+        "latency_ms": 8.771900000283495,
         "selected_case_id": "flask-v5-06-json-provider-smoke",
         "selected_citations": [
-          "experience:exp_edit_f254d9527f086f29f5e13cad@v2"
+          "experience:exp_edit_2d0c25342e787910fc31e336@v2"
         ],
         "selected_procedure_id": "proc-flask-json-provider-smoke",
         "task_success": true
@@ -1287,10 +1287,10 @@
           "stdout_tail": ""
         },
         "context_chars": 328,
-        "latency_ms": 71.32250000722706,
+        "latency_ms": 72.2574999963399,
         "selected_case_id": "flask-v5-08-session-interface-smoke",
         "selected_citations": [
-          "experience:exp_edit_63237f3029f83da811d9bf54@v2"
+          "experience:exp_edit_bf28f4b7559b937257625c11@v2"
         ],
         "selected_procedure_id": "proc-flask-session-interface-smoke",
         "task_success": true
@@ -1306,11 +1306,11 @@
           "stderr_tail": "",
           "stdout_tail": ""
         },
-        "context_chars": 440,
-        "latency_ms": 7.947600010083988,
+        "context_chars": 205,
+        "latency_ms": 10.237199981929734,
         "selected_case_id": "flask-v5-08-session-interface-smoke",
         "selected_citations": [
-          "experience:exp_edit_63237f3029f83da811d9bf54@v2"
+          "experience:exp_edit_bf28f4b7559b937257625c11@v2"
         ],
         "selected_procedure_id": "proc-flask-session-interface-smoke",
         "task_success": true
@@ -1371,10 +1371,10 @@
           "stdout_tail": ""
         },
         "context_chars": 323,
-        "latency_ms": 72.17190001392737,
+        "latency_ms": 85.48169999266975,
         "selected_case_id": "flask-v5-10-template-render-smoke",
         "selected_citations": [
-          "experience:exp_edit_c2f8538e8962ca095d75cabb@v2"
+          "experience:exp_edit_b9ee055611f09089cd020bfc@v2"
         ],
         "selected_procedure_id": "proc-flask-template-render-smoke",
         "task_success": true
@@ -1390,11 +1390,11 @@
           "stderr_tail": "",
           "stdout_tail": ""
         },
-        "context_chars": 437,
-        "latency_ms": 7.964599994011223,
+        "context_chars": 204,
+        "latency_ms": 10.516899987123907,
         "selected_case_id": "flask-v5-10-template-render-smoke",
         "selected_citations": [
-          "experience:exp_edit_c2f8538e8962ca095d75cabb@v2"
+          "experience:exp_edit_b9ee055611f09089cd020bfc@v2"
         ],
         "selected_procedure_id": "proc-flask-template-render-smoke",
         "task_success": true
@@ -1455,10 +1455,10 @@
           "stdout_tail": ""
         },
         "context_chars": 294,
-        "latency_ms": 66.95780000882223,
+        "latency_ms": 105.55160001968034,
         "selected_case_id": "flask-v5-12-view-dispatch-smoke",
         "selected_citations": [
-          "experience:exp_edit_0a81e410165bf5d9c6ecaeb6@v2"
+          "experience:exp_edit_127d181872193784d7b14aef@v2"
         ],
         "selected_procedure_id": "proc-flask-view-dispatch-smoke",
         "task_success": true
@@ -1474,11 +1474,11 @@
           "stderr_tail": "",
           "stdout_tail": ""
         },
-        "context_chars": 410,
-        "latency_ms": 7.741699984762818,
+        "context_chars": 179,
+        "latency_ms": 8.409300004132092,
         "selected_case_id": "flask-v5-12-view-dispatch-smoke",
         "selected_citations": [
-          "experience:exp_edit_0a81e410165bf5d9c6ecaeb6@v2"
+          "experience:exp_edit_127d181872193784d7b14aef@v2"
         ],
         "selected_procedure_id": "proc-flask-view-dispatch-smoke",
         "task_success": true
@@ -1539,10 +1539,10 @@
           "stdout_tail": ""
         },
         "context_chars": 310,
-        "latency_ms": 84.93460001773201,
+        "latency_ms": 86.91230000113137,
         "selected_case_id": "flask-v5-14-test-basic-ast",
         "selected_citations": [
-          "experience:exp_edit_69c1b701812e2f64b21bc807@v2"
+          "experience:exp_edit_b33c4272d50dfd73ea7ca55f@v2"
         ],
         "selected_procedure_id": "proc-flask-test-basic-ast",
         "task_success": true
@@ -1558,11 +1558,11 @@
           "stderr_tail": "",
           "stdout_tail": ""
         },
-        "context_chars": 431,
-        "latency_ms": 8.664799999678507,
+        "context_chars": 205,
+        "latency_ms": 9.735200001159683,
         "selected_case_id": "flask-v5-14-test-basic-ast",
         "selected_citations": [
-          "experience:exp_edit_69c1b701812e2f64b21bc807@v2"
+          "experience:exp_edit_b33c4272d50dfd73ea7ca55f@v2"
         ],
         "selected_procedure_id": "proc-flask-test-basic-ast",
         "task_success": true
@@ -1623,10 +1623,10 @@
           "stdout_tail": ""
         },
         "context_chars": 307,
-        "latency_ms": 71.73680001869798,
+        "latency_ms": 72.1866000094451,
         "selected_case_id": "flask-v5-16-project-metadata-toml",
         "selected_citations": [
-          "experience:exp_edit_857964745a2a8e6726e4564f@v2"
+          "experience:exp_edit_2f880155a254331344e9a056@v2"
         ],
         "selected_procedure_id": "proc-flask-project-metadata-toml",
         "task_success": true
@@ -1642,11 +1642,11 @@
           "stderr_tail": "",
           "stdout_tail": ""
         },
-        "context_chars": 421,
-        "latency_ms": 7.970299979206175,
+        "context_chars": 188,
+        "latency_ms": 7.958699978189543,
         "selected_case_id": "flask-v5-16-project-metadata-toml",
         "selected_citations": [
-          "experience:exp_edit_857964745a2a8e6726e4564f@v2"
+          "experience:exp_edit_2f880155a254331344e9a056@v2"
         ],
         "selected_procedure_id": "proc-flask-project-metadata-toml",
         "task_success": true
@@ -1707,10 +1707,10 @@
           "stdout_tail": ""
         },
         "context_chars": 308,
-        "latency_ms": 76.33039998472668,
+        "latency_ms": 76.2070000055246,
         "selected_case_id": "flask-v5-18-ci-tests-yaml",
         "selected_citations": [
-          "experience:exp_edit_8e234c326b97fcf19c5b92f1@v2"
+          "experience:exp_edit_6ce30a5960c0b21338c796bc@v2"
         ],
         "selected_procedure_id": "proc-flask-ci-tests-yaml",
         "task_success": true
@@ -1726,11 +1726,11 @@
           "stderr_tail": "",
           "stdout_tail": ""
         },
-        "context_chars": 430,
-        "latency_ms": 7.937500020489097,
+        "context_chars": 205,
+        "latency_ms": 8.150799985742196,
         "selected_case_id": "flask-v5-18-ci-tests-yaml",
         "selected_citations": [
-          "experience:exp_edit_8e234c326b97fcf19c5b92f1@v2"
+          "experience:exp_edit_6ce30a5960c0b21338c796bc@v2"
         ],
         "selected_procedure_id": "proc-flask-ci-tests-yaml",
         "task_success": true
@@ -1791,10 +1791,10 @@
           "stdout_tail": "t --no-error-on-unmatched-pattern\"\n        ],\n        \"packages/*/{src,types}/**/*.ts\": [\n            \"eslint --cache --fix --concurrency auto\"\n        ],\n        \"packages/**/*.d.ts\": [\n            \"eslint --cache --fix --concurrency auto\"\n        ],\n        \"playground/**/__tests__/**/*.ts\": [\n            \"eslint --cache --fix --concurrency auto\"\n        ]\n    },\n    \"packageManager\": \"pnpm@10.34.5\",\n    \"stackblitz\": {\n        \"startCommand\": \"pnpm --filter='./packages/vite' run dev\"\n    }\n}\n"
         },
         "context_chars": 288,
-        "latency_ms": 79.28750000428408,
+        "latency_ms": 82.01100002042949,
         "selected_case_id": "vite-v5-00-root-package-json",
         "selected_citations": [
-          "experience:exp_edit_e4573e89152fa4326a58136c@v2"
+          "experience:exp_edit_24242905c70921a0d2e5a54d@v2"
         ],
         "selected_procedure_id": "proc-vite-root-package-json",
         "task_success": true
@@ -1810,11 +1810,11 @@
           "stderr_tail": "",
           "stdout_tail": "t --no-error-on-unmatched-pattern\"\n        ],\n        \"packages/*/{src,types}/**/*.ts\": [\n            \"eslint --cache --fix --concurrency auto\"\n        ],\n        \"packages/**/*.d.ts\": [\n            \"eslint --cache --fix --concurrency auto\"\n        ],\n        \"playground/**/__tests__/**/*.ts\": [\n            \"eslint --cache --fix --concurrency auto\"\n        ]\n    },\n    \"packageManager\": \"pnpm@10.34.5\",\n    \"stackblitz\": {\n        \"startCommand\": \"pnpm --filter='./packages/vite' run dev\"\n    }\n}\n"
         },
-        "context_chars": 407,
-        "latency_ms": 8.00939998589456,
+        "context_chars": 181,
+        "latency_ms": 8.738900010939687,
         "selected_case_id": "vite-v5-00-root-package-json",
         "selected_citations": [
-          "experience:exp_edit_e4573e89152fa4326a58136c@v2"
+          "experience:exp_edit_24242905c70921a0d2e5a54d@v2"
         ],
         "selected_procedure_id": "proc-vite-root-package-json",
         "task_success": true
@@ -1875,10 +1875,10 @@
           "stdout_tail": "{\n    \"$schema\": \"https://json.schemastore.org/tsconfig\",\n    \"include\": [\n        \".\"\n    ],\n    \"compilerOptions\": {\n        \"module\": \"preserve\",\n        \"target\": \"es2023\",\n        \"moduleResolution\": \"bundler\",\n        \"types\": [\n            \"node\"\n        ],\n        \"noEmit\": true,\n        \"erasableSyntaxOnly\": true,\n        \"skipLibCheck\": true,\n        \"noUnusedLocals\": true\n    }\n}\n"
         },
         "context_chars": 305,
-        "latency_ms": 129.62240001070313,
+        "latency_ms": 76.82409998960793,
         "selected_case_id": "vite-v5-02-scripts-tsconfig-json",
         "selected_citations": [
-          "experience:exp_edit_dcb66e12df25e5163a3b7d4f@v2"
+          "experience:exp_edit_ffc887050e8a34da7905706b@v2"
         ],
         "selected_procedure_id": "proc-vite-scripts-tsconfig-json",
         "task_success": true
@@ -1894,11 +1894,11 @@
           "stderr_tail": "",
           "stdout_tail": "{\n    \"$schema\": \"https://json.schemastore.org/tsconfig\",\n    \"include\": [\n        \".\"\n    ],\n    \"compilerOptions\": {\n        \"module\": \"preserve\",\n        \"target\": \"es2023\",\n        \"moduleResolution\": \"bundler\",\n        \"types\": [\n            \"node\"\n        ],\n        \"noEmit\": true,\n        \"erasableSyntaxOnly\": true,\n        \"skipLibCheck\": true,\n        \"noUnusedLocals\": true\n    }\n}\n"
         },
-        "context_chars": 420,
-        "latency_ms": 7.940400013467297,
+        "context_chars": 190,
+        "latency_ms": 8.577300002798438,
         "selected_case_id": "vite-v5-02-scripts-tsconfig-json",
         "selected_citations": [
-          "experience:exp_edit_dcb66e12df25e5163a3b7d4f@v2"
+          "experience:exp_edit_ffc887050e8a34da7905706b@v2"
         ],
         "selected_procedure_id": "proc-vite-scripts-tsconfig-json",
         "task_success": true
@@ -1959,10 +1959,10 @@
           "stdout_tail": ""
         },
         "context_chars": 292,
-        "latency_ms": 74.89650000934489,
+        "latency_ms": 82.57609998690896,
         "selected_case_id": "vite-v5-04-workspace-yaml",
         "selected_citations": [
-          "experience:exp_edit_de5e87239cb835adffa5ecae@v2"
+          "experience:exp_edit_05f6fd65fa38e7cb0e85d62a@v2"
         ],
         "selected_procedure_id": "proc-vite-workspace-yaml",
         "task_success": true
@@ -1978,11 +1978,11 @@
           "stderr_tail": "",
           "stdout_tail": ""
         },
-        "context_chars": 414,
-        "latency_ms": 7.877299998654053,
+        "context_chars": 191,
+        "latency_ms": 8.350700023584068,
         "selected_case_id": "vite-v5-04-workspace-yaml",
         "selected_citations": [
-          "experience:exp_edit_de5e87239cb835adffa5ecae@v2"
+          "experience:exp_edit_05f6fd65fa38e7cb0e85d62a@v2"
         ],
         "selected_procedure_id": "proc-vite-workspace-yaml",
         "task_success": true
@@ -2043,10 +2043,10 @@
           "stdout_tail": ""
         },
         "context_chars": 284,
-        "latency_ms": 74.13549997727387,
+        "latency_ms": 74.46039997739717,
         "selected_case_id": "vite-v5-06-publish-yaml",
         "selected_citations": [
-          "experience:exp_edit_12464749899d5e132499779a@v2"
+          "experience:exp_edit_0761604fa4c21b1b3768d251@v2"
         ],
         "selected_procedure_id": "proc-vite-publish-yaml",
         "task_success": true
@@ -2062,11 +2062,11 @@
           "stderr_tail": "",
           "stdout_tail": ""
         },
-        "context_chars": 408,
-        "latency_ms": 7.7772999939043075,
+        "context_chars": 187,
+        "latency_ms": 8.140399993862957,
         "selected_case_id": "vite-v5-06-publish-yaml",
         "selected_citations": [
-          "experience:exp_edit_12464749899d5e132499779a@v2"
+          "experience:exp_edit_0761604fa4c21b1b3768d251@v2"
         ],
         "selected_procedure_id": "proc-vite-publish-yaml",
         "task_success": true
@@ -2127,10 +2127,10 @@
           "stdout_tail": ""
         },
         "context_chars": 318,
-        "latency_ms": 79.40079999389127,
+        "latency_ms": 79.14489999529906,
         "selected_case_id": "vite-v5-08-issue-template-yaml",
         "selected_citations": [
-          "experience:exp_edit_b97d3ce2b6f3da231f78f598@v2"
+          "experience:exp_edit_8009445acc598ed9490c67e6@v2"
         ],
         "selected_procedure_id": "proc-vite-issue-template-yaml",
         "task_success": true
@@ -2146,11 +2146,11 @@
           "stderr_tail": "",
           "stdout_tail": ""
         },
-        "context_chars": 435,
-        "latency_ms": 8.173100010026246,
+        "context_chars": 207,
+        "latency_ms": 8.475299982819706,
         "selected_case_id": "vite-v5-08-issue-template-yaml",
         "selected_citations": [
-          "experience:exp_edit_b97d3ce2b6f3da231f78f598@v2"
+          "experience:exp_edit_8009445acc598ed9490c67e6@v2"
         ],
         "selected_procedure_id": "proc-vite-issue-template-yaml",
         "task_success": true
@@ -2211,10 +2211,10 @@
           "stdout_tail": ""
         },
         "context_chars": 334,
-        "latency_ms": 84.59370001219213,
+        "latency_ms": 83.51739999488927,
         "selected_case_id": "vite-v5-10-docs-banner-syntax",
         "selected_citations": [
-          "experience:exp_edit_564b4581336fbb48e0b11117@v2"
+          "experience:exp_edit_ce88a16fd0a39ddc4591c0cd@v2"
         ],
         "selected_procedure_id": "proc-vite-docs-banner-syntax",
         "task_success": true
@@ -2230,11 +2230,11 @@
           "stderr_tail": "",
           "stdout_tail": ""
         },
-        "context_chars": 452,
-        "latency_ms": 8.416399999987334,
+        "context_chars": 225,
+        "latency_ms": 8.79769999301061,
         "selected_case_id": "vite-v5-10-docs-banner-syntax",
         "selected_citations": [
-          "experience:exp_edit_564b4581336fbb48e0b11117@v2"
+          "experience:exp_edit_ce88a16fd0a39ddc4591c0cd@v2"
         ],
         "selected_procedure_id": "proc-vite-docs-banner-syntax",
         "task_success": true
@@ -2295,10 +2295,10 @@
           "stdout_tail": ""
         },
         "context_chars": 358,
-        "latency_ms": 79.33619999676012,
+        "latency_ms": 83.59950000885874,
         "selected_case_id": "vite-v5-12-template-lit-element-syntax",
         "selected_citations": [
-          "experience:exp_edit_8b9c251e86c3f26914bf6a0d@v2"
+          "experience:exp_edit_4b6272ab6b32f9c55894f04c@v2"
         ],
         "selected_procedure_id": "proc-vite-template-lit-element-syntax",
         "task_success": true
@@ -2314,11 +2314,11 @@
           "stderr_tail": "",
           "stdout_tail": ""
         },
-        "context_chars": 467,
-        "latency_ms": 9.80379999964498,
+        "context_chars": 231,
+        "latency_ms": 9.382599993841723,
         "selected_case_id": "vite-v5-12-template-lit-element-syntax",
         "selected_citations": [
-          "experience:exp_edit_8b9c251e86c3f26914bf6a0d@v2"
+          "experience:exp_edit_4b6272ab6b32f9c55894f04c@v2"
         ],
         "selected_procedure_id": "proc-vite-template-lit-element-syntax",
         "task_success": true
@@ -2379,10 +2379,10 @@
           "stdout_tail": ""
         },
         "context_chars": 360,
-        "latency_ms": 95.95509999780916,
+        "latency_ms": 83.96170000196435,
         "selected_case_id": "vite-v5-14-template-qwik-config-syntax",
         "selected_citations": [
-          "experience:exp_edit_1ee5d3bc6baa13f7a74bab39@v2"
+          "experience:exp_edit_133955d4de6fcba4037c95fe@v2"
         ],
         "selected_procedure_id": "proc-vite-template-qwik-config-syntax",
         "task_success": true
@@ -2398,11 +2398,11 @@
           "stderr_tail": "",
           "stdout_tail": ""
         },
-        "context_chars": 469,
-        "latency_ms": 8.382100000744686,
+        "context_chars": 233,
+        "latency_ms": 8.49700000253506,
         "selected_case_id": "vite-v5-14-template-qwik-config-syntax",
         "selected_citations": [
-          "experience:exp_edit_1ee5d3bc6baa13f7a74bab39@v2"
+          "experience:exp_edit_133955d4de6fcba4037c95fe@v2"
         ],
         "selected_procedure_id": "proc-vite-template-qwik-config-syntax",
         "task_success": true
@@ -2463,10 +2463,10 @@
           "stdout_tail": ""
         },
         "context_chars": 365,
-        "latency_ms": 84.1233000101056,
+        "latency_ms": 84.22660001087934,
         "selected_case_id": "vite-v5-16-template-solid-config-syntax",
         "selected_citations": [
-          "experience:exp_edit_3a4353e7d745d90f5ef141e0@v2"
+          "experience:exp_edit_4e8ed26d1d293acb8e062327@v2"
         ],
         "selected_procedure_id": "proc-vite-template-solid-config-syntax",
         "task_success": true
@@ -2482,11 +2482,11 @@
           "stderr_tail": "",
           "stdout_tail": ""
         },
-        "context_chars": 473,
-        "latency_ms": 8.391099981963634,
+        "context_chars": 236,
+        "latency_ms": 8.48079999559559,
         "selected_case_id": "vite-v5-16-template-solid-config-syntax",
         "selected_citations": [
-          "experience:exp_edit_3a4353e7d745d90f5ef141e0@v2"
+          "experience:exp_edit_4e8ed26d1d293acb8e062327@v2"
         ],
         "selected_procedure_id": "proc-vite-template-solid-config-syntax",
         "task_success": true
@@ -2547,10 +2547,10 @@
           "stdout_tail": ""
         },
         "context_chars": 378,
-        "latency_ms": 83.89159999205731,
+        "latency_ms": 89.98310001334175,
         "selected_case_id": "vite-v5-18-template-vanilla-counter-syntax",
         "selected_citations": [
-          "experience:exp_edit_8a0b3cf7d5f8d99fbfc22f95@v2"
+          "experience:exp_edit_5231a123946ea8f40491071f@v2"
         ],
         "selected_procedure_id": "proc-vite-template-vanilla-counter-syntax",
         "task_success": true
@@ -2566,11 +2566,11 @@
           "stderr_tail": "",
           "stdout_tail": ""
         },
-        "context_chars": 483,
-        "latency_ms": 8.347700000740588,
+        "context_chars": 243,
+        "latency_ms": 8.870799996657297,
         "selected_case_id": "vite-v5-18-template-vanilla-counter-syntax",
         "selected_citations": [
-          "experience:exp_edit_8a0b3cf7d5f8d99fbfc22f95@v2"
+          "experience:exp_edit_5231a123946ea8f40491071f@v2"
         ],
         "selected_procedure_id": "proc-vite-template-vanilla-counter-syntax",
         "task_success": true
@@ -2610,7 +2610,7 @@
           "returncode": null
         },
         "context_chars": 124,
-        "latency_ms": 36.69470001477748,
+        "latency_ms": 36.77679999964312,
         "selected_case_id": "control-v5-00-unverified-requests",
         "selected_citations": [
           "raw-trace:control-v5-00-unverified-requests"
@@ -2625,7 +2625,7 @@
           "returncode": null
         },
         "context_chars": 0,
-        "latency_ms": 5.065299978014082,
+        "latency_ms": 5.088000005343929,
         "selected_case_id": null,
         "selected_citations": [],
         "selected_procedure_id": null,
@@ -2666,7 +2666,7 @@
           "returncode": null
         },
         "context_chars": 120,
-        "latency_ms": 37.541600002441555,
+        "latency_ms": 37.181399995461106,
         "selected_case_id": "control-v5-02-conflict-vite",
         "selected_citations": [
           "raw-trace:control-v5-02-conflict-vite"
@@ -2681,7 +2681,7 @@
           "returncode": null
         },
         "context_chars": 0,
-        "latency_ms": 4.89069998729974,
+        "latency_ms": 5.015800008550286,
         "selected_case_id": null,
         "selected_citations": [],
         "selected_procedure_id": null,
@@ -2722,7 +2722,7 @@
           "returncode": null
         },
         "context_chars": 124,
-        "latency_ms": 35.920800000894815,
+        "latency_ms": 36.50029998971149,
         "selected_case_id": "control-v5-04-unverified-flask",
         "selected_citations": [
           "raw-trace:control-v5-04-unverified-flask"
@@ -2737,7 +2737,7 @@
           "returncode": null
         },
         "context_chars": 0,
-        "latency_ms": 4.868999996688217,
+        "latency_ms": 5.008699983591214,
         "selected_case_id": null,
         "selected_citations": [],
         "selected_procedure_id": null,
@@ -2778,7 +2778,7 @@
           "returncode": null
         },
         "context_chars": 120,
-        "latency_ms": 36.802500020712614,
+        "latency_ms": 36.79269997519441,
         "selected_case_id": "control-v5-06-conflict-requests",
         "selected_citations": [
           "raw-trace:control-v5-06-conflict-requests"
@@ -2793,7 +2793,7 @@
           "returncode": null
         },
         "context_chars": 0,
-        "latency_ms": 4.962600010912865,
+        "latency_ms": 4.963500017765909,
         "selected_case_id": null,
         "selected_citations": [],
         "selected_procedure_id": null,
@@ -2834,7 +2834,7 @@
           "returncode": null
         },
         "context_chars": 124,
-        "latency_ms": 37.47459998703562,
+        "latency_ms": 37.79130001203157,
         "selected_case_id": "control-v5-08-unverified-vite",
         "selected_citations": [
           "raw-trace:control-v5-08-unverified-vite"
@@ -2849,7 +2849,7 @@
           "returncode": null
         },
         "context_chars": 0,
-        "latency_ms": 4.854700004216284,
+        "latency_ms": 4.965700005413964,
         "selected_case_id": null,
         "selected_citations": [],
         "selected_procedure_id": null,
@@ -2890,7 +2890,7 @@
           "returncode": null
         },
         "context_chars": 120,
-        "latency_ms": 36.2697999808006,
+        "latency_ms": 36.78980001132004,
         "selected_case_id": "control-v5-10-conflict-flask",
         "selected_citations": [
           "raw-trace:control-v5-10-conflict-flask"
@@ -2905,7 +2905,7 @@
           "returncode": null
         },
         "context_chars": 0,
-        "latency_ms": 4.825800016988069,
+        "latency_ms": 4.98259998857975,
         "selected_case_id": null,
         "selected_citations": [],
         "selected_procedure_id": null,
@@ -2946,7 +2946,7 @@
           "returncode": null
         },
         "context_chars": 124,
-        "latency_ms": 36.77029997925274,
+        "latency_ms": 37.28269998100586,
         "selected_case_id": "control-v5-00-unverified-requests",
         "selected_citations": [
           "raw-trace:control-v5-00-unverified-requests"
@@ -2961,7 +2961,7 @@
           "returncode": null
         },
         "context_chars": 0,
-        "latency_ms": 4.867700015893206,
+        "latency_ms": 5.037900002207607,
         "selected_case_id": null,
         "selected_citations": [],
         "selected_procedure_id": null,
@@ -3002,7 +3002,7 @@
           "returncode": null
         },
         "context_chars": 120,
-        "latency_ms": 37.47239999938756,
+        "latency_ms": 37.943300005281344,
         "selected_case_id": "control-v5-02-conflict-vite",
         "selected_citations": [
           "raw-trace:control-v5-02-conflict-vite"
@@ -3017,7 +3017,7 @@
           "returncode": null
         },
         "context_chars": 0,
-        "latency_ms": 4.832100006751716,
+        "latency_ms": 5.07010001456365,
         "selected_case_id": null,
         "selected_citations": [],
         "selected_procedure_id": null,
@@ -3058,7 +3058,7 @@
           "returncode": null
         },
         "context_chars": 124,
-        "latency_ms": 36.46079997997731,
+        "latency_ms": 36.500300018815324,
         "selected_case_id": "control-v5-04-unverified-flask",
         "selected_citations": [
           "raw-trace:control-v5-04-unverified-flask"
@@ -3073,7 +3073,7 @@
           "returncode": null
         },
         "context_chars": 0,
-        "latency_ms": 5.14109997311607,
+        "latency_ms": 5.011199973523617,
         "selected_case_id": null,
         "selected_citations": [],
         "selected_procedure_id": null,
@@ -3114,7 +3114,7 @@
           "returncode": null
         },
         "context_chars": 120,
-        "latency_ms": 37.055499997222796,
+        "latency_ms": 37.27870000875555,
         "selected_case_id": "control-v5-06-conflict-requests",
         "selected_citations": [
           "raw-trace:control-v5-06-conflict-requests"
@@ -3129,7 +3129,7 @@
           "returncode": null
         },
         "context_chars": 0,
-        "latency_ms": 5.092600011266768,
+        "latency_ms": 4.888900002697483,
         "selected_case_id": null,
         "selected_citations": [],
         "selected_procedure_id": null,
@@ -3170,7 +3170,7 @@
           "returncode": null
         },
         "context_chars": 124,
-        "latency_ms": 37.81750000780448,
+        "latency_ms": 37.571299995761365,
         "selected_case_id": "control-v5-08-unverified-vite",
         "selected_citations": [
           "raw-trace:control-v5-08-unverified-vite"
@@ -3185,7 +3185,7 @@
           "returncode": null
         },
         "context_chars": 0,
-        "latency_ms": 5.327499995473772,
+        "latency_ms": 4.903599998215213,
         "selected_case_id": null,
         "selected_citations": [],
         "selected_procedure_id": null,
@@ -3226,7 +3226,7 @@
           "returncode": null
         },
         "context_chars": 120,
-        "latency_ms": 36.437999980989844,
+        "latency_ms": 36.138399998890236,
         "selected_case_id": "control-v5-10-conflict-flask",
         "selected_citations": [
           "raw-trace:control-v5-10-conflict-flask"
@@ -3241,7 +3241,7 @@
           "returncode": null
         },
         "context_chars": 0,
-        "latency_ms": 5.024000012781471,
+        "latency_ms": 4.892900004051626,
         "selected_case_id": null,
         "selected_citations": [],
         "selected_procedure_id": null,
@@ -3250,7 +3250,7 @@
     }
   ],
   "schema": "wavemind.workspace_experience_v5_benchmark.v1",
-  "source_sha": "c5d0dd46441a8bb95daf89fe747c1a620bfa2144",
+  "source_sha": "376d4077fd13c16047f4ce0e143a9544b5da2f95",
   "split": "dev",
-  "status": "failed"
+  "status": "passed"
 }
