@@ -11,7 +11,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from threading import Lock
-from typing import Any, Iterator
+from typing import Any, Iterator, Mapping, Sequence
 
 from fastapi import Body, Depends, FastAPI, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
@@ -184,6 +184,94 @@ class APIAuth:
             )
         if not all(principal.allows_namespace(namespace) for namespace in namespaces):
             raise HTTPException(status_code=403, detail="Namespace access denied")
+
+
+class WorkspaceRegistry:
+    def __init__(
+        self,
+        roots: Mapping[str, str | Path] | None = None,
+        *,
+        base_roots: Sequence[str | Path] | None = None,
+    ):
+        self.roots = {
+            str(workspace_id).strip(): Path(root)
+            for workspace_id, root in (roots or {}).items()
+            if str(workspace_id).strip()
+        }
+        self.base_roots = tuple(
+            Path(root).expanduser().resolve(strict=True)
+            for root in (base_roots or ())
+        )
+
+    def resolve(self, workspace_id: str) -> Path:
+        selected = str(workspace_id or "").strip()
+        if not selected or selected not in self.roots:
+            raise HTTPException(status_code=403, detail="Workspace is not registered")
+        try:
+            root = self.roots[selected].expanduser().resolve(strict=True)
+        except OSError as exc:
+            raise HTTPException(status_code=422, detail="Workspace root is not available") from exc
+        if not root.is_dir():
+            raise HTTPException(status_code=422, detail="Workspace root is not a directory")
+        if self.base_roots and not any(
+            _path_is_relative_to(root, base_root) for base_root in self.base_roots
+        ):
+            raise HTTPException(
+                status_code=403,
+                detail="Workspace root is outside configured allowlist",
+            )
+        state_dir = root / ".wavemind"
+        config_path = state_dir / "workspace.json"
+        try:
+            resolved_config = config_path.resolve(strict=True)
+        except OSError as exc:
+            raise HTTPException(status_code=422, detail="Workspace config is not available") from exc
+        if resolved_config.parent != state_dir.resolve(strict=True) or not _path_is_relative_to(
+            resolved_config,
+            root,
+        ):
+            raise HTTPException(status_code=403, detail="Workspace config escapes workspace root")
+        return root
+
+
+def _workspace_registry_from_env() -> WorkspaceRegistry:
+    roots: dict[str, str] = {}
+    raw_registry = os.environ.get("WAVEMIND_WORKSPACE_REGISTRY", "").strip()
+    if raw_registry:
+        try:
+            payload = json.loads(raw_registry)
+        except json.JSONDecodeError as exc:
+            raise ValueError("WAVEMIND_WORKSPACE_REGISTRY must be valid JSON") from exc
+        if not isinstance(payload, dict):
+            raise ValueError("WAVEMIND_WORKSPACE_REGISTRY must be a JSON object")
+        for workspace_id, root in payload.items():
+            if not isinstance(workspace_id, str) or not isinstance(root, str):
+                raise ValueError("WAVEMIND_WORKSPACE_REGISTRY maps string ids to string roots")
+            roots[workspace_id] = root
+    base_roots: list[str] = []
+    raw_base_roots = os.environ.get("WAVEMIND_WORKSPACE_BASE_ROOTS", "").strip()
+    if raw_base_roots:
+        if raw_base_roots.startswith("["):
+            try:
+                base_payload = json.loads(raw_base_roots)
+            except json.JSONDecodeError as exc:
+                raise ValueError("WAVEMIND_WORKSPACE_BASE_ROOTS must be valid JSON") from exc
+            if not isinstance(base_payload, list) or not all(
+                isinstance(item, str) for item in base_payload
+            ):
+                raise ValueError("WAVEMIND_WORKSPACE_BASE_ROOTS JSON must be a string array")
+            base_roots = base_payload
+        else:
+            base_roots = [item for item in raw_base_roots.split(os.pathsep) if item]
+    return WorkspaceRegistry(roots, base_roots=base_roots)
+
+
+def _path_is_relative_to(path: Path, parent: Path) -> bool:
+    try:
+        path.relative_to(parent)
+        return True
+    except ValueError:
+        return False
 
 
 class InMemoryRateLimiter:
@@ -718,11 +806,13 @@ async def _request_namespaces(request: Request) -> set[str]:
     return namespaces
 
 
-def require_role(role: str):
+def require_role(role: str, *, require_explicit_namespace: bool = True):
     async def dependency(request: Request) -> None:
         auth = request.app.state.auth
         principal = auth.check(request, role)
-        auth.check_namespaces(principal, await _request_namespaces(request))
+        namespaces = await _request_namespaces(request)
+        if namespaces or require_explicit_namespace:
+            auth.check_namespaces(principal, namespaces)
         request.state.wavemind_principal = principal
 
     return dependency
@@ -1341,7 +1431,10 @@ class ExperienceRuntimeLifecycleRequest(BaseModel):
 
 
 class WorkspaceRootRequest(BaseModel):
-    root: str = Field(min_length=1)
+    workspace_id: str = Field(
+        min_length=1,
+        validation_alias=AliasChoices("workspace_id", "workspaceId"),
+    )
 
 
 class WorkspaceRuntimeStartRequest(WorkspaceRootRequest):
@@ -1564,6 +1657,8 @@ def create_app(
     mind: WaveMind | None = None,
     *,
     experience_store: SQLiteExperienceStore | None = None,
+    workspace_registry: Mapping[str, str | Path] | None = None,
+    workspace_base_roots: Sequence[str | Path] | None = None,
 ) -> FastAPI:
     logging.basicConfig(level=os.environ.get("WAVEMIND_LOG_LEVEL", "INFO"))
     app = FastAPI(title="WaveMind", version=__version__)
@@ -1578,6 +1673,11 @@ def create_app(
     app.state.rate_limiter = _rate_limiter_from_env()
     app.state.cache = _cache_from_env()
     app.state.vector_cache = _vector_cache_from_env()
+    app.state.workspace_registry = (
+        _workspace_registry_from_env()
+        if workspace_registry is None and workspace_base_roots is None
+        else WorkspaceRegistry(workspace_registry or {}, base_roots=workspace_base_roots)
+    )
     app.state.operation_lock = (
         None
         if os.environ.get("WAVEMIND_API_SERIALIZE_OPERATIONS", "1").lower()
@@ -1635,11 +1735,19 @@ def create_app(
             return runtime
 
     @contextmanager
-    def _workspace_manager(root: str) -> Iterator[WorkspaceExperienceManager]:
+    def _workspace_manager(
+        workspace_id: str,
+        request: Request,
+    ) -> Iterator[WorkspaceExperienceManager]:
+        principal = getattr(request.state, "wavemind_principal", None)
+        if principal is None:
+            raise HTTPException(status_code=401, detail="Missing authenticated principal")
         try:
+            root = app.state.workspace_registry.resolve(workspace_id)
             manager = WorkspaceExperienceManager.open(root)
         except (OSError, ValueError) as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
+        app.state.auth.check_namespaces(principal, {manager.identity.namespace})
         try:
             yield manager
         finally:
@@ -2431,10 +2539,10 @@ def create_app(
 
     @app.post(
         "/workspace/runtime/runs",
-        dependencies=[Depends(require_role("write"))],
+        dependencies=[Depends(require_role("write", require_explicit_namespace=False))],
     )
-    def start_workspace_runtime_run(request: WorkspaceRuntimeStartRequest):
-        with _workspace_manager(request.root) as manager:
+    def start_workspace_runtime_run(request: WorkspaceRuntimeStartRequest, http_request: Request):
+        with _workspace_manager(request.workspace_id, http_request) as manager:
             try:
                 return manager.start_run(
                     query=request.query,
@@ -2455,10 +2563,13 @@ def create_app(
 
     @app.post(
         "/workspace/runtime/events",
-        dependencies=[Depends(require_role("write"))],
+        dependencies=[Depends(require_role("write", require_explicit_namespace=False))],
     )
-    def capture_workspace_runtime_event(request: WorkspaceRuntimeEventRequest):
-        with _workspace_manager(request.root) as manager:
+    def capture_workspace_runtime_event(
+        request: WorkspaceRuntimeEventRequest,
+        http_request: Request,
+    ):
+        with _workspace_manager(request.workspace_id, http_request) as manager:
             try:
                 return manager.capture_event(
                     WorkspaceEvent(
@@ -2480,13 +2591,14 @@ def create_app(
 
     @app.post(
         "/workspace/runtime/runs/{run_id}/verify",
-        dependencies=[Depends(require_role("write"))],
+        dependencies=[Depends(require_role("write", require_explicit_namespace=False))],
     )
     def verify_workspace_runtime_run(
         run_id: str,
         request: WorkspaceRuntimeVerifyRequest,
+        http_request: Request,
     ):
-        with _workspace_manager(request.root) as manager:
+        with _workspace_manager(request.workspace_id, http_request) as manager:
             try:
                 return manager.verify_run(
                     run_id=run_id,
@@ -2506,15 +2618,16 @@ def create_app(
 
     @app.post(
         "/workspace/runtime/runs/{run_id}/cancel",
-        dependencies=[Depends(require_role("write"))],
+        dependencies=[Depends(require_role("write", require_explicit_namespace=False))],
     )
     def cancel_workspace_runtime_run(
         run_id: str,
         request: WorkspaceLifecycleRequest,
+        http_request: Request,
     ):
         if not request.evidence_id:
             raise HTTPException(status_code=422, detail="evidence_id is required")
-        with _workspace_manager(request.root) as manager:
+        with _workspace_manager(request.workspace_id, http_request) as manager:
             try:
                 return manager.cancel_run(
                     run_id=run_id,
@@ -2529,10 +2642,13 @@ def create_app(
 
     @app.post(
         "/workspace/packet",
-        dependencies=[Depends(require_role("read"))],
+        dependencies=[Depends(require_role("read", require_explicit_namespace=False))],
     )
-    def compile_workspace_experience_packet(request: WorkspacePacketRequest):
-        with _workspace_manager(request.root) as manager:
+    def compile_workspace_experience_packet(
+        request: WorkspacePacketRequest,
+        http_request: Request,
+    ):
+        with _workspace_manager(request.workspace_id, http_request) as manager:
             try:
                 return manager.packet(
                     request.query,
@@ -2547,10 +2663,10 @@ def create_app(
 
     @app.post(
         "/workspace/review",
-        dependencies=[Depends(require_role("read"))],
+        dependencies=[Depends(require_role("read", require_explicit_namespace=False))],
     )
-    def list_workspace_review_queue(request: WorkspaceReviewRequest):
-        with _workspace_manager(request.root) as manager:
+    def list_workspace_review_queue(request: WorkspaceReviewRequest, http_request: Request):
+        with _workspace_manager(request.workspace_id, http_request) as manager:
             return {
                 "schema": "wavemind.workspace_review_queue.v1",
                 "identity": manager.identity.as_dict(),
@@ -2559,15 +2675,16 @@ def create_app(
 
     @app.post(
         "/workspace/runtime/{experience_id}/approve",
-        dependencies=[Depends(require_role("admin"))],
+        dependencies=[Depends(require_role("admin", require_explicit_namespace=False))],
     )
     def approve_workspace_experience(
         experience_id: str,
         request: WorkspaceLifecycleRequest,
+        http_request: Request,
     ):
         if not request.evidence_id:
             raise HTTPException(status_code=422, detail="evidence_id is required")
-        with _workspace_manager(request.root) as manager:
+        with _workspace_manager(request.workspace_id, http_request) as manager:
             try:
                 return {
                     "experience_id": experience_id,
@@ -2582,17 +2699,18 @@ def create_app(
 
     @app.post(
         "/workspace/runtime/{experience_id}/edit-and-approve",
-        dependencies=[Depends(require_role("admin"))],
+        dependencies=[Depends(require_role("admin", require_explicit_namespace=False))],
     )
     def edit_and_approve_workspace_experience(
         experience_id: str,
         request: WorkspaceEditApproveRequest,
+        http_request: Request,
     ):
         if not request.evidence_id:
             raise HTTPException(status_code=422, detail="evidence_id is required")
         if request.title is None and request.content is None:
             raise HTTPException(status_code=422, detail="title or content is required")
-        with _workspace_manager(request.root) as manager:
+        with _workspace_manager(request.workspace_id, http_request) as manager:
             try:
                 return manager.edit_and_approve(
                     experience_id,
@@ -2610,13 +2728,14 @@ def create_app(
 
     @app.post(
         "/workspace/runtime/{experience_id}/reject",
-        dependencies=[Depends(require_role("admin"))],
+        dependencies=[Depends(require_role("admin", require_explicit_namespace=False))],
     )
     def reject_workspace_experience(
         experience_id: str,
         request: WorkspaceLifecycleRequest,
+        http_request: Request,
     ):
-        with _workspace_manager(request.root) as manager:
+        with _workspace_manager(request.workspace_id, http_request) as manager:
             try:
                 return manager.reject(experience_id, reason=request.reason)
             except KeyError as exc:
@@ -2624,13 +2743,14 @@ def create_app(
 
     @app.post(
         "/workspace/runtime/{experience_id}/rollback",
-        dependencies=[Depends(require_role("admin"))],
+        dependencies=[Depends(require_role("admin", require_explicit_namespace=False))],
     )
     def rollback_workspace_experience(
         experience_id: str,
         request: WorkspaceLifecycleRequest,
+        http_request: Request,
     ):
-        with _workspace_manager(request.root) as manager:
+        with _workspace_manager(request.workspace_id, http_request) as manager:
             try:
                 return manager.rollback(experience_id, reason=request.reason)
             except KeyError as exc:
@@ -2640,13 +2760,14 @@ def create_app(
 
     @app.delete(
         "/workspace/runtime/{experience_id}",
-        dependencies=[Depends(require_role("admin"))],
+        dependencies=[Depends(require_role("admin", require_explicit_namespace=False))],
     )
     def delete_workspace_experience(
         experience_id: str,
         request: WorkspaceLifecycleRequest,
+        http_request: Request,
     ):
-        with _workspace_manager(request.root) as manager:
+        with _workspace_manager(request.workspace_id, http_request) as manager:
             try:
                 return {
                     "experience_id": experience_id,

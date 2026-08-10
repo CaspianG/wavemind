@@ -382,11 +382,17 @@ def test_workspace_http_capture_review_and_cross_process_replay(tmp_path: Path) 
     initialize_workspace(repo, workspace_id="http-agent", tenant_id="tenant", user_id="user")
     mind = WaveMind(db_path=tmp_path / "memory.sqlite3")
     try:
-        with TestClient(create_app(mind=mind)) as client:
+        with TestClient(
+            create_app(
+                mind=mind,
+                workspace_registry={"http-agent": repo},
+                workspace_base_roots=[tmp_path],
+            )
+        ) as client:
             start = client.post(
                 "/workspace/runtime/runs",
                 json={
-                    "root": str(repo),
+                    "workspace_id": "http-agent",
                     "query": "pytest cache permission failure",
                     "objective": "fix pytest cache permission failure",
                     "domain": "python",
@@ -403,7 +409,7 @@ def test_workspace_http_capture_review_and_cross_process_replay(tmp_path: Path) 
             replay = client.post(
                 "/workspace/runtime/runs",
                 json={
-                    "root": str(repo),
+                    "workspace_id": "http-agent",
                     "query": "pytest cache permission failure",
                     "objective": "fix pytest cache permission failure",
                     "domain": "python",
@@ -419,7 +425,7 @@ def test_workspace_http_capture_review_and_cross_process_replay(tmp_path: Path) 
             assert replay.json()["next_sequence"] == started["next_sequence"]
 
             call = {
-                "root": str(repo),
+                "workspace_id": "http-agent",
                 "id": "http-call",
                 "run_id": "http-run",
                 "session_id": "http-session",
@@ -452,7 +458,7 @@ def test_workspace_http_capture_review_and_cross_process_replay(tmp_path: Path) 
             result = client.post(
                 "/workspace/runtime/events",
                 json={
-                    "root": str(repo),
+                    "workspace_id": "http-agent",
                     "id": "http-result",
                     "run_id": "http-run",
                     "session_id": "http-session",
@@ -468,7 +474,7 @@ def test_workspace_http_capture_review_and_cross_process_replay(tmp_path: Path) 
             verified = client.post(
                 "/workspace/runtime/runs/http-run/verify",
                 json={
-                    "root": str(repo),
+                    "workspace_id": "http-agent",
                     "evidence_id": "http-pytest-pass",
                     "source": "test",
                     "verifier": "pytest",
@@ -480,13 +486,13 @@ def test_workspace_http_capture_review_and_cross_process_replay(tmp_path: Path) 
             assert verified.status_code == 200
             candidate_id = verified.json()["candidate_ids"][0]
 
-            queue = client.post("/workspace/review", json={"root": str(repo)})
+            queue = client.post("/workspace/review", json={"workspace_id": "http-agent"})
             assert queue.status_code == 200
             assert queue.json()["items"][0]["experience"]["id"] == candidate_id
             approved = client.post(
                 f"/workspace/runtime/{candidate_id}/edit-and-approve",
                 json={
-                    "root": str(repo),
+                    "workspace_id": "http-agent",
                     "evidence_id": "http-operator-edit-approve",
                     "reason": "tighten HTTP runbook",
                     "title": "HTTP pytest cache recovery",
@@ -502,7 +508,7 @@ def test_workspace_http_capture_review_and_cross_process_replay(tmp_path: Path) 
             packet = client.post(
                 "/workspace/packet",
                 json={
-                    "root": str(repo),
+                    "workspace_id": "http-agent",
                     "query": "pytest cache permission failure",
                     "domain": "python",
                     "task_type": "pytest-cache",
@@ -522,7 +528,7 @@ def test_workspace_http_capture_review_and_cross_process_replay(tmp_path: Path) 
             cancelled_start = client.post(
                 "/workspace/runtime/runs",
                 json={
-                    "root": str(repo),
+                    "workspace_id": "http-agent",
                     "query": "cancelled task",
                     "objective": "cancel cancelled task",
                     "domain": "python",
@@ -534,7 +540,7 @@ def test_workspace_http_capture_review_and_cross_process_replay(tmp_path: Path) 
             cancelled = client.post(
                 "/workspace/runtime/runs/http-cancel/cancel",
                 json={
-                    "root": str(repo),
+                    "workspace_id": "http-agent",
                     "evidence_id": "operator-cancel",
                     "reason": "operator cancelled cleanly",
                 },
@@ -556,6 +562,181 @@ def test_workspace_http_capture_review_and_cross_process_replay(tmp_path: Path) 
         assert replayed["selected_citations"] == [f"experience:{edited_id}@v2"]
     finally:
         other_process.close()
+
+
+def test_workspace_http_requires_registered_workspace_and_namespace_auth(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo_a = _make_repo(tmp_path / "repo-a")
+    repo_b = _make_repo(tmp_path / "repo-b", remote="https://github.com/example/other.git")
+    config_a = initialize_workspace(
+        repo_a,
+        workspace_id="agent-a",
+        tenant_id="tenant",
+        user_id="user-a",
+    )
+    config_b = initialize_workspace(
+        repo_b,
+        workspace_id="agent-b",
+        tenant_id="tenant",
+        user_id="user-b",
+    )
+    monkeypatch.setenv(
+        "WAVEMIND_API_PRINCIPALS",
+        json.dumps(
+            {
+                "token-a": {
+                    "identity": "agent-a",
+                    "role": "admin",
+                    "namespace_prefixes": [config_a.identity.namespace],
+                },
+                "token-b": {
+                    "identity": "agent-b",
+                    "role": "admin",
+                    "namespace_prefixes": [config_b.identity.namespace],
+                },
+            }
+        ),
+    )
+    headers_a = {"x-api-key": "token-a"}
+    start_payload = {
+        "workspace_id": "workspace-a",
+        "query": "pytest cache permission failure",
+        "objective": "fix pytest cache permission failure",
+        "run_id": "auth-run",
+    }
+    mind = WaveMind(db_path=tmp_path / "memory-auth.sqlite3")
+    try:
+        with TestClient(
+            create_app(
+                mind=mind,
+                workspace_registry={"workspace-a": repo_a, "workspace-b": repo_b},
+                workspace_base_roots=[tmp_path],
+            )
+        ) as client:
+            allowed = client.post(
+                "/workspace/runtime/runs",
+                headers=headers_a,
+                json=start_payload,
+            )
+            assert allowed.status_code == 200
+
+            cross_workspace = client.post(
+                "/workspace/runtime/runs",
+                headers=headers_a,
+                json={**start_payload, "workspace_id": "workspace-b", "run_id": "cross-run"},
+            )
+            assert cross_workspace.status_code == 403
+
+            root_only = client.post(
+                "/workspace/runtime/runs",
+                headers=headers_a,
+                json={
+                    "root": str(repo_a),
+                    "query": "pytest cache permission failure",
+                    "objective": "fix pytest cache permission failure",
+                    "run_id": "root-only",
+                },
+            )
+            assert root_only.status_code == 422
+
+            absolute_workspace_id = client.post(
+                "/workspace/runtime/runs",
+                headers=headers_a,
+                json={**start_payload, "workspace_id": str(repo_a), "run_id": "absolute"},
+            )
+            assert absolute_workspace_id.status_code == 403
+    finally:
+        mind.close()
+
+    missing_registry_mind = WaveMind(db_path=tmp_path / "memory-missing-registry.sqlite3")
+    try:
+        with TestClient(
+            create_app(mind=missing_registry_mind, workspace_base_roots=[tmp_path])
+        ) as client:
+            missing = client.post(
+                "/workspace/runtime/runs",
+                headers=headers_a,
+                json=start_payload,
+            )
+            assert missing.status_code == 403
+    finally:
+        missing_registry_mind.close()
+
+
+def test_workspace_http_rejects_registry_file_and_symlink_escape(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    base = tmp_path / "base"
+    base.mkdir()
+    repo = _make_repo(base / "repo")
+    config = initialize_workspace(repo, workspace_id="agent", tenant_id="tenant", user_id="user")
+    monkeypatch.setenv(
+        "WAVEMIND_API_PRINCIPALS",
+        json.dumps(
+            {
+                "token": {
+                    "identity": "agent",
+                    "role": "admin",
+                    "namespace_prefixes": [config.identity.namespace],
+                }
+            }
+        ),
+    )
+    payload = {
+        "workspace_id": "bad",
+        "query": "pytest cache permission failure",
+        "objective": "fix pytest cache permission failure",
+        "run_id": "bad-run",
+    }
+    headers = {"x-api-key": "token"}
+
+    file_mind = WaveMind(db_path=tmp_path / "memory-file-registry.sqlite3")
+    try:
+        with TestClient(
+            create_app(
+                mind=file_mind,
+                workspace_registry={"bad": Path(config.config_path)},
+                workspace_base_roots=[base],
+            )
+        ) as client:
+            file_result = client.post(
+                "/workspace/runtime/runs",
+                headers=headers,
+                json=payload,
+            )
+            assert file_result.status_code == 422
+    finally:
+        file_mind.close()
+
+    outside = tmp_path / "outside"
+    outside_repo = _make_repo(outside)
+    initialize_workspace(outside_repo, workspace_id="agent", tenant_id="tenant", user_id="user")
+    link = base / "linked-outside"
+    try:
+        link.symlink_to(outside_repo, target_is_directory=True)
+    except OSError as exc:
+        pytest.skip(f"symlink creation unavailable: {exc}")
+
+    escape_mind = WaveMind(db_path=tmp_path / "memory-symlink-registry.sqlite3")
+    try:
+        with TestClient(
+            create_app(
+                mind=escape_mind,
+                workspace_registry={"bad": link},
+                workspace_base_roots=[base],
+            )
+        ) as client:
+            escape_result = client.post(
+                "/workspace/runtime/runs",
+                headers=headers,
+                json=payload,
+            )
+            assert escape_result.status_code == 403
+    finally:
+        escape_mind.close()
 
 
 def test_workspace_mcp_adapter_uses_same_runtime_and_namespace(tmp_path: Path) -> None:

@@ -824,7 +824,6 @@ def _resolve_workspace_config_path(
     allow_private_root: bool,
 ) -> Path:
     # Config roots are explicit local workspace inputs and are constrained below.
-    # lgtm[py/path-injection]
     raw = Path(path_or_root).expanduser()
     if raw.name == "workspace.json":
         if raw.parent.name != ".wavemind":
