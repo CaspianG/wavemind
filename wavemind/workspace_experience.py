@@ -824,13 +824,12 @@ def _resolve_workspace_config_path(
     allow_private_root: bool,
 ) -> Path:
     # Config roots are explicit local workspace inputs and are constrained below.
-    # codeql[py/path-injection]
     raw = Path(path_or_root).expanduser()
-    if raw.name == "workspace.json" and raw.parent.name == ".wavemind":
+    if raw.name == "workspace.json":
+        if raw.parent.name != ".wavemind":
+            raise WorkspacePathError("workspace config must be .wavemind/workspace.json")
         config_path = raw.resolve()
         project_root = config_path.parent.parent
-    elif raw.exists() and raw.is_file():
-        raise WorkspacePathError("workspace config must be .wavemind/workspace.json")
     else:
         project_root = _safe_project_root(raw, allow_private_root=allow_private_root)
         config_path = project_root / ".wavemind" / "workspace.json"
