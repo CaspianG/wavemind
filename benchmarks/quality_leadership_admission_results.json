@@ -8,17 +8,16 @@
     "results": "benchmarks/quality_leadership_results.json"
   },
   "claim_boundary": "Quality leadership is blocked until a new frozen protocol, bounded development gate, single untouched held-out run, real local competitors, current Safe Product and Workspace Experience evidence, and exact-main CI evidence all pass. The historical Goal 4 failure remains public.",
-  "expected_source_sha": "71abd346e7e2e2019b6c2807455e7d0e23265aea",
-  "generated_at": "2026-08-10T18:33:22Z",
+  "expected_source_sha": "ebab888eab1a3f75ae08103a99a8ccc11c156f0f",
+  "generated_at": "2026-08-10T18:59:51Z",
   "integrity": {
     "algorithm": "sha256",
-    "payload_sha256": "e5791cf7d69ecfcbe3d7256c6a2b6c0868fd8099ba121a698c95074232e8d041",
+    "payload_sha256": "5a3b96d911274ae516193be2ff56ea06ebda88ea44dd3a2fe1dc60b14c4d26c4",
     "schema": "wavemind.artifact_integrity.v1"
   },
   "next_actions": [
     "Freeze a new independent quality-leadership development/held-out protocol before tuning.",
     "Run a bounded development benchmark and stop unless the go/no-go gate passes.",
-    "Run real local Chroma/Qdrant, Mem0 OSS, and LangMem/LangGraph comparators on the same protocol.",
     "Use exact-current CI artifacts for Safe Product and Workspace Experience on the final SHA.",
     "Open the new held-out split exactly once only after protocol freeze and dev go/no-go."
   ],
@@ -27,8 +26,8 @@
     {
       "artifact": "git rev-parse HEAD",
       "details": {
-        "expected_source_sha": "71abd346e7e2e2019b6c2807455e7d0e23265aea",
-        "source_sha": "71abd346e7e2e2019b6c2807455e7d0e23265aea"
+        "expected_source_sha": "ebab888eab1a3f75ae08103a99a8ccc11c156f0f",
+        "source_sha": "ebab888eab1a3f75ae08103a99a8ccc11c156f0f"
       },
       "id": "source-sha-exact",
       "requirement": "Admission is evaluated against the exact current source SHA.",
@@ -124,11 +123,9 @@
       "artifact": "benchmarks/quality_leadership_results.json",
       "details": {
         "observed": {
-          "diagnostic": "benchmarks/quality_leadership_agent_memory_advantage_dev.json",
+          "diagnostic": "benchmarks/quality_leadership_agent_memory_advantage_dev_real_competitors.json",
           "errors": [
-            "agent-memory diagnostic source SHA mismatch",
             "improved_category_count below threshold",
-            "missing real local competitors: langmem_or_langgraph, mem0_oss, static_chroma_or_qdrant",
             "LongMemEval-V2 quality gate has not been run on this protocol"
           ],
           "status": "blocked"
@@ -222,8 +219,8 @@
     {
       "artifact": "benchmarks/quality_leadership_results.json",
       "details": {
-        "p95_overhead_ms": -0.66230000811629,
-        "p95_overhead_ratio": -0.11017583699414799,
+        "p95_overhead_ms": -0.2091999922413379,
+        "p95_overhead_ratio": -0.09433196177743314,
         "targets": {
           "p95_overhead_ms": 5.0,
           "p95_overhead_ratio": 0.2
@@ -249,17 +246,17 @@
     {
       "artifact": "benchmarks/quality_leadership_results.json",
       "details": {
-        "missing": [
+        "missing": [],
+        "observed": [
           "langmem_or_langgraph",
           "mem0_oss",
           "static_chroma_or_qdrant"
         ],
-        "observed": [],
         "simulated": []
       },
       "id": "real-local-competitors",
       "requirement": "Runnable local competitors are real packages/runs, not simulated baselines.",
-      "status": "blocked",
+      "status": "implemented",
       "test": "tests/test_quality_leadership_admission.py"
     },
     {
@@ -324,11 +321,11 @@
   "schema": "wavemind.quality_leadership_admission.v1",
   "source_manifest": {
     "algorithm": "sha256",
-    "digest": "e78d14e6100f7c42033df8652cfa514c3ecba06c429f00406286c2625fc2aad9",
+    "digest": "7c82a397c1b819b61e42545ce4bb3132eed10a4e2c338c68fd610438072473c0",
     "files": [
       {
         "path": "benchmarks/agent_memory_advantage_benchmark.py",
-        "sha256": "f8daf598dfa4e3f6165a1d71c5a9b8b74c95c25d2ae8cc1253553ffed66ce755"
+        "sha256": "fcd242be133a0604f0bf1b423c0d4d8d7ad2d7fbfb60f27da20bdf7f7b09e431"
       },
       {
         "path": "benchmarks/goal4_quality_experiment_results.json",
@@ -384,7 +381,7 @@
       },
       {
         "path": "wavemind/quality_leadership_admission.py",
-        "sha256": "af768e9c071ac42dc8c2ad675bb205570410894e7925abbf21b4f0c88f1ba6bd"
+        "sha256": "d6c42ecd6821c8a64354ba3ff49a0c24f572e22d11a3f99a4511ea12a04af0b7"
       },
       {
         "path": "wavemind/workspace_experience_admission.py",
@@ -393,13 +390,13 @@
     ],
     "schema": "wavemind.source_manifest.v1"
   },
-  "source_sha": "71abd346e7e2e2019b6c2807455e7d0e23265aea",
+  "source_sha": "ebab888eab1a3f75ae08103a99a8ccc11c156f0f",
   "status": "blocked",
   "summary": {
-    "blocked": 10,
+    "blocked": 9,
     "failed": 0,
     "historical": 0,
-    "implemented": 10,
+    "implemented": 11,
     "required_current": 2,
     "total": 22
   }

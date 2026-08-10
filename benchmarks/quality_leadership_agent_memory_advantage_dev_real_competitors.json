@@ -1,0 +1,3357 @@
+{
+  "schema": "wavemind.agent_memory_advantage_benchmark.v1",
+  "generated_at": "2026-08-10T18:59:24Z",
+  "source_sha": "ebab888eab1a3f75ae08103a99a8ccc11c156f0f",
+  "status": "pass",
+  "protocol": {
+    "hash": "c0379987ea9a72b81a6fa811de97ecad063252f7d6dd472064c12d799d97ea26",
+    "dataset": "wavemind-dynamic-agent-memory-v1",
+    "memory_count": 36,
+    "query_count": 18,
+    "category_case_counts": {
+      "knowledge_update": 9,
+      "preference_update": 1,
+      "state_tracking": 2,
+      "workflow_gotcha": 6
+    },
+    "measurement_trials": 5,
+    "bootstrap_samples": 10000,
+    "confidence_level": 0.95,
+    "seed": 20260728,
+    "same_memories": true,
+    "same_queries": true,
+    "same_embeddings": true,
+    "same_top_k": true,
+    "embedding": {
+      "kind": "hash",
+      "class": "HashingTextEncoder",
+      "vector_dim": 384
+    },
+    "hardware": {
+      "python": "3.13.3",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "processor": "AMD64 Family 23 Model 8 Stepping 2, AuthenticAMD"
+    },
+    "combined_score": {
+      "task_success_weight": 0.6,
+      "stale_suppression_weight": 0.25,
+      "context_saving_weight": 0.15
+    }
+  },
+  "results": [
+    {
+      "engine": "WaveMind Core",
+      "status": "pass",
+      "measurement_trials": 5,
+      "task_success_rate": 0.3888888888888889,
+      "task_success_ci95": {
+        "mean": 0.3888888888888889,
+        "lower": 0.3888888888888889,
+        "upper": 0.3888888888888889,
+        "observations": 5
+      },
+      "stale_error_rate": 0.6111111111111112,
+      "stale_error_ci95": {
+        "mean": 0.6111111111111112,
+        "lower": 0.6111111111111112,
+        "upper": 0.6111111111111112,
+        "observations": 5
+      },
+      "context_budget_saved": 0.5015105740181269,
+      "context_budget_saved_ci95": {
+        "mean": 0.5015105740181269,
+        "lower": 0.5015105740181269,
+        "upper": 0.5015105740181269,
+        "observations": 5
+      },
+      "category_success": {
+        "knowledge_update": 0.4444444444444444,
+        "preference_update": 1.0,
+        "state_tracking": 1.0,
+        "workflow_gotcha": 0.0
+      },
+      "category_success_trials": {
+        "knowledge_update": [
+          0.4444444444444444,
+          0.4444444444444444,
+          0.4444444444444444,
+          0.4444444444444444,
+          0.4444444444444444
+        ],
+        "preference_update": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "state_tracking": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "workflow_gotcha": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "p50_latency_ms": 1.6272999928332865,
+      "p95_latency_ms": 2.217700006440282,
+      "p99_latency_ms": 26.15009999135509,
+      "combined_score": 0.4057821416582746,
+      "cost_per_query_usd": 0.0,
+      "trial_metrics": [
+        {
+          "task_success_rate": 0.3888888888888889,
+          "stale_error_rate": 0.6111111111111112,
+          "context_budget_saved": 0.5015105740181269,
+          "category_success": {
+            "knowledge_update": 0.4444444444444444,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.0
+          },
+          "case_outcomes": [
+            {
+              "namespace": "role",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "city",
+              "category": "knowledge_update",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "budget",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "style",
+              "category": "preference_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "project",
+              "category": "state_tracking",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "token",
+              "category": "state_tracking",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "language",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "exchange",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-budget",
+              "category": "knowledge_update",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "updated-region",
+              "category": "knowledge_update",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "updated-owner",
+              "category": "knowledge_update",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "updated-port",
+              "category": "knowledge_update",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "backup-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "merge-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "token-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "recovery-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "release-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "migration-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            }
+          ],
+          "p50_latency_ms": 1.8402000132482499,
+          "p95_latency_ms": 2.467299986165017,
+          "p99_latency_ms": 26.015999988885596
+        },
+        {
+          "task_success_rate": 0.3888888888888889,
+          "stale_error_rate": 0.6111111111111112,
+          "context_budget_saved": 0.5015105740181269,
+          "category_success": {
+            "knowledge_update": 0.4444444444444444,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.0
+          },
+          "case_outcomes": [
+            {
+              "namespace": "role",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "city",
+              "category": "knowledge_update",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "budget",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "style",
+              "category": "preference_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "project",
+              "category": "state_tracking",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "token",
+              "category": "state_tracking",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "language",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "exchange",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-budget",
+              "category": "knowledge_update",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "updated-region",
+              "category": "knowledge_update",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "updated-owner",
+              "category": "knowledge_update",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "updated-port",
+              "category": "knowledge_update",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "backup-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "merge-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "token-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "recovery-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "release-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "migration-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            }
+          ],
+          "p50_latency_ms": 1.5433999942615628,
+          "p95_latency_ms": 2.217700006440282,
+          "p99_latency_ms": 17.582800006493926
+        },
+        {
+          "task_success_rate": 0.3888888888888889,
+          "stale_error_rate": 0.6111111111111112,
+          "context_budget_saved": 0.5015105740181269,
+          "category_success": {
+            "knowledge_update": 0.4444444444444444,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.0
+          },
+          "case_outcomes": [
+            {
+              "namespace": "role",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "city",
+              "category": "knowledge_update",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "budget",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "style",
+              "category": "preference_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "project",
+              "category": "state_tracking",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "token",
+              "category": "state_tracking",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "language",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "exchange",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-budget",
+              "category": "knowledge_update",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "updated-region",
+              "category": "knowledge_update",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "updated-owner",
+              "category": "knowledge_update",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "updated-port",
+              "category": "knowledge_update",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "backup-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "merge-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "token-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "recovery-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "release-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "migration-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            }
+          ],
+          "p50_latency_ms": 1.872900000307709,
+          "p95_latency_ms": 2.652800001669675,
+          "p99_latency_ms": 26.15009999135509
+        },
+        {
+          "task_success_rate": 0.3888888888888889,
+          "stale_error_rate": 0.6111111111111112,
+          "context_budget_saved": 0.5015105740181269,
+          "category_success": {
+            "knowledge_update": 0.4444444444444444,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.0
+          },
+          "case_outcomes": [
+            {
+              "namespace": "role",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "city",
+              "category": "knowledge_update",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "budget",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "style",
+              "category": "preference_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "project",
+              "category": "state_tracking",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "token",
+              "category": "state_tracking",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "language",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "exchange",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-budget",
+              "category": "knowledge_update",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "updated-region",
+              "category": "knowledge_update",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "updated-owner",
+              "category": "knowledge_update",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "updated-port",
+              "category": "knowledge_update",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "backup-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "merge-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "token-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "recovery-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "release-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "migration-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            }
+          ],
+          "p50_latency_ms": 1.6272999928332865,
+          "p95_latency_ms": 2.157700015231967,
+          "p99_latency_ms": 26.552299998002127
+        },
+        {
+          "task_success_rate": 0.3888888888888889,
+          "stale_error_rate": 0.6111111111111112,
+          "context_budget_saved": 0.5015105740181269,
+          "category_success": {
+            "knowledge_update": 0.4444444444444444,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.0
+          },
+          "case_outcomes": [
+            {
+              "namespace": "role",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "city",
+              "category": "knowledge_update",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "budget",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "style",
+              "category": "preference_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "project",
+              "category": "state_tracking",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "token",
+              "category": "state_tracking",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "language",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "exchange",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-budget",
+              "category": "knowledge_update",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "updated-region",
+              "category": "knowledge_update",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "updated-owner",
+              "category": "knowledge_update",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "updated-port",
+              "category": "knowledge_update",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "backup-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "merge-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "token-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "recovery-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "release-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            },
+            {
+              "namespace": "migration-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 0,
+              "stale_error_rate": 1
+            }
+          ],
+          "p50_latency_ms": 1.472900010412559,
+          "p95_latency_ms": 2.066399989416823,
+          "p99_latency_ms": 26.619400014169514
+        }
+      ],
+      "execution_mode": "wavemind_core"
+    },
+    {
+      "engine": "WaveMind + Memory OS",
+      "status": "pass",
+      "measurement_trials": 5,
+      "task_success_rate": 1.0,
+      "task_success_ci95": {
+        "mean": 1.0,
+        "lower": 1.0,
+        "upper": 1.0,
+        "observations": 5
+      },
+      "stale_error_rate": 0.0,
+      "stale_error_ci95": {
+        "mean": 0.0,
+        "lower": 0.0,
+        "upper": 0.0,
+        "observations": 5
+      },
+      "context_budget_saved": 0.5015105740181269,
+      "context_budget_saved_ci95": {
+        "mean": 0.5015105740181269,
+        "lower": 0.5015105740181269,
+        "upper": 0.5015105740181269,
+        "observations": 5
+      },
+      "category_success": {
+        "knowledge_update": 1.0,
+        "preference_update": 1.0,
+        "state_tracking": 1.0,
+        "workflow_gotcha": 1.0
+      },
+      "category_success_trials": {
+        "knowledge_update": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "preference_update": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "state_tracking": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "workflow_gotcha": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "p50_latency_ms": 0.002100015990436077,
+      "p95_latency_ms": 2.008500014198944,
+      "p99_latency_ms": 2.342099993256852,
+      "combined_score": 0.925226586102719,
+      "cost_per_query_usd": 0.0,
+      "trial_metrics": [
+        {
+          "task_success_rate": 1.0,
+          "stale_error_rate": 0.0,
+          "context_budget_saved": 0.5015105740181269,
+          "category_success": {
+            "knowledge_update": 1.0,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 1.0
+          },
+          "case_outcomes": [
+            {
+              "namespace": "role",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "city",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "budget",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "style",
+              "category": "preference_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "project",
+              "category": "state_tracking",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "token",
+              "category": "state_tracking",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "language",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "exchange",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-budget",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-region",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-owner",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-port",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "backup-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "merge-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "token-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "recovery-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "release-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "migration-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            }
+          ],
+          "p50_latency_ms": 0.00200001522898674,
+          "p95_latency_ms": 1.8664999806787819,
+          "p99_latency_ms": 2.1502000163309276
+        },
+        {
+          "task_success_rate": 1.0,
+          "stale_error_rate": 0.0,
+          "context_budget_saved": 0.5015105740181269,
+          "category_success": {
+            "knowledge_update": 1.0,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 1.0
+          },
+          "case_outcomes": [
+            {
+              "namespace": "role",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "city",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "budget",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "style",
+              "category": "preference_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "project",
+              "category": "state_tracking",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "token",
+              "category": "state_tracking",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "language",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "exchange",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-budget",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-region",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-owner",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-port",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "backup-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "merge-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "token-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "recovery-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "release-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "migration-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            }
+          ],
+          "p50_latency_ms": 0.0034999975468963385,
+          "p95_latency_ms": 2.0306999795138836,
+          "p99_latency_ms": 2.397700009169057
+        },
+        {
+          "task_success_rate": 1.0,
+          "stale_error_rate": 0.0,
+          "context_budget_saved": 0.5015105740181269,
+          "category_success": {
+            "knowledge_update": 1.0,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 1.0
+          },
+          "case_outcomes": [
+            {
+              "namespace": "role",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "city",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "budget",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "style",
+              "category": "preference_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "project",
+              "category": "state_tracking",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "token",
+              "category": "state_tracking",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "language",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "exchange",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-budget",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-region",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-owner",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-port",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "backup-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "merge-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "token-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "recovery-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "release-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "migration-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            }
+          ],
+          "p50_latency_ms": 0.0024999899324029684,
+          "p95_latency_ms": 2.008500014198944,
+          "p99_latency_ms": 2.2791000083088875
+        },
+        {
+          "task_success_rate": 1.0,
+          "stale_error_rate": 0.0,
+          "context_budget_saved": 0.5015105740181269,
+          "category_success": {
+            "knowledge_update": 1.0,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 1.0
+          },
+          "case_outcomes": [
+            {
+              "namespace": "role",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "city",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "budget",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "style",
+              "category": "preference_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "project",
+              "category": "state_tracking",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "token",
+              "category": "state_tracking",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "language",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "exchange",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-budget",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-region",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-owner",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-port",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "backup-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "merge-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "token-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "recovery-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "release-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "migration-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            }
+          ],
+          "p50_latency_ms": 0.00200001522898674,
+          "p95_latency_ms": 1.9564999965950847,
+          "p99_latency_ms": 2.342099993256852
+        },
+        {
+          "task_success_rate": 1.0,
+          "stale_error_rate": 0.0,
+          "context_budget_saved": 0.5015105740181269,
+          "category_success": {
+            "knowledge_update": 1.0,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 1.0
+          },
+          "case_outcomes": [
+            {
+              "namespace": "role",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "city",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "budget",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "style",
+              "category": "preference_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "project",
+              "category": "state_tracking",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "token",
+              "category": "state_tracking",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "language",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "exchange",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-budget",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-region",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-owner",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "updated-port",
+              "category": "knowledge_update",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "backup-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "merge-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "token-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "recovery-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "release-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            },
+            {
+              "namespace": "migration-rule",
+              "category": "workflow_gotcha",
+              "success_rate": 1,
+              "stale_error_rate": 0
+            }
+          ],
+          "p50_latency_ms": 0.002100015990436077,
+          "p95_latency_ms": 2.0358000183478,
+          "p99_latency_ms": 2.461399999447167
+        }
+      ],
+      "execution_mode": "memory_os_direct_adaptive"
+    },
+    {
+      "engine": "Static vector",
+      "status": "pass",
+      "measurement_trials": 5,
+      "task_success_rate": 0.2222222222222222,
+      "task_success_ci95": {
+        "mean": 0.2222222222222222,
+        "lower": 0.2222222222222222,
+        "upper": 0.2222222222222222,
+        "observations": 5
+      },
+      "stale_error_rate": 0.7777777777777778,
+      "stale_error_ci95": {
+        "mean": 0.7777777777777778,
+        "lower": 0.7777777777777778,
+        "upper": 0.7777777777777778,
+        "observations": 5
+      },
+      "context_budget_saved": 0.5015105740181269,
+      "context_budget_saved_ci95": {
+        "mean": 0.5015105740181269,
+        "lower": 0.5015105740181269,
+        "upper": 0.5015105740181269,
+        "observations": 5
+      },
+      "category_success": {
+        "knowledge_update": 0.1111111111111111,
+        "preference_update": 1.0,
+        "state_tracking": 1.0,
+        "workflow_gotcha": 0.0
+      },
+      "category_success_trials": {
+        "knowledge_update": [
+          0.1111111111111111,
+          0.1111111111111111,
+          0.1111111111111111,
+          0.1111111111111111,
+          0.1111111111111111
+        ],
+        "preference_update": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "state_tracking": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "workflow_gotcha": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "p50_latency_ms": 0.004399975296109915,
+      "p95_latency_ms": 0.010299991117790341,
+      "p99_latency_ms": 0.010299991117790341,
+      "combined_score": 0.2641154749916079,
+      "cost_per_query_usd": 0.0,
+      "trial_metrics": [
+        {
+          "engine": "Static vector",
+          "evidence_recall_at_k": 0.2222222222222222,
+          "evidence_precision_at_k": 0.2222222222222222,
+          "mrr_at_k": 0.2222222222222222,
+          "precision_at_1": 0.2222222222222222,
+          "stale_suppression": 0.2222222222222222,
+          "category_success": {
+            "knowledge_update": 0.1111111111111111,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 165,
+          "context_budget_saved": 0.5015105740181269,
+          "avg_latency_ms": 0.005222223181691434,
+          "p50_latency_ms": 0.004399975296109915,
+          "p95_latency_ms": 0.016400008462369442,
+          "p99_latency_ms": 0.016400008462369442,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 0.15690000145696104,
+          "ingest_avg_ms": 0.004358333373804473,
+          "ingest_scope": "in_memory_index_from_precomputed_embeddings",
+          "task_success_rate": 0.2222222222222222,
+          "stale_error_rate": 0.7777777777777778
+        },
+        {
+          "engine": "Static vector",
+          "evidence_recall_at_k": 0.2222222222222222,
+          "evidence_precision_at_k": 0.2222222222222222,
+          "mrr_at_k": 0.2222222222222222,
+          "precision_at_1": 0.2222222222222222,
+          "stale_suppression": 0.2222222222222222,
+          "category_success": {
+            "knowledge_update": 0.1111111111111111,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 165,
+          "context_budget_saved": 0.5015105740181269,
+          "avg_latency_ms": 0.004405555147160258,
+          "p50_latency_ms": 0.0042000028770416975,
+          "p95_latency_ms": 0.00790000194683671,
+          "p99_latency_ms": 0.00790000194683671,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 0.07309997454285622,
+          "ingest_avg_ms": 0.0020305548484126725,
+          "ingest_scope": "in_memory_index_from_precomputed_embeddings",
+          "task_success_rate": 0.2222222222222222,
+          "stale_error_rate": 0.7777777777777778
+        },
+        {
+          "engine": "Static vector",
+          "evidence_recall_at_k": 0.2222222222222222,
+          "evidence_precision_at_k": 0.2222222222222222,
+          "mrr_at_k": 0.2222222222222222,
+          "precision_at_1": 0.2222222222222222,
+          "stale_suppression": 0.2222222222222222,
+          "category_success": {
+            "knowledge_update": 0.1111111111111111,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 165,
+          "context_budget_saved": 0.5015105740181269,
+          "avg_latency_ms": 0.004488890731914176,
+          "p50_latency_ms": 0.0042000028770416975,
+          "p95_latency_ms": 0.007599999662488699,
+          "p99_latency_ms": 0.007599999662488699,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 0.06440002471208572,
+          "ingest_avg_ms": 0.0017888895753357145,
+          "ingest_scope": "in_memory_index_from_precomputed_embeddings",
+          "task_success_rate": 0.2222222222222222,
+          "stale_error_rate": 0.7777777777777778
+        },
+        {
+          "engine": "Static vector",
+          "evidence_recall_at_k": 0.2222222222222222,
+          "evidence_precision_at_k": 0.2222222222222222,
+          "mrr_at_k": 0.2222222222222222,
+          "precision_at_1": 0.2222222222222222,
+          "stale_suppression": 0.2222222222222222,
+          "category_success": {
+            "knowledge_update": 0.1111111111111111,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 165,
+          "context_budget_saved": 0.5015105740181269,
+          "avg_latency_ms": 0.005299998317948646,
+          "p50_latency_ms": 0.0047000066842883825,
+          "p95_latency_ms": 0.011299998732283711,
+          "p99_latency_ms": 0.011299998732283711,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 0.09209997369907796,
+          "ingest_avg_ms": 0.002558332602752166,
+          "ingest_scope": "in_memory_index_from_precomputed_embeddings",
+          "task_success_rate": 0.2222222222222222,
+          "stale_error_rate": 0.7777777777777778
+        },
+        {
+          "engine": "Static vector",
+          "evidence_recall_at_k": 0.2222222222222222,
+          "evidence_precision_at_k": 0.2222222222222222,
+          "mrr_at_k": 0.2222222222222222,
+          "precision_at_1": 0.2222222222222222,
+          "stale_suppression": 0.2222222222222222,
+          "category_success": {
+            "knowledge_update": 0.1111111111111111,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 165,
+          "context_budget_saved": 0.5015105740181269,
+          "avg_latency_ms": 0.005083334852113492,
+          "p50_latency_ms": 0.0047000066842883825,
+          "p95_latency_ms": 0.010299991117790341,
+          "p99_latency_ms": 0.010299991117790341,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 0.1047999830916524,
+          "ingest_avg_ms": 0.0029111106414347887,
+          "ingest_scope": "in_memory_index_from_precomputed_embeddings",
+          "task_success_rate": 0.2222222222222222,
+          "stale_error_rate": 0.7777777777777778
+        }
+      ]
+    },
+    {
+      "engine": "Full context",
+      "status": "pass",
+      "measurement_trials": 5,
+      "task_success_rate": 0.0,
+      "task_success_ci95": {
+        "mean": 0.0,
+        "lower": 0.0,
+        "upper": 0.0,
+        "observations": 5
+      },
+      "stale_error_rate": 1.0,
+      "stale_error_ci95": {
+        "mean": 1.0,
+        "lower": 1.0,
+        "upper": 1.0,
+        "observations": 5
+      },
+      "context_budget_saved": 0.0,
+      "context_budget_saved_ci95": {
+        "mean": 0.0,
+        "lower": 0.0,
+        "upper": 0.0,
+        "observations": 5
+      },
+      "category_success": {
+        "knowledge_update": 0.0,
+        "preference_update": 0.0,
+        "state_tracking": 0.0,
+        "workflow_gotcha": 0.0
+      },
+      "category_success_trials": {
+        "knowledge_update": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "preference_update": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "state_tracking": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "workflow_gotcha": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "p50_latency_ms": 0.0,
+      "p95_latency_ms": 0.0,
+      "p99_latency_ms": 0.0,
+      "combined_score": 0.0,
+      "cost_per_query_usd": 0.0,
+      "trial_metrics": [
+        {
+          "engine": "Full context",
+          "evidence_recall_at_k": 1.0,
+          "evidence_precision_at_k": 0.5,
+          "mrr_at_k": 1.0,
+          "precision_at_1": 1.0,
+          "stale_suppression": 0.0,
+          "category_success": {
+            "knowledge_update": 0.0,
+            "preference_update": 0.0,
+            "state_tracking": 0.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 331,
+          "context_budget_saved": 0.0,
+          "avg_latency_ms": 0.0,
+          "p50_latency_ms": 0.0,
+          "p95_latency_ms": 0.0,
+          "p99_latency_ms": 0.0,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 0.0,
+          "ingest_avg_ms": 0.0,
+          "ingest_scope": "",
+          "task_success_rate": 0.0,
+          "stale_error_rate": 1.0
+        },
+        {
+          "engine": "Full context",
+          "evidence_recall_at_k": 1.0,
+          "evidence_precision_at_k": 0.5,
+          "mrr_at_k": 1.0,
+          "precision_at_1": 1.0,
+          "stale_suppression": 0.0,
+          "category_success": {
+            "knowledge_update": 0.0,
+            "preference_update": 0.0,
+            "state_tracking": 0.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 331,
+          "context_budget_saved": 0.0,
+          "avg_latency_ms": 0.0,
+          "p50_latency_ms": 0.0,
+          "p95_latency_ms": 0.0,
+          "p99_latency_ms": 0.0,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 0.0,
+          "ingest_avg_ms": 0.0,
+          "ingest_scope": "",
+          "task_success_rate": 0.0,
+          "stale_error_rate": 1.0
+        },
+        {
+          "engine": "Full context",
+          "evidence_recall_at_k": 1.0,
+          "evidence_precision_at_k": 0.5,
+          "mrr_at_k": 1.0,
+          "precision_at_1": 1.0,
+          "stale_suppression": 0.0,
+          "category_success": {
+            "knowledge_update": 0.0,
+            "preference_update": 0.0,
+            "state_tracking": 0.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 331,
+          "context_budget_saved": 0.0,
+          "avg_latency_ms": 0.0,
+          "p50_latency_ms": 0.0,
+          "p95_latency_ms": 0.0,
+          "p99_latency_ms": 0.0,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 0.0,
+          "ingest_avg_ms": 0.0,
+          "ingest_scope": "",
+          "task_success_rate": 0.0,
+          "stale_error_rate": 1.0
+        },
+        {
+          "engine": "Full context",
+          "evidence_recall_at_k": 1.0,
+          "evidence_precision_at_k": 0.5,
+          "mrr_at_k": 1.0,
+          "precision_at_1": 1.0,
+          "stale_suppression": 0.0,
+          "category_success": {
+            "knowledge_update": 0.0,
+            "preference_update": 0.0,
+            "state_tracking": 0.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 331,
+          "context_budget_saved": 0.0,
+          "avg_latency_ms": 0.0,
+          "p50_latency_ms": 0.0,
+          "p95_latency_ms": 0.0,
+          "p99_latency_ms": 0.0,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 0.0,
+          "ingest_avg_ms": 0.0,
+          "ingest_scope": "",
+          "task_success_rate": 0.0,
+          "stale_error_rate": 1.0
+        },
+        {
+          "engine": "Full context",
+          "evidence_recall_at_k": 1.0,
+          "evidence_precision_at_k": 0.5,
+          "mrr_at_k": 1.0,
+          "precision_at_1": 1.0,
+          "stale_suppression": 0.0,
+          "category_success": {
+            "knowledge_update": 0.0,
+            "preference_update": 0.0,
+            "state_tracking": 0.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 331,
+          "context_budget_saved": 0.0,
+          "avg_latency_ms": 0.0,
+          "p50_latency_ms": 0.0,
+          "p95_latency_ms": 0.0,
+          "p99_latency_ms": 0.0,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 0.0,
+          "ingest_avg_ms": 0.0,
+          "ingest_scope": "",
+          "task_success_rate": 0.0,
+          "stale_error_rate": 1.0
+        }
+      ]
+    },
+    {
+      "engine": "No memory",
+      "status": "pass",
+      "measurement_trials": 5,
+      "task_success_rate": 0.0,
+      "task_success_ci95": {
+        "mean": 0.0,
+        "lower": 0.0,
+        "upper": 0.0,
+        "observations": 5
+      },
+      "stale_error_rate": 0.0,
+      "stale_error_ci95": {
+        "mean": 0.0,
+        "lower": 0.0,
+        "upper": 0.0,
+        "observations": 5
+      },
+      "context_budget_saved": 1.0,
+      "context_budget_saved_ci95": {
+        "mean": 1.0,
+        "lower": 1.0,
+        "upper": 1.0,
+        "observations": 5
+      },
+      "category_success": {
+        "knowledge_update": 0.0,
+        "preference_update": 0.0,
+        "state_tracking": 0.0,
+        "workflow_gotcha": 0.0
+      },
+      "category_success_trials": {
+        "knowledge_update": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "preference_update": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "state_tracking": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "workflow_gotcha": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "p50_latency_ms": 0.0,
+      "p95_latency_ms": 0.0,
+      "p99_latency_ms": 0.0,
+      "combined_score": 0.4,
+      "cost_per_query_usd": 0.0,
+      "trial_metrics": [
+        {
+          "engine": "No memory",
+          "evidence_recall_at_k": 0.0,
+          "evidence_precision_at_k": 0.0,
+          "mrr_at_k": 0.0,
+          "precision_at_1": 0.0,
+          "stale_suppression": 1.0,
+          "category_success": {
+            "knowledge_update": 0.0,
+            "preference_update": 0.0,
+            "state_tracking": 0.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 0,
+          "context_budget_saved": 1.0,
+          "avg_latency_ms": 0.0,
+          "p50_latency_ms": 0.0,
+          "p95_latency_ms": 0.0,
+          "p99_latency_ms": 0.0,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 0.0,
+          "ingest_avg_ms": 0.0,
+          "ingest_scope": "",
+          "task_success_rate": 0.0,
+          "stale_error_rate": 0.0
+        },
+        {
+          "engine": "No memory",
+          "evidence_recall_at_k": 0.0,
+          "evidence_precision_at_k": 0.0,
+          "mrr_at_k": 0.0,
+          "precision_at_1": 0.0,
+          "stale_suppression": 1.0,
+          "category_success": {
+            "knowledge_update": 0.0,
+            "preference_update": 0.0,
+            "state_tracking": 0.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 0,
+          "context_budget_saved": 1.0,
+          "avg_latency_ms": 0.0,
+          "p50_latency_ms": 0.0,
+          "p95_latency_ms": 0.0,
+          "p99_latency_ms": 0.0,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 0.0,
+          "ingest_avg_ms": 0.0,
+          "ingest_scope": "",
+          "task_success_rate": 0.0,
+          "stale_error_rate": 0.0
+        },
+        {
+          "engine": "No memory",
+          "evidence_recall_at_k": 0.0,
+          "evidence_precision_at_k": 0.0,
+          "mrr_at_k": 0.0,
+          "precision_at_1": 0.0,
+          "stale_suppression": 1.0,
+          "category_success": {
+            "knowledge_update": 0.0,
+            "preference_update": 0.0,
+            "state_tracking": 0.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 0,
+          "context_budget_saved": 1.0,
+          "avg_latency_ms": 0.0,
+          "p50_latency_ms": 0.0,
+          "p95_latency_ms": 0.0,
+          "p99_latency_ms": 0.0,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 0.0,
+          "ingest_avg_ms": 0.0,
+          "ingest_scope": "",
+          "task_success_rate": 0.0,
+          "stale_error_rate": 0.0
+        },
+        {
+          "engine": "No memory",
+          "evidence_recall_at_k": 0.0,
+          "evidence_precision_at_k": 0.0,
+          "mrr_at_k": 0.0,
+          "precision_at_1": 0.0,
+          "stale_suppression": 1.0,
+          "category_success": {
+            "knowledge_update": 0.0,
+            "preference_update": 0.0,
+            "state_tracking": 0.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 0,
+          "context_budget_saved": 1.0,
+          "avg_latency_ms": 0.0,
+          "p50_latency_ms": 0.0,
+          "p95_latency_ms": 0.0,
+          "p99_latency_ms": 0.0,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 0.0,
+          "ingest_avg_ms": 0.0,
+          "ingest_scope": "",
+          "task_success_rate": 0.0,
+          "stale_error_rate": 0.0
+        },
+        {
+          "engine": "No memory",
+          "evidence_recall_at_k": 0.0,
+          "evidence_precision_at_k": 0.0,
+          "mrr_at_k": 0.0,
+          "precision_at_1": 0.0,
+          "stale_suppression": 1.0,
+          "category_success": {
+            "knowledge_update": 0.0,
+            "preference_update": 0.0,
+            "state_tracking": 0.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 0,
+          "context_budget_saved": 1.0,
+          "avg_latency_ms": 0.0,
+          "p50_latency_ms": 0.0,
+          "p95_latency_ms": 0.0,
+          "p99_latency_ms": 0.0,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 0.0,
+          "ingest_avg_ms": 0.0,
+          "ingest_scope": "",
+          "task_success_rate": 0.0,
+          "stale_error_rate": 0.0
+        }
+      ]
+    },
+    {
+      "engine": "Chroma static",
+      "status": "pass",
+      "measurement_trials": 5,
+      "task_success_rate": 0.2222222222222222,
+      "task_success_ci95": {
+        "mean": 0.2222222222222222,
+        "lower": 0.2222222222222222,
+        "upper": 0.2222222222222222,
+        "observations": 5
+      },
+      "stale_error_rate": 0.7777777777777778,
+      "stale_error_ci95": {
+        "mean": 0.7777777777777778,
+        "lower": 0.7777777777777778,
+        "upper": 0.7777777777777778,
+        "observations": 5
+      },
+      "context_budget_saved": 0.5015105740181269,
+      "context_budget_saved_ci95": {
+        "mean": 0.5015105740181269,
+        "lower": 0.5015105740181269,
+        "upper": 0.5015105740181269,
+        "observations": 5
+      },
+      "category_success": {
+        "knowledge_update": 0.1111111111111111,
+        "preference_update": 1.0,
+        "state_tracking": 1.0,
+        "workflow_gotcha": 0.0
+      },
+      "category_success_trials": {
+        "knowledge_update": [
+          0.1111111111111111,
+          0.1111111111111111,
+          0.1111111111111111,
+          0.1111111111111111,
+          0.1111111111111111
+        ],
+        "preference_update": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "state_tracking": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "workflow_gotcha": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "p50_latency_ms": 0.9740999958012253,
+      "p95_latency_ms": 3.143799985991791,
+      "p99_latency_ms": 3.143799985991791,
+      "combined_score": 0.2641154749916079,
+      "cost_per_query_usd": 0.0,
+      "trial_metrics": [
+        {
+          "engine": "Chroma static",
+          "evidence_recall_at_k": 0.2222222222222222,
+          "evidence_precision_at_k": 0.2222222222222222,
+          "mrr_at_k": 0.2222222222222222,
+          "precision_at_1": 0.2222222222222222,
+          "stale_suppression": 0.2222222222222222,
+          "category_success": {
+            "knowledge_update": 0.1111111111111111,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 165,
+          "context_budget_saved": 0.5015105740181269,
+          "avg_latency_ms": 3.5086055561098166,
+          "p50_latency_ms": 0.9682000090833753,
+          "p95_latency_ms": 37.94090001611039,
+          "p99_latency_ms": 37.94090001611039,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 1598.7627999857068,
+          "ingest_avg_ms": 44.41007777738074,
+          "ingest_scope": "local_index_write_from_precomputed_embeddings",
+          "task_success_rate": 0.2222222222222222,
+          "stale_error_rate": 0.7777777777777778
+        },
+        {
+          "engine": "Chroma static",
+          "evidence_recall_at_k": 0.2222222222222222,
+          "evidence_precision_at_k": 0.2222222222222222,
+          "mrr_at_k": 0.2222222222222222,
+          "precision_at_1": 0.2222222222222222,
+          "stale_suppression": 0.2222222222222222,
+          "category_success": {
+            "knowledge_update": 0.1111111111111111,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 165,
+          "context_budget_saved": 0.5015105740181269,
+          "avg_latency_ms": 1.119716670170116,
+          "p50_latency_ms": 0.9757000079844147,
+          "p95_latency_ms": 2.7415000076871365,
+          "p99_latency_ms": 2.7415000076871365,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 24.368300015339628,
+          "ingest_avg_ms": 0.676897222648323,
+          "ingest_scope": "local_index_write_from_precomputed_embeddings",
+          "task_success_rate": 0.2222222222222222,
+          "stale_error_rate": 0.7777777777777778
+        },
+        {
+          "engine": "Chroma static",
+          "evidence_recall_at_k": 0.2222222222222222,
+          "evidence_precision_at_k": 0.2222222222222222,
+          "mrr_at_k": 0.2222222222222222,
+          "precision_at_1": 0.2222222222222222,
+          "stale_suppression": 0.2222222222222222,
+          "category_success": {
+            "knowledge_update": 0.1111111111111111,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 165,
+          "context_budget_saved": 0.5015105740181269,
+          "avg_latency_ms": 1.0951388895692717,
+          "p50_latency_ms": 0.9398999973200262,
+          "p95_latency_ms": 2.7885999879799783,
+          "p99_latency_ms": 2.7885999879799783,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 25.170000008074567,
+          "ingest_avg_ms": 0.6991666668909602,
+          "ingest_scope": "local_index_write_from_precomputed_embeddings",
+          "task_success_rate": 0.2222222222222222,
+          "stale_error_rate": 0.7777777777777778
+        },
+        {
+          "engine": "Chroma static",
+          "evidence_recall_at_k": 0.2222222222222222,
+          "evidence_precision_at_k": 0.2222222222222222,
+          "mrr_at_k": 0.2222222222222222,
+          "precision_at_1": 0.2222222222222222,
+          "stale_suppression": 0.2222222222222222,
+          "category_success": {
+            "knowledge_update": 0.1111111111111111,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 165,
+          "context_budget_saved": 0.5015105740181269,
+          "avg_latency_ms": 1.2083500041626394,
+          "p50_latency_ms": 1.0968999995384365,
+          "p95_latency_ms": 3.461800020886585,
+          "p99_latency_ms": 3.461800020886585,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 27.59350000997074,
+          "ingest_avg_ms": 0.7664861113880761,
+          "ingest_scope": "local_index_write_from_precomputed_embeddings",
+          "task_success_rate": 0.2222222222222222,
+          "stale_error_rate": 0.7777777777777778
+        },
+        {
+          "engine": "Chroma static",
+          "evidence_recall_at_k": 0.2222222222222222,
+          "evidence_precision_at_k": 0.2222222222222222,
+          "mrr_at_k": 0.2222222222222222,
+          "precision_at_1": 0.2222222222222222,
+          "stale_suppression": 0.2222222222222222,
+          "category_success": {
+            "knowledge_update": 0.1111111111111111,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 165,
+          "context_budget_saved": 0.5015105740181269,
+          "avg_latency_ms": 1.1031777798456863,
+          "p50_latency_ms": 0.9740999958012253,
+          "p95_latency_ms": 3.143799985991791,
+          "p99_latency_ms": 3.143799985991791,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 24.960899987490848,
+          "ingest_avg_ms": 0.6933583329858569,
+          "ingest_scope": "local_index_write_from_precomputed_embeddings",
+          "task_success_rate": 0.2222222222222222,
+          "stale_error_rate": 0.7777777777777778
+        }
+      ]
+    },
+    {
+      "engine": "Qdrant static",
+      "status": "pass",
+      "measurement_trials": 5,
+      "task_success_rate": 0.2222222222222222,
+      "task_success_ci95": {
+        "mean": 0.2222222222222222,
+        "lower": 0.2222222222222222,
+        "upper": 0.2222222222222222,
+        "observations": 5
+      },
+      "stale_error_rate": 0.7777777777777778,
+      "stale_error_ci95": {
+        "mean": 0.7777777777777778,
+        "lower": 0.7777777777777778,
+        "upper": 0.7777777777777778,
+        "observations": 5
+      },
+      "context_budget_saved": 0.5015105740181269,
+      "context_budget_saved_ci95": {
+        "mean": 0.5015105740181269,
+        "lower": 0.5015105740181269,
+        "upper": 0.5015105740181269,
+        "observations": 5
+      },
+      "category_success": {
+        "knowledge_update": 0.1111111111111111,
+        "preference_update": 1.0,
+        "state_tracking": 1.0,
+        "workflow_gotcha": 0.0
+      },
+      "category_success_trials": {
+        "knowledge_update": [
+          0.1111111111111111,
+          0.1111111111111111,
+          0.1111111111111111,
+          0.1111111111111111,
+          0.1111111111111111
+        ],
+        "preference_update": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "state_tracking": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "workflow_gotcha": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "p50_latency_ms": 1.3893000141251832,
+      "p95_latency_ms": 2.115600014803931,
+      "p99_latency_ms": 2.115600014803931,
+      "combined_score": 0.2641154749916079,
+      "cost_per_query_usd": 0.0,
+      "trial_metrics": [
+        {
+          "engine": "Qdrant static",
+          "evidence_recall_at_k": 0.2222222222222222,
+          "evidence_precision_at_k": 0.2222222222222222,
+          "mrr_at_k": 0.2222222222222222,
+          "precision_at_1": 0.2222222222222222,
+          "stale_suppression": 0.2222222222222222,
+          "category_success": {
+            "knowledge_update": 0.1111111111111111,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 165,
+          "context_budget_saved": 0.5015105740181269,
+          "avg_latency_ms": 3.611727777752094,
+          "p50_latency_ms": 1.2783000129275024,
+          "p95_latency_ms": 41.9543000170961,
+          "p99_latency_ms": 41.9543000170961,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 24.605600017821416,
+          "ingest_avg_ms": 0.6834888893839283,
+          "ingest_scope": "local_index_write_from_precomputed_embeddings",
+          "task_success_rate": 0.2222222222222222,
+          "stale_error_rate": 0.7777777777777778
+        },
+        {
+          "engine": "Qdrant static",
+          "evidence_recall_at_k": 0.2222222222222222,
+          "evidence_precision_at_k": 0.2222222222222222,
+          "mrr_at_k": 0.2222222222222222,
+          "precision_at_1": 0.2222222222222222,
+          "stale_suppression": 0.2222222222222222,
+          "category_success": {
+            "knowledge_update": 0.1111111111111111,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 165,
+          "context_budget_saved": 0.5015105740181269,
+          "avg_latency_ms": 1.4528833287638716,
+          "p50_latency_ms": 1.3964999816380441,
+          "p95_latency_ms": 2.0255999988876283,
+          "p99_latency_ms": 2.0255999988876283,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 21.848399977898225,
+          "ingest_avg_ms": 0.6068999993860618,
+          "ingest_scope": "local_index_write_from_precomputed_embeddings",
+          "task_success_rate": 0.2222222222222222,
+          "stale_error_rate": 0.7777777777777778
+        },
+        {
+          "engine": "Qdrant static",
+          "evidence_recall_at_k": 0.2222222222222222,
+          "evidence_precision_at_k": 0.2222222222222222,
+          "mrr_at_k": 0.2222222222222222,
+          "precision_at_1": 0.2222222222222222,
+          "stale_suppression": 0.2222222222222222,
+          "category_success": {
+            "knowledge_update": 0.1111111111111111,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 165,
+          "context_budget_saved": 0.5015105740181269,
+          "avg_latency_ms": 1.388038890177591,
+          "p50_latency_ms": 1.2889000063296407,
+          "p95_latency_ms": 1.8485999898985028,
+          "p99_latency_ms": 1.8485999898985028,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 24.255900003481656,
+          "ingest_avg_ms": 0.6737750000967127,
+          "ingest_scope": "local_index_write_from_precomputed_embeddings",
+          "task_success_rate": 0.2222222222222222,
+          "stale_error_rate": 0.7777777777777778
+        },
+        {
+          "engine": "Qdrant static",
+          "evidence_recall_at_k": 0.2222222222222222,
+          "evidence_precision_at_k": 0.2222222222222222,
+          "mrr_at_k": 0.2222222222222222,
+          "precision_at_1": 0.2222222222222222,
+          "stale_suppression": 0.2222222222222222,
+          "category_success": {
+            "knowledge_update": 0.1111111111111111,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 165,
+          "context_budget_saved": 0.5015105740181269,
+          "avg_latency_ms": 1.7514444415509287,
+          "p50_latency_ms": 1.856200018664822,
+          "p95_latency_ms": 2.1772999898530543,
+          "p99_latency_ms": 2.1772999898530543,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 21.240700007183477,
+          "ingest_avg_ms": 0.5900194446439855,
+          "ingest_scope": "local_index_write_from_precomputed_embeddings",
+          "task_success_rate": 0.2222222222222222,
+          "stale_error_rate": 0.7777777777777778
+        },
+        {
+          "engine": "Qdrant static",
+          "evidence_recall_at_k": 0.2222222222222222,
+          "evidence_precision_at_k": 0.2222222222222222,
+          "mrr_at_k": 0.2222222222222222,
+          "precision_at_1": 0.2222222222222222,
+          "stale_suppression": 0.2222222222222222,
+          "category_success": {
+            "knowledge_update": 0.1111111111111111,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 165,
+          "context_budget_saved": 0.5015105740181269,
+          "avg_latency_ms": 1.3982833317843162,
+          "p50_latency_ms": 1.3893000141251832,
+          "p95_latency_ms": 2.115600014803931,
+          "p99_latency_ms": 2.115600014803931,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 26.054399990243837,
+          "ingest_avg_ms": 0.7237333330623288,
+          "ingest_scope": "local_index_write_from_precomputed_embeddings",
+          "task_success_rate": 0.2222222222222222,
+          "stale_error_rate": 0.7777777777777778
+        }
+      ]
+    },
+    {
+      "engine": "Mem0 OSS",
+      "status": "pass",
+      "measurement_trials": 5,
+      "task_success_rate": 0.5,
+      "task_success_ci95": {
+        "mean": 0.5,
+        "lower": 0.5,
+        "upper": 0.5,
+        "observations": 5
+      },
+      "stale_error_rate": 0.5,
+      "stale_error_ci95": {
+        "mean": 0.5,
+        "lower": 0.5,
+        "upper": 0.5,
+        "observations": 5
+      },
+      "context_budget_saved": 0.5015105740181269,
+      "context_budget_saved_ci95": {
+        "mean": 0.5015105740181269,
+        "lower": 0.5015105740181269,
+        "upper": 0.5015105740181269,
+        "observations": 5
+      },
+      "category_success": {
+        "knowledge_update": 0.4444444444444444,
+        "preference_update": 1.0,
+        "state_tracking": 1.0,
+        "workflow_gotcha": 0.3333333333333333
+      },
+      "category_success_trials": {
+        "knowledge_update": [
+          0.4444444444444444,
+          0.4444444444444444,
+          0.4444444444444444,
+          0.4444444444444444,
+          0.4444444444444444
+        ],
+        "preference_update": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "state_tracking": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "workflow_gotcha": [
+          0.3333333333333333,
+          0.3333333333333333,
+          0.3333333333333333,
+          0.3333333333333333,
+          0.3333333333333333
+        ]
+      },
+      "p50_latency_ms": 11.799200001405552,
+      "p95_latency_ms": 19.302000000607222,
+      "p99_latency_ms": 19.302000000607222,
+      "combined_score": 0.5002265861027191,
+      "cost_per_query_usd": 0.0,
+      "trial_metrics": [
+        {
+          "engine": "Mem0 OSS",
+          "evidence_recall_at_k": 0.5,
+          "evidence_precision_at_k": 0.5,
+          "mrr_at_k": 0.5,
+          "precision_at_1": 0.5,
+          "stale_suppression": 0.5,
+          "category_success": {
+            "knowledge_update": 0.4444444444444444,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.3333333333333333
+          },
+          "context_tokens_returned": 165,
+          "context_budget_saved": 0.5015105740181269,
+          "avg_latency_ms": 12.60129443997155,
+          "p50_latency_ms": 11.799200001405552,
+          "p95_latency_ms": 27.095500001451,
+          "p99_latency_ms": 27.095500001451,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 0.0,
+          "ingest_avg_ms": 0.0,
+          "ingest_scope": "",
+          "task_success_rate": 0.5,
+          "stale_error_rate": 0.5
+        },
+        {
+          "engine": "Mem0 OSS",
+          "evidence_recall_at_k": 0.5,
+          "evidence_precision_at_k": 0.5,
+          "mrr_at_k": 0.5,
+          "precision_at_1": 0.5,
+          "stale_suppression": 0.5,
+          "category_success": {
+            "knowledge_update": 0.4444444444444444,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.3333333333333333
+          },
+          "context_tokens_returned": 165,
+          "context_budget_saved": 0.5015105740181269,
+          "avg_latency_ms": 14.649322222491415,
+          "p50_latency_ms": 14.911600010236725,
+          "p95_latency_ms": 19.302000000607222,
+          "p99_latency_ms": 19.302000000607222,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 0.0,
+          "ingest_avg_ms": 0.0,
+          "ingest_scope": "",
+          "task_success_rate": 0.5,
+          "stale_error_rate": 0.5
+        },
+        {
+          "engine": "Mem0 OSS",
+          "evidence_recall_at_k": 0.5,
+          "evidence_precision_at_k": 0.5,
+          "mrr_at_k": 0.5,
+          "precision_at_1": 0.5,
+          "stale_suppression": 0.5,
+          "category_success": {
+            "knowledge_update": 0.4444444444444444,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.3333333333333333
+          },
+          "context_tokens_returned": 165,
+          "context_budget_saved": 0.5015105740181269,
+          "avg_latency_ms": 13.754411112232548,
+          "p50_latency_ms": 12.788499996531755,
+          "p95_latency_ms": 29.174900002544746,
+          "p99_latency_ms": 29.174900002544746,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 0.0,
+          "ingest_avg_ms": 0.0,
+          "ingest_scope": "",
+          "task_success_rate": 0.5,
+          "stale_error_rate": 0.5
+        },
+        {
+          "engine": "Mem0 OSS",
+          "evidence_recall_at_k": 0.5,
+          "evidence_precision_at_k": 0.5,
+          "mrr_at_k": 0.5,
+          "precision_at_1": 0.5,
+          "stale_suppression": 0.5,
+          "category_success": {
+            "knowledge_update": 0.4444444444444444,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.3333333333333333
+          },
+          "context_tokens_returned": 165,
+          "context_budget_saved": 0.5015105740181269,
+          "avg_latency_ms": 9.913572223417255,
+          "p50_latency_ms": 10.107100009918213,
+          "p95_latency_ms": 12.790900014806539,
+          "p99_latency_ms": 12.790900014806539,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 0.0,
+          "ingest_avg_ms": 0.0,
+          "ingest_scope": "",
+          "task_success_rate": 0.5,
+          "stale_error_rate": 0.5
+        },
+        {
+          "engine": "Mem0 OSS",
+          "evidence_recall_at_k": 0.5,
+          "evidence_precision_at_k": 0.5,
+          "mrr_at_k": 0.5,
+          "precision_at_1": 0.5,
+          "stale_suppression": 0.5,
+          "category_success": {
+            "knowledge_update": 0.4444444444444444,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.3333333333333333
+          },
+          "context_tokens_returned": 165,
+          "context_budget_saved": 0.5015105740181269,
+          "avg_latency_ms": 11.120811112858872,
+          "p50_latency_ms": 10.879100009333342,
+          "p95_latency_ms": 15.341199992690235,
+          "p99_latency_ms": 15.341199992690235,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 0.0,
+          "ingest_avg_ms": 0.0,
+          "ingest_scope": "",
+          "task_success_rate": 0.5,
+          "stale_error_rate": 0.5
+        }
+      ]
+    },
+    {
+      "engine": "LangGraph persistent memory",
+      "status": "pass",
+      "measurement_trials": 5,
+      "task_success_rate": 0.2222222222222222,
+      "task_success_ci95": {
+        "mean": 0.2222222222222222,
+        "lower": 0.2222222222222222,
+        "upper": 0.2222222222222222,
+        "observations": 5
+      },
+      "stale_error_rate": 0.7777777777777778,
+      "stale_error_ci95": {
+        "mean": 0.7777777777777778,
+        "lower": 0.7777777777777778,
+        "upper": 0.7777777777777778,
+        "observations": 5
+      },
+      "context_budget_saved": 0.5015105740181269,
+      "context_budget_saved_ci95": {
+        "mean": 0.5015105740181269,
+        "lower": 0.5015105740181269,
+        "upper": 0.5015105740181269,
+        "observations": 5
+      },
+      "category_success": {
+        "knowledge_update": 0.1111111111111111,
+        "preference_update": 1.0,
+        "state_tracking": 1.0,
+        "workflow_gotcha": 0.0
+      },
+      "category_success_trials": {
+        "knowledge_update": [
+          0.1111111111111111,
+          0.1111111111111111,
+          0.1111111111111111,
+          0.1111111111111111,
+          0.1111111111111111
+        ],
+        "preference_update": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "state_tracking": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "workflow_gotcha": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "p50_latency_ms": 0.3252000024076551,
+      "p95_latency_ms": 0.8864999981597066,
+      "p99_latency_ms": 0.8864999981597066,
+      "combined_score": 0.2641154749916079,
+      "cost_per_query_usd": 0.0,
+      "trial_metrics": [
+        {
+          "engine": "LangGraph persistent memory",
+          "evidence_recall_at_k": 0.2222222222222222,
+          "evidence_precision_at_k": 0.2222222222222222,
+          "mrr_at_k": 0.2222222222222222,
+          "precision_at_1": 0.2222222222222222,
+          "stale_suppression": 0.2222222222222222,
+          "category_success": {
+            "knowledge_update": 0.1111111111111111,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 165,
+          "context_budget_saved": 0.5015105740181269,
+          "avg_latency_ms": 0.4752666670052956,
+          "p50_latency_ms": 0.33099998836405575,
+          "p95_latency_ms": 2.373800001805648,
+          "p99_latency_ms": 2.373800001805648,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 0.0,
+          "ingest_avg_ms": 0.0,
+          "ingest_scope": "",
+          "task_success_rate": 0.2222222222222222,
+          "stale_error_rate": 0.7777777777777778
+        },
+        {
+          "engine": "LangGraph persistent memory",
+          "evidence_recall_at_k": 0.2222222222222222,
+          "evidence_precision_at_k": 0.2222222222222222,
+          "mrr_at_k": 0.2222222222222222,
+          "precision_at_1": 0.2222222222222222,
+          "stale_suppression": 0.2222222222222222,
+          "category_success": {
+            "knowledge_update": 0.1111111111111111,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 165,
+          "context_budget_saved": 0.5015105740181269,
+          "avg_latency_ms": 0.3614944418788784,
+          "p50_latency_ms": 0.3252000024076551,
+          "p95_latency_ms": 0.8864999981597066,
+          "p99_latency_ms": 0.8864999981597066,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 0.0,
+          "ingest_avg_ms": 0.0,
+          "ingest_scope": "",
+          "task_success_rate": 0.2222222222222222,
+          "stale_error_rate": 0.7777777777777778
+        },
+        {
+          "engine": "LangGraph persistent memory",
+          "evidence_recall_at_k": 0.2222222222222222,
+          "evidence_precision_at_k": 0.2222222222222222,
+          "mrr_at_k": 0.2222222222222222,
+          "precision_at_1": 0.2222222222222222,
+          "stale_suppression": 0.2222222222222222,
+          "category_success": {
+            "knowledge_update": 0.1111111111111111,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 165,
+          "context_budget_saved": 0.5015105740181269,
+          "avg_latency_ms": 0.34073333437037134,
+          "p50_latency_ms": 0.31269999453797936,
+          "p95_latency_ms": 0.7549000147264451,
+          "p99_latency_ms": 0.7549000147264451,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 0.0,
+          "ingest_avg_ms": 0.0,
+          "ingest_scope": "",
+          "task_success_rate": 0.2222222222222222,
+          "stale_error_rate": 0.7777777777777778
+        },
+        {
+          "engine": "LangGraph persistent memory",
+          "evidence_recall_at_k": 0.2222222222222222,
+          "evidence_precision_at_k": 0.2222222222222222,
+          "mrr_at_k": 0.2222222222222222,
+          "precision_at_1": 0.2222222222222222,
+          "stale_suppression": 0.2222222222222222,
+          "category_success": {
+            "knowledge_update": 0.1111111111111111,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 165,
+          "context_budget_saved": 0.5015105740181269,
+          "avg_latency_ms": 0.550200000159546,
+          "p50_latency_ms": 0.5148999916855246,
+          "p95_latency_ms": 1.3143999967724085,
+          "p99_latency_ms": 1.3143999967724085,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 0.0,
+          "ingest_avg_ms": 0.0,
+          "ingest_scope": "",
+          "task_success_rate": 0.2222222222222222,
+          "stale_error_rate": 0.7777777777777778
+        },
+        {
+          "engine": "LangGraph persistent memory",
+          "evidence_recall_at_k": 0.2222222222222222,
+          "evidence_precision_at_k": 0.2222222222222222,
+          "mrr_at_k": 0.2222222222222222,
+          "precision_at_1": 0.2222222222222222,
+          "stale_suppression": 0.2222222222222222,
+          "category_success": {
+            "knowledge_update": 0.1111111111111111,
+            "preference_update": 1.0,
+            "state_tracking": 1.0,
+            "workflow_gotcha": 0.0
+          },
+          "context_tokens_returned": 165,
+          "context_budget_saved": 0.5015105740181269,
+          "avg_latency_ms": 0.35143332691707957,
+          "p50_latency_ms": 0.3183000080753118,
+          "p95_latency_ms": 0.8108000038191676,
+          "p99_latency_ms": 0.8108000038191676,
+          "queries": 18,
+          "execution_mode": "retrieval",
+          "worker_runs": 0,
+          "maintenance_total_ms": 0.0,
+          "maintenance_avg_ms": 0.0,
+          "end_to_end_p95_ms": 0.0,
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "priority_predictions": 0,
+          "forgetting_demotions": 0,
+          "memory_os_policy_mode": "",
+          "prewarmed_queries": 0,
+          "predictive_prefetch_warmed": 0,
+          "worker_errors": 0,
+          "maintenance_interval_queries": 0,
+          "ingest_total_ms": 0.0,
+          "ingest_avg_ms": 0.0,
+          "ingest_scope": "",
+          "task_success_rate": 0.2222222222222222,
+          "stale_error_rate": 0.7777777777777778
+        }
+      ]
+    }
+  ],
+  "skipped": [
+    {
+      "engine": "Graphiti",
+      "status": "skipped",
+      "module": "graphiti_core",
+      "installed": false,
+      "reason": "package_not_installed; no imitation substituted",
+      "eligible_for_comparison": false
+    }
+  ],
+  "paired_lift": {
+    "overall_task_success": {
+      "mean": 0.6111111111111112,
+      "lower": 0.3888888888888889,
+      "upper": 0.8333333333333334,
+      "observations": 18
+    },
+    "categories": {
+      "knowledge_update": {
+        "mean": 0.5555555555555556,
+        "lower": 0.2222222222222222,
+        "upper": 0.8888888888888888,
+        "observations": 9
+      },
+      "preference_update": {
+        "mean": 0.0,
+        "lower": 0.0,
+        "upper": 0.0,
+        "observations": 1
+      },
+      "state_tracking": {
+        "mean": 0.0,
+        "lower": 0.0,
+        "upper": 0.0,
+        "observations": 2
+      },
+      "workflow_gotcha": {
+        "mean": 1.0,
+        "lower": 1.0,
+        "upper": 1.0,
+        "observations": 6
+      }
+    }
+  },
+  "strongest_local_baseline": {
+    "engine": "Mem0 OSS",
+    "combined_score": 0.5002265861027191,
+    "memory_os_combined_score": 0.925226586102719,
+    "combined_lift": 0.42499999999999993
+  },
+  "claim_boundary": "This controlled sequential benchmark isolates Memory OS policy effects on knowledge updates and workflow gotchas. Public-dataset execution is reported separately and cannot be replaced by this fixture."
+}
