@@ -581,7 +581,7 @@ def _cross_surface_parity(
             http_packet = client.post(
                 "/workspace/packet",
                 json={
-                    "root": str(manager.config.config_path.parent.parent),
+                    "root": str(Path(manager.config.config_path).parent.parent),
                     "query": str(case["query"]),
                     "domain": _stack_for_repo(str(case["repo"])),
                     "task_type": str(case["task_type"]),
