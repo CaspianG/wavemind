@@ -38,6 +38,11 @@ MANIFEST_SCHEMA = "wavemind.workspace_experience_v5_manifest.v1"
 RESULT_SCHEMA = "wavemind.workspace_experience_v5_benchmark.v1"
 DEFAULT_MANIFEST = ROOT / "benchmarks" / "workspace_experience_v5_manifest.json"
 FORBIDDEN_TASK_OUTCOMES = {"source_sha256_check", "file_hash_check", "checksum_only"}
+HISTORICAL_WORKSPACE_ARTIFACTS = (
+    ROOT / "benchmarks" / "workspace_experience_manifest.json",
+    ROOT / "benchmarks" / "workspace_experience_benchmark_results.json",
+    ROOT / "benchmarks" / "workspace_experience_v4_manifest.json",
+)
 
 
 class WorkspaceV5BenchmarkError(RuntimeError):
@@ -80,6 +85,7 @@ def validate_manifest(
     _reject_split_overlap(positives, "semantic_family")
     _reject_split_overlap(positives, "source_family")
     _reject_split_overlap(positives, "workflow_group")
+    _reject_historical_heldout_overlap(cases)
 
     fingerprints: set[tuple[str, str, str, str]] = set()
     for case in positives:
@@ -470,7 +476,7 @@ def _static_raw_trace(case: dict[str, Any], traces: list[dict[str, Any]], repo_r
     return {
         "selected_citations": citations,
         "abstain": not citations,
-        "context_chars": sum(len(item["context"]) for item in _ranked_static(case["query"], traces)[:3]),
+        "context_chars": len(selected["context"]) if selected else 0,
         "latency_ms": latency_ms,
         "command": command,
         "task_success": task_success,
@@ -771,6 +777,74 @@ def _reject_query_leakage(case: dict[str, Any]) -> None:
     if len(filename_tokens) > 1 and max(len(token) for token in filename_tokens) > 4:
         if _contains_sequence(_tokens(str(case.get("query") or "")), filename_tokens):
             raise WorkspaceV5BenchmarkError("query leaks case id, procedure id, source path, or filename")
+
+
+def _reject_historical_heldout_overlap(cases: list[dict[str, Any]]) -> None:
+    historical = _historical_observed_fingerprints()
+    for case in cases:
+        if case.get("split") != "heldout":
+            continue
+        repo = str(case.get("repo") or "")
+        source_path = str(case.get("source_path") or "")
+        if source_path and (repo, source_path) in historical["repo_source_paths"]:
+            raise WorkspaceV5BenchmarkError("heldout source path overlaps historical observed workspace benchmark")
+        for key, bucket in (
+            ("semantic_family", "semantic_families"),
+            ("source_family", "source_families"),
+            ("procedure_id", "procedure_ids"),
+        ):
+            value = str(case.get(key) or "")
+            if value and value in historical[bucket]:
+                raise WorkspaceV5BenchmarkError(f"heldout {key} overlaps historical observed workspace benchmark")
+        fingerprint = _case_fingerprint(case)
+        if fingerprint in historical["fingerprints"]:
+            raise WorkspaceV5BenchmarkError("heldout normalized query/outcome fingerprint overlaps historical observed workspace benchmark")
+
+
+def _historical_observed_fingerprints() -> dict[str, set[Any]]:
+    collected: dict[str, set[Any]] = {
+        "repo_source_paths": set(),
+        "semantic_families": set(),
+        "source_families": set(),
+        "procedure_ids": set(),
+        "fingerprints": set(),
+    }
+    for path in HISTORICAL_WORKSPACE_ARTIFACTS:
+        if not path.exists():
+            continue
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        cases = list(payload.get("cases") or [])
+        if not cases and payload.get("rows"):
+            cases = [row.get("case", {}) for row in payload.get("rows", [])]
+        for case in cases:
+            if not isinstance(case, dict):
+                continue
+            repo = str(case.get("repo") or "")
+            source_paths = set()
+            if case.get("source_path"):
+                source_paths.add(str(case["source_path"]))
+            source_paths.update(re.findall(r"`([^`]+\.[A-Za-z0-9]+)`", str(case.get("query") or "")))
+            for source_path in source_paths:
+                collected["repo_source_paths"].add((repo, source_path))
+            for key, bucket in (
+                ("semantic_family", "semantic_families"),
+                ("source_family", "source_families"),
+                ("procedure_id", "procedure_ids"),
+            ):
+                value = str(case.get(key) or "")
+                if value:
+                    collected[bucket].add(value)
+            collected["fingerprints"].add(_case_fingerprint(case))
+    return collected
+
+
+def _case_fingerprint(case: dict[str, Any]) -> tuple[str, str, str, str]:
+    return (
+        _normalize(str(case.get("query") or "")),
+        _normalize(str(case.get("workflow_group") or case.get("task_type") or "")),
+        _normalize(str(case.get("procedure_id") or "")),
+        str(case.get("expected_outcome", {}).get("kind") or ",".join(case.get("tools") or [])),
+    )
 
 
 def _reject_split_overlap(cases: list[dict[str, Any]], key: str) -> None:

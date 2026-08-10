@@ -30,33 +30,33 @@
       "workflow_group": "requests-api-surface-smoke"
     },
     {
-      "case_id": "requests-v5-01-session-pooling-smoke",
+      "case_id": "requests-v5-01-cert-bundle-smoke",
       "distractor": {
         "kind": "unverified_failed_attempt",
-        "procedure_id": "raw-requests-session-pooling-smoke-unverified",
-        "text": "Unverified trace for session pooling workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
+        "procedure_id": "raw-requests-cert-bundle-smoke-unverified",
+        "text": "Unverified trace for certificate bundle workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
       },
       "expected_behavior": "execute_verified_outcome",
       "expected_outcome": {
         "expected_exit_code": 0,
         "kind": "python_py_compile",
-        "path": "src/requests/sessions.py"
+        "path": "src/requests/certs.py"
       },
-      "failure_symptom": "session pooling workspace issue",
+      "failure_symptom": "certificate bundle workspace issue",
       "kind": "positive",
       "license": "Apache-2.0",
-      "procedure_id": "proc-requests-session-pooling-smoke",
-      "procedure_title": "Session pooling edits need syntax verification before replay",
-      "query": "An agent is about to handle this workspace procedure: Session pooling edits need syntax verification before replay. Which verified packet applies?",
+      "procedure_id": "proc-requests-cert-bundle-smoke",
+      "procedure_title": "Certificate bundle helper edits need syntax verification before replay",
+      "query": "An agent is about to handle this workspace procedure: Certificate bundle helper edits need syntax verification before replay. Which verified packet applies?",
       "repo": "requests",
-      "semantic_family": "requests:session-pooling-smoke",
-      "source_family": "requests:session-pooling-smoke",
-      "source_path": "src/requests/sessions.py",
-      "source_sha256": "03cef27dd6ce31c5bd1b724a80156a24e9ccb2e7041f1d6c3500fa60c3871d21",
-      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/src/requests/sessions.py",
+      "semantic_family": "requests:cert-bundle-smoke",
+      "source_family": "requests:cert-bundle-smoke",
+      "source_path": "src/requests/certs.py",
+      "source_sha256": "5200c997cec403786b1045457c262f1b259270e0fe936b2bac9ba0f5efa84d2e",
+      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/src/requests/certs.py",
       "split": "heldout",
-      "task_type": "session_pooling_smoke",
-      "workflow_group": "requests-session-pooling-smoke"
+      "task_type": "cert_bundle_smoke",
+      "workflow_group": "requests-cert-bundle-smoke"
     },
     {
       "case_id": "requests-v5-02-adapter-transport-smoke",
@@ -88,33 +88,33 @@
       "workflow_group": "requests-adapter-transport-smoke"
     },
     {
-      "case_id": "requests-v5-03-model-body-smoke",
+      "case_id": "requests-v5-03-package-compat-smoke",
       "distractor": {
         "kind": "unverified_failed_attempt",
-        "procedure_id": "raw-requests-model-body-smoke-unverified",
-        "text": "Unverified trace for prepared model workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
+        "procedure_id": "raw-requests-package-compat-smoke-unverified",
+        "text": "Unverified trace for package compatibility workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
       },
       "expected_behavior": "execute_verified_outcome",
       "expected_outcome": {
         "expected_exit_code": 0,
         "kind": "python_py_compile",
-        "path": "src/requests/models.py"
+        "path": "src/requests/packages.py"
       },
-      "failure_symptom": "prepared model workspace issue",
+      "failure_symptom": "package compatibility workspace issue",
       "kind": "positive",
       "license": "Apache-2.0",
-      "procedure_id": "proc-requests-model-body-smoke",
-      "procedure_title": "Prepared request model edits must pass module compile",
-      "query": "An agent is about to handle this workspace procedure: Prepared request model edits must pass module compile. Which verified packet applies?",
+      "procedure_id": "proc-requests-package-compat-smoke",
+      "procedure_title": "Vendored package compatibility edits must pass module compile",
+      "query": "An agent is about to handle this workspace procedure: Vendored package compatibility edits must pass module compile. Which verified packet applies?",
       "repo": "requests",
-      "semantic_family": "requests:model-body-smoke",
-      "source_family": "requests:model-body-smoke",
-      "source_path": "src/requests/models.py",
-      "source_sha256": "2d4b5a2738256b3d10cbe8b6e5ad572b9579b847396de6b4093affa5e328150c",
-      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/src/requests/models.py",
+      "semantic_family": "requests:package-compat-smoke",
+      "source_family": "requests:package-compat-smoke",
+      "source_path": "src/requests/packages.py",
+      "source_sha256": "b745f5941ad2e2dcd9d44b5f09841c87a7353ab669ba82443f70b480f178082d",
+      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/src/requests/packages.py",
       "split": "heldout",
-      "task_type": "model_body_smoke",
-      "workflow_group": "requests-model-body-smoke"
+      "task_type": "package_compat_smoke",
+      "workflow_group": "requests-package-compat-smoke"
     },
     {
       "case_id": "requests-v5-04-cookie-policy-smoke",
@@ -146,33 +146,33 @@
       "workflow_group": "requests-cookie-policy-smoke"
     },
     {
-      "case_id": "requests-v5-05-auth-flow-smoke",
+      "case_id": "requests-v5-05-internal-utils-smoke",
       "distractor": {
         "kind": "unverified_failed_attempt",
-        "procedure_id": "raw-requests-auth-flow-smoke-unverified",
-        "text": "Unverified trace for auth helper workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
+        "procedure_id": "raw-requests-internal-utils-smoke-unverified",
+        "text": "Unverified trace for internal utility workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
       },
       "expected_behavior": "execute_verified_outcome",
       "expected_outcome": {
         "expected_exit_code": 0,
         "kind": "python_py_compile",
-        "path": "src/requests/auth.py"
+        "path": "src/requests/_internal_utils.py"
       },
-      "failure_symptom": "auth helper workspace issue",
+      "failure_symptom": "internal utility workspace issue",
       "kind": "positive",
       "license": "Apache-2.0",
-      "procedure_id": "proc-requests-auth-flow-smoke",
-      "procedure_title": "Authentication helper edits require compile verification",
-      "query": "An agent is about to handle this workspace procedure: Authentication helper edits require compile verification. Which verified packet applies?",
+      "procedure_id": "proc-requests-internal-utils-smoke",
+      "procedure_title": "Internal utility edits require compile verification",
+      "query": "An agent is about to handle this workspace procedure: Internal utility edits require compile verification. Which verified packet applies?",
       "repo": "requests",
-      "semantic_family": "requests:auth-flow-smoke",
-      "source_family": "requests:auth-flow-smoke",
-      "source_path": "src/requests/auth.py",
-      "source_sha256": "c35ba30ee054ed8744989fee2cddd06a581255a6929e58f0947d1824530095f1",
-      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/src/requests/auth.py",
+      "semantic_family": "requests:internal-utils-smoke",
+      "source_family": "requests:internal-utils-smoke",
+      "source_path": "src/requests/_internal_utils.py",
+      "source_sha256": "3c72d298d4a062c5eb87d62241b55f0d6cc884cab8fbb4b70b1f0587317b149f",
+      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/src/requests/_internal_utils.py",
       "split": "heldout",
-      "task_type": "auth_flow_smoke",
-      "workflow_group": "requests-auth-flow-smoke"
+      "task_type": "internal_utils_smoke",
+      "workflow_group": "requests-internal-utils-smoke"
     },
     {
       "case_id": "requests-v5-06-utils-regression-smoke",
@@ -204,33 +204,33 @@
       "workflow_group": "requests-utils-regression-smoke"
     },
     {
-      "case_id": "requests-v5-07-structure-case-smoke",
+      "case_id": "requests-v5-07-typing-contract-smoke",
       "distractor": {
         "kind": "unverified_failed_attempt",
-        "procedure_id": "raw-requests-structure-case-smoke-unverified",
-        "text": "Unverified trace for structure case workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
+        "procedure_id": "raw-requests-typing-contract-smoke-unverified",
+        "text": "Unverified trace for typing contract workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
       },
       "expected_behavior": "execute_verified_outcome",
       "expected_outcome": {
         "expected_exit_code": 0,
         "kind": "python_py_compile",
-        "path": "src/requests/structures.py"
+        "path": "src/requests/_types.py"
       },
-      "failure_symptom": "structure case workspace issue",
+      "failure_symptom": "typing contract workspace issue",
       "kind": "positive",
       "license": "Apache-2.0",
-      "procedure_id": "proc-requests-structure-case-smoke",
-      "procedure_title": "Case-insensitive structure updates must compile",
-      "query": "An agent is about to handle this workspace procedure: Case-insensitive structure updates must compile. Which verified packet applies?",
+      "procedure_id": "proc-requests-typing-contract-smoke",
+      "procedure_title": "Typing contract updates must compile",
+      "query": "An agent is about to handle this workspace procedure: Typing contract updates must compile. Which verified packet applies?",
       "repo": "requests",
-      "semantic_family": "requests:structure-case-smoke",
-      "source_family": "requests:structure-case-smoke",
-      "source_path": "src/requests/structures.py",
-      "source_sha256": "6323bbcacce5f2df5b9146d9d5355826f9ba862a33f8c632b598625079902639",
-      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/src/requests/structures.py",
+      "semantic_family": "requests:typing-contract-smoke",
+      "source_family": "requests:typing-contract-smoke",
+      "source_path": "src/requests/_types.py",
+      "source_sha256": "5eb5fc19d6a03cd7c6a3c104779425ec724f42d4701ee0ec4b8001c6bb892ca0",
+      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/src/requests/_types.py",
       "split": "heldout",
-      "task_type": "structure_case_smoke",
-      "workflow_group": "requests-structure-case-smoke"
+      "task_type": "typing_contract_smoke",
+      "workflow_group": "requests-typing-contract-smoke"
     },
     {
       "case_id": "requests-v5-08-exception-path-smoke",
@@ -262,33 +262,33 @@
       "workflow_group": "requests-exception-path-smoke"
     },
     {
-      "case_id": "requests-v5-09-hook-dispatch-smoke",
+      "case_id": "requests-v5-09-version-module-smoke",
       "distractor": {
         "kind": "unverified_failed_attempt",
-        "procedure_id": "raw-requests-hook-dispatch-smoke-unverified",
-        "text": "Unverified trace for hook dispatch workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
+        "procedure_id": "raw-requests-version-module-smoke-unverified",
+        "text": "Unverified trace for version module workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
       },
       "expected_behavior": "execute_verified_outcome",
       "expected_outcome": {
         "expected_exit_code": 0,
         "kind": "python_py_compile",
-        "path": "src/requests/hooks.py"
+        "path": "src/requests/__version__.py"
       },
-      "failure_symptom": "hook dispatch workspace issue",
+      "failure_symptom": "version module workspace issue",
       "kind": "positive",
       "license": "Apache-2.0",
-      "procedure_id": "proc-requests-hook-dispatch-smoke",
-      "procedure_title": "Hook dispatch changes require compile verification",
-      "query": "An agent is about to handle this workspace procedure: Hook dispatch changes require compile verification. Which verified packet applies?",
+      "procedure_id": "proc-requests-version-module-smoke",
+      "procedure_title": "Version module changes require compile verification",
+      "query": "An agent is about to handle this workspace procedure: Version module changes require compile verification. Which verified packet applies?",
       "repo": "requests",
-      "semantic_family": "requests:hook-dispatch-smoke",
-      "source_family": "requests:hook-dispatch-smoke",
-      "source_path": "src/requests/hooks.py",
-      "source_sha256": "aa947312c1c17982362bcbdf8bf1adcbe821ecee0cfb47481e1e94129c2ff406",
-      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/src/requests/hooks.py",
+      "semantic_family": "requests:version-module-smoke",
+      "source_family": "requests:version-module-smoke",
+      "source_path": "src/requests/__version__.py",
+      "source_sha256": "138a8ee2cb71898d5195c6937daa4e9045daff7e69949e1f68ed839fb777c39b",
+      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/src/requests/__version__.py",
       "split": "heldout",
-      "task_type": "hook_dispatch_smoke",
-      "workflow_group": "requests-hook-dispatch-smoke"
+      "task_type": "version_module_smoke",
+      "workflow_group": "requests-version-module-smoke"
     },
     {
       "case_id": "requests-v5-10-compat-layer-smoke",
@@ -436,33 +436,33 @@
       "workflow_group": "requests-test-requests-smoke"
     },
     {
-      "case_id": "requests-v5-15-test-utils-smoke",
+      "case_id": "requests-v5-15-test-help-ast",
       "distractor": {
         "kind": "unverified_failed_attempt",
-        "procedure_id": "raw-requests-test-utils-smoke-unverified",
-        "text": "Unverified trace for utility test workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
+        "procedure_id": "raw-requests-test-help-ast-unverified",
+        "text": "Unverified trace for help test workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
       },
       "expected_behavior": "execute_verified_outcome",
       "expected_outcome": {
         "expected_exit_code": 0,
         "kind": "python_ast_parse",
-        "path": "tests/test_utils.py"
+        "path": "tests/test_help.py"
       },
-      "failure_symptom": "utility test workspace issue",
+      "failure_symptom": "help test workspace issue",
       "kind": "positive",
       "license": "Apache-2.0",
-      "procedure_id": "proc-requests-test-utils-smoke",
-      "procedure_title": "Utility test edits need AST parse before replay",
-      "query": "An agent is about to handle this workspace procedure: Utility test edits need AST parse before replay. Which verified packet applies?",
+      "procedure_id": "proc-requests-test-help-ast",
+      "procedure_title": "Help output test edits need AST parse before replay",
+      "query": "An agent is about to handle this workspace procedure: Help output test edits need AST parse before replay. Which verified packet applies?",
       "repo": "requests",
-      "semantic_family": "requests:test-utils-smoke",
-      "source_family": "requests:test-utils-smoke",
-      "source_path": "tests/test_utils.py",
-      "source_sha256": "3953bda8c96f8f38f0f9ead5f0cb1c7aabb3cfba48f513fc742a3abe9f84d192",
-      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/tests/test_utils.py",
+      "semantic_family": "requests:test-help-ast",
+      "source_family": "requests:test-help-ast",
+      "source_path": "tests/test_help.py",
+      "source_sha256": "6527243a09aca6928a760b98ecda44a073eeaf500fc1751054bc9a7d6ab7a3c0",
+      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/tests/test_help.py",
       "split": "heldout",
-      "task_type": "test_utils_smoke",
-      "workflow_group": "requests-test-utils-smoke"
+      "task_type": "test_help_ast",
+      "workflow_group": "requests-test-help-ast"
     },
     {
       "case_id": "requests-v5-16-project-metadata-toml",
@@ -494,33 +494,33 @@
       "workflow_group": "requests-project-metadata-toml"
     },
     {
-      "case_id": "requests-v5-17-tox-config-parse",
+      "case_id": "requests-v5-17-test-packages-ast",
       "distractor": {
         "kind": "unverified_failed_attempt",
-        "procedure_id": "raw-requests-tox-config-parse-unverified",
-        "text": "Unverified trace for tox config workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
+        "procedure_id": "raw-requests-test-packages-ast-unverified",
+        "text": "Unverified trace for package tests workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
       },
       "expected_behavior": "execute_verified_outcome",
       "expected_outcome": {
         "expected_exit_code": 0,
-        "kind": "python_configparser_parse",
-        "path": "tox.ini"
+        "kind": "python_ast_parse",
+        "path": "tests/test_packages.py"
       },
-      "failure_symptom": "tox config workspace issue",
+      "failure_symptom": "package tests workspace issue",
       "kind": "positive",
       "license": "Apache-2.0",
-      "procedure_id": "proc-requests-tox-config-parse",
-      "procedure_title": "Tox environment edits must parse as INI",
-      "query": "An agent is about to handle this workspace procedure: Tox environment edits must parse as INI. Which verified packet applies?",
+      "procedure_id": "proc-requests-test-packages-ast",
+      "procedure_title": "Package metadata tests must parse before replay",
+      "query": "An agent is about to handle this workspace procedure: Package metadata tests must parse before replay. Which verified packet applies?",
       "repo": "requests",
-      "semantic_family": "requests:tox-config-parse",
-      "source_family": "requests:tox-config-parse",
-      "source_path": "tox.ini",
-      "source_sha256": "79e495771d389ba0daffff8f6f76bf159bbac7a75aaa6bc9309ebf4f29944720",
-      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/tox.ini",
+      "semantic_family": "requests:test-packages-ast",
+      "source_family": "requests:test-packages-ast",
+      "source_path": "tests/test_packages.py",
+      "source_sha256": "28ef0b9f75e4d22b09fa5695619c12de050c9dd293797e887ce14aca2f287687",
+      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/tests/test_packages.py",
       "split": "heldout",
-      "task_type": "tox_config_parse",
-      "workflow_group": "requests-tox-config-parse"
+      "task_type": "test_packages_ast",
+      "workflow_group": "requests-test-packages-ast"
     },
     {
       "case_id": "requests-v5-18-ci-run-tests-yaml",
@@ -552,33 +552,33 @@
       "workflow_group": "requests-ci-run-tests-yaml"
     },
     {
-      "case_id": "requests-v5-19-ci-codeql-yaml",
+      "case_id": "requests-v5-19-dependabot-yaml",
       "distractor": {
         "kind": "unverified_failed_attempt",
-        "procedure_id": "raw-requests-ci-codeql-yaml-unverified",
-        "text": "Unverified trace for codeql workflow workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
+        "procedure_id": "raw-requests-dependabot-yaml-unverified",
+        "text": "Unverified trace for dependency automation workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
       },
       "expected_behavior": "execute_verified_outcome",
       "expected_outcome": {
         "expected_exit_code": 0,
         "kind": "yaml_parse",
-        "path": ".github/workflows/codeql-analysis.yml"
+        "path": ".github/dependabot.yml"
       },
-      "failure_symptom": "codeql workflow workspace issue",
+      "failure_symptom": "dependency automation workspace issue",
       "kind": "positive",
       "license": "Apache-2.0",
-      "procedure_id": "proc-requests-ci-codeql-yaml",
-      "procedure_title": "CodeQL workflow changes need YAML parse verification",
-      "query": "An agent is about to handle this workspace procedure: CodeQL workflow changes need YAML parse verification. Which verified packet applies?",
+      "procedure_id": "proc-requests-dependabot-yaml",
+      "procedure_title": "Dependency automation changes need YAML parse verification",
+      "query": "An agent is about to handle this workspace procedure: Dependency automation changes need YAML parse verification. Which verified packet applies?",
       "repo": "requests",
-      "semantic_family": "requests:ci-codeql-yaml",
-      "source_family": "requests:ci-codeql-yaml",
-      "source_path": ".github/workflows/codeql-analysis.yml",
-      "source_sha256": "41d6dd35e22f681b93d0d358aec811177b18c5104f796f1af178190ee8ff9cc1",
-      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/.github/workflows/codeql-analysis.yml",
+      "semantic_family": "requests:dependabot-yaml",
+      "source_family": "requests:dependabot-yaml",
+      "source_path": ".github/dependabot.yml",
+      "source_sha256": "765d75c8e7c2109462b0b75bcd78887a016c31b79298783e3b3a15fc735e803c",
+      "source_url": "https://github.com/psf/requests/blob/1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e/.github/dependabot.yml",
       "split": "heldout",
-      "task_type": "ci_codeql_yaml",
-      "workflow_group": "requests-ci-codeql-yaml"
+      "task_type": "dependabot_yaml",
+      "workflow_group": "requests-dependabot-yaml"
     },
     {
       "case_id": "flask-v5-00-app-lifecycle-smoke",
@@ -610,33 +610,33 @@
       "workflow_group": "flask-app-lifecycle-smoke"
     },
     {
-      "case_id": "flask-v5-01-blueprint-routing-smoke",
+      "case_id": "flask-v5-01-sansio-blueprint-smoke",
       "distractor": {
         "kind": "unverified_failed_attempt",
-        "procedure_id": "raw-flask-blueprint-routing-smoke-unverified",
-        "text": "Unverified trace for blueprint routing workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
+        "procedure_id": "raw-flask-sansio-blueprint-smoke-unverified",
+        "text": "Unverified trace for sansio blueprint workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
       },
       "expected_behavior": "execute_verified_outcome",
       "expected_outcome": {
         "expected_exit_code": 0,
         "kind": "python_py_compile",
-        "path": "src/flask/blueprints.py"
+        "path": "src/flask/sansio/blueprints.py"
       },
-      "failure_symptom": "blueprint routing workspace issue",
+      "failure_symptom": "sansio blueprint workspace issue",
       "kind": "positive",
       "license": "BSD-3-Clause",
-      "procedure_id": "proc-flask-blueprint-routing-smoke",
-      "procedure_title": "Blueprint routing edits require compile verification",
-      "query": "An agent is about to handle this workspace procedure: Blueprint routing edits require compile verification. Which verified packet applies?",
+      "procedure_id": "proc-flask-sansio-blueprint-smoke",
+      "procedure_title": "Sans-IO blueprint edits require compile verification",
+      "query": "An agent is about to handle this workspace procedure: Sans-IO blueprint edits require compile verification. Which verified packet applies?",
       "repo": "flask",
-      "semantic_family": "flask:blueprint-routing-smoke",
-      "source_family": "flask:blueprint-routing-smoke",
-      "source_path": "src/flask/blueprints.py",
-      "source_sha256": "565d4de8d464df4e5ffe1b1daa4cd4dbd70b5e4d06a7f30e5ba93fab68d8b928",
-      "source_url": "https://github.com/pallets/flask/blob/6a2f545bfd8ed31e19066a299296917e034aca58/src/flask/blueprints.py",
+      "semantic_family": "flask:sansio-blueprint-smoke",
+      "source_family": "flask:sansio-blueprint-smoke",
+      "source_path": "src/flask/sansio/blueprints.py",
+      "source_sha256": "7643053c41ff59311eaefcf1a086269801724a5a26f66a8da03a90d99553260a",
+      "source_url": "https://github.com/pallets/flask/blob/6a2f545bfd8ed31e19066a299296917e034aca58/src/flask/sansio/blueprints.py",
       "split": "heldout",
-      "task_type": "blueprint_routing_smoke",
-      "workflow_group": "flask-blueprint-routing-smoke"
+      "task_type": "sansio_blueprint_smoke",
+      "workflow_group": "flask-sansio-blueprint-smoke"
     },
     {
       "case_id": "flask-v5-02-cli-runner-smoke",
@@ -668,33 +668,33 @@
       "workflow_group": "flask-cli-runner-smoke"
     },
     {
-      "case_id": "flask-v5-03-config-loader-smoke",
+      "case_id": "flask-v5-03-sansio-app-smoke",
       "distractor": {
         "kind": "unverified_failed_attempt",
-        "procedure_id": "raw-flask-config-loader-smoke-unverified",
-        "text": "Unverified trace for config loader workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
+        "procedure_id": "raw-flask-sansio-app-smoke-unverified",
+        "text": "Unverified trace for sansio app workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
       },
       "expected_behavior": "execute_verified_outcome",
       "expected_outcome": {
         "expected_exit_code": 0,
         "kind": "python_py_compile",
-        "path": "src/flask/config.py"
+        "path": "src/flask/sansio/app.py"
       },
-      "failure_symptom": "config loader workspace issue",
+      "failure_symptom": "sansio app workspace issue",
       "kind": "positive",
       "license": "BSD-3-Clause",
-      "procedure_id": "proc-flask-config-loader-smoke",
-      "procedure_title": "Configuration loader edits must compile",
-      "query": "An agent is about to handle this workspace procedure: Configuration loader edits must compile. Which verified packet applies?",
+      "procedure_id": "proc-flask-sansio-app-smoke",
+      "procedure_title": "Sans-IO application edits must compile",
+      "query": "An agent is about to handle this workspace procedure: Sans-IO application edits must compile. Which verified packet applies?",
       "repo": "flask",
-      "semantic_family": "flask:config-loader-smoke",
-      "source_family": "flask:config-loader-smoke",
-      "source_path": "src/flask/config.py",
-      "source_sha256": "1e96b8823b559bb504f168c07c86334cdde5370525b2aebd99f67336cdc4c205",
-      "source_url": "https://github.com/pallets/flask/blob/6a2f545bfd8ed31e19066a299296917e034aca58/src/flask/config.py",
+      "semantic_family": "flask:sansio-app-smoke",
+      "source_family": "flask:sansio-app-smoke",
+      "source_path": "src/flask/sansio/app.py",
+      "source_sha256": "9f458dbb91a8b93580f328a9f8368b40cb7a6cb8165fc9cc491c18a4c8a90a1e",
+      "source_url": "https://github.com/pallets/flask/blob/6a2f545bfd8ed31e19066a299296917e034aca58/src/flask/sansio/app.py",
       "split": "heldout",
-      "task_type": "config_loader_smoke",
-      "workflow_group": "flask-config-loader-smoke"
+      "task_type": "sansio_app_smoke",
+      "workflow_group": "flask-sansio-app-smoke"
     },
     {
       "case_id": "flask-v5-04-context-stack-smoke",
@@ -1132,33 +1132,33 @@
       "workflow_group": "flask-ci-tests-yaml"
     },
     {
-      "case_id": "flask-v5-19-docs-conf-compile",
+      "case_id": "flask-v5-19-debug-helper-compile",
       "distractor": {
         "kind": "unverified_failed_attempt",
-        "procedure_id": "raw-flask-docs-conf-compile-unverified",
-        "text": "Unverified trace for docs config workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
+        "procedure_id": "raw-flask-debug-helper-compile-unverified",
+        "text": "Unverified trace for debug helper workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
       },
       "expected_behavior": "execute_verified_outcome",
       "expected_outcome": {
         "expected_exit_code": 0,
         "kind": "python_py_compile",
-        "path": "docs/conf.py"
+        "path": "src/flask/debughelpers.py"
       },
-      "failure_symptom": "docs config workspace issue",
+      "failure_symptom": "debug helper workspace issue",
       "kind": "positive",
       "license": "BSD-3-Clause",
-      "procedure_id": "proc-flask-docs-conf-compile",
-      "procedure_title": "Documentation config edits must compile",
-      "query": "An agent is about to handle this workspace procedure: Documentation config edits must compile. Which verified packet applies?",
+      "procedure_id": "proc-flask-debug-helper-compile",
+      "procedure_title": "Debug helper edits must compile",
+      "query": "An agent is about to handle this workspace procedure: Debug helper edits must compile. Which verified packet applies?",
       "repo": "flask",
-      "semantic_family": "flask:docs-conf-compile",
-      "source_family": "flask:docs-conf-compile",
-      "source_path": "docs/conf.py",
-      "source_sha256": "532e9e94ac685f8b8c847b8efcc1c637abc2f216e86297389508d4bf16e706fe",
-      "source_url": "https://github.com/pallets/flask/blob/6a2f545bfd8ed31e19066a299296917e034aca58/docs/conf.py",
+      "semantic_family": "flask:debug-helper-compile",
+      "source_family": "flask:debug-helper-compile",
+      "source_path": "src/flask/debughelpers.py",
+      "source_sha256": "679d9b4a03099693f83a0fe7610c7200919e2a89307ffcba4b7142321ef89683",
+      "source_url": "https://github.com/pallets/flask/blob/6a2f545bfd8ed31e19066a299296917e034aca58/src/flask/debughelpers.py",
       "split": "heldout",
-      "task_type": "docs_conf_compile",
-      "workflow_group": "flask-docs-conf-compile"
+      "task_type": "debug_helper_compile",
+      "workflow_group": "flask-debug-helper-compile"
     },
     {
       "case_id": "vite-v5-00-root-package-json",
@@ -1190,33 +1190,33 @@
       "workflow_group": "vite-root-package-json"
     },
     {
-      "case_id": "vite-v5-01-docs-package-json",
+      "case_id": "vite-v5-01-issues-helper-action-yaml",
       "distractor": {
         "kind": "unverified_failed_attempt",
-        "procedure_id": "raw-vite-docs-package-json-unverified",
-        "text": "Unverified trace for docs package workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
+        "procedure_id": "raw-vite-issues-helper-action-yaml-unverified",
+        "text": "Unverified trace for issue helper action workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
       },
       "expected_behavior": "execute_verified_outcome",
       "expected_outcome": {
         "expected_exit_code": 0,
-        "kind": "json_parse",
-        "path": "docs/package.json"
+        "kind": "yaml_parse",
+        "path": ".github/actions/issues-helper/action.yml"
       },
-      "failure_symptom": "docs package workspace issue",
+      "failure_symptom": "issue helper action workspace issue",
       "kind": "positive",
       "license": "MIT",
-      "procedure_id": "proc-vite-docs-package-json",
-      "procedure_title": "Docs package metadata changes need JSON parse verification",
-      "query": "An agent is about to handle this workspace procedure: Docs package metadata changes need JSON parse verification. Which verified packet applies?",
+      "procedure_id": "proc-vite-issues-helper-action-yaml",
+      "procedure_title": "Issue helper action changes need YAML verification",
+      "query": "An agent is about to handle this workspace procedure: Issue helper action changes need YAML verification. Which verified packet applies?",
       "repo": "vite",
-      "semantic_family": "vite:docs-package-json",
-      "source_family": "vite:docs-package-json",
-      "source_path": "docs/package.json",
-      "source_sha256": "6e2914e2fc9c870f4c0b4fed3e523be0640f5935947a3b06af2ae7ab653155bc",
-      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/docs/package.json",
+      "semantic_family": "vite:issues-helper-action-yaml",
+      "source_family": "vite:issues-helper-action-yaml",
+      "source_path": ".github/actions/issues-helper/action.yml",
+      "source_sha256": "9d033fc5e24644c631858565b1a9a904b7b699adce9c8747269f791e5b990c96",
+      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/.github/actions/issues-helper/action.yml",
       "split": "heldout",
-      "task_type": "docs_package_json",
-      "workflow_group": "vite-docs-package-json"
+      "task_type": "issues_helper_action_yaml",
+      "workflow_group": "vite-issues-helper-action-yaml"
     },
     {
       "case_id": "vite-v5-02-scripts-tsconfig-json",
@@ -1306,33 +1306,33 @@
       "workflow_group": "vite-workspace-yaml"
     },
     {
-      "case_id": "vite-v5-05-ci-yaml",
+      "case_id": "vite-v5-05-issue-template-config-yaml",
       "distractor": {
         "kind": "unverified_failed_attempt",
-        "procedure_id": "raw-vite-ci-yaml-unverified",
-        "text": "Unverified trace for main ci workflow issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
+        "procedure_id": "raw-vite-issue-template-config-yaml-unverified",
+        "text": "Unverified trace for issue template config workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
       },
       "expected_behavior": "execute_verified_outcome",
       "expected_outcome": {
         "expected_exit_code": 0,
         "kind": "yaml_parse",
-        "path": ".github/workflows/ci.yml"
+        "path": ".github/ISSUE_TEMPLATE/config.yml"
       },
-      "failure_symptom": "main ci workflow issue",
+      "failure_symptom": "issue template config workspace issue",
       "kind": "positive",
       "license": "MIT",
-      "procedure_id": "proc-vite-ci-yaml",
-      "procedure_title": "Main CI workflow changes need YAML verification",
-      "query": "An agent is about to handle this workspace procedure: Main CI workflow changes need YAML verification. Which verified packet applies?",
+      "procedure_id": "proc-vite-issue-template-config-yaml",
+      "procedure_title": "Issue template config changes need YAML verification",
+      "query": "An agent is about to handle this workspace procedure: Issue template config changes need YAML verification. Which verified packet applies?",
       "repo": "vite",
-      "semantic_family": "vite:ci-yaml",
-      "source_family": "vite:ci-yaml",
-      "source_path": ".github/workflows/ci.yml",
-      "source_sha256": "de3107a80870e15c80ab5e2f485bebf12150c4738b0e6198002285196295d0c9",
-      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/.github/workflows/ci.yml",
+      "semantic_family": "vite:issue-template-config-yaml",
+      "source_family": "vite:issue-template-config-yaml",
+      "source_path": ".github/ISSUE_TEMPLATE/config.yml",
+      "source_sha256": "6d1eaafa52c54a20eb65add3e47f27c4d2089334310c857b5e77a7a13ffc5644",
+      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/.github/ISSUE_TEMPLATE/config.yml",
       "split": "heldout",
-      "task_type": "ci_yaml",
-      "workflow_group": "vite-ci-yaml"
+      "task_type": "issue_template_config_yaml",
+      "workflow_group": "vite-issue-template-config-yaml"
     },
     {
       "case_id": "vite-v5-06-publish-yaml",
@@ -1364,33 +1364,33 @@
       "workflow_group": "vite-publish-yaml"
     },
     {
-      "case_id": "vite-v5-07-release-yaml",
+      "case_id": "vite-v5-07-create-vite-entry-syntax",
       "distractor": {
         "kind": "unverified_failed_attempt",
-        "procedure_id": "raw-vite-release-yaml-unverified",
-        "text": "Unverified trace for release workflow issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
+        "procedure_id": "raw-vite-create-vite-entry-syntax-unverified",
+        "text": "Unverified trace for create vite entrypoint workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
       },
       "expected_behavior": "execute_verified_outcome",
       "expected_outcome": {
         "expected_exit_code": 0,
-        "kind": "yaml_parse",
-        "path": ".github/workflows/release-tag.yml"
+        "kind": "node_syntax_check",
+        "path": "packages/create-vite/index.js"
       },
-      "failure_symptom": "release workflow issue",
+      "failure_symptom": "create vite entrypoint workspace issue",
       "kind": "positive",
       "license": "MIT",
-      "procedure_id": "proc-vite-release-yaml",
-      "procedure_title": "Release tag workflow changes need YAML verification",
-      "query": "An agent is about to handle this workspace procedure: Release tag workflow changes need YAML verification. Which verified packet applies?",
+      "procedure_id": "proc-vite-create-vite-entry-syntax",
+      "procedure_title": "Create Vite entrypoint changes need Node syntax verification",
+      "query": "An agent is about to handle this workspace procedure: Create Vite entrypoint changes need Node syntax verification. Which verified packet applies?",
       "repo": "vite",
-      "semantic_family": "vite:release-yaml",
-      "source_family": "vite:release-yaml",
-      "source_path": ".github/workflows/release-tag.yml",
-      "source_sha256": "6d877c649019589aabac5c48f423074dd63f7611e5eac60cf60d70b091543c27",
-      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/.github/workflows/release-tag.yml",
+      "semantic_family": "vite:create-vite-entry-syntax",
+      "source_family": "vite:create-vite-entry-syntax",
+      "source_path": "packages/create-vite/index.js",
+      "source_sha256": "69362351fdf4a07c10cc7caf6c5cd3c2b337401e4fac066b0542fb09810b46c3",
+      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/packages/create-vite/index.js",
       "split": "heldout",
-      "task_type": "release_yaml",
-      "workflow_group": "vite-release-yaml"
+      "task_type": "create_vite_entry_syntax",
+      "workflow_group": "vite-create-vite-entry-syntax"
     },
     {
       "case_id": "vite-v5-08-issue-template-yaml",
@@ -1480,33 +1480,33 @@
       "workflow_group": "vite-docs-banner-syntax"
     },
     {
-      "case_id": "vite-v5-11-team-data-syntax",
+      "case_id": "vite-v5-11-preact-ts-package-json",
       "distractor": {
         "kind": "unverified_failed_attempt",
-        "procedure_id": "raw-vite-team-data-syntax-unverified",
-        "text": "Unverified trace for team data workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
+        "procedure_id": "raw-vite-preact-ts-package-json-unverified",
+        "text": "Unverified trace for preact ts package workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
       },
       "expected_behavior": "execute_verified_outcome",
       "expected_outcome": {
         "expected_exit_code": 0,
-        "kind": "node_syntax_check",
-        "path": "docs/_data/team.js"
+        "kind": "json_parse",
+        "path": "packages/create-vite/template-preact-ts/package.json"
       },
-      "failure_symptom": "team data workspace issue",
+      "failure_symptom": "preact ts package workspace issue",
       "kind": "positive",
       "license": "MIT",
-      "procedure_id": "proc-vite-team-data-syntax",
-      "procedure_title": "Team data script changes need Node syntax verification",
-      "query": "An agent is about to handle this workspace procedure: Team data script changes need Node syntax verification. Which verified packet applies?",
+      "procedure_id": "proc-vite-preact-ts-package-json",
+      "procedure_title": "Preact TS template package metadata needs JSON verification",
+      "query": "An agent is about to handle this workspace procedure: Preact TS template package metadata needs JSON verification. Which verified packet applies?",
       "repo": "vite",
-      "semantic_family": "vite:team-data-syntax",
-      "source_family": "vite:team-data-syntax",
-      "source_path": "docs/_data/team.js",
-      "source_sha256": "167968dd293d94b8f505e3588173e0f052583e5d222b43f3682361997c37f5d8",
-      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/docs/_data/team.js",
+      "semantic_family": "vite:preact-ts-package-json",
+      "source_family": "vite:preact-ts-package-json",
+      "source_path": "packages/create-vite/template-preact-ts/package.json",
+      "source_sha256": "4e5006347a97a7caea5444157f16566b2e65c9fc2406d1bff88e8408162f6e68",
+      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/packages/create-vite/template-preact-ts/package.json",
       "split": "heldout",
-      "task_type": "team_data_syntax",
-      "workflow_group": "vite-team-data-syntax"
+      "task_type": "preact_ts_package_json",
+      "workflow_group": "vite-preact-ts-package-json"
     },
     {
       "case_id": "vite-v5-12-template-lit-element-syntax",
@@ -1538,33 +1538,33 @@
       "workflow_group": "vite-template-lit-element-syntax"
     },
     {
-      "case_id": "vite-v5-13-template-preact-config-syntax",
+      "case_id": "vite-v5-13-react-ts-package-json",
       "distractor": {
         "kind": "unverified_failed_attempt",
-        "procedure_id": "raw-vite-template-preact-config-syntax-unverified",
-        "text": "Unverified trace for preact starter workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
+        "procedure_id": "raw-vite-react-ts-package-json-unverified",
+        "text": "Unverified trace for react ts package workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
       },
       "expected_behavior": "execute_verified_outcome",
       "expected_outcome": {
         "expected_exit_code": 0,
-        "kind": "node_syntax_check",
-        "path": "packages/create-vite/template-preact/vite.config.js"
+        "kind": "json_parse",
+        "path": "packages/create-vite/template-react-ts/package.json"
       },
-      "failure_symptom": "preact starter workspace issue",
+      "failure_symptom": "react ts package workspace issue",
       "kind": "positive",
       "license": "MIT",
-      "procedure_id": "proc-vite-template-preact-config-syntax",
-      "procedure_title": "Preact starter setup changes need Node syntax verification",
-      "query": "An agent is about to handle this workspace procedure: Preact starter setup changes need Node syntax verification. Which verified packet applies?",
+      "procedure_id": "proc-vite-react-ts-package-json",
+      "procedure_title": "React TS template package metadata needs JSON verification",
+      "query": "An agent is about to handle this workspace procedure: React TS template package metadata needs JSON verification. Which verified packet applies?",
       "repo": "vite",
-      "semantic_family": "vite:template-preact-config-syntax",
-      "source_family": "vite:template-preact-config-syntax",
-      "source_path": "packages/create-vite/template-preact/vite.config.js",
-      "source_sha256": "39a8288703679f439affccda5bbc2b9573a2014456f773d7ead88aaa07946a9c",
-      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/packages/create-vite/template-preact/vite.config.js",
+      "semantic_family": "vite:react-ts-package-json",
+      "source_family": "vite:react-ts-package-json",
+      "source_path": "packages/create-vite/template-react-ts/package.json",
+      "source_sha256": "103da4af34abc86307ad55324fb579fba98f4788ef8ce8767b152279925aff82",
+      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/packages/create-vite/template-react-ts/package.json",
       "split": "heldout",
-      "task_type": "template_preact_config_syntax",
-      "workflow_group": "vite-template-preact-config-syntax"
+      "task_type": "react_ts_package_json",
+      "workflow_group": "vite-react-ts-package-json"
     },
     {
       "case_id": "vite-v5-14-template-qwik-config-syntax",
@@ -1596,33 +1596,33 @@
       "workflow_group": "vite-template-qwik-config-syntax"
     },
     {
-      "case_id": "vite-v5-15-template-react-config-syntax",
+      "case_id": "vite-v5-15-template-svelte-main-syntax",
       "distractor": {
         "kind": "unverified_failed_attempt",
-        "procedure_id": "raw-vite-template-react-config-syntax-unverified",
-        "text": "Unverified trace for react starter workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
+        "procedure_id": "raw-vite-template-svelte-main-syntax-unverified",
+        "text": "Unverified trace for svelte entry workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
       },
       "expected_behavior": "execute_verified_outcome",
       "expected_outcome": {
         "expected_exit_code": 0,
         "kind": "node_syntax_check",
-        "path": "packages/create-vite/template-react/vite.config.js"
+        "path": "packages/create-vite/template-svelte/src/main.js"
       },
-      "failure_symptom": "react starter workspace issue",
+      "failure_symptom": "svelte entry workspace issue",
       "kind": "positive",
       "license": "MIT",
-      "procedure_id": "proc-vite-template-react-config-syntax",
-      "procedure_title": "React starter setup changes need Node syntax verification",
-      "query": "An agent is about to handle this workspace procedure: React starter setup changes need Node syntax verification. Which verified packet applies?",
+      "procedure_id": "proc-vite-template-svelte-main-syntax",
+      "procedure_title": "Svelte starter entry changes need Node syntax verification",
+      "query": "An agent is about to handle this workspace procedure: Svelte starter entry changes need Node syntax verification. Which verified packet applies?",
       "repo": "vite",
-      "semantic_family": "vite:template-react-config-syntax",
-      "source_family": "vite:template-react-config-syntax",
-      "source_path": "packages/create-vite/template-react/vite.config.js",
-      "source_sha256": "4d36db3522a7b2dd10e0936e1004373c7ee65f10f7cd7920cd76410459c15a45",
-      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/packages/create-vite/template-react/vite.config.js",
+      "semantic_family": "vite:template-svelte-main-syntax",
+      "source_family": "vite:template-svelte-main-syntax",
+      "source_path": "packages/create-vite/template-svelte/src/main.js",
+      "source_sha256": "d5d48475db14abbfe896356df04c10f4884a1215804fa7e2ccf3249288e9d1b6",
+      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/packages/create-vite/template-svelte/src/main.js",
       "split": "heldout",
-      "task_type": "template_react_config_syntax",
-      "workflow_group": "vite-template-react-config-syntax"
+      "task_type": "template_svelte_main_syntax",
+      "workflow_group": "vite-template-svelte-main-syntax"
     },
     {
       "case_id": "vite-v5-16-template-solid-config-syntax",
@@ -1654,33 +1654,33 @@
       "workflow_group": "vite-template-solid-config-syntax"
     },
     {
-      "case_id": "vite-v5-17-template-svelte-config-syntax",
+      "case_id": "vite-v5-17-template-vue-main-syntax",
       "distractor": {
         "kind": "unverified_failed_attempt",
-        "procedure_id": "raw-vite-template-svelte-config-syntax-unverified",
-        "text": "Unverified trace for svelte starter workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
+        "procedure_id": "raw-vite-template-vue-main-syntax-unverified",
+        "text": "Unverified trace for vue entry workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
       },
       "expected_behavior": "execute_verified_outcome",
       "expected_outcome": {
         "expected_exit_code": 0,
         "kind": "node_syntax_check",
-        "path": "packages/create-vite/template-svelte/vite.config.js"
+        "path": "packages/create-vite/template-vue/src/main.js"
       },
-      "failure_symptom": "svelte starter workspace issue",
+      "failure_symptom": "vue entry workspace issue",
       "kind": "positive",
       "license": "MIT",
-      "procedure_id": "proc-vite-template-svelte-config-syntax",
-      "procedure_title": "Svelte starter setup changes need Node syntax verification",
-      "query": "An agent is about to handle this workspace procedure: Svelte starter setup changes need Node syntax verification. Which verified packet applies?",
+      "procedure_id": "proc-vite-template-vue-main-syntax",
+      "procedure_title": "Vue starter entry changes need Node syntax verification",
+      "query": "An agent is about to handle this workspace procedure: Vue starter entry changes need Node syntax verification. Which verified packet applies?",
       "repo": "vite",
-      "semantic_family": "vite:template-svelte-config-syntax",
-      "source_family": "vite:template-svelte-config-syntax",
-      "source_path": "packages/create-vite/template-svelte/vite.config.js",
-      "source_sha256": "a5fb25d253551543be4bc62b0337e83a4b0714f59b3a33c85745857af763aa34",
-      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/packages/create-vite/template-svelte/vite.config.js",
+      "semantic_family": "vite:template-vue-main-syntax",
+      "source_family": "vite:template-vue-main-syntax",
+      "source_path": "packages/create-vite/template-vue/src/main.js",
+      "source_sha256": "ae6eb9de53e72b97ee4c88fe88d2e982bf060266b2b82a0aa29ec859fa342019",
+      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/packages/create-vite/template-vue/src/main.js",
       "split": "heldout",
-      "task_type": "template_svelte_config_syntax",
-      "workflow_group": "vite-template-svelte-config-syntax"
+      "task_type": "template_vue_main_syntax",
+      "workflow_group": "vite-template-vue-main-syntax"
     },
     {
       "case_id": "vite-v5-18-template-vanilla-counter-syntax",
@@ -1712,33 +1712,33 @@
       "workflow_group": "vite-template-vanilla-counter-syntax"
     },
     {
-      "case_id": "vite-v5-19-template-vue-config-syntax",
+      "case_id": "vite-v5-19-vite-bin-open-chrome-syntax",
       "distractor": {
         "kind": "unverified_failed_attempt",
-        "procedure_id": "raw-vite-template-vue-config-syntax-unverified",
-        "text": "Unverified trace for vue starter workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
+        "procedure_id": "raw-vite-vite-bin-open-chrome-syntax-unverified",
+        "text": "Unverified trace for browser launch workspace issue: skip the local verification and rely on previous agent text. This is intentionally not independently confirmed."
       },
       "expected_behavior": "execute_verified_outcome",
       "expected_outcome": {
         "expected_exit_code": 0,
         "kind": "node_syntax_check",
-        "path": "packages/create-vite/template-vue/vite.config.js"
+        "path": "packages/vite/bin/openChrome.js"
       },
-      "failure_symptom": "vue starter workspace issue",
+      "failure_symptom": "browser launch workspace issue",
       "kind": "positive",
       "license": "MIT",
-      "procedure_id": "proc-vite-template-vue-config-syntax",
-      "procedure_title": "Vue starter setup changes need Node syntax verification",
-      "query": "An agent is about to handle this workspace procedure: Vue starter setup changes need Node syntax verification. Which verified packet applies?",
+      "procedure_id": "proc-vite-vite-bin-open-chrome-syntax",
+      "procedure_title": "Browser launch helper changes need Node syntax verification",
+      "query": "An agent is about to handle this workspace procedure: Browser launch helper changes need Node syntax verification. Which verified packet applies?",
       "repo": "vite",
-      "semantic_family": "vite:template-vue-config-syntax",
-      "source_family": "vite:template-vue-config-syntax",
-      "source_path": "packages/create-vite/template-vue/vite.config.js",
-      "source_sha256": "22966d552a34b1cbd2246e7feaa4c74361c6f38a707144b50dd6c5ec11da10cb",
-      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/packages/create-vite/template-vue/vite.config.js",
+      "semantic_family": "vite:vite-bin-open-chrome-syntax",
+      "source_family": "vite:vite-bin-open-chrome-syntax",
+      "source_path": "packages/vite/bin/openChrome.js",
+      "source_sha256": "d72bfcc4e6fc7b3dd81338704895402b2b54fe725662eb82f09669aa93f36b92",
+      "source_url": "https://github.com/vitejs/vite/blob/57fea001d154e7dd8d5d74d3082731f1dcfd31be/packages/vite/bin/openChrome.js",
       "split": "heldout",
-      "task_type": "template_vue_config_syntax",
-      "workflow_group": "vite-template-vue-config-syntax"
+      "task_type": "vite_bin_open_chrome_syntax",
+      "workflow_group": "vite-vite-bin-open-chrome-syntax"
     },
     {
       "case_id": "control-v5-00-unverified-requests",
@@ -2082,7 +2082,7 @@
   },
   "revision": "workspace-experience-v5-real-work-freeze-candidate-20260810",
   "schema": "wavemind.workspace_experience_v5_manifest.v1",
-  "sha256": "5ca11801e8a4f2b5026bde4ac5e9468f9e8f55af7277b5d87067f71d3f771a9e",
+  "sha256": "9fa1d31b4085b723baf2e4dacd6ea4be8b894e734ecc475329fdc53d5cd888b8",
   "success_criteria": "exact_case_procedure_and_executable_outcome",
   "thresholds": {
     "clean_onboarding_seconds_max": 300.0,

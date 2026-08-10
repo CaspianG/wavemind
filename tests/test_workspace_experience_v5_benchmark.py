@@ -48,6 +48,54 @@ def test_v5_manifest_rejects_query_case_and_procedure_leakage() -> None:
         bench.validate_manifest(payload, require_checkout=False)
 
 
+def test_v5_manifest_rejects_historical_heldout_overlap() -> None:
+    payload = _manifest()
+    heldout = next(
+        case
+        for case in payload["cases"]
+        if case["split"] == "heldout" and case["kind"] == "positive" and case["repo"] == "requests"
+    )
+    heldout["source_path"] = ".github/workflows/zizmor.yml"
+    heldout["expected_outcome"]["path"] = ".github/workflows/zizmor.yml"
+    payload = _refresh_checksum(payload)
+
+    with pytest.raises(bench.WorkspaceV5BenchmarkError, match="historical observed"):
+        bench.validate_manifest(payload, require_checkout=False)
+
+
+def test_v5_manifest_rejects_historical_heldout_control_overlap() -> None:
+    payload = _manifest()
+    heldout = next(case for case in payload["cases"] if case["split"] == "heldout" and case["kind"] != "positive")
+    heldout["semantic_family"] = "flask:app-core-import"
+    heldout["source_family"] = "flask:app-core-import"
+    payload = _refresh_checksum(payload)
+
+    with pytest.raises(bench.WorkspaceV5BenchmarkError, match="historical observed"):
+        bench.validate_manifest(payload, require_checkout=False)
+
+
+def test_v5_static_context_counts_selected_payload_only(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+    selected = {
+        "citation": "static:c1",
+        "case_id": "case-1",
+        "procedure_id": "proc-1",
+        "context": "selected packet",
+    }
+    traces = [
+        selected,
+        {"citation": "static:c2", "case_id": "case-2", "procedure_id": "proc-2", "context": "ignored " * 50},
+    ]
+    monkeypatch.setattr(bench, "_rank_static", lambda query, corpus: selected)
+
+    result = bench._static_raw_trace(  # noqa: SLF001 - regression for benchmark fairness metric.
+        {"query": "anything", "expected_behavior": "abstain"},
+        traces,
+        tmp_path,
+    )
+
+    assert result["context_chars"] == len(selected["context"])
+
+
 def test_v5_result_rejects_hardcoded_onboarding_metric() -> None:
     manifest = _manifest()
     payload = _result(manifest)
