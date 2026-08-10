@@ -4,6 +4,25 @@ Notable user-facing and operational changes are recorded here. Git tags,
 GitHub Releases, checked evidence artifacts, and package versions remain the
 authoritative release sources.
 
+## [2.12.0] - 2026-08-10
+
+- Added Verified Workspace Experience for coding and work agents: stable
+  workspace identity, isolated workspace namespaces, provider-neutral event
+  capture, cited Experience Packets, and cross-client replay.
+- Added human-controlled runbook review with candidate diff, approve, reject,
+  edit-and-approve, rollback, protected deletion, provenance, and portable
+  checksummed bundles.
+- Added exact-source workspace-experience admission with a frozen three-repo
+  held-out benchmark, positive task-success lift, context reduction, zero
+  workspace leakage, and cross-surface parity checks.
+- Hardened the HTTP workspace surface with server-side workspace registry
+  resolution, configured base-root containment, symlink escape protection, and
+  namespace authorization before workspace data access.
+- Added local workspace onboarding commands, diagnostics, and documentation for
+  keyless Python, HTTP, MCP, Docker, and TypeScript repository-local flows.
+
+Release: [WaveMind v2.12.0](https://github.com/CaspianG/wavemind/releases/tag/v2.12.0)
+
 ## [2.11.0] - 2026-08-09
 
 - Added exact-source Safe Product admission with signed manifests, frozen
@@ -103,6 +122,7 @@ Release: [WaveMind v2.6.3](https://github.com/CaspianG/wavemind/releases/tag/v2.
 
 | Version | Published | Notes |
 |---|---|---|
+| [v2.12.0](https://github.com/CaspianG/wavemind/releases/tag/v2.12.0) | 2026-08-10 | Verified Workspace Experience and secure workspace HTTP isolation |
 | [v2.11.0](https://github.com/CaspianG/wavemind/releases/tag/v2.11.0) | 2026-08-09 | Safe Trusted Product foundation and secure service runtimes |
 | [v2.10.0](https://github.com/CaspianG/wavemind/releases/tag/v2.10.0) | 2026-08-03 | Verified Agent Experience Runtime and honest quality evidence |
 | [v2.9.0](https://github.com/CaspianG/wavemind/releases/tag/v2.9.0) | 2026-07-30 | Trusted agent experience, safety, portability, and SDKs |
@@ -117,6 +137,7 @@ Release: [WaveMind v2.6.3](https://github.com/CaspianG/wavemind/releases/tag/v2.
 See the complete [release archive](https://github.com/CaspianG/wavemind/releases)
 for earlier versions and attached evidence bundles.
 
+[2.12.0]: https://github.com/CaspianG/wavemind/compare/v2.11.0...v2.12.0
 [2.11.0]: https://github.com/CaspianG/wavemind/compare/v2.10.0...v2.11.0
 [2.10.0]: https://github.com/CaspianG/wavemind/compare/v2.9.0...v2.10.0
 [2.9.0]: https://github.com/CaspianG/wavemind/compare/v2.8.0...v2.9.0
