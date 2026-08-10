@@ -27,6 +27,82 @@ Numbers below describe the source revision recorded by each linked artifact.
 They are historical evidence unless an exact-SHA current workflow artifact says
 otherwise.
 
+## Strategic Sequence
+
+WaveMind's next product work is intentionally ordered. Distribution and new
+surfaces must not hide an unresolved generalization gap.
+
+### Phase A: Quality Leadership Recovery (Next)
+
+The immediate goal is to create a measurable reason for an agent developer to
+switch: higher end-to-end task success, fewer stale or repeated mistakes, and
+less context at a bounded latency cost. This does not require WaveMind to beat a
+specialized vector database on every pure ANN latency test. FAISS, Qdrant, and
+pgvector remain valid candidate engines under the WaveMind policy layer.
+
+The controlled Verified Experience results are strong, but they are not enough
+to claim general leadership. The strict frozen LongMemEval-V2 Small experiment
+remains a failed result: Memory OS quality was below Core on both the full
+451-question run and the untouched 419-question split. That failure stays public
+and those rows must not be reused for tuning.
+
+Phase A is complete only when all of the following are true:
+
+1. A versioned replacement protocol is frozen before the next held-out run. It
+   has separate development and held-out data, pinned prompts, reader, token
+   budgets, embeddings, seeds, hardware profile, and per-query evidence.
+2. On the full isolated LongMemEval-V2 protocol, answer quality is at least
+   `0.18`, Memory OS improves over Core by at least `0.01`, at least four
+   categories improve, context falls by at least `35%`, stale or contradiction
+   errors stay at or below `2%`, and p95 overhead stays within both `5 ms` and
+   `20%`.
+3. LoCoMo and LongMemEval answer-quality profiles show no significant overall
+   regression and a statistically positive lift in at least two dynamic-memory
+   categories. Report at least five runs with 95% confidence intervals.
+4. WaveMind Core and WaveMind Experience are compared fairly with the strongest
+   runnable local baselines, including static Chroma or Qdrant retrieval, Mem0
+   OSS, and LangMem or LangGraph. Dataset, reader, prompts, embeddings, token
+   budgets, hardware, and seeds must match. A missing proprietary service is
+   reported as skipped and cannot unlock a leadership claim.
+5. Candidate retrieval and bounded WaveMind reranking are profiled separately.
+   The policy layer must preserve backend recall within `0.01`, stay inside the
+   declared latency budget, and retain provenance, correction, namespace, and
+   stale-suppression behavior.
+6. Every public claim is generated from fresh exact-SHA JSON evidence. Failed
+   rows remain visible, thresholds are not weakened, and a full held-out run is
+   not repeated until a bounded development gate passes.
+
+The release-facing claim after Phase A is deliberately specific: WaveMind is a
+verified agent-work memory layer on the declared public scenarios and sits on
+their task-success, context, safety, and latency Pareto frontier. It is not a
+universal "fastest database" claim.
+
+### Phase B: WaveMind Connect
+
+After Phase A is admitted, the next expansion is zero-config cross-agent
+verified memory: one auditable experience lifecycle that follows a workspace
+across supported agents without silently reading private histories or rewriting
+user files.
+
+Planned product surface:
+
+- `wavemind connect` for an opt-in local setup, capability detection, health
+  checks, and reversible connector configuration;
+- the same cited Experience Packet across Python, TypeScript, MCP, OpenAI
+  Agents, Anthropic hooks, LangGraph, and HTTP;
+- stable workspace identity, tenant namespaces, cross-client handoff, replay,
+  approval, rejection, rollback, and deletion;
+- a Studio Learning Inbox that shows what was learned, why it was promoted,
+  where it applies, and how to undo it;
+- official registry/package distribution plus public reference projects and
+  independent pilot evidence.
+
+WaveMind Connect is admitted only after a clean install reaches a first
+cross-client recall in under five minutes without cloud registration, replay is
+identical across supported clients, private-history access remains explicit
+opt-in, namespace leakage is zero, and frozen public-repository tasks show a
+measurable benefit over the same agents without WaveMind.
+
 ## Current Position
 
 Today WaveMind is strongest when the memory set is small to medium and memory
@@ -800,14 +876,18 @@ different things and should not be mixed together.
 
 Near-term benchmark priorities:
 
-- Improve the complete LoCoMo direct Memory OS result beyond Core rather than
-  treating the admission-tolerated regression as uplift.
-- Repeat LongMemEval-V2 Small with a stronger pinned local reader to improve
-  absolute answer quality while keeping the same 451-question protocol.
-- Compare against static vector retrieval, Chroma, Qdrant, Mem0-style memory,
-  Zep-style memory, and LangGraph persistent memory patterns where possible.
-- Add service-mode Qdrant, pgvector, and persisted-FAISS baselines for fair
-  latency curves.
+- Close Phase A Quality Leadership Recovery before expanding the product claim.
+  Improve on bounded development data first; do not tune on the previous frozen
+  419-question split or launch another full held-out run before the development
+  gate passes.
+- Improve the complete LoCoMo and LongMemEval direct Memory OS results beyond
+  Core rather than treating admission-tolerated non-regression as uplift.
+- Compare against real static Chroma or Qdrant retrieval, Mem0 OSS, and LangMem
+  or LangGraph on identical reader, prompts, embeddings, token budgets,
+  hardware, and seeds. Do not substitute a local imitation for a competitor.
+- Use persisted FAISS, service-mode Qdrant, and pgvector as candidate engines,
+  then measure WaveMind's bounded reranking overhead and policy benefit
+  separately.
 - Add MIRACL Russian to prove multilingual retrieval behavior.
 - Add RAGBench once answer generation and citation/fidelity metrics are stable.
 - Keep every published result backed by a checked-in JSON artifact and a command
@@ -897,6 +977,14 @@ Enterprise requirements:
 
 ### Short Term: 1 To 3 Months
 
+- Complete Phase A Quality Leadership Recovery. The strict LongMemEval-V2,
+  LoCoMo, LongMemEval, competitor, confidence-interval, context, and latency
+  gates above are the release boundary; controlled local wins alone do not close
+  it.
+- After Phase A is admitted, deliver the first WaveMind Connect slice: opt-in
+  setup, workspace identity, cross-client Experience Packet replay, Studio
+  review and rollback, and a frozen public-repository proof. Do not delay the
+  quality gate by building this expansion early.
 - Larger service-mode benchmark profiles for persisted FAISS, Qdrant, and
   further-tuned pgvector, with SLO and cost gates tracked for every checked-in
   production result.
@@ -973,6 +1061,12 @@ Enterprise requirements:
 
 - Do not position WaveMind as a full replacement for Pinecone, Weaviate,
   Qdrant, Milvus, or Chroma on static large-scale RAG.
+- Do not claim that WaveMind is "better than everyone" from a composite score,
+  a controlled synthetic suite, or a win in only one dimension. State the
+  scenario, baseline, quality, context, safety, latency, and statistical result.
+- Do not tune against the frozen LongMemEval-V2 419-question split or weaken a
+  failed gate. The next held-out set must be versioned and untouched before its
+  first full run.
 - Do not claim leaderboard results without official datasets, reproducible
   commands, and checked-in result artifacts.
 - Do not hide latency limits. Dynamic memory must earn its cost by improving
