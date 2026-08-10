@@ -26,6 +26,7 @@ DEFAULT_RESULTS_PATH = Path("benchmarks/quality_leadership_results.json")
 DEFAULT_PER_QUERY_PATH = Path("benchmarks/quality_leadership_per_query.jsonl")
 DEFAULT_ADMISSION_PATH = Path("benchmarks/quality_leadership_admission_results.json")
 DEFAULT_ADMISSION_MARKDOWN_PATH = Path("benchmarks/QUALITY_LEADERSHIP_ADMISSION.md")
+DEFAULT_AGENT_MEMORY_DIAGNOSTIC_PATH = Path("benchmarks/agent_memory_advantage_results.json")
 GOAL4_ARTIFACT_PATH = Path("benchmarks/goal4_quality_experiment_results.json")
 
 GOAL4_HISTORICAL_DECISION_SHA = "4959dbfda325bf7bab979861b93e276472e8bbfb"
@@ -85,6 +86,7 @@ QUALITY_SOURCE_PATHS = [
     "wavemind/quality_leadership_admission.py",
     "benchmarks/goal4_quality_experiment_results.json",
     "benchmarks/quality_leadership_admission.py",
+    "benchmarks/quality_leadership_results.py",
     "benchmarks/agent_memory_advantage_benchmark.py",
     "benchmarks/longmemeval_v2_memory_benchmark.py",
     "benchmarks/locomo_memory_benchmark.py",
@@ -181,6 +183,98 @@ def quality_leadership_not_run_results(*, root: str | Path = ".") -> dict[str, A
     return attach_artifact_integrity(payload)
 
 
+def quality_leadership_results_from_diagnostics(
+    *,
+    root: str | Path = ".",
+    agent_memory_path: str | Path = DEFAULT_AGENT_MEMORY_DIAGNOSTIC_PATH,
+) -> dict[str, Any]:
+    root_path = Path(root)
+    source_sha = _repository_commit(root_path)
+    agent_path = _resolve(root_path, agent_memory_path)
+    agent_artifact = _artifact_path(root_path, agent_memory_path)
+    agent_payload = _load_json(agent_path)
+    agent_errors = _validate_agent_memory_diagnostic(
+        agent_payload,
+        expected_source_sha=source_sha,
+    )
+    metrics = _metrics_from_agent_memory(agent_payload)
+    competitor_runs = _competitors_from_agent_memory(agent_payload)
+    gate_errors = list(agent_errors)
+    if metrics.get("memory_os_uplift_over_core") is None:
+        gate_errors.append("memory_os_uplift_over_core missing")
+    elif float(metrics["memory_os_uplift_over_core"]) < QUALITY_THRESHOLDS["memory_os_uplift_over_core_min"]:
+        gate_errors.append("memory_os_uplift_over_core below threshold")
+    if int(metrics.get("improved_category_count") or 0) < QUALITY_THRESHOLDS["improved_categories_min"]:
+        gate_errors.append("improved_category_count below threshold")
+    if metrics.get("context_reduction") is None:
+        gate_errors.append("context_reduction missing")
+    elif float(metrics["context_reduction"]) < QUALITY_THRESHOLDS["context_reduction_min"]:
+        gate_errors.append("context_reduction below threshold")
+    if metrics.get("stale_contradiction_error_rate") is None:
+        gate_errors.append("stale_contradiction_error_rate missing")
+    elif float(metrics["stale_contradiction_error_rate"]) > QUALITY_THRESHOLDS["stale_contradiction_error_rate_max"]:
+        gate_errors.append("stale_contradiction_error_rate above threshold")
+    if metrics.get("p95_overhead_ms") is None or metrics.get("p95_overhead_ratio") is None:
+        gate_errors.append("latency overhead metrics missing")
+    elif float(metrics["p95_overhead_ms"]) > QUALITY_THRESHOLDS["p95_overhead_ms_max"] or float(metrics["p95_overhead_ratio"]) > QUALITY_THRESHOLDS["p95_overhead_ratio_max"]:
+        gate_errors.append("latency overhead exceeds threshold")
+    missing_competitors = sorted(REQUIRED_LOCAL_COMPETITORS - {
+        str(row.get("family"))
+        for row in competitor_runs
+        if row.get("status") == "pass" and row.get("simulated") is not True
+    })
+    if missing_competitors:
+        gate_errors.append(f"missing real local competitors: {', '.join(missing_competitors)}")
+    if "longmemeval_v2_quality" not in metrics:
+        gate_errors.append("LongMemEval-V2 quality gate has not been run on this protocol")
+
+    payload: dict[str, Any] = {
+        "schema": QUALITY_LEADERSHIP_RESULTS_SCHEMA,
+        "status": "development_passed" if not gate_errors else "development_blocked",
+        "admitted": False,
+        "generated_at": _utc_now(),
+        "source_sha": source_sha,
+        "protocol_revision": PROTOCOL_REVISION,
+        "development_gate": {
+            "status": "passed" if not gate_errors else "blocked",
+            "diagnostic": agent_artifact,
+            "errors": gate_errors,
+        },
+        "held_out_gate": {
+            "status": "not_opened",
+            "reason": "held-out is forbidden until protocol freeze and development go/no-go",
+        },
+        "measurement_runs": metrics.get("measurement_runs", 0),
+        "confidence_level": metrics.get("confidence_level"),
+        "confidence_intervals": metrics.get("confidence_intervals"),
+        "runs": [
+            {
+                "id": "controlled-sequential-agent-memory",
+                "artifact": agent_artifact,
+                "status": "pass" if not agent_errors else "blocked",
+                "source_sha": agent_payload.get("source_sha") if isinstance(agent_payload, Mapping) else None,
+                "claim_boundary": (
+                    "Bounded development diagnostic only; it cannot replace public "
+                    "held-out quality evidence or real competitor execution."
+                ),
+            }
+        ],
+        "competitor_runs": competitor_runs,
+        "metrics": metrics,
+        "historical_goal4_failure": {
+            "artifact": GOAL4_ARTIFACT_PATH.as_posix(),
+            "status": "preserved_failed_experiment",
+            "must_not_be_used_for_tuning": True,
+        },
+        "source_manifest": build_source_manifest(root_path, QUALITY_SOURCE_PATHS),
+        "claim_boundary": (
+            "Development diagnostic evidence only. A blocked development gate forbids "
+            "heavy/full held-out execution and forbids public quality-leadership claims."
+        ),
+    }
+    return attach_artifact_integrity(payload)
+
+
 def quality_leadership_per_query_header(*, root: str | Path = ".") -> dict[str, Any]:
     return {
         "schema": QUALITY_LEADERSHIP_PER_QUERY_SCHEMA,
@@ -268,7 +362,7 @@ def evaluate_quality_leadership_admission(
         _row(
             "protocol-snapshot-current",
             "Quality-leadership protocol snapshot has integrity and current source manifest.",
-            "implemented" if not protocol_errors else "failed",
+            _protocol_snapshot_status(protocol_errors),
             DEFAULT_PROTOCOL_PATH.as_posix(),
             "tests/test_quality_leadership_admission.py",
             details={"errors": protocol_errors},
@@ -505,6 +599,40 @@ def write_quality_leadership_artifacts(
     return payload
 
 
+def write_quality_leadership_development_results(
+    *,
+    root: str | Path = ".",
+    agent_memory_path: str | Path = DEFAULT_AGENT_MEMORY_DIAGNOSTIC_PATH,
+    results_output: str | Path = DEFAULT_RESULTS_PATH,
+    admission_output: str | Path = DEFAULT_ADMISSION_PATH,
+    markdown_output: str | Path = DEFAULT_ADMISSION_MARKDOWN_PATH,
+    expected_source_sha: str | None = None,
+    safe_product_path: str | Path | None = None,
+    workspace_experience_path: str | Path | None = None,
+) -> dict[str, Any]:
+    root_path = Path(root)
+    results_path = _resolve(root_path, results_output)
+    admission_path = _resolve(root_path, admission_output)
+    markdown_path = _resolve(root_path, markdown_output)
+    _write_json(
+        results_path,
+        quality_leadership_results_from_diagnostics(
+            root=root_path,
+            agent_memory_path=agent_memory_path,
+        ),
+    )
+    payload = evaluate_quality_leadership_admission(
+        root=root_path,
+        expected_source_sha=expected_source_sha,
+        results_path=results_path,
+        safe_product_path=safe_product_path,
+        workspace_experience_path=workspace_experience_path,
+    )
+    _write_json(admission_path, payload)
+    _write_text(markdown_path, render_quality_leadership_admission_markdown(payload))
+    return payload
+
+
 def render_quality_leadership_admission_markdown(payload: Mapping[str, Any]) -> str:
     summary = payload["summary"]
     lines = [
@@ -604,6 +732,14 @@ def _validate_protocol(
     return errors
 
 
+def _protocol_snapshot_status(errors: list[str]) -> str:
+    if not errors:
+        return "implemented"
+    if errors == ["quality leadership protocol source SHA mismatch"]:
+        return "blocked"
+    return "failed"
+
+
 def _validate_protocol_frozen(payload: Mapping[str, Any] | None) -> list[str]:
     if payload is None:
         return ["protocol artifact is missing"]
@@ -644,6 +780,128 @@ def _validate_results(
     if isinstance(historical, Mapping) and historical.get("must_not_be_used_for_tuning") is not True:
         errors.append("results allow historical Goal 4 data for tuning")
     return errors
+
+
+def _validate_agent_memory_diagnostic(
+    payload: Mapping[str, Any] | None,
+    *,
+    expected_source_sha: str,
+) -> list[str]:
+    if payload is None:
+        return [f"missing {DEFAULT_AGENT_MEMORY_DIAGNOSTIC_PATH.as_posix()}"]
+    errors: list[str] = []
+    if payload.get("schema") != "wavemind.agent_memory_advantage_benchmark.v1":
+        errors.append("agent-memory diagnostic schema mismatch")
+    if payload.get("status") != "pass":
+        errors.append("agent-memory diagnostic did not pass")
+    if payload.get("source_sha") != expected_source_sha:
+        errors.append("agent-memory diagnostic source SHA mismatch")
+    protocol = payload.get("protocol")
+    if not isinstance(protocol, Mapping):
+        errors.append("agent-memory diagnostic protocol missing")
+    else:
+        if int(protocol.get("measurement_trials") or 0) < QUALITY_THRESHOLDS["measurement_runs_min"]:
+            errors.append("agent-memory diagnostic has too few measurement trials")
+        if not _same_float(protocol.get("confidence_level"), QUALITY_THRESHOLDS["confidence_level"]):
+            errors.append("agent-memory diagnostic confidence level is not 0.95")
+    return errors
+
+
+def _metrics_from_agent_memory(payload: Mapping[str, Any] | None) -> dict[str, Any]:
+    if payload is None:
+        return {}
+    core = _engine_row(payload, "WaveMind Core")
+    memory_os = _engine_row(payload, "WaveMind + Memory OS")
+    protocol = payload.get("protocol") if isinstance(payload.get("protocol"), Mapping) else {}
+    paired = payload.get("paired_lift") if isinstance(payload.get("paired_lift"), Mapping) else {}
+    categories = paired.get("categories") if isinstance(paired.get("categories"), Mapping) else {}
+    improved = [
+        category
+        for category, interval in categories.items()
+        if isinstance(interval, Mapping) and _compare(interval.get("lower"), 0.0, ">=") and float(interval.get("lower") or 0.0) > 0.0
+    ]
+    core_task = _float_or_none(core.get("task_success_rate"))
+    memory_os_task = _float_or_none(memory_os.get("task_success_rate"))
+    core_p95 = _float_or_none(core.get("p95_latency_ms"))
+    memory_os_p95 = _float_or_none(memory_os.get("p95_latency_ms"))
+    p95_delta = (
+        memory_os_p95 - core_p95
+        if memory_os_p95 is not None and core_p95 is not None
+        else None
+    )
+    p95_ratio = p95_delta / core_p95 if p95_delta is not None and core_p95 and core_p95 > 0 else None
+    confidence_intervals = {
+        "task_success": memory_os.get("task_success_ci95"),
+        "stale_error": memory_os.get("stale_error_ci95"),
+        "context_reduction": memory_os.get("context_budget_saved_ci95"),
+        "paired_overall": paired.get("overall_task_success"),
+        "paired_categories": categories,
+    }
+    metrics: dict[str, Any] = {
+        "measurement_runs": protocol.get("measurement_trials"),
+        "confidence_level": protocol.get("confidence_level"),
+        "confidence_intervals": confidence_intervals,
+        "memory_os_uplift_over_core": (
+            memory_os_task - core_task
+            if memory_os_task is not None and core_task is not None
+            else None
+        ),
+        "improved_category_count": len(improved),
+        "improved_categories": sorted(improved),
+        "context_reduction": _float_or_none(memory_os.get("context_budget_saved")),
+        "stale_contradiction_error_rate": _float_or_none(memory_os.get("stale_error_rate")),
+        "p95_overhead_ms": p95_delta,
+        "p95_overhead_ratio": p95_ratio,
+        "controlled_core_task_success": core_task,
+        "controlled_memory_os_task_success": memory_os_task,
+    }
+    return metrics
+
+
+def _competitors_from_agent_memory(payload: Mapping[str, Any] | None) -> list[dict[str, Any]]:
+    if payload is None:
+        return []
+    rows: list[dict[str, Any]] = []
+    family_by_engine = {
+        "Chroma static": "static_chroma_or_qdrant",
+        "Qdrant static": "static_chroma_or_qdrant",
+        "Mem0 OSS": "mem0_oss",
+        "LangMem / LangGraph": "langmem_or_langgraph",
+    }
+    for row in payload.get("results") or []:
+        if not isinstance(row, Mapping):
+            continue
+        engine = str(row.get("engine") or "")
+        family = family_by_engine.get(engine)
+        if not family:
+            continue
+        rows.append(
+            {
+                "engine": engine,
+                "family": family,
+                "status": row.get("status", "pass"),
+                "simulated": False,
+                "task_success_rate": row.get("task_success_rate"),
+                "p95_latency_ms": row.get("p95_latency_ms"),
+            }
+        )
+    for row in payload.get("skipped") or []:
+        if not isinstance(row, Mapping):
+            continue
+        engine = str(row.get("engine") or "")
+        family = family_by_engine.get(engine)
+        if not family:
+            continue
+        rows.append(
+            {
+                "engine": engine,
+                "family": family,
+                "status": "skipped",
+                "simulated": False,
+                "reason": row.get("reason"),
+            }
+        )
+    return rows
 
 
 def _validate_safe_product(
@@ -891,6 +1149,20 @@ def _row(
     return row
 
 
+def _engine_row(payload: Mapping[str, Any], engine: str) -> dict[str, Any]:
+    for row in payload.get("results") or []:
+        if isinstance(row, Mapping) and row.get("engine") == engine:
+            return dict(row)
+    return {}
+
+
+def _float_or_none(value: Any) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def _next_actions(rows: list[dict[str, Any]]) -> list[str]:
     actions: list[str] = []
     statuses = {row["id"]: row["status"] for row in rows}
@@ -959,6 +1231,16 @@ def _repository_commit(root: Path) -> str:
 def _resolve(root: Path, path: str | Path) -> Path:
     candidate = Path(path)
     return candidate if candidate.is_absolute() else root / candidate
+
+
+def _artifact_path(root: Path, path: str | Path) -> str:
+    candidate = Path(path)
+    if not candidate.is_absolute():
+        return candidate.as_posix()
+    try:
+        return candidate.resolve().relative_to(root.resolve()).as_posix()
+    except ValueError:
+        return candidate.as_posix()
 
 
 def _utc_now() -> str:

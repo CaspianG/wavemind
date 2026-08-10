@@ -5,11 +5,14 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 from wavemind.quality_leadership_admission import (
     DEFAULT_PROTOCOL_PATH,
     GOAL4_ARTIFACT_PATH,
     QUALITY_THRESHOLDS,
     evaluate_quality_leadership_admission,
+    quality_leadership_results_from_diagnostics,
     quality_leadership_protocol_manifest,
     validate_goal4_failure_artifact,
 )
@@ -28,6 +31,79 @@ def _copy_goal4_artifact(root: Path) -> None:
     )
 
 
+def _source_sha() -> str:
+    return subprocess.check_output(
+        ["git", "rev-parse", "HEAD"],
+        cwd=PROJECT_ROOT,
+        text=True,
+        encoding="utf-8",
+    ).strip()
+
+
+def _agent_memory_payload(*, source_sha: str | None = None) -> dict:
+    source = source_sha or _source_sha()
+    return {
+        "schema": "wavemind.agent_memory_advantage_benchmark.v1",
+        "status": "pass",
+        "source_sha": source,
+        "protocol": {
+            "measurement_trials": 5,
+            "confidence_level": 0.95,
+        },
+        "results": [
+            {
+                "engine": "WaveMind Core",
+                "status": "pass",
+                "task_success_rate": 0.40,
+                "stale_error_rate": 0.60,
+                "context_budget_saved": 0.50,
+                "p95_latency_ms": 10.0,
+            },
+            {
+                "engine": "WaveMind + Memory OS",
+                "status": "pass",
+                "task_success_rate": 0.80,
+                "task_success_ci95": {"lower": 0.70, "upper": 0.90},
+                "stale_error_rate": 0.01,
+                "stale_error_ci95": {"lower": 0.0, "upper": 0.02},
+                "context_budget_saved": 0.40,
+                "context_budget_saved_ci95": {"lower": 0.35, "upper": 0.45},
+                "p95_latency_ms": 11.0,
+            },
+        ],
+        "skipped": [
+            {
+                "engine": "Chroma static",
+                "status": "skipped",
+                "reason": "chromadb_not_installed",
+            },
+            {
+                "engine": "Qdrant static",
+                "status": "skipped",
+                "reason": "qdrant_client_not_installed",
+            },
+            {
+                "engine": "Mem0 OSS",
+                "status": "skipped",
+                "reason": "package_not_installed",
+            },
+            {
+                "engine": "LangMem / LangGraph",
+                "status": "skipped",
+                "reason": "package_not_installed",
+            },
+        ],
+        "paired_lift": {
+            "overall_task_success": {"lower": 0.20, "upper": 0.60},
+            "categories": {
+                "knowledge_update": {"lower": 0.10, "upper": 0.50},
+                "workflow_gotcha": {"lower": 0.20, "upper": 0.80},
+                "state_tracking": {"lower": 0.0, "upper": 0.10},
+            },
+        },
+    }
+
+
 def test_checked_in_quality_leadership_admission_blocks_without_new_evidence() -> None:
     payload = evaluate_quality_leadership_admission(root=PROJECT_ROOT)
     rows = {row["id"]: row for row in payload["rows"]}
@@ -38,6 +114,60 @@ def test_checked_in_quality_leadership_admission_blocks_without_new_evidence() -
     assert rows["protocol-frozen-before-heldout"]["status"] == "blocked"
     assert rows["development-go-no-go"]["status"] == "blocked"
     assert rows["heldout-opened-once"]["status"] == "blocked"
+    assert not any(row["status"] == "failed" for row in rows.values())
+
+
+def test_development_results_extract_metrics_but_keep_gate_blocked(tmp_path: Path) -> None:
+    diagnostic = tmp_path / "agent.json"
+    diagnostic.write_text(json.dumps(_agent_memory_payload()), encoding="utf-8")
+
+    payload = quality_leadership_results_from_diagnostics(
+        root=PROJECT_ROOT,
+        agent_memory_path=diagnostic,
+    )
+
+    assert payload["status"] == "development_blocked"
+    assert payload["development_gate"]["status"] == "blocked"
+    assert payload["metrics"]["memory_os_uplift_over_core"] == pytest.approx(0.40)
+    assert payload["metrics"]["improved_category_count"] == 2
+    assert "missing real local competitors" in " ".join(
+        payload["development_gate"]["errors"]
+    )
+
+
+def test_development_results_reject_wrong_source_diagnostic(tmp_path: Path) -> None:
+    diagnostic = tmp_path / "agent.json"
+    diagnostic.write_text(
+        json.dumps(_agent_memory_payload(source_sha="0" * 40)),
+        encoding="utf-8",
+    )
+
+    payload = quality_leadership_results_from_diagnostics(
+        root=PROJECT_ROOT,
+        agent_memory_path=diagnostic,
+    )
+
+    assert payload["development_gate"]["status"] == "blocked"
+    assert any(
+        "source SHA mismatch" in error
+        for error in payload["development_gate"]["errors"]
+    )
+
+
+def test_in_repo_development_diagnostic_path_stays_relative() -> None:
+    payload = quality_leadership_results_from_diagnostics(
+        root=PROJECT_ROOT,
+        agent_memory_path="benchmarks/quality_leadership_agent_memory_advantage_dev.json",
+    )
+
+    assert (
+        payload["development_gate"]["diagnostic"]
+        == "benchmarks/quality_leadership_agent_memory_advantage_dev.json"
+    )
+    assert (
+        payload["runs"][0]["artifact"]
+        == "benchmarks/quality_leadership_agent_memory_advantage_dev.json"
+    )
 
 
 def test_goal4_failure_validation_rejects_false_success() -> None:

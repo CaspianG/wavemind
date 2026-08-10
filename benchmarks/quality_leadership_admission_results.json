@@ -8,11 +8,11 @@
     "results": "benchmarks/quality_leadership_results.json"
   },
   "claim_boundary": "Quality leadership is blocked until a new frozen protocol, bounded development gate, single untouched held-out run, real local competitors, current Safe Product and Workspace Experience evidence, and exact-main CI evidence all pass. The historical Goal 4 failure remains public.",
-  "expected_source_sha": "25e501b79b8210226bd577c926fc761db9936cc1",
-  "generated_at": "2026-08-10T18:17:48Z",
+  "expected_source_sha": "71abd346e7e2e2019b6c2807455e7d0e23265aea",
+  "generated_at": "2026-08-10T18:33:22Z",
   "integrity": {
     "algorithm": "sha256",
-    "payload_sha256": "e118a62ff71c3483fea55123211fe68a48587d28c610e5d414fe0acde53d2608",
+    "payload_sha256": "e5791cf7d69ecfcbe3d7256c6a2b6c0868fd8099ba121a698c95074232e8d041",
     "schema": "wavemind.artifact_integrity.v1"
   },
   "next_actions": [
@@ -27,8 +27,8 @@
     {
       "artifact": "git rev-parse HEAD",
       "details": {
-        "expected_source_sha": "25e501b79b8210226bd577c926fc761db9936cc1",
-        "source_sha": "25e501b79b8210226bd577c926fc761db9936cc1"
+        "expected_source_sha": "71abd346e7e2e2019b6c2807455e7d0e23265aea",
+        "source_sha": "71abd346e7e2e2019b6c2807455e7d0e23265aea"
       },
       "id": "source-sha-exact",
       "requirement": "Admission is evaluated against the exact current source SHA.",
@@ -124,8 +124,14 @@
       "artifact": "benchmarks/quality_leadership_results.json",
       "details": {
         "observed": {
-          "reason": "new frozen development split is required before tuning",
-          "status": "not_run"
+          "diagnostic": "benchmarks/quality_leadership_agent_memory_advantage_dev.json",
+          "errors": [
+            "agent-memory diagnostic source SHA mismatch",
+            "improved_category_count below threshold",
+            "missing real local competitors: langmem_or_langgraph, mem0_oss, static_chroma_or_qdrant",
+            "LongMemEval-V2 quality gate has not been run on this protocol"
+          ],
+          "status": "blocked"
         },
         "target_status": "passed"
       },
@@ -166,12 +172,12 @@
       "details": {
         "comparison": ">=",
         "metric": "memory_os_uplift_over_core",
-        "observed": null,
+        "observed": 0.6111111111111112,
         "target": 0.01
       },
       "id": "memory-os-uplift-over-core",
       "requirement": "Memory OS beats WaveMind Core on task success by the required margin.",
-      "status": "blocked",
+      "status": "implemented",
       "test": "tests/test_quality_leadership_admission.py"
     },
     {
@@ -179,7 +185,7 @@
       "details": {
         "comparison": ">=",
         "metric": "improved_category_count",
-        "observed": null,
+        "observed": 2,
         "target": 4
       },
       "id": "category-improvements",
@@ -192,12 +198,12 @@
       "details": {
         "comparison": ">=",
         "metric": "context_reduction",
-        "observed": null,
+        "observed": 0.5015105740181269,
         "target": 0.35
       },
       "id": "context-reduction",
       "requirement": "Context tokens drop by at least 35 percent.",
-      "status": "blocked",
+      "status": "implemented",
       "test": "tests/test_quality_leadership_admission.py"
     },
     {
@@ -205,19 +211,19 @@
       "details": {
         "comparison": "<=",
         "metric": "stale_contradiction_error_rate",
-        "observed": null,
+        "observed": 0.0,
         "target": 0.02
       },
       "id": "stale-contradiction-control",
       "requirement": "Stale and contradiction error rate stays below two percent.",
-      "status": "blocked",
+      "status": "implemented",
       "test": "tests/test_quality_leadership_admission.py"
     },
     {
       "artifact": "benchmarks/quality_leadership_results.json",
       "details": {
-        "p95_overhead_ms": null,
-        "p95_overhead_ratio": null,
+        "p95_overhead_ms": -0.66230000811629,
+        "p95_overhead_ratio": -0.11017583699414799,
         "targets": {
           "p95_overhead_ms": 5.0,
           "p95_overhead_ratio": 0.2
@@ -225,7 +231,7 @@
       },
       "id": "latency-budget",
       "requirement": "p95 overhead is below both absolute and relative budgets.",
-      "status": "blocked",
+      "status": "implemented",
       "test": "tests/test_quality_leadership_admission.py"
     },
     {
@@ -272,17 +278,13 @@
     {
       "artifact": "benchmarks/quality_leadership_results.json",
       "details": {
-        "confidence_level": null,
-        "errors": [
-          "measurement runs below required minimum",
-          "confidence level is not 0.95",
-          "confidence intervals missing"
-        ],
-        "measurement_runs": 0
+        "confidence_level": 0.95,
+        "errors": [],
+        "measurement_runs": 5
       },
       "id": "five-run-confidence-intervals",
       "requirement": "All mandatory results have at least five runs and 95 percent confidence intervals.",
-      "status": "blocked",
+      "status": "implemented",
       "test": "tests/test_quality_leadership_admission.py"
     },
     {
@@ -322,7 +324,7 @@
   "schema": "wavemind.quality_leadership_admission.v1",
   "source_manifest": {
     "algorithm": "sha256",
-    "digest": "804b813b340ece3ccdb4c00fdb034978ee04925cbca70366b219fa9f37c3207d",
+    "digest": "e78d14e6100f7c42033df8652cfa514c3ecba06c429f00406286c2625fc2aad9",
     "files": [
       {
         "path": "benchmarks/agent_memory_advantage_benchmark.py",
@@ -347,6 +349,10 @@
       {
         "path": "benchmarks/quality_leadership_admission.py",
         "sha256": "e3ce98a26b0bf0773a01c8cf0c1b857f004116edb6d1f9c56cd3fcbf6088862d"
+      },
+      {
+        "path": "benchmarks/quality_leadership_results.py",
+        "sha256": "5494bb43924c60d759c1829fa53139270c19fb6194c7d9b09e5531808f7f5712"
       },
       {
         "path": "wavemind/agent_memory_admission.py",
@@ -378,7 +384,7 @@
       },
       {
         "path": "wavemind/quality_leadership_admission.py",
-        "sha256": "673a31e4ffe6faf508e82108fbc047798db51ea8f823359ec0f89d8689ff3551"
+        "sha256": "af768e9c071ac42dc8c2ad675bb205570410894e7925abbf21b4f0c88f1ba6bd"
       },
       {
         "path": "wavemind/workspace_experience_admission.py",
@@ -387,13 +393,13 @@
     ],
     "schema": "wavemind.source_manifest.v1"
   },
-  "source_sha": "25e501b79b8210226bd577c926fc761db9936cc1",
+  "source_sha": "71abd346e7e2e2019b6c2807455e7d0e23265aea",
   "status": "blocked",
   "summary": {
-    "blocked": 15,
+    "blocked": 10,
     "failed": 0,
     "historical": 0,
-    "implemented": 5,
+    "implemented": 10,
     "required_current": 2,
     "total": 22
   }

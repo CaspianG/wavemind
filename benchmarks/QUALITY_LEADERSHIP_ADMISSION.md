@@ -1,9 +1,9 @@
 # Quality Leadership Admission
 
 Status: **blocked**
-Source SHA: `25e501b79b8210226bd577c926fc761db9936cc1`
+Source SHA: `71abd346e7e2e2019b6c2807455e7d0e23265aea`
 Protocol: `quality-leadership-v1-20260810`
-Rows: **5/22 implemented**, 15 blocked, 2 required-current, 0 failed
+Rows: **10/22 implemented**, 10 blocked, 2 required-current, 0 failed
 
 | Row | Status | Artifact | Test |
 |---|---:|---|---|
@@ -17,15 +17,15 @@ Rows: **5/22 implemented**, 15 blocked, 2 required-current, 0 failed
 | `development-go-no-go` | `blocked` | `benchmarks/quality_leadership_results.json` | `tests/test_quality_leadership_admission.py` |
 | `heldout-opened-once` | `blocked` | `benchmarks/quality_leadership_results.json` | `tests/test_quality_leadership_admission.py` |
 | `longmemeval-v2-quality` | `blocked` | `benchmarks/quality_leadership_results.json` | `tests/test_quality_leadership_admission.py` |
-| `memory-os-uplift-over-core` | `blocked` | `benchmarks/quality_leadership_results.json` | `tests/test_quality_leadership_admission.py` |
+| `memory-os-uplift-over-core` | `implemented` | `benchmarks/quality_leadership_results.json` | `tests/test_quality_leadership_admission.py` |
 | `category-improvements` | `blocked` | `benchmarks/quality_leadership_results.json` | `tests/test_quality_leadership_admission.py` |
-| `context-reduction` | `blocked` | `benchmarks/quality_leadership_results.json` | `tests/test_quality_leadership_admission.py` |
-| `stale-contradiction-control` | `blocked` | `benchmarks/quality_leadership_results.json` | `tests/test_quality_leadership_admission.py` |
-| `latency-budget` | `blocked` | `benchmarks/quality_leadership_results.json` | `tests/test_quality_leadership_admission.py` |
+| `context-reduction` | `implemented` | `benchmarks/quality_leadership_results.json` | `tests/test_quality_leadership_admission.py` |
+| `stale-contradiction-control` | `implemented` | `benchmarks/quality_leadership_results.json` | `tests/test_quality_leadership_admission.py` |
+| `latency-budget` | `implemented` | `benchmarks/quality_leadership_results.json` | `tests/test_quality_leadership_admission.py` |
 | `locomo-longmemeval-dynamic-categories` | `blocked` | `benchmarks/quality_leadership_results.json` | `tests/test_quality_leadership_admission.py` |
 | `real-local-competitors` | `blocked` | `benchmarks/quality_leadership_results.json` | `tests/test_quality_leadership_admission.py` |
 | `backend-recall-loss` | `blocked` | `benchmarks/quality_leadership_results.json` | `tests/test_quality_leadership_admission.py` |
-| `five-run-confidence-intervals` | `blocked` | `benchmarks/quality_leadership_results.json` | `tests/test_quality_leadership_admission.py` |
+| `five-run-confidence-intervals` | `implemented` | `benchmarks/quality_leadership_results.json` | `tests/test_quality_leadership_admission.py` |
 | `verdict-fingerprint-stability` | `blocked` | `benchmarks/quality_leadership_results.json` | `tests/test_quality_leadership_admission.py` |
 | `per-query-artifact` | `implemented` | `benchmarks/quality_leadership_per_query.jsonl` | `tests/test_quality_leadership_admission.py` |
 | `public-claims-fresh` | `blocked` | `README.md / docs/ROADMAP.md / docs/BENCHMARK_BRIEF.md` | `tests/test_quality_leadership_admission.py` |

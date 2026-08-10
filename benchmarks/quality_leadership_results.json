@@ -1,12 +1,100 @@
 {
   "admitted": false,
-  "claim_boundary": "No quality-leadership result has been run for this protocol yet. The checked-in payload is a fail-closed placeholder, not evidence of uplift.",
-  "competitor_runs": [],
-  "development_gate": {
-    "reason": "new frozen development split is required before tuning",
-    "status": "not_run"
+  "claim_boundary": "Development diagnostic evidence only. A blocked development gate forbids heavy/full held-out execution and forbids public quality-leadership claims.",
+  "competitor_runs": [
+    {
+      "engine": "Chroma static",
+      "family": "static_chroma_or_qdrant",
+      "reason": "chromadb_not_installed; no imitation substituted",
+      "simulated": false,
+      "status": "skipped"
+    },
+    {
+      "engine": "Qdrant static",
+      "family": "static_chroma_or_qdrant",
+      "reason": "qdrant_client_not_installed; no imitation substituted",
+      "simulated": false,
+      "status": "skipped"
+    },
+    {
+      "engine": "Mem0 OSS",
+      "family": "mem0_oss",
+      "reason": "package_not_installed; no imitation substituted",
+      "simulated": false,
+      "status": "skipped"
+    },
+    {
+      "engine": "LangMem / LangGraph",
+      "family": "langmem_or_langgraph",
+      "reason": "package_not_installed; no imitation substituted",
+      "simulated": false,
+      "status": "skipped"
+    }
+  ],
+  "confidence_intervals": {
+    "context_reduction": {
+      "lower": 0.5015105740181269,
+      "mean": 0.5015105740181269,
+      "observations": 5,
+      "upper": 0.5015105740181269
+    },
+    "paired_categories": {
+      "knowledge_update": {
+        "lower": 0.2222222222222222,
+        "mean": 0.5555555555555556,
+        "observations": 9,
+        "upper": 0.8888888888888888
+      },
+      "preference_update": {
+        "lower": 0.0,
+        "mean": 0.0,
+        "observations": 1,
+        "upper": 0.0
+      },
+      "state_tracking": {
+        "lower": 0.0,
+        "mean": 0.0,
+        "observations": 2,
+        "upper": 0.0
+      },
+      "workflow_gotcha": {
+        "lower": 1.0,
+        "mean": 1.0,
+        "observations": 6,
+        "upper": 1.0
+      }
+    },
+    "paired_overall": {
+      "lower": 0.3888888888888889,
+      "mean": 0.6111111111111112,
+      "observations": 18,
+      "upper": 0.8333333333333334
+    },
+    "stale_error": {
+      "lower": 0.0,
+      "mean": 0.0,
+      "observations": 5,
+      "upper": 0.0
+    },
+    "task_success": {
+      "lower": 1.0,
+      "mean": 1.0,
+      "observations": 5,
+      "upper": 1.0
+    }
   },
-  "generated_at": "2026-08-10T18:17:48Z",
+  "confidence_level": 0.95,
+  "development_gate": {
+    "diagnostic": "benchmarks/quality_leadership_agent_memory_advantage_dev.json",
+    "errors": [
+      "agent-memory diagnostic source SHA mismatch",
+      "improved_category_count below threshold",
+      "missing real local competitors: langmem_or_langgraph, mem0_oss, static_chroma_or_qdrant",
+      "LongMemEval-V2 quality gate has not been run on this protocol"
+    ],
+    "status": "blocked"
+  },
+  "generated_at": "2026-08-10T18:33:21Z",
   "held_out_gate": {
     "reason": "held-out is forbidden until protocol freeze and development go/no-go",
     "status": "not_opened"
@@ -18,16 +106,92 @@
   },
   "integrity": {
     "algorithm": "sha256",
-    "payload_sha256": "19ddcec435c488e7db2e45b0504f3f08a3b03f1663dcf955c83eb614af26101f",
+    "payload_sha256": "cad9a7cac6db2d244331b1314d5aa6c497428014ee11974dc657216a74071e60",
     "schema": "wavemind.artifact_integrity.v1"
   },
-  "metrics": {},
+  "measurement_runs": 5,
+  "metrics": {
+    "confidence_intervals": {
+      "context_reduction": {
+        "lower": 0.5015105740181269,
+        "mean": 0.5015105740181269,
+        "observations": 5,
+        "upper": 0.5015105740181269
+      },
+      "paired_categories": {
+        "knowledge_update": {
+          "lower": 0.2222222222222222,
+          "mean": 0.5555555555555556,
+          "observations": 9,
+          "upper": 0.8888888888888888
+        },
+        "preference_update": {
+          "lower": 0.0,
+          "mean": 0.0,
+          "observations": 1,
+          "upper": 0.0
+        },
+        "state_tracking": {
+          "lower": 0.0,
+          "mean": 0.0,
+          "observations": 2,
+          "upper": 0.0
+        },
+        "workflow_gotcha": {
+          "lower": 1.0,
+          "mean": 1.0,
+          "observations": 6,
+          "upper": 1.0
+        }
+      },
+      "paired_overall": {
+        "lower": 0.3888888888888889,
+        "mean": 0.6111111111111112,
+        "observations": 18,
+        "upper": 0.8333333333333334
+      },
+      "stale_error": {
+        "lower": 0.0,
+        "mean": 0.0,
+        "observations": 5,
+        "upper": 0.0
+      },
+      "task_success": {
+        "lower": 1.0,
+        "mean": 1.0,
+        "observations": 5,
+        "upper": 1.0
+      }
+    },
+    "confidence_level": 0.95,
+    "context_reduction": 0.5015105740181269,
+    "controlled_core_task_success": 0.3888888888888889,
+    "controlled_memory_os_task_success": 1.0,
+    "improved_categories": [
+      "knowledge_update",
+      "workflow_gotcha"
+    ],
+    "improved_category_count": 2,
+    "measurement_runs": 5,
+    "memory_os_uplift_over_core": 0.6111111111111112,
+    "p95_overhead_ms": -0.66230000811629,
+    "p95_overhead_ratio": -0.11017583699414799,
+    "stale_contradiction_error_rate": 0.0
+  },
   "protocol_revision": "quality-leadership-v1-20260810",
-  "runs": [],
+  "runs": [
+    {
+      "artifact": "benchmarks/quality_leadership_agent_memory_advantage_dev.json",
+      "claim_boundary": "Bounded development diagnostic only; it cannot replace public held-out quality evidence or real competitor execution.",
+      "id": "controlled-sequential-agent-memory",
+      "source_sha": "1918ec3d9034d1ee42e1786c5434b44a978410ef",
+      "status": "blocked"
+    }
+  ],
   "schema": "wavemind.quality_leadership_results.v1",
   "source_manifest": {
     "algorithm": "sha256",
-    "digest": "804b813b340ece3ccdb4c00fdb034978ee04925cbca70366b219fa9f37c3207d",
+    "digest": "e78d14e6100f7c42033df8652cfa514c3ecba06c429f00406286c2625fc2aad9",
     "files": [
       {
         "path": "benchmarks/agent_memory_advantage_benchmark.py",
@@ -52,6 +216,10 @@
       {
         "path": "benchmarks/quality_leadership_admission.py",
         "sha256": "e3ce98a26b0bf0773a01c8cf0c1b857f004116edb6d1f9c56cd3fcbf6088862d"
+      },
+      {
+        "path": "benchmarks/quality_leadership_results.py",
+        "sha256": "5494bb43924c60d759c1829fa53139270c19fb6194c7d9b09e5531808f7f5712"
       },
       {
         "path": "wavemind/agent_memory_admission.py",
@@ -83,7 +251,7 @@
       },
       {
         "path": "wavemind/quality_leadership_admission.py",
-        "sha256": "673a31e4ffe6faf508e82108fbc047798db51ea8f823359ec0f89d8689ff3551"
+        "sha256": "af768e9c071ac42dc8c2ad675bb205570410894e7925abbf21b4f0c88f1ba6bd"
       },
       {
         "path": "wavemind/workspace_experience_admission.py",
@@ -92,6 +260,6 @@
     ],
     "schema": "wavemind.source_manifest.v1"
   },
-  "source_sha": "25e501b79b8210226bd577c926fc761db9936cc1",
-  "status": "not_run"
+  "source_sha": "71abd346e7e2e2019b6c2807455e7d0e23265aea",
+  "status": "development_blocked"
 }
