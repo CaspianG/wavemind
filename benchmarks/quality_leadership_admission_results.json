@@ -8,11 +8,11 @@
     "results": "benchmarks/quality_leadership_results.json"
   },
   "claim_boundary": "Quality leadership is blocked until a new frozen protocol, bounded development gate, single untouched held-out run, real local competitors, current Safe Product and Workspace Experience evidence, and exact-main CI evidence all pass. The historical Goal 4 failure remains public.",
-  "expected_source_sha": "68168dfac0f436671ab5fadc9c877ab46e535c50",
-  "generated_at": "2026-08-10T20:46:35Z",
+  "expected_source_sha": "d2201beff75723486e18acc45368c919d9f4bd93",
+  "generated_at": "2026-08-10T20:57:08Z",
   "integrity": {
     "algorithm": "sha256",
-    "payload_sha256": "e444e9ca7b98e8ed6299fee610340ba1fcd2efb11636b26f7101f0d6eec8e228",
+    "payload_sha256": "c3d9b66dbc21a255b59b036de5dcf644f8d92ef6eea6d8b2e9b69e19b24d10f0",
     "schema": "wavemind.artifact_integrity.v1"
   },
   "next_actions": [
@@ -25,8 +25,8 @@
     {
       "artifact": "git rev-parse HEAD",
       "details": {
-        "expected_source_sha": "68168dfac0f436671ab5fadc9c877ab46e535c50",
-        "source_sha": "68168dfac0f436671ab5fadc9c877ab46e535c50"
+        "expected_source_sha": "d2201beff75723486e18acc45368c919d9f4bd93",
+        "source_sha": "d2201beff75723486e18acc45368c919d9f4bd93"
       },
       "id": "source-sha-exact",
       "requirement": "Admission is evaluated against the exact current source SHA.",
@@ -118,6 +118,7 @@
           "diagnostic": "benchmarks/quality_leadership_agent_memory_advantage_dev_real_competitors.json",
           "errors": [
             "improved_category_count below threshold",
+            "category_improvement_ceiling below threshold",
             "LongMemEval-V2 quality gate has not been run on this protocol"
           ],
           "status": "blocked"
@@ -172,6 +173,54 @@
     {
       "artifact": "benchmarks/quality_leadership_results.json",
       "details": {
+        "category_improvement_analysis": {
+          "baseline_ceiling_categories": [
+            "preference_update",
+            "state_tracking"
+          ],
+          "category_details": {
+            "knowledge_update": {
+              "core_success": 0.4444444444444444,
+              "improvable_over_core": true,
+              "improved": true,
+              "memory_os_success": 1.0,
+              "paired_lift_lower": 0.2222222222222222,
+              "reason": "improvable"
+            },
+            "preference_update": {
+              "core_success": 1.0,
+              "improvable_over_core": false,
+              "improved": false,
+              "memory_os_success": 1.0,
+              "paired_lift_lower": 0.0,
+              "reason": "core_already_at_ceiling"
+            },
+            "state_tracking": {
+              "core_success": 1.0,
+              "improvable_over_core": false,
+              "improved": false,
+              "memory_os_success": 1.0,
+              "paired_lift_lower": 0.0,
+              "reason": "core_already_at_ceiling"
+            },
+            "workflow_gotcha": {
+              "core_success": 0.0,
+              "improvable_over_core": true,
+              "improved": true,
+              "memory_os_success": 1.0,
+              "paired_lift_lower": 1.0,
+              "reason": "improvable"
+            }
+          },
+          "claim_boundary": "A category where Core already has 1.0 success cannot show a strictly positive Memory OS-over-Core lift without changing the frozen split or degrading the baseline.",
+          "improvement_ceiling_over_core": 2,
+          "methodology_status": "blocked_unsatisfiable_without_split_change_or_baseline_degradation",
+          "observed_improved_categories": [
+            "knowledge_update",
+            "workflow_gotcha"
+          ],
+          "target": 4
+        },
         "comparison": ">=",
         "metric": "improved_category_count",
         "observed": 2,
@@ -211,8 +260,8 @@
     {
       "artifact": "benchmarks/quality_leadership_results.json",
       "details": {
-        "p95_overhead_ms": 0.05709996912628412,
-        "p95_overhead_ratio": 0.03825537220710181,
+        "p95_overhead_ms": -0.08450000314041972,
+        "p95_overhead_ratio": -0.05360314796952967,
         "targets": {
           "p95_overhead_ms": 5.0,
           "p95_overhead_ratio": 0.2
@@ -314,7 +363,7 @@
   "schema": "wavemind.quality_leadership_admission.v1",
   "source_manifest": {
     "algorithm": "sha256",
-    "digest": "60ad17af1a1bbddb220581ed4abf90933effc66e14f238906bd45033fe3cb1d9",
+    "digest": "e34fb9afd24d395a73feb6cfe4088f4c5fb760d669f2a4661f8574b025ce4292",
     "files": [
       {
         "path": "benchmarks/agent_memory_advantage_benchmark.py",
@@ -378,7 +427,7 @@
       },
       {
         "path": "wavemind/quality_leadership_admission.py",
-        "sha256": "3f9610d00569edc8984ae6163161fd5f0526d3c0b7a7b9a5fa87cd317cbb872d"
+        "sha256": "54744597d0e54b113e54094afda72b262664e60a1a88728fbd3a0ffebc216aea"
       },
       {
         "path": "wavemind/workspace_experience_admission.py",
@@ -387,7 +436,7 @@
     ],
     "schema": "wavemind.source_manifest.v1"
   },
-  "source_sha": "68168dfac0f436671ab5fadc9c877ab46e535c50",
+  "source_sha": "d2201beff75723486e18acc45368c919d9f4bd93",
   "status": "blocked",
   "summary": {
     "blocked": 8,
