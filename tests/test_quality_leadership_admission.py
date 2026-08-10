@@ -22,7 +22,11 @@ from wavemind.evidence import (
     canonical_json_bytes,
     sha256_bytes,
 )
-from benchmarks.quality_leadership_freeze_protocol import build_frozen_protocol
+from benchmarks.quality_leadership_freeze_protocol import (
+    CANDIDATE2_DATASET_REVISION,
+    CANDIDATE2_LANE,
+    build_frozen_protocol,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -653,6 +657,109 @@ def test_freeze_builder_reserves_memory_agent_bench_without_opening_rows(tmp_pat
     assert "row contents are not opened" in " ".join(held_out["leakage_controls"])
     assert result["status"] == "blocked"
     assert result["admitted"] is False
+
+
+def test_freeze_builder_preregisters_candidate2_memoryagentbench_lane(
+    tmp_path: Path,
+) -> None:
+    protocol = build_frozen_protocol(
+        root=PROJECT_ROOT,
+        memory_agent_metadata=_memory_agent_metadata(),
+        lane=CANDIDATE2_LANE,
+    )
+    protocol_path = tmp_path / DEFAULT_PROTOCOL_PATH
+    protocol_path.parent.mkdir(parents=True, exist_ok=True)
+    protocol_path.write_text(json.dumps(protocol), encoding="utf-8")
+
+    result = evaluate_quality_leadership_admission(
+        root=PROJECT_ROOT,
+        protocol_path=protocol_path,
+        results_path=tmp_path / "missing-results.json",
+    )
+
+    dataset = protocol["new_quality_dataset"]
+    development = dataset["development_split"]
+    held_out = dataset["held_out_split"]
+    development_ids = set(development["case_fingerprints"])
+    held_out_ids = set(held_out["case_fingerprints"])
+    split_identity = json.dumps(
+        {
+            "development": development["case_fingerprints"],
+            "held_out": held_out["case_fingerprints"],
+            "development_sources": development["primary_sources"],
+            "held_out_sources": held_out["primary_sources"],
+        },
+        sort_keys=True,
+    )
+    row = {row["id"]: row for row in result["rows"]}["protocol-frozen-before-heldout"]
+
+    assert dataset["revision"] == CANDIDATE2_DATASET_REVISION
+    assert dataset["lane"] == CANDIDATE2_LANE
+    assert dataset["development_split_sha256"] == _split_digest(development)
+    assert dataset["held_out_split_sha256"] == _split_digest(held_out)
+    assert development["id"] == "memoryagentbench-balanced-development-v2"
+    assert development["role"] == "development"
+    assert development["view_status"] == "reserved_unopened_until_bounded_development"
+    assert development["case_count"] == 8
+    assert development["categories"] == {
+        "Accurate_Retrieval": 2,
+        "Conflict_Resolution": 2,
+        "Long_Range_Understanding": 2,
+        "Test_Time_Learning": 2,
+    }
+    assert held_out["id"] == "memoryagentbench-balanced-heldout-v2"
+    assert held_out["view_status"] == "unopened"
+    assert held_out["case_count"] == 138
+    assert held_out["categories"] == {
+        "Accurate_Retrieval": 20,
+        "Conflict_Resolution": 6,
+        "Long_Range_Understanding": 108,
+        "Test_Time_Learning": 4,
+    }
+    assert development_ids.isdisjoint(held_out_ids)
+    assert all("memoryagentbench:" in fingerprint for fingerprint in development_ids)
+    assert all("memoryagentbench:" in fingerprint for fingerprint in held_out_ids)
+    assert "full451" not in split_identity
+    assert "untouched419" not in split_identity
+    assert "wavemind-dev:" not in split_identity
+    assert "row contents are not opened" in " ".join(development["leakage_controls"])
+    assert "held-out rows are disjoint" in " ".join(held_out["leakage_controls"])
+    assert row["status"] == "implemented"
+    assert result["status"] == "blocked"
+    assert result["admitted"] is False
+
+
+def test_freeze_cli_can_write_candidate2_lane(tmp_path: Path) -> None:
+    metadata = tmp_path / "memoryagentbench_metadata.json"
+    output = tmp_path / "candidate2_protocol.json"
+    metadata.write_text(json.dumps(_memory_agent_metadata()), encoding="utf-8")
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "benchmarks/quality_leadership_freeze_protocol.py",
+            "--metadata-json",
+            str(metadata),
+            "--output",
+            str(output),
+            "--lane",
+            CANDIDATE2_LANE,
+            "--expected-source-sha",
+            _source_sha(),
+        ],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert payload["new_quality_dataset"]["lane"] == CANDIDATE2_LANE
+    assert payload["new_quality_dataset"]["revision"] == CANDIDATE2_DATASET_REVISION
+    assert payload["new_quality_dataset"]["development_split"]["case_count"] == 8
+    assert payload["new_quality_dataset"]["held_out_split"]["case_count"] == 138
 
 
 def test_frozen_v1_protocol_rejects_post_result_development_refreeze(
