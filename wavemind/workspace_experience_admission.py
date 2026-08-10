@@ -69,6 +69,7 @@ def evaluate_workspace_experience_admission_matrix(
 ) -> dict[str, Any]:
     root_path = Path(root)
     benchmark_status, benchmark_details = _benchmark_status(root_path)
+    v5_status, v5_details = _v5_benchmark_status(root_path)
     admission_status = "blocked" if benchmark_status == "failed" else "missing"
     rows = [
         _row(
@@ -153,9 +154,10 @@ def evaluate_workspace_experience_admission_matrix(
         _row(
             "frozen-real-work-benchmark-v5",
             "New independent real workflow benchmark with exact case/procedure success, strongest static baseline, measured onboarding, and cross-surface replay.",
-            "missing",
+            v5_status,
             "benchmarks/workspace_experience_v5_benchmark_results.json",
             "tests/test_workspace_experience_v5_benchmark.py",
+            details=v5_details,
         ),
         _row(
             "workspace-experience-admission",
@@ -353,6 +355,90 @@ def _benchmark_status(root: Path) -> tuple[str, dict[str, Any]]:
     if payload.get("status") == "passed" and not failed_gates:
         return "implemented", details
     return "failed", details
+
+
+def _v5_benchmark_status(root: Path) -> tuple[str, dict[str, Any]]:
+    path = root / "benchmarks" / "workspace_experience_v5_benchmark_results.json"
+    if not path.exists():
+        return "missing", {}
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    metrics = payload.get("metrics", {}).get("admission", {})
+    thresholds = workspace_experience_protocol_manifest()["thresholds"]
+    failed_gates = _admission_gate_failures(metrics, thresholds)
+    details = {
+        "result_status": payload.get("status"),
+        "split": payload.get("split"),
+        "source_sha": payload.get("source_sha"),
+        "manifest_sha256": payload.get("manifest", {}).get("sha256"),
+        "failed_gates": failed_gates,
+        "metrics": {
+            "task_success_lift_pp": metrics.get("task_success_lift_pp"),
+            "repeated_known_error_reduction": metrics.get("repeated_known_error_reduction"),
+            "context_reduction": metrics.get("context_reduction"),
+            "false_procedure_injection": metrics.get("false_procedure_injection"),
+            "workspace_namespace_leakage": metrics.get("workspace_namespace_leakage"),
+            "packet_selection_p95_ms": metrics.get("packet_selection_p95_ms"),
+            "packet_selection_p99_ms": metrics.get("packet_selection_p99_ms"),
+            "clean_onboarding_seconds": metrics.get("clean_onboarding_seconds"),
+        },
+    }
+    if payload.get("split") != "heldout":
+        details["not_admission_evidence_reason"] = "v5 result is a development diagnostic, not untouched held-out evidence"
+        return "blocked", details
+    if payload.get("status") == "passed" and not failed_gates:
+        return "implemented", details
+    return "failed", details
+
+
+def _admission_gate_failures(metrics: dict[str, Any], thresholds: dict[str, Any]) -> list[str]:
+    failed_gates: list[str] = []
+    if float(metrics.get("task_success_lift_pp", -1.0)) < thresholds["task_success_lift_pp_min"]:
+        failed_gates.append("task_success_lift_pp")
+    if (
+        float(metrics.get("repeated_known_error_reduction", -1.0))
+        < thresholds["repeated_known_error_reduction_min"]
+    ):
+        failed_gates.append("repeated_known_error_reduction")
+    if float(metrics.get("context_reduction", -1.0)) < thresholds["context_reduction_min"]:
+        failed_gates.append("context_reduction")
+    if (
+        float(metrics.get("false_procedure_injection", 1.0))
+        > thresholds["false_procedure_injection_max"]
+    ):
+        failed_gates.append("false_procedure_injection")
+    if int(metrics.get("unverified_injection", -1)) != thresholds["unverified_injection"]:
+        failed_gates.append("unverified_injection")
+    if (
+        int(metrics.get("workspace_namespace_leakage", -1))
+        != thresholds["workspace_namespace_leakage"]
+    ):
+        failed_gates.append("workspace_namespace_leakage")
+    if (
+        float(metrics.get("mandatory_event_capture", -1.0))
+        < thresholds["mandatory_event_capture_min"]
+    ):
+        failed_gates.append("mandatory_event_capture")
+    if (
+        float(metrics.get("cross_client_citation_state_parity", -1.0))
+        != thresholds["cross_client_citation_state_parity"]
+    ):
+        failed_gates.append("cross_client_citation_state_parity")
+    if (
+        float(metrics.get("packet_selection_p95_ms", 999999.0))
+        > thresholds["packet_selection_p95_ms_max"]
+    ):
+        failed_gates.append("packet_selection_p95_ms")
+    if (
+        float(metrics.get("packet_selection_p99_ms", 999999.0))
+        > thresholds["packet_selection_p99_ms_max"]
+    ):
+        failed_gates.append("packet_selection_p99_ms")
+    if (
+        float(metrics.get("clean_onboarding_seconds", 999999.0))
+        > thresholds["clean_onboarding_seconds_max"]
+    ):
+        failed_gates.append("clean_onboarding_seconds")
+    return failed_gates
 
 
 def _source_manifest(root: Path) -> dict[str, Any]:

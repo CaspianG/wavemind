@@ -36,9 +36,9 @@ def test_workspace_experience_gap_matrix_is_not_final_admission() -> None:
     assert payload["summary"] == {
         "implemented": 8,
         "partial": 0,
-        "missing": 1,
+        "missing": 0,
         "failed": 2,
-        "blocked": 1,
+        "blocked": 2,
         "required_current": 1,
         "total": 13,
     }
@@ -62,7 +62,10 @@ def test_workspace_experience_gap_matrix_is_not_final_admission() -> None:
     assert "hardcoded" in " ".join(
         rows["frozen-real-work-benchmark-v4"]["details"]["invalid_reasons"]
     )
-    assert rows["frozen-real-work-benchmark-v5"]["status"] == "missing"
+    assert rows["frozen-real-work-benchmark-v5"]["status"] == "blocked"
+    assert rows["frozen-real-work-benchmark-v5"]["details"]["split"] == "dev"
+    assert rows["frozen-real-work-benchmark-v5"]["details"]["failed_gates"] == ["context_reduction"]
+    assert "development diagnostic" in rows["frozen-real-work-benchmark-v5"]["details"]["not_admission_evidence_reason"]
     assert rows["workspace-experience-admission"]["status"] == "blocked"
     assert rows["safe-product-regression"]["status"] == "required_current"
     assert rows["workspace-identity-isolation"]["artifact"]
