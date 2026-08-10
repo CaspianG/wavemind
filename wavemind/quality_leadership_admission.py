@@ -88,6 +88,7 @@ QUALITY_SOURCE_PATHS = [
     "wavemind/workspace_experience_admission.py",
     "wavemind/quality_leadership_admission.py",
     "benchmarks/goal4_quality_experiment_results.json",
+    "benchmarks/quality_leadership_freeze_protocol.py",
     "benchmarks/quality_leadership_admission.py",
     "benchmarks/quality_leadership_results.py",
     "benchmarks/agent_memory_advantage_benchmark.py",
@@ -830,7 +831,13 @@ def _validate_quality_split_pair(
             "untouched419",
             GOAL4_HISTORICAL_DECISION_SHA,
         }
-        heldout_source = canonical_json_bytes(held_out_split).decode("utf-8")
+        heldout_source = canonical_json_bytes(
+            {
+                "id": held_out_split.get("id"),
+                "primary_sources": held_out_split.get("primary_sources"),
+                "case_fingerprints": held_out_split.get("case_fingerprints"),
+            }
+        ).decode("utf-8")
         if any(source in heldout_source for source in forbidden_sources):
             errors.append("new quality held-out split reuses historical Goal 4 evidence")
     return errors, digests

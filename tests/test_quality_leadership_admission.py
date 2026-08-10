@@ -21,6 +21,7 @@ from wavemind.evidence import (
     canonical_json_bytes,
     sha256_bytes,
 )
+from benchmarks.quality_leadership_freeze_protocol import build_frozen_protocol
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -188,14 +189,66 @@ def _frozen_protocol() -> dict:
     return attach_artifact_integrity(protocol)
 
 
+def _memory_agent_metadata() -> dict:
+    return {
+        "id": "ai-hyz/MemoryAgentBench",
+        "sha": "7ea066982b140a19337e17e60d45d4076e042faf",
+        "cardData": {
+            "license": "mit",
+            "dataset_info": {
+                "splits": [
+                    {"name": "Accurate_Retrieval", "num_examples": 22},
+                    {"name": "Test_Time_Learning", "num_examples": 6},
+                    {"name": "Long_Range_Understanding", "num_examples": 110},
+                    {"name": "Conflict_Resolution", "num_examples": 8},
+                ],
+            },
+        },
+        "siblings": [
+            {
+                "rfilename": "data/Accurate_Retrieval-00000-of-00001.parquet",
+                "blobId": "a" * 40,
+                "size": 20024386,
+                "lfs": {"sha256": "1" * 64, "size": 20024386},
+            },
+            {
+                "rfilename": "data/Test_Time_Learning-00000-of-00001.parquet",
+                "blobId": "b" * 40,
+                "size": 3947476,
+                "lfs": {"sha256": "2" * 64, "size": 3947476},
+            },
+            {
+                "rfilename": "data/Long_Range_Understanding-00000-of-00001.parquet",
+                "blobId": "c" * 40,
+                "size": 49342452,
+                "lfs": {"sha256": "3" * 64, "size": 49342452},
+            },
+            {
+                "rfilename": "data/Conflict_Resolution-00000-of-00001.parquet",
+                "blobId": "d" * 40,
+                "size": 1491588,
+                "lfs": {"sha256": "4" * 64, "size": 1491588},
+            },
+        ],
+    }
+
+
 def test_checked_in_quality_leadership_admission_blocks_without_new_evidence() -> None:
     payload = evaluate_quality_leadership_admission(root=PROJECT_ROOT)
     rows = {row["id"]: row for row in payload["rows"]}
+    protocol = json.loads(
+        (PROJECT_ROOT / DEFAULT_PROTOCOL_PATH).read_text(encoding="utf-8")
+    )
+    expected_freeze_status = (
+        "implemented"
+        if protocol.get("status") == "frozen_before_heldout"
+        else "blocked"
+    )
 
     assert payload["status"] == "blocked"
     assert payload["admitted"] is False
     assert rows["goal4-failure-preserved"]["status"] == "implemented"
-    assert rows["protocol-frozen-before-heldout"]["status"] == "blocked"
+    assert rows["protocol-frozen-before-heldout"]["status"] == expected_freeze_status
     assert rows["development-go-no-go"]["status"] == "blocked"
     assert rows["heldout-opened-once"]["status"] == "blocked"
 
@@ -389,6 +442,43 @@ def test_frozen_protocol_requires_real_split_manifest(tmp_path: Path) -> None:
     row = {row["id"]: row for row in result["rows"]}["protocol-frozen-before-heldout"]
     assert row["status"] == "implemented"
     assert row["details"]["errors"] == []
+
+
+def test_freeze_builder_reserves_memory_agent_bench_without_opening_rows(tmp_path: Path) -> None:
+    protocol = build_frozen_protocol(
+        root=PROJECT_ROOT,
+        memory_agent_metadata=_memory_agent_metadata(),
+    )
+    protocol_path = tmp_path / DEFAULT_PROTOCOL_PATH
+    protocol_path.parent.mkdir(parents=True, exist_ok=True)
+    protocol_path.write_text(json.dumps(protocol), encoding="utf-8")
+
+    result = evaluate_quality_leadership_admission(
+        root=PROJECT_ROOT,
+        protocol_path=protocol_path,
+    )
+
+    dataset = protocol["new_quality_dataset"]
+    held_out = dataset["held_out_split"]
+    row = {row["id"]: row for row in result["rows"]}["protocol-frozen-before-heldout"]
+    assert row["status"] == "implemented"
+    assert held_out["view_status"] == "unopened"
+    assert held_out["case_count"] == 146
+    assert len(held_out["case_fingerprints"]) == 146
+    assert "row contents are not opened" in " ".join(held_out["leakage_controls"])
+    assert result["status"] == "blocked"
+    assert result["admitted"] is False
+
+
+def test_freeze_builder_requires_file_level_huggingface_lfs_hashes() -> None:
+    metadata = _memory_agent_metadata()
+    metadata["siblings"][0].pop("lfs")
+
+    with pytest.raises(ValueError, match="no LFS SHA"):
+        build_frozen_protocol(
+            root=PROJECT_ROOT,
+            memory_agent_metadata=metadata,
+        )
 
 
 def test_frozen_protocol_rejects_viewed_heldout(tmp_path: Path) -> None:
