@@ -543,6 +543,7 @@ class SQLiteMemoryStore:
         *,
         priority: float | None = None,
         access_count: int | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         fields = []
         params: list[Any] = []
@@ -552,6 +553,9 @@ class SQLiteMemoryStore:
         if access_count is not None:
             fields.append("access_count = ?")
             params.append(int(access_count))
+        if metadata is not None:
+            fields.append("metadata = ?")
+            params.append(json.dumps(metadata, ensure_ascii=False))
         if not fields:
             return
         fields.append("updated_at = ?")
@@ -623,24 +627,42 @@ class SQLiteMemoryStore:
             return
         now = time.time()
         with self.conn:
-            self.conn.executemany(
-                """
-                UPDATE memories
-                SET priority = ?,
-                    access_count = ?,
-                    updated_at = ?
-                WHERE id = ?
-                """,
-                [
-                    (
-                        float(row["priority"]),
-                        int(row["access_count"]),
-                        now,
-                        int(row["id"]),
+            for row in rows:
+                memory_metadata = row.get("memory_metadata")
+                if isinstance(memory_metadata, dict):
+                    self.conn.execute(
+                        """
+                        UPDATE memories
+                        SET priority = ?,
+                            access_count = ?,
+                            metadata = ?,
+                            updated_at = ?
+                        WHERE id = ?
+                        """,
+                        (
+                            float(row["priority"]),
+                            int(row["access_count"]),
+                            json.dumps(memory_metadata, ensure_ascii=False),
+                            now,
+                            int(row["id"]),
+                        ),
                     )
-                    for row in rows
-                ],
-            )
+                else:
+                    self.conn.execute(
+                        """
+                        UPDATE memories
+                        SET priority = ?,
+                            access_count = ?,
+                            updated_at = ?
+                        WHERE id = ?
+                        """,
+                        (
+                            float(row["priority"]),
+                            int(row["access_count"]),
+                            now,
+                            int(row["id"]),
+                        ),
+                    )
             self.conn.executemany(
                 """
                 INSERT INTO audit_events (
@@ -1112,6 +1134,7 @@ class PostgresMemoryStore:
         *,
         priority: float | None = None,
         access_count: int | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         fields = []
         params: list[Any] = []
@@ -1121,6 +1144,9 @@ class PostgresMemoryStore:
         if access_count is not None:
             fields.append("access_count = %s")
             params.append(int(access_count))
+        if metadata is not None:
+            fields.append("metadata = %s")
+            params.append(json.dumps(metadata, ensure_ascii=False))
         if not fields:
             return
         fields.append("updated_at = %s")
@@ -1204,21 +1230,41 @@ class PostgresMemoryStore:
                 self._apply_feedback_batch_row(row, now)
 
     def _apply_feedback_batch_row(self, row: dict[str, Any], now: float) -> None:
-        self.conn.execute(
-            f"""
-            UPDATE {self.memories_table}
-            SET priority = %s,
-                access_count = %s,
-                updated_at = %s
-            WHERE id = %s
-            """,
-            (
-                float(row["priority"]),
-                int(row["access_count"]),
-                now,
-                int(row["id"]),
-            ),
-        )
+        memory_metadata = row.get("memory_metadata")
+        if isinstance(memory_metadata, dict):
+            self.conn.execute(
+                f"""
+                UPDATE {self.memories_table}
+                SET priority = %s,
+                    access_count = %s,
+                    metadata = %s,
+                    updated_at = %s
+                WHERE id = %s
+                """,
+                (
+                    float(row["priority"]),
+                    int(row["access_count"]),
+                    json.dumps(memory_metadata, ensure_ascii=False),
+                    now,
+                    int(row["id"]),
+                ),
+            )
+        else:
+            self.conn.execute(
+                f"""
+                UPDATE {self.memories_table}
+                SET priority = %s,
+                    access_count = %s,
+                    updated_at = %s
+                WHERE id = %s
+                """,
+                (
+                    float(row["priority"]),
+                    int(row["access_count"]),
+                    now,
+                    int(row["id"]),
+                ),
+            )
         self.conn.execute(
             f"""
             INSERT INTO {self.audit_table} (

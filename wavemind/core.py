@@ -49,6 +49,13 @@ def _redact_audit_text(value: object) -> str:
     return _AUDIT_PROVIDER_KEY_RE.sub("[REDACTED]", text)
 
 
+def _coerce_float(value: object, default: float = 0.0) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
 class WaveField:
     def __init__(
         self,
@@ -195,6 +202,7 @@ class WaveMind:
         hash_confidence_threshold: float = 0.12,
         hash_lexical_coverage_threshold: float = 1.0 / 3.0,
         semantic_confidence_threshold: float = 0.28,
+        feedback_suppression_weight: float = 2.0,
     ):
         self.encoder = encoder or HashingTextEncoder(vector_dim=384)
         self.projector = FieldProjector(width, height, self.encoder.vector_dim)
@@ -228,6 +236,7 @@ class WaveMind:
         self.hash_confidence_threshold = float(hash_confidence_threshold)
         self.hash_lexical_coverage_threshold = float(hash_lexical_coverage_threshold)
         self.semantic_confidence_threshold = float(semantic_confidence_threshold)
+        self.feedback_suppression_weight = max(0.0, float(feedback_suppression_weight))
         self._namespace_store_refresh_at: dict[str, float] = {}
         self._records_by_id: dict[int, MemoryRecord] = {}
         self._namespace_ids: dict[str, set[int]] = {}
@@ -530,6 +539,7 @@ class WaveMind:
                 graph_score = graph_scores.get(candidate_id, self.graph.energy(candidate_id) if self.graph_weight > 0 else 0.0)
                 priority_score = min(1.0, max(0.0, record.priority / 10.0))
                 lexical_score = self._lexical_match(query_tokens, record.id, record.text)
+                feedback_suppression = self._feedback_suppression(record)
                 confidence_reason = self._confidence_reason(
                     record,
                     vector_score=float(vector_score),
@@ -543,6 +553,7 @@ class WaveMind:
                     + self.graph_weight * graph_score
                     + self.priority_weight * priority_score
                     + lexical_weight * lexical_score
+                    - self.feedback_suppression_weight * feedback_suppression
                 )
                 if score < threshold:
                     continue
@@ -775,6 +786,7 @@ class WaveMind:
                     "priority": float(record.priority),
                     "access_count": int(record.access_count),
                     "metadata": metadata,
+                    "memory_metadata": dict(record.metadata),
                 }
             )
             accepted.append(
@@ -797,6 +809,7 @@ class WaveMind:
                             int(row["id"]),
                             priority=float(row["priority"]),
                             access_count=int(row["access_count"]),
+                            metadata=dict(row["memory_metadata"]),
                         )
                     self.store.log_audit_event(
                         "feedback",
@@ -840,11 +853,28 @@ class WaveMind:
         else:
             record.priority = max(0.0, record.priority - delta)
             self.field.forget(record.pattern, strength=delta)
+        feedback_state = self._feedback_state(record)
+        if bool(useful):
+            feedback_state["positive_strength"] = float(
+                feedback_state.get("positive_strength", 0.0)
+            ) + delta
+            feedback_state["positive_count"] = int(
+                feedback_state.get("positive_count", 0)
+            ) + 1
+        else:
+            feedback_state["negative_strength"] = float(
+                feedback_state.get("negative_strength", 0.0)
+            ) + delta
+            feedback_state["negative_count"] = int(
+                feedback_state.get("negative_count", 0)
+            ) + 1
+        record.metadata["_wavemind_feedback"] = feedback_state
         metadata: dict[str, object] = {
             "useful": bool(useful),
             "strength": delta,
             "priority": float(record.priority),
             "access_count": int(record.access_count),
+            "feedback_suppression": self._feedback_suppression(record),
         }
         if reason:
             metadata["reason"] = _redact_audit_text(reason)
@@ -860,6 +890,7 @@ class WaveMind:
                     record.id,
                     priority=record.priority,
                     access_count=record.access_count,
+                    metadata=record.metadata,
                 )
             self.store.log_audit_event(
                 "feedback",
@@ -868,6 +899,18 @@ class WaveMind:
                 metadata=metadata,
             )
         return metadata
+
+    def _feedback_state(self, record: MemoryRecord) -> dict[str, Any]:
+        state = record.metadata.get("_wavemind_feedback")
+        if isinstance(state, dict):
+            return dict(state)
+        return {}
+
+    def _feedback_suppression(self, record: MemoryRecord) -> float:
+        state = self._feedback_state(record)
+        negative = _coerce_float(state.get("negative_strength"))
+        positive = _coerce_float(state.get("positive_strength"))
+        return min(1.0, max(0.0, negative - positive))
 
     def save(
         self,

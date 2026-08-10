@@ -326,7 +326,9 @@ def test_feedback_batch_updates_state_and_rejects_bad_items(tmp_path):
         assert report["rejected_ids"] == (useful_id, 999999)
         assert report["namespaces"] == ("tenant:batch",)
         assert mind.store.get(useful_id).priority > before_useful_priority
-        assert mind.store.get(stale_id).priority < before_stale_priority
+        updated_stale = mind.store.get(stale_id)
+        assert updated_stale.priority < before_stale_priority
+        assert updated_stale.metadata["_wavemind_feedback"]["negative_strength"] == 0.25
 
         events = mind.audit_events(namespace="tenant:batch", action="feedback", limit=4)
         assert len(events) == 2
@@ -334,6 +336,70 @@ def test_feedback_batch_updates_state_and_rejects_bad_items(tmp_path):
         assert events[0].metadata["query"] in {"useful memory", "stale memory"}
     finally:
         mind.close()
+
+
+def test_negative_feedback_suppresses_stale_memory_after_restart(tmp_path):
+    db_path = tmp_path / "feedback-suppression.sqlite3"
+    query = "should responses still be long paragraphs?"
+    mind = make_mind(
+        db_path,
+        score_threshold=0.0,
+        confidence_gate=False,
+        lexical_weight=0.42,
+        short_query_lexical_weight=1.8,
+        priority_weight=0.7,
+        vector_weight=0.62,
+        field_weight=0.04,
+        persist_access_on_query=False,
+    )
+    try:
+        current_id = mind.remember(
+            "The preferred response format is bullet points.",
+            namespace="tenant:feedback",
+        )
+        stale_id = mind.remember(
+            "The obsolete response format was long paragraphs.",
+            namespace="tenant:feedback",
+        )
+        assert mind.query(query, namespace="tenant:feedback", top_k=1)[0].id == stale_id
+
+        assert mind.feedback(
+            stale_id,
+            useful=False,
+            strength=0.3,
+            namespace="tenant:feedback",
+            query=query,
+            reason="obsolete preference",
+        )
+        assert mind.query(query, namespace="tenant:feedback", top_k=1)[0].id == current_id
+        stale_record = mind.store.get(stale_id)
+        assert stale_record is not None
+        assert stale_record.metadata["_wavemind_feedback"]["negative_strength"] == 0.3
+    finally:
+        mind.close()
+
+    reopened = make_mind(
+        db_path,
+        score_threshold=0.0,
+        confidence_gate=False,
+        lexical_weight=0.42,
+        short_query_lexical_weight=1.8,
+        priority_weight=0.7,
+        vector_weight=0.62,
+        field_weight=0.04,
+        persist_access_on_query=False,
+    )
+    try:
+        assert reopened.query(query, namespace="tenant:feedback", top_k=1)[0].id == current_id
+        assert reopened.feedback(
+            stale_id,
+            useful=True,
+            strength=0.3,
+            namespace="tenant:feedback",
+        )
+        assert reopened.query(query, namespace="tenant:feedback", top_k=1)[0].id == stale_id
+    finally:
+        reopened.close()
 
 
 def test_audit_events_track_mutations_without_query_audit_by_default(tmp_path):
