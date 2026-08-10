@@ -1,0 +1,400 @@
+{
+  "admitted": false,
+  "artifacts": {
+    "admission": "benchmarks/quality_leadership_admission_results.json",
+    "markdown": "benchmarks/QUALITY_LEADERSHIP_ADMISSION.md",
+    "per_query": "benchmarks/quality_leadership_per_query.jsonl",
+    "protocol": "benchmarks/quality_leadership_protocol.json",
+    "results": "benchmarks/quality_leadership_results.json"
+  },
+  "claim_boundary": "Quality leadership is blocked until a new frozen protocol, bounded development gate, single untouched held-out run, real local competitors, current Safe Product and Workspace Experience evidence, and exact-main CI evidence all pass. The historical Goal 4 failure remains public.",
+  "expected_source_sha": "25e501b79b8210226bd577c926fc761db9936cc1",
+  "generated_at": "2026-08-10T18:17:48Z",
+  "integrity": {
+    "algorithm": "sha256",
+    "payload_sha256": "e118a62ff71c3483fea55123211fe68a48587d28c610e5d414fe0acde53d2608",
+    "schema": "wavemind.artifact_integrity.v1"
+  },
+  "next_actions": [
+    "Freeze a new independent quality-leadership development/held-out protocol before tuning.",
+    "Run a bounded development benchmark and stop unless the go/no-go gate passes.",
+    "Run real local Chroma/Qdrant, Mem0 OSS, and LangMem/LangGraph comparators on the same protocol.",
+    "Use exact-current CI artifacts for Safe Product and Workspace Experience on the final SHA.",
+    "Open the new held-out split exactly once only after protocol freeze and dev go/no-go."
+  ],
+  "protocol_revision": "quality-leadership-v1-20260810",
+  "rows": [
+    {
+      "artifact": "git rev-parse HEAD",
+      "details": {
+        "expected_source_sha": "25e501b79b8210226bd577c926fc761db9936cc1",
+        "source_sha": "25e501b79b8210226bd577c926fc761db9936cc1"
+      },
+      "id": "source-sha-exact",
+      "requirement": "Admission is evaluated against the exact current source SHA.",
+      "status": "implemented",
+      "test": "tests/test_quality_leadership_admission.py"
+    },
+    {
+      "artifact": "benchmarks/goal4_quality_experiment_results.json",
+      "details": {
+        "errors": []
+      },
+      "id": "goal4-failure-preserved",
+      "requirement": "The public Goal 4 failed experiment remains visible and internally consistent.",
+      "status": "implemented",
+      "test": "tests/test_goal4_quality_experiment.py"
+    },
+    {
+      "artifact": "benchmarks/quality_leadership_protocol.json",
+      "details": {
+        "errors": []
+      },
+      "id": "protocol-snapshot-current",
+      "requirement": "Quality-leadership protocol snapshot has integrity and current source manifest.",
+      "status": "implemented",
+      "test": "tests/test_quality_leadership_admission.py"
+    },
+    {
+      "artifact": "benchmarks/quality_leadership_protocol.json",
+      "details": {
+        "errors": [
+          "protocol status is not frozen_before_heldout",
+          "new quality dataset development_split_sha256 missing",
+          "new quality dataset held_out_split_sha256 missing",
+          "new quality dataset licenses missing",
+          "new quality dataset dataset_revisions missing",
+          "held-out split must be unviewed at protocol freeze"
+        ]
+      },
+      "id": "protocol-frozen-before-heldout",
+      "requirement": "A new independent protocol, dataset split, thresholds, and hashes are frozen before held-out.",
+      "status": "blocked",
+      "test": "tests/test_quality_leadership_admission.py"
+    },
+    {
+      "artifact": "benchmarks/safe_product_admission_results.json",
+      "details": {
+        "errors": [
+          "safe product source SHA mismatch",
+          "source manifest file hash mismatch: .github/workflows/benchmark-leaderboard.yml",
+          "source manifest file hash mismatch: Dockerfile",
+          "source manifest file hash mismatch: docker-compose.yml",
+          "source manifest file hash mismatch: wavemind/api.py",
+          "source manifest file hash mismatch: wavemind/cli.py",
+          "source manifest file hash mismatch: wavemind/core.py",
+          "source manifest file hash mismatch: wavemind/evidence.py",
+          "source manifest file hash mismatch: wavemind/onboarding.py",
+          "source manifest file hash mismatch: wavemind/product_backup.py",
+          "source manifest file hash mismatch: wavemind/safe_product_admission.py",
+          "safe product mandatory checks are not all passing"
+        ]
+      },
+      "id": "safe-product-current",
+      "requirement": "Safe Product admission remains admitted for this exact source SHA.",
+      "status": "required_current",
+      "test": ".github/workflows/safe-product.yml"
+    },
+    {
+      "artifact": "benchmarks/workspace_experience_admission_results.json",
+      "details": {
+        "errors": [
+          "artifact integrity block is missing",
+          "workspace experience source SHA mismatch",
+          "workspace experience status is not admitted",
+          "workspace experience contains blocked, failed, or required-current rows"
+        ]
+      },
+      "id": "workspace-experience-current",
+      "requirement": "Workspace Experience admission remains admitted for this exact source SHA.",
+      "status": "required_current",
+      "test": ".github/workflows/safe-product.yml"
+    },
+    {
+      "artifact": "benchmarks/quality_leadership_results.json",
+      "details": {
+        "errors": []
+      },
+      "id": "results-artifact-current",
+      "requirement": "Quality-leadership results artifact is current, signed, and not using historical tuning data.",
+      "status": "implemented",
+      "test": "tests/test_quality_leadership_admission.py"
+    },
+    {
+      "artifact": "benchmarks/quality_leadership_results.json",
+      "details": {
+        "observed": {
+          "reason": "new frozen development split is required before tuning",
+          "status": "not_run"
+        },
+        "target_status": "passed"
+      },
+      "id": "development-go-no-go",
+      "requirement": "Bounded development benchmark passes before any heavy or full held-out run.",
+      "status": "blocked",
+      "test": "tests/test_quality_leadership_admission.py"
+    },
+    {
+      "artifact": "benchmarks/quality_leadership_results.json",
+      "details": {
+        "observed": {
+          "reason": "held-out is forbidden until protocol freeze and development go/no-go",
+          "status": "not_opened"
+        },
+        "target_status": "passed"
+      },
+      "id": "heldout-opened-once",
+      "requirement": "The new held-out split is opened exactly once after protocol freeze.",
+      "status": "blocked",
+      "test": "tests/test_quality_leadership_admission.py"
+    },
+    {
+      "artifact": "benchmarks/quality_leadership_results.json",
+      "details": {
+        "comparison": ">=",
+        "metric": "longmemeval_v2_quality",
+        "observed": null,
+        "target": 0.18
+      },
+      "id": "longmemeval-v2-quality",
+      "requirement": "Isolated LongMemEval-V2 quality meets the preregistered floor.",
+      "status": "blocked",
+      "test": "tests/test_quality_leadership_admission.py"
+    },
+    {
+      "artifact": "benchmarks/quality_leadership_results.json",
+      "details": {
+        "comparison": ">=",
+        "metric": "memory_os_uplift_over_core",
+        "observed": null,
+        "target": 0.01
+      },
+      "id": "memory-os-uplift-over-core",
+      "requirement": "Memory OS beats WaveMind Core on task success by the required margin.",
+      "status": "blocked",
+      "test": "tests/test_quality_leadership_admission.py"
+    },
+    {
+      "artifact": "benchmarks/quality_leadership_results.json",
+      "details": {
+        "comparison": ">=",
+        "metric": "improved_category_count",
+        "observed": null,
+        "target": 4
+      },
+      "id": "category-improvements",
+      "requirement": "At least four preregistered categories improve.",
+      "status": "blocked",
+      "test": "tests/test_quality_leadership_admission.py"
+    },
+    {
+      "artifact": "benchmarks/quality_leadership_results.json",
+      "details": {
+        "comparison": ">=",
+        "metric": "context_reduction",
+        "observed": null,
+        "target": 0.35
+      },
+      "id": "context-reduction",
+      "requirement": "Context tokens drop by at least 35 percent.",
+      "status": "blocked",
+      "test": "tests/test_quality_leadership_admission.py"
+    },
+    {
+      "artifact": "benchmarks/quality_leadership_results.json",
+      "details": {
+        "comparison": "<=",
+        "metric": "stale_contradiction_error_rate",
+        "observed": null,
+        "target": 0.02
+      },
+      "id": "stale-contradiction-control",
+      "requirement": "Stale and contradiction error rate stays below two percent.",
+      "status": "blocked",
+      "test": "tests/test_quality_leadership_admission.py"
+    },
+    {
+      "artifact": "benchmarks/quality_leadership_results.json",
+      "details": {
+        "p95_overhead_ms": null,
+        "p95_overhead_ratio": null,
+        "targets": {
+          "p95_overhead_ms": 5.0,
+          "p95_overhead_ratio": 0.2
+        }
+      },
+      "id": "latency-budget",
+      "requirement": "p95 overhead is below both absolute and relative budgets.",
+      "status": "blocked",
+      "test": "tests/test_quality_leadership_admission.py"
+    },
+    {
+      "artifact": "benchmarks/quality_leadership_results.json",
+      "details": {
+        "locomo_no_regression": false,
+        "longmemeval_no_regression": false,
+        "positive_dynamic_categories": 0
+      },
+      "id": "locomo-longmemeval-dynamic-categories",
+      "requirement": "LoCoMo and LongMemEval have no significant overall regression and positive lift in at least two dynamic categories.",
+      "status": "blocked",
+      "test": "tests/test_quality_leadership_admission.py"
+    },
+    {
+      "artifact": "benchmarks/quality_leadership_results.json",
+      "details": {
+        "missing": [
+          "langmem_or_langgraph",
+          "mem0_oss",
+          "static_chroma_or_qdrant"
+        ],
+        "observed": [],
+        "simulated": []
+      },
+      "id": "real-local-competitors",
+      "requirement": "Runnable local competitors are real packages/runs, not simulated baselines.",
+      "status": "blocked",
+      "test": "tests/test_quality_leadership_admission.py"
+    },
+    {
+      "artifact": "benchmarks/quality_leadership_results.json",
+      "details": {
+        "comparison": "<=",
+        "metric": "backend_recall_loss",
+        "observed": null,
+        "target": 0.01
+      },
+      "id": "backend-recall-loss",
+      "requirement": "Candidate engine recall loss stays within the ANN policy budget.",
+      "status": "blocked",
+      "test": "tests/test_quality_leadership_admission.py"
+    },
+    {
+      "artifact": "benchmarks/quality_leadership_results.json",
+      "details": {
+        "confidence_level": null,
+        "errors": [
+          "measurement runs below required minimum",
+          "confidence level is not 0.95",
+          "confidence intervals missing"
+        ],
+        "measurement_runs": 0
+      },
+      "id": "five-run-confidence-intervals",
+      "requirement": "All mandatory results have at least five runs and 95 percent confidence intervals.",
+      "status": "blocked",
+      "test": "tests/test_quality_leadership_admission.py"
+    },
+    {
+      "artifact": "benchmarks/quality_leadership_results.json",
+      "details": {
+        "errors": [
+          "not enough verdict fingerprints"
+        ],
+        "fingerprints": null
+      },
+      "id": "verdict-fingerprint-stability",
+      "requirement": "Three consecutive runs on one SHA produce the same verdict fingerprint.",
+      "status": "blocked",
+      "test": "tests/test_quality_leadership_admission.py"
+    },
+    {
+      "artifact": "benchmarks/quality_leadership_per_query.jsonl",
+      "details": {
+        "errors": []
+      },
+      "id": "per-query-artifact",
+      "requirement": "Per-query JSONL exists and belongs to the exact source SHA.",
+      "status": "implemented",
+      "test": "tests/test_quality_leadership_admission.py"
+    },
+    {
+      "artifact": "README.md / docs/ROADMAP.md / docs/BENCHMARK_BRIEF.md",
+      "details": {
+        "reason": "Quality leadership claim is intentionally disabled until all admission rows are implemented on exact-main evidence."
+      },
+      "id": "public-claims-fresh",
+      "requirement": "README, Roadmap, benchmark brief, and leaderboard claims map only to admitted fresh evidence.",
+      "status": "blocked",
+      "test": "tests/test_quality_leadership_admission.py"
+    }
+  ],
+  "schema": "wavemind.quality_leadership_admission.v1",
+  "source_manifest": {
+    "algorithm": "sha256",
+    "digest": "804b813b340ece3ccdb4c00fdb034978ee04925cbca70366b219fa9f37c3207d",
+    "files": [
+      {
+        "path": "benchmarks/agent_memory_advantage_benchmark.py",
+        "sha256": "f8daf598dfa4e3f6165a1d71c5a9b8b74c95c25d2ae8cc1253553ffed66ce755"
+      },
+      {
+        "path": "benchmarks/goal4_quality_experiment_results.json",
+        "sha256": "b9b8744c5d5c8e8d05a8c1fee2cd32d18f5f32494ad34bbb728b2ae9c2fc9105"
+      },
+      {
+        "path": "benchmarks/locomo_memory_benchmark.py",
+        "sha256": "f8436886967f4d149a7d81b12d147866e2dc3787be96b118ff42e5d30df65faa"
+      },
+      {
+        "path": "benchmarks/longmemeval_memory_benchmark.py",
+        "sha256": "c8532b622721f8590a2e169da3424fe5ea123b668db5744aa5868df6bf2dc0d3"
+      },
+      {
+        "path": "benchmarks/longmemeval_v2_memory_benchmark.py",
+        "sha256": "fe2dcede6e2a9469d6def0327f629f8aa0e0f5d9b66357ed4074f11ad79778cb"
+      },
+      {
+        "path": "benchmarks/quality_leadership_admission.py",
+        "sha256": "e3ce98a26b0bf0773a01c8cf0c1b857f004116edb6d1f9c56cd3fcbf6088862d"
+      },
+      {
+        "path": "wavemind/agent_memory_admission.py",
+        "sha256": "e9d6489e224015b67120b1b867b61a041dbe5f5850cf14e233dfbf506584eebb"
+      },
+      {
+        "path": "wavemind/cli.py",
+        "sha256": "238e448203159bdc92dba156a5bd761b0bec5eeea8e937513b99cbeeee94e746"
+      },
+      {
+        "path": "wavemind/core.py",
+        "sha256": "c0be9842f27b0498122bc0ca160d267003221d048f49ed804441ab3aefbe2cd9"
+      },
+      {
+        "path": "wavemind/experience.py",
+        "sha256": "f34c503c6befb38efdac5eca062e79ef715bb8dd63c4b1ef28ace8572ffa1e34"
+      },
+      {
+        "path": "wavemind/experience_compiler.py",
+        "sha256": "3b6c183002f57309dacf5c3b71f86a752b2c258f5454e65e0e1ee4d8c3c5d724"
+      },
+      {
+        "path": "wavemind/experience_runtime.py",
+        "sha256": "7b5469d7b7e885903c347b7a276f90c4d94043d0c5476c1452099df27737da6d"
+      },
+      {
+        "path": "wavemind/memory_os_admission.py",
+        "sha256": "183283c3c884b7a66f082920c0ec477bb9c83410f140f2a5af2690e6d42a2860"
+      },
+      {
+        "path": "wavemind/quality_leadership_admission.py",
+        "sha256": "673a31e4ffe6faf508e82108fbc047798db51ea8f823359ec0f89d8689ff3551"
+      },
+      {
+        "path": "wavemind/workspace_experience_admission.py",
+        "sha256": "a708c0d8d74f552353c41c9d5e774ad92f8d01e37c26db14a67ba5ffec58f068"
+      }
+    ],
+    "schema": "wavemind.source_manifest.v1"
+  },
+  "source_sha": "25e501b79b8210226bd577c926fc761db9936cc1",
+  "status": "blocked",
+  "summary": {
+    "blocked": 15,
+    "failed": 0,
+    "historical": 0,
+    "implemented": 5,
+    "required_current": 2,
+    "total": 22
+  }
+}

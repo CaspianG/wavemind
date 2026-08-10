@@ -1,0 +1,145 @@
+{
+  "claim_boundary": "This protocol is a quality-leadership recovery gate. Until it is frozen with a new independent development/held-out split and passing exact-SHA evidence, it authorizes no public best, SOTA, or universal quality claim.",
+  "competitors": {
+    "forbidden": [
+      "self-simulated competitor",
+      "proprietary external service as mandatory evidence",
+      "unverified marketing proxy"
+    ],
+    "optional_if_fully_local": [
+      "graphiti"
+    ],
+    "required_local": [
+      "langmem_or_langgraph",
+      "mem0_oss",
+      "static_chroma_or_qdrant"
+    ]
+  },
+  "generated_at": "2026-08-10T18:17:48Z",
+  "go_no_go": {
+    "dev_gate_required_before_full_run": true,
+    "max_architecture_candidates_before_blocked": 2,
+    "single_held_out_run_after_freeze": true,
+    "user_approval_required_before_gpu_heavy_full_run": true
+  },
+  "historical_regression_evidence": {
+    "artifact": "benchmarks/goal4_quality_experiment_results.json",
+    "decision_sha": "4959dbfda325bf7bab979861b93e276472e8bbfb",
+    "full451": {
+      "context_token_reduction_vs_core": 0.4099552226942337,
+      "core_task_success_rate": 0.18625277161862527,
+      "improved_category_count": 3,
+      "memory_os_task_success_rate": 0.18181818181818182,
+      "p95_latency_delta_ms": 1.5909000067040324,
+      "task_success_uplift": -0.00443458980044345
+    },
+    "role": "historical_regression_evidence_only_not_development_or_heldout",
+    "status": "required_preserved_failed_experiment",
+    "untouched419": {
+      "core_task_success_rate": 0.18854415274463007,
+      "memory_os_task_success_rate": 0.1766109785202864,
+      "task_success_uplift": -0.011933174224343673
+    }
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "payload_sha256": "8804cf5b6d69069d669a67ecb3db8ce85ba161d069c1e2ac79eedf3504bb920d",
+    "schema": "wavemind.artifact_integrity.v1"
+  },
+  "new_quality_dataset": {
+    "development_split": "required_before_tuning",
+    "held_out_split": "required_untouched_after_protocol_freeze",
+    "leakage_controls": [
+      "old full451 and untouched419 are forbidden tuning sets",
+      "held-out rows cannot be used for error analysis before final verdict",
+      "dataset ids, filenames, or metadata cannot encode answers"
+    ],
+    "minimum_repeats": 5,
+    "state": "required_before_heldout"
+  },
+  "revision": "quality-leadership-v1-20260810",
+  "schema": "wavemind.quality_leadership_protocol.v1",
+  "source_manifest": {
+    "algorithm": "sha256",
+    "digest": "804b813b340ece3ccdb4c00fdb034978ee04925cbca70366b219fa9f37c3207d",
+    "files": [
+      {
+        "path": "benchmarks/agent_memory_advantage_benchmark.py",
+        "sha256": "f8daf598dfa4e3f6165a1d71c5a9b8b74c95c25d2ae8cc1253553ffed66ce755"
+      },
+      {
+        "path": "benchmarks/goal4_quality_experiment_results.json",
+        "sha256": "b9b8744c5d5c8e8d05a8c1fee2cd32d18f5f32494ad34bbb728b2ae9c2fc9105"
+      },
+      {
+        "path": "benchmarks/locomo_memory_benchmark.py",
+        "sha256": "f8436886967f4d149a7d81b12d147866e2dc3787be96b118ff42e5d30df65faa"
+      },
+      {
+        "path": "benchmarks/longmemeval_memory_benchmark.py",
+        "sha256": "c8532b622721f8590a2e169da3424fe5ea123b668db5744aa5868df6bf2dc0d3"
+      },
+      {
+        "path": "benchmarks/longmemeval_v2_memory_benchmark.py",
+        "sha256": "fe2dcede6e2a9469d6def0327f629f8aa0e0f5d9b66357ed4074f11ad79778cb"
+      },
+      {
+        "path": "benchmarks/quality_leadership_admission.py",
+        "sha256": "e3ce98a26b0bf0773a01c8cf0c1b857f004116edb6d1f9c56cd3fcbf6088862d"
+      },
+      {
+        "path": "wavemind/agent_memory_admission.py",
+        "sha256": "e9d6489e224015b67120b1b867b61a041dbe5f5850cf14e233dfbf506584eebb"
+      },
+      {
+        "path": "wavemind/cli.py",
+        "sha256": "238e448203159bdc92dba156a5bd761b0bec5eeea8e937513b99cbeeee94e746"
+      },
+      {
+        "path": "wavemind/core.py",
+        "sha256": "c0be9842f27b0498122bc0ca160d267003221d048f49ed804441ab3aefbe2cd9"
+      },
+      {
+        "path": "wavemind/experience.py",
+        "sha256": "f34c503c6befb38efdac5eca062e79ef715bb8dd63c4b1ef28ace8572ffa1e34"
+      },
+      {
+        "path": "wavemind/experience_compiler.py",
+        "sha256": "3b6c183002f57309dacf5c3b71f86a752b2c258f5454e65e0e1ee4d8c3c5d724"
+      },
+      {
+        "path": "wavemind/experience_runtime.py",
+        "sha256": "7b5469d7b7e885903c347b7a276f90c4d94043d0c5476c1452099df27737da6d"
+      },
+      {
+        "path": "wavemind/memory_os_admission.py",
+        "sha256": "183283c3c884b7a66f082920c0ec477bb9c83410f140f2a5af2690e6d42a2860"
+      },
+      {
+        "path": "wavemind/quality_leadership_admission.py",
+        "sha256": "673a31e4ffe6faf508e82108fbc047798db51ea8f823359ec0f89d8689ff3551"
+      },
+      {
+        "path": "wavemind/workspace_experience_admission.py",
+        "sha256": "a708c0d8d74f552353c41c9d5e774ad92f8d01e37c26db14a67ba5ffec58f068"
+      }
+    ],
+    "schema": "wavemind.source_manifest.v1"
+  },
+  "source_sha": "25e501b79b8210226bd577c926fc761db9936cc1",
+  "status": "gap_audit",
+  "thresholds": {
+    "backend_recall_loss_max": 0.01,
+    "confidence_level": 0.95,
+    "context_reduction_min": 0.35,
+    "dynamic_category_lift_min_count": 2,
+    "improved_categories_min": 4,
+    "longmemeval_v2_quality_min": 0.18,
+    "measurement_runs_min": 5,
+    "memory_os_uplift_over_core_min": 0.01,
+    "p95_overhead_ms_max": 5.0,
+    "p95_overhead_ratio_max": 0.2,
+    "stale_contradiction_error_rate_max": 0.02,
+    "verdict_fingerprint_repetitions": 3
+  }
+}

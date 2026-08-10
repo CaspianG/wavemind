@@ -56,6 +56,10 @@ from .agent_memory_admission import (
     evaluate_agent_memory_advantage_admission,
     render_agent_memory_advantage_admission_markdown,
 )
+from .quality_leadership_admission import (
+    evaluate_quality_leadership_admission,
+    write_quality_leadership_artifacts,
+)
 from .experience_quality_admission import (
     evaluate_experience_quality_admission,
     render_experience_quality_admission_markdown,
@@ -1021,6 +1025,56 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path("benchmarks/AGENT_MEMORY_ADVANTAGE_ADMISSION.md"),
     )
     agent_memory_admission.add_argument("--json", action="store_true")
+
+    quality_leadership_admission = sub.add_parser(
+        "quality-leadership-admission",
+        help="Gate quality-leadership claims against frozen protocol and exact evidence",
+    )
+    quality_leadership_admission.add_argument(
+        "--root",
+        type=Path,
+        default=Path.cwd(),
+        help="Repository/artifact root. Defaults to the current working directory.",
+    )
+    quality_leadership_admission.add_argument("--expected-source-sha")
+    quality_leadership_admission.add_argument("--safe-product", type=Path, default=None)
+    quality_leadership_admission.add_argument(
+        "--workspace-experience",
+        type=Path,
+        default=None,
+    )
+    quality_leadership_admission.add_argument("--write-artifacts", action="store_true")
+    quality_leadership_admission.add_argument(
+        "--fail-on-blocked",
+        action="store_true",
+        help="Exit non-zero unless quality leadership is admitted.",
+    )
+    quality_leadership_admission.add_argument(
+        "--protocol-output",
+        type=Path,
+        default=Path("benchmarks/quality_leadership_protocol.json"),
+    )
+    quality_leadership_admission.add_argument(
+        "--results-output",
+        type=Path,
+        default=Path("benchmarks/quality_leadership_results.json"),
+    )
+    quality_leadership_admission.add_argument(
+        "--per-query-output",
+        type=Path,
+        default=Path("benchmarks/quality_leadership_per_query.jsonl"),
+    )
+    quality_leadership_admission.add_argument(
+        "--output",
+        type=Path,
+        default=Path("benchmarks/quality_leadership_admission_results.json"),
+    )
+    quality_leadership_admission.add_argument(
+        "--markdown-output",
+        type=Path,
+        default=Path("benchmarks/QUALITY_LEADERSHIP_ADMISSION.md"),
+    )
+    quality_leadership_admission.add_argument("--json", action="store_true")
 
     experience_quality_admission = sub.add_parser(
         "experience-quality-admission",
@@ -2558,6 +2612,25 @@ def print_agent_memory_advantage_admission(
             print(f"- {issue}")
 
 
+def print_quality_leadership_admission(payload: dict[str, object]) -> None:
+    summary = payload["summary"]
+    print(f"status: {payload['status']}")
+    print(f"admitted: {str(payload['admitted']).lower()}")
+    print(f"source_sha: {payload['source_sha']}")
+    print(
+        "rows: "
+        f"{summary['implemented']}/{summary['total']} implemented, "
+        f"{summary['blocked']} blocked, "
+        f"{summary['required_current']} required_current, "
+        f"{summary['failed']} failed"
+    )
+    next_actions = payload.get("next_actions") or []
+    if next_actions:
+        print("next_actions:")
+        for action in next_actions:
+            print(f"- {action}")
+
+
 def print_experience_quality_admission(
     payload: dict[str, object],
 ) -> None:
@@ -4019,6 +4092,43 @@ def main(argv: list[str] | None = None) -> int:
         else:
             print_agent_memory_advantage_admission(payload)
             if args.write_artifacts:
+                print(f"json_report: {args.output}")
+                print(f"markdown_report: {args.markdown_output}")
+        if args.fail_on_blocked and not payload["admitted"]:
+            return 2
+        return 0 if payload["status"] in {"admitted", "blocked"} else 1
+
+    if args.command == "quality-leadership-admission":
+        if args.write_artifacts:
+            payload = write_quality_leadership_artifacts(
+                root=args.root,
+                expected_source_sha=args.expected_source_sha,
+                protocol_output=args.protocol_output,
+                results_output=args.results_output,
+                per_query_output=args.per_query_output,
+                admission_output=args.output,
+                markdown_output=args.markdown_output,
+                safe_product_path=args.safe_product,
+                workspace_experience_path=args.workspace_experience,
+            )
+        else:
+            payload = evaluate_quality_leadership_admission(
+                root=args.root,
+                expected_source_sha=args.expected_source_sha,
+                protocol_path=args.protocol_output,
+                results_path=args.results_output,
+                per_query_path=args.per_query_output,
+                safe_product_path=args.safe_product,
+                workspace_experience_path=args.workspace_experience,
+            )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print_quality_leadership_admission(payload)
+            if args.write_artifacts:
+                print(f"protocol: {args.protocol_output}")
+                print(f"results: {args.results_output}")
+                print(f"per_query: {args.per_query_output}")
                 print(f"json_report: {args.output}")
                 print(f"markdown_report: {args.markdown_output}")
         if args.fail_on_blocked and not payload["admitted"]:
