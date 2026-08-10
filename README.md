@@ -48,7 +48,7 @@ claim that one vector database should replace every other system.
 
 | Product truth | Status | Evidence |
 |---|---|---|
-| Public release | `v2.12.0`; runtime source `c85ebd97059a` | PyPI package `wavemind` and `ghcr.io/caspiang/wavemind:2.12.0` |
+| Public release | `v2.12.1`; runtime source `6d6fac04904b` | PyPI package `wavemind` and `ghcr.io/caspiang/wavemind:2.12.1` |
 | Safe Product snapshot | `historical`, 18/18 checks at `92c539d0a069` | [`benchmarks/safe_product_admission_results.json`](benchmarks/safe_product_admission_results.json) |
 | Current-source admission | Required per exact source SHA | [`.github/workflows/safe-product.yml`](.github/workflows/safe-product.yml) |
 | TypeScript SDK | `@wavemind/http`, repository-local; npm claim disabled | Repository package only |
@@ -73,7 +73,7 @@ because the repository moved forward.
 | Remote Redis/worker soak | 6 hours, 500/500 cycles, 2,500 attempts, zero failures or state corruption | [`memory_os_remote_worker_soak_results.json`](benchmarks/memory_os_remote_worker_soak_results.json) |
 | LongMemEval-V2 protocol | Goal 4 completed a strict frozen 451-question experiment; it passed execution/context/latency controls but failed quality uplift, so no admission claim is made | [`failed experiment`](benchmarks/goal4_quality_experiment_results.json) / [`Memory OS run`](benchmarks/longmemeval_v2_small_memory_os_results.json) / [`strict smoke`](benchmarks/longmemeval_v2_frozen20_protocol_results.json) |
 | Core production readiness | `pass`, 39/39 criteria | [`production_readiness_results.json`](benchmarks/production_readiness_results.json) |
-| Public package | PyPI and GitHub release `v2.12.0` | [PyPI](https://pypi.org/project/wavemind/) / [release](https://github.com/CaspianG/wavemind/releases/latest) |
+| Public package | PyPI and GitHub release `v2.12.1` | [PyPI](https://pypi.org/project/wavemind/) / [release](https://github.com/CaspianG/wavemind/releases/latest) |
 
 Remote multi-region, managed serverless, 100M service evidence, and universal
 multimodal admission remain explicitly gated. See
