@@ -64,6 +64,12 @@ def _agent_memory_payload(*, source_sha: str | None = None) -> dict:
                 "stale_error_rate": 0.60,
                 "context_budget_saved": 0.50,
                 "p95_latency_ms": 10.0,
+                "category_success": {
+                    "knowledge_update": 0.40,
+                    "preference_update": 1.0,
+                    "state_tracking": 1.0,
+                    "workflow_gotcha": 0.0,
+                },
             },
             {
                 "engine": "WaveMind + Memory OS",
@@ -75,6 +81,12 @@ def _agent_memory_payload(*, source_sha: str | None = None) -> dict:
                 "context_budget_saved": 0.40,
                 "context_budget_saved_ci95": {"lower": 0.35, "upper": 0.45},
                 "p95_latency_ms": 11.0,
+                "category_success": {
+                    "knowledge_update": 0.80,
+                    "preference_update": 1.0,
+                    "state_tracking": 1.0,
+                    "workflow_gotcha": 1.0,
+                },
             },
         ],
         "skipped": [
@@ -103,6 +115,7 @@ def _agent_memory_payload(*, source_sha: str | None = None) -> dict:
             "overall_task_success": {"lower": 0.20, "upper": 0.60},
             "categories": {
                 "knowledge_update": {"lower": 0.10, "upper": 0.50},
+                "preference_update": {"lower": 0.0, "upper": 0.0},
                 "workflow_gotcha": {"lower": 0.20, "upper": 0.80},
                 "state_tracking": {"lower": 0.0, "upper": 0.10},
             },
@@ -279,6 +292,22 @@ def test_development_results_extract_metrics_but_keep_gate_blocked(tmp_path: Pat
     assert payload["development_gate"]["status"] == "blocked"
     assert payload["metrics"]["memory_os_uplift_over_core"] == pytest.approx(0.40)
     assert payload["metrics"]["improved_category_count"] == 2
+    analysis = payload["metrics"]["category_improvement_analysis"]
+    assert analysis["improvement_ceiling_over_core"] == 2
+    assert analysis["baseline_ceiling_categories"] == [
+        "preference_update",
+        "state_tracking",
+    ]
+    assert (
+        analysis["methodology_status"]
+        == "blocked_unsatisfiable_without_split_change_or_baseline_degradation"
+    )
+    taxonomy = payload["blocker_taxonomy"]
+    assert taxonomy["held_out_policy"].startswith("not_opened")
+    assert taxonomy["blockers"][0]["id"] == "category_improvement_ceiling"
+    assert "category_improvement_ceiling below threshold" in " ".join(
+        payload["development_gate"]["errors"]
+    )
     assert "missing real local competitors" in " ".join(
         payload["development_gate"]["errors"]
     )

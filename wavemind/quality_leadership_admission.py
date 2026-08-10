@@ -210,6 +210,13 @@ def quality_leadership_results_from_diagnostics(
         gate_errors.append("memory_os_uplift_over_core below threshold")
     if int(metrics.get("improved_category_count") or 0) < QUALITY_THRESHOLDS["improved_categories_min"]:
         gate_errors.append("improved_category_count below threshold")
+    category_analysis = metrics.get("category_improvement_analysis")
+    if (
+        isinstance(category_analysis, Mapping)
+        and _as_int(category_analysis.get("improvement_ceiling_over_core"))
+        < QUALITY_THRESHOLDS["improved_categories_min"]
+    ):
+        gate_errors.append("category_improvement_ceiling below threshold")
     if metrics.get("context_reduction") is None:
         gate_errors.append("context_reduction missing")
     elif float(metrics["context_reduction"]) < QUALITY_THRESHOLDS["context_reduction_min"]:
@@ -268,6 +275,7 @@ def quality_leadership_results_from_diagnostics(
         ],
         "competitor_runs": competitor_runs,
         "metrics": metrics,
+        "blocker_taxonomy": _development_blocker_taxonomy(metrics, gate_errors),
         "historical_goal4_failure": {
             "artifact": GOAL4_ARTIFACT_PATH.as_posix(),
             "status": "preserved_failed_experiment",
@@ -443,6 +451,7 @@ def evaluate_quality_leadership_admission(
             "improved_category_count",
             QUALITY_THRESHOLDS["improved_categories_min"],
             comparison=">=",
+            extra_details_key="category_improvement_analysis",
         ),
         _threshold_row(
             "context-reduction",
@@ -1000,8 +1009,135 @@ def _metrics_from_agent_memory(payload: Mapping[str, Any] | None) -> dict[str, A
         "p95_overhead_ratio": p95_ratio,
         "controlled_core_task_success": core_task,
         "controlled_memory_os_task_success": memory_os_task,
+        "category_improvement_analysis": _category_improvement_analysis(
+            core,
+            memory_os,
+            categories,
+        ),
     }
     return metrics
+
+
+def _category_improvement_analysis(
+    core: Mapping[str, Any],
+    memory_os: Mapping[str, Any],
+    paired_categories: Mapping[str, Any],
+) -> dict[str, Any]:
+    core_success = (
+        core.get("category_success")
+        if isinstance(core.get("category_success"), Mapping)
+        else {}
+    )
+    memory_os_success = (
+        memory_os.get("category_success")
+        if isinstance(memory_os.get("category_success"), Mapping)
+        else {}
+    )
+    categories = sorted(
+        set(str(category) for category in core_success)
+        | set(str(category) for category in memory_os_success)
+        | set(str(category) for category in paired_categories)
+    )
+    improved: list[str] = []
+    improvable: list[str] = []
+    baseline_ceiling_categories: list[str] = []
+    details: dict[str, dict[str, Any]] = {}
+    for category in categories:
+        core_value = _float_or_none(core_success.get(category))
+        memory_os_value = _float_or_none(memory_os_success.get(category))
+        interval = paired_categories.get(category)
+        lower = (
+            _float_or_none(interval.get("lower"))
+            if isinstance(interval, Mapping)
+            else None
+        )
+        if lower is not None and lower > 0.0:
+            improved.append(category)
+        is_improvable = core_value is None or core_value < 1.0
+        if is_improvable:
+            improvable.append(category)
+            reason = "improvable"
+        else:
+            baseline_ceiling_categories.append(category)
+            reason = "core_already_at_ceiling"
+        details[category] = {
+            "core_success": core_value,
+            "memory_os_success": memory_os_value,
+            "paired_lift_lower": lower,
+            "improvable_over_core": is_improvable,
+            "improved": category in improved,
+            "reason": reason,
+        }
+    target = QUALITY_THRESHOLDS["improved_categories_min"]
+    ceiling = len(improvable)
+    return {
+        "target": target,
+        "observed_improved_categories": improved,
+        "improvement_ceiling_over_core": ceiling,
+        "baseline_ceiling_categories": baseline_ceiling_categories,
+        "category_details": details,
+        "methodology_status": (
+            "blocked_unsatisfiable_without_split_change_or_baseline_degradation"
+            if categories and ceiling < target
+            else "measurable"
+        ),
+        "claim_boundary": (
+            "A category where Core already has 1.0 success cannot show a "
+            "strictly positive Memory OS-over-Core lift without changing the "
+            "frozen split or degrading the baseline."
+        ),
+    }
+
+
+def _development_blocker_taxonomy(
+    metrics: Mapping[str, Any],
+    gate_errors: list[str],
+) -> dict[str, Any]:
+    category_analysis = metrics.get("category_improvement_analysis")
+    blockers: list[dict[str, Any]] = []
+    if (
+        isinstance(category_analysis, Mapping)
+        and _as_int(category_analysis.get("improvement_ceiling_over_core"))
+        < QUALITY_THRESHOLDS["improved_categories_min"]
+    ):
+        blockers.append(
+            {
+                "id": "category_improvement_ceiling",
+                "status": "blocked",
+                "reason": (
+                    "the frozen development split cannot demonstrate four "
+                    "strictly positive category improvements over Core because "
+                    "Core is already perfect in some categories"
+                ),
+                "analysis": category_analysis,
+                "allowed_next_step": (
+                    "pre-register a genuinely new independent protocol/split "
+                    "or record this architecture lane as blocked; do not tune "
+                    "or refreeze using viewed results"
+                ),
+            }
+        )
+    if "LongMemEval-V2 quality gate has not been run on this protocol" in gate_errors:
+        blockers.append(
+            {
+                "id": "longmemeval_v2_quality_not_run",
+                "status": "blocked",
+                "reason": "public-quality gate is absent for this protocol",
+                "allowed_next_step": (
+                    "run only after bounded development go/no-go passes and "
+                    "the user explicitly approves any heavy workload"
+                ),
+            }
+        )
+    return {
+        "status": "blocked" if gate_errors else "clear",
+        "candidate": "candidate-1",
+        "gate_errors": list(gate_errors),
+        "blockers": blockers,
+        "held_out_policy": (
+            "not_opened; remains forbidden while development gate is blocked"
+        ),
+    }
 
 
 def _competitors_from_agent_memory(payload: Mapping[str, Any] | None) -> list[dict[str, Any]]:
@@ -1212,17 +1348,28 @@ def _threshold_row(
     target: float,
     *,
     comparison: str,
+    extra_details_key: str | None = None,
 ) -> dict[str, Any]:
     metrics = payload.get("metrics") if isinstance(payload, Mapping) else {}
     value = metrics.get(metric) if isinstance(metrics, Mapping) else None
     passed = _compare(value, target, comparison)
+    details: dict[str, Any] = {
+        "metric": metric,
+        "observed": value,
+        "target": target,
+        "comparison": comparison,
+    }
+    if extra_details_key and isinstance(metrics, Mapping):
+        extra = metrics.get(extra_details_key)
+        if extra is not None:
+            details[extra_details_key] = extra
     return _row(
         row_id,
         requirement,
         "implemented" if passed else "blocked",
         DEFAULT_RESULTS_PATH.as_posix(),
         "tests/test_quality_leadership_admission.py",
-        details={"metric": metric, "observed": value, "target": target, "comparison": comparison},
+        details=details,
     )
 
 
