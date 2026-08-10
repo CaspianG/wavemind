@@ -1,7 +1,7 @@
 # Quality Leadership Admission
 
 Status: **blocked**
-Source SHA: `9504ae76c05ff75a5a6adf3edb8c271dc0f88f73`
+Source SHA: `dd729e9fe731d85794e06929ba7d34ec6540373a`
 Protocol: `quality-leadership-v1-20260810`
 Rows: **11/22 implemented**, 9 blocked, 2 required-current, 0 failed
 

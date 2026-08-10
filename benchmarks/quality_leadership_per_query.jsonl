@@ -1,1 +1,1 @@
-{"claim_boundary": "No per-query quality-leadership evidence has been run.", "protocol_revision": "quality-leadership-v1-20260810", "query_count": 0, "schema": "wavemind.quality_leadership_per_query.v1", "source_sha": "9504ae76c05ff75a5a6adf3edb8c271dc0f88f73", "status": "not_run"}
+{"claim_boundary": "No per-query quality-leadership evidence has been run.", "protocol_revision": "quality-leadership-v1-20260810", "query_count": 0, "schema": "wavemind.quality_leadership_per_query.v1", "source_sha": "dd729e9fe731d85794e06929ba7d34ec6540373a", "status": "not_run"}
