@@ -24,6 +24,7 @@ def main() -> int:
         default=Path("benchmarks/evaluation_dataset_manifest_v1.json"),
     )
     parser.add_argument("--validity-evidence", type=Path)
+    parser.add_argument("--split-evidence", type=Path)
     parser.add_argument("--expected-source-sha")
     parser.add_argument(
         "--output",
@@ -41,6 +42,7 @@ def main() -> int:
         project_root=PROJECT_ROOT,
         dataset_manifest_path=args.dataset_manifest,
         validity_evidence_path=args.validity_evidence,
+        split_evidence_path=args.split_evidence,
         expected_source_sha=args.expected_source_sha,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)

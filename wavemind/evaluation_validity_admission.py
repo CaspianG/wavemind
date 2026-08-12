@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from .evaluation_contracts import backend_query_view, validate_dataset_manifest
+from .evaluation_splits import validate_evaluation_split_manifest
 from .evaluation_validity_controls import SCHEMA as CONTROLS_SCHEMA
 from .evidence import (
     attach_artifact_integrity,
@@ -39,17 +40,20 @@ EXPECTED_ROWS = (
 SOURCE_PATHS = (
     "README.md",
     "wavemind/evaluation_contracts.py",
+    "wavemind/evaluation_splits.py",
     "wavemind/evaluation_statistics.py",
     "wavemind/evaluation_validity_admission.py",
     "wavemind/evaluation_validity_controls.py",
     "benchmarks/evaluation_dataset_manifest_v1.json",
     "benchmarks/evaluation_salvage_manifest.json",
+    "benchmarks/evaluation_split_manifest.py",
     "benchmarks/evaluation_validity_admission.py",
     "benchmarks/evaluation_validity_controls.py",
     "docs/adr/0001-task-native-evaluation-science.md",
     "docs/ROADMAP.md",
     "tests/test_evaluation_validity_admission.py",
     "tests/test_evaluation_validity_controls.py",
+    "tests/test_evaluation_splits.py",
     "tests/test_evaluation_statistics.py",
 )
 
@@ -102,6 +106,7 @@ def run_evaluation_validity_admission(
     project_root: str | Path,
     dataset_manifest_path: str | Path,
     validity_evidence_path: str | Path | None = None,
+    split_evidence_path: str | Path | None = None,
     expected_source_sha: str | None = None,
 ) -> dict[str, Any]:
     root = Path(project_root).resolve()
@@ -111,6 +116,16 @@ def run_evaluation_validity_admission(
     dataset_errors = validate_dataset_manifest(dataset_manifest)
     evidence = _load_json(validity_evidence_path) if validity_evidence_path else {}
     evidence_errors = _validate_validity_evidence(root, evidence, source_sha)
+    split_evidence = _load_json(split_evidence_path) if split_evidence_path else {}
+    split_errors = (
+        validate_evaluation_split_manifest(
+            split_evidence,
+            project_root=root,
+            expected_source_sha=source_sha,
+        )
+        if split_evidence
+        else ["evaluation split evidence artifact is missing"]
+    )
 
     contract = dataset_manifest.get("backend_query_contract", {})
     blind_probe = {
@@ -167,8 +182,15 @@ def run_evaluation_validity_admission(
             requirements["dataset-provenance"],
         )
     )
+    rows.append(
+        _row(
+            "split-isolation",
+            not split_errors,
+            {"errors": split_errors, "counts": split_evidence.get("counts")},
+            requirements["split-isolation"],
+        )
+    )
     for row_id, evidence_key in (
-        ("split-isolation", "split_isolation"),
         ("positive-controls", "positive_controls"),
         ("negative-controls", "negative_controls"),
         ("control-ordering", "control_ordering"),

@@ -189,3 +189,19 @@ def test_tampered_or_wrong_sha_control_evidence_is_rejected(tmp_path):
         "validity evidence source SHA mismatch"
         in rows["positive-controls"]["evidence"]["errors"]
     )
+
+
+def test_missing_split_evidence_stays_blocked_even_with_valid_controls(tmp_path):
+    evidence = run_evaluation_validity_controls(project_root=ROOT)
+    path = tmp_path / "controls.json"
+    path.write_text(json.dumps(evidence), encoding="utf-8")
+    report = run_evaluation_validity_admission(
+        project_root=ROOT,
+        dataset_manifest_path=DATASET_MANIFEST,
+        validity_evidence_path=path,
+    )
+    row = next(item for item in report["rows"] if item["id"] == "split-isolation")
+    assert row["status"] == "blocked"
+    assert row["evidence"]["errors"] == [
+        "evaluation split evidence artifact is missing"
+    ]
