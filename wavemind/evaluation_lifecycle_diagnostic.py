@@ -21,6 +21,8 @@ from .evidence import (
 SCHEMA = "wavemind.evaluation_lifecycle_diagnostic.v2"
 MEMOPS_REVISION = "312af65e2c7b6d1b70f062ffa8b4cde32aaf6f35"
 SOURCE_PATHS = (
+    "wavemind/core.py",
+    "wavemind/storage.py",
     "wavemind/evaluation_lifecycle_diagnostic.py",
     "benchmarks/evaluation_lifecycle_diagnostic.py",
     "tests/test_evaluation_lifecycle_diagnostic.py",
