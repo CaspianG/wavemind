@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.evaluation_development_protocol.v1",
   "revision": "goal8-bounded-development-v1-20260812",
-  "source_sha": "8a11e037ff8616211cb640da044c137a1ed28a2b",
+  "source_sha": "b28409bf06dd8c1a1666e47b7db9bcb0ee99d5bb",
   "baseline_source_sha": "8a11e037ff8616211cb640da044c137a1ed28a2b",
   "phase": "development_only",
   "heldout_access": "forbidden",
@@ -396,19 +396,19 @@
       },
       {
         "path": "tests/test_evaluation_development_protocol.py",
-        "sha256": "a0e0f06c9da2eae8abd7491f501838fa671aa8602ed53dd1601d60730a16b145"
+        "sha256": "542a105ba3fae25947e971d4d98eb7950777a052729afbdcb65c680348c6b9e9"
       },
       {
         "path": "wavemind/evaluation_development_protocol.py",
         "sha256": "5beb79331f6e73318e8f268e9811478b2750f4fcb65a59674cbff6749e752b93"
       }
     ],
-    "digest": "699c67dd9dd6d465572eb9df921a658c9e764c86406e434d083813db4be1a65d"
+    "digest": "7f45637637d9712b20aa92bc208c0a91c9958563635256e8b13ab00e3fc81c10"
   },
   "claim_boundary": "Frozen development-only protocol and sample selection. It does not run a benchmark, open validation/final data, or establish a quality claim.",
   "integrity": {
     "schema": "wavemind.artifact_integrity.v1",
     "algorithm": "sha256",
-    "payload_sha256": "650ddf5542c34238d15aa50fa71d743f854b49f959acc1b60205cff9c635a5e5"
+    "payload_sha256": "c259edcd5830c8cd69c98aaaa6652030b9c43af7abe3bc02ef2fac22a01d5857"
   }
 }
