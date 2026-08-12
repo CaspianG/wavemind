@@ -1,0 +1,348 @@
+{
+  "schema": "wavemind.evaluation_lifecycle_diagnostic.v1",
+  "status": "diagnostic_complete",
+  "source_sha": "9a66d6d9b9229a790be5c1162e4a78b822003b81",
+  "protocol": {
+    "revision": "goal8-bounded-development-v2-20260812",
+    "payload_sha256": "803a291df1fed8fc0f344f5c8984b81d164315abf18518cf2ff34dec26f8971b",
+    "heldout_access": "forbidden"
+  },
+  "upstream": {
+    "memops_revision": "312af65e2c7b6d1b70f062ffa8b4cde32aaf6f35"
+  },
+  "scope": {
+    "split": "development",
+    "case_count": 25,
+    "target_row_count": 123,
+    "quality_claim_eligible": false,
+    "reason": "Operation-level typed-event capability diagnostic; it does not measure conversation extraction or generated-answer quality."
+  },
+  "summary": {
+    "no_memory": {
+      "target_count": 123,
+      "operation_state_transition": 0.08943089430894309,
+      "target_correct": 0.08943089430894309,
+      "stale_leakage": 0.0,
+      "over_forgetting": 0.9105691056910569,
+      "deleted_resurfacing": 0.0,
+      "unverified_injection": 0.0,
+      "namespace_leakage": 0.0,
+      "provenance_supported": 0.08943089430894309,
+      "latency_ms": {
+        "mean": 0.0010317057083413853,
+        "max": 0.007599999662488699
+      }
+    },
+    "static_lww": {
+      "target_count": 123,
+      "operation_state_transition": 1.0,
+      "target_correct": 1.0,
+      "stale_leakage": 0.0,
+      "over_forgetting": 0.0,
+      "deleted_resurfacing": 0.0,
+      "unverified_injection": 0.0,
+      "namespace_leakage": 0.0,
+      "provenance_supported": 1.0,
+      "latency_ms": {
+        "mean": 0.0008634160030481777,
+        "max": 0.002200016751885414
+      }
+    },
+    "wavemind_core": {
+      "target_count": 123,
+      "operation_state_transition": 0.9186991869918699,
+      "target_correct": 0.959349593495935,
+      "stale_leakage": 0.08130081300813008,
+      "over_forgetting": 0.0,
+      "deleted_resurfacing": 0.0,
+      "unverified_injection": 0.0,
+      "namespace_leakage": 0.0,
+      "provenance_supported": 1.0,
+      "latency_ms": {
+        "mean": 3.098139839390732,
+        "max": 4.595000005792826
+      }
+    }
+  },
+  "by_operation_type": {
+    "Forget": {
+      "no_memory": {
+        "target_count": 28,
+        "operation_state_transition": 0.17857142857142858,
+        "target_correct": 0.17857142857142858,
+        "stale_leakage": 0.0,
+        "over_forgetting": 0.8214285714285714,
+        "deleted_resurfacing": 0.0,
+        "unverified_injection": 0.0,
+        "namespace_leakage": 0.0,
+        "provenance_supported": 0.17857142857142858,
+        "latency_ms": {
+          "mean": 0.0009428622433915734,
+          "max": 0.003500026650726795
+        }
+      },
+      "static_lww": {
+        "target_count": 28,
+        "operation_state_transition": 1.0,
+        "target_correct": 1.0,
+        "stale_leakage": 0.0,
+        "over_forgetting": 0.0,
+        "deleted_resurfacing": 0.0,
+        "unverified_injection": 0.0,
+        "namespace_leakage": 0.0,
+        "provenance_supported": 1.0,
+        "latency_ms": {
+          "mean": 0.0008178633704249348,
+          "max": 0.001300009898841381
+        }
+      },
+      "wavemind_core": {
+        "target_count": 28,
+        "operation_state_transition": 1.0,
+        "target_correct": 1.0,
+        "stale_leakage": 0.0,
+        "over_forgetting": 0.0,
+        "deleted_resurfacing": 0.0,
+        "unverified_injection": 0.0,
+        "namespace_leakage": 0.0,
+        "provenance_supported": 1.0,
+        "latency_ms": {
+          "mean": 2.6391571445856243,
+          "max": 4.081299994140863
+        }
+      }
+    },
+    "Reflect": {
+      "no_memory": {
+        "target_count": 36,
+        "operation_state_transition": 0.1388888888888889,
+        "target_correct": 0.1388888888888889,
+        "stale_leakage": 0.0,
+        "over_forgetting": 0.8611111111111112,
+        "deleted_resurfacing": 0.0,
+        "unverified_injection": 0.0,
+        "namespace_leakage": 0.0,
+        "provenance_supported": 0.1388888888888889,
+        "latency_ms": {
+          "mean": 0.0008277776133682993,
+          "max": 0.002600019797682762
+        }
+      },
+      "static_lww": {
+        "target_count": 36,
+        "operation_state_transition": 1.0,
+        "target_correct": 1.0,
+        "stale_leakage": 0.0,
+        "over_forgetting": 0.0,
+        "deleted_resurfacing": 0.0,
+        "unverified_injection": 0.0,
+        "namespace_leakage": 0.0,
+        "provenance_supported": 1.0,
+        "latency_ms": {
+          "mean": 0.0008305554122974476,
+          "max": 0.002200016751885414
+        }
+      },
+      "wavemind_core": {
+        "target_count": 36,
+        "operation_state_transition": 1.0,
+        "target_correct": 1.0,
+        "stale_leakage": 0.0,
+        "over_forgetting": 0.0,
+        "deleted_resurfacing": 0.0,
+        "unverified_injection": 0.0,
+        "namespace_leakage": 0.0,
+        "provenance_supported": 1.0,
+        "latency_ms": {
+          "mean": 3.135747224506405,
+          "max": 3.582199977245182
+        }
+      }
+    },
+    "Remember": {
+      "no_memory": {
+        "target_count": 35,
+        "operation_state_transition": 0.02857142857142857,
+        "target_correct": 0.02857142857142857,
+        "stale_leakage": 0.0,
+        "over_forgetting": 0.9714285714285714,
+        "deleted_resurfacing": 0.0,
+        "unverified_injection": 0.0,
+        "namespace_leakage": 0.0,
+        "provenance_supported": 0.02857142857142857,
+        "latency_ms": {
+          "mean": 0.0007685689654733453,
+          "max": 0.0032999669201672077
+        }
+      },
+      "static_lww": {
+        "target_count": 35,
+        "operation_state_transition": 1.0,
+        "target_correct": 1.0,
+        "stale_leakage": 0.0,
+        "over_forgetting": 0.0,
+        "deleted_resurfacing": 0.0,
+        "unverified_injection": 0.0,
+        "namespace_leakage": 0.0,
+        "provenance_supported": 1.0,
+        "latency_ms": {
+          "mean": 0.0007942884362169675,
+          "max": 0.001400010660290718
+        }
+      },
+      "wavemind_core": {
+        "target_count": 35,
+        "operation_state_transition": 1.0,
+        "target_correct": 1.0,
+        "stale_leakage": 0.0,
+        "over_forgetting": 0.0,
+        "deleted_resurfacing": 0.0,
+        "unverified_injection": 0.0,
+        "namespace_leakage": 0.0,
+        "provenance_supported": 1.0,
+        "latency_ms": {
+          "mean": 3.2461657172202,
+          "max": 4.499100032262504
+        }
+      }
+    },
+    "TrajectoryOps": {
+      "no_memory": {
+        "target_count": 10,
+        "operation_state_transition": 0.0,
+        "target_correct": 0.0,
+        "stale_leakage": 0.0,
+        "over_forgetting": 1.0,
+        "deleted_resurfacing": 0.0,
+        "unverified_injection": 0.0,
+        "namespace_leakage": 0.0,
+        "provenance_supported": 0.0,
+        "latency_ms": {
+          "mean": 0.0023099943064153194,
+          "max": 0.007599999662488699
+        }
+      },
+      "static_lww": {
+        "target_count": 10,
+        "operation_state_transition": 1.0,
+        "target_correct": 1.0,
+        "stale_leakage": 0.0,
+        "over_forgetting": 0.0,
+        "deleted_resurfacing": 0.0,
+        "unverified_injection": 0.0,
+        "namespace_leakage": 0.0,
+        "provenance_supported": 1.0,
+        "latency_ms": {
+          "mean": 0.001109996810555458,
+          "max": 0.001700012944638729
+        }
+      },
+      "wavemind_core": {
+        "target_count": 10,
+        "operation_state_transition": 0.5,
+        "target_correct": 0.7,
+        "stale_leakage": 0.5,
+        "over_forgetting": 0.0,
+        "deleted_resurfacing": 0.0,
+        "unverified_injection": 0.0,
+        "namespace_leakage": 0.0,
+        "provenance_supported": 1.0,
+        "latency_ms": {
+          "mean": 3.523130004759878,
+          "max": 4.595000005792826
+        }
+      }
+    },
+    "Update": {
+      "no_memory": {
+        "target_count": 14,
+        "operation_state_transition": 0.0,
+        "target_correct": 0.0,
+        "stale_leakage": 0.0,
+        "over_forgetting": 1.0,
+        "deleted_resurfacing": 0.0,
+        "unverified_injection": 0.0,
+        "namespace_leakage": 0.0,
+        "provenance_supported": 0.0,
+        "latency_ms": {
+          "mean": 0.001478557741003377,
+          "max": 0.004099973011761904
+        }
+      },
+      "static_lww": {
+        "target_count": 14,
+        "operation_state_transition": 1.0,
+        "target_correct": 1.0,
+        "stale_leakage": 0.0,
+        "over_forgetting": 0.0,
+        "deleted_resurfacing": 0.0,
+        "unverified_injection": 0.0,
+        "namespace_leakage": 0.0,
+        "provenance_supported": 1.0,
+        "latency_ms": {
+          "mean": 0.0010357096990836518,
+          "max": 0.0016999547369778156
+        }
+      },
+      "wavemind_core": {
+        "target_count": 14,
+        "operation_state_transition": 0.6428571428571429,
+        "target_correct": 0.8571428571428571,
+        "stale_leakage": 0.35714285714285715,
+        "over_forgetting": 0.0,
+        "deleted_resurfacing": 0.0,
+        "unverified_injection": 0.0,
+        "namespace_leakage": 0.0,
+        "provenance_supported": 1.0,
+        "latency_ms": {
+          "mean": 3.2457714260090142,
+          "max": 3.694600018206984
+        }
+      }
+    }
+  },
+  "wavemind_error_taxonomy": {
+    "stale_or_contradictory_selection": 10
+  },
+  "source_manifest": {
+    "schema": "wavemind.source_manifest.v1",
+    "algorithm": "sha256",
+    "text_normalization": "utf8-crlf-to-lf-v1",
+    "files": [
+      {
+        "path": "benchmarks/evaluation_lifecycle_diagnostic.py",
+        "sha256": "35c0fc1121b404f2550f7996f4d1fa1148e0a70a6d2664ee4e010fda153e000f"
+      },
+      {
+        "path": "tests/test_evaluation_lifecycle_diagnostic.py",
+        "sha256": "f6da7736c1d7e086cb1d7a48c716c44520bb71fcc25d4a20b063db630d545174"
+      },
+      {
+        "path": "wavemind/evaluation_lifecycle_diagnostic.py",
+        "sha256": "b649eaf268366500f17cf3fe004d677be976ec309d401571643ed3a151799e2a"
+      }
+    ],
+    "digest": "803c21c4beb73e9cfe6870a94c21cb7e295e7054386a2d4d1fd3bc85b741431e"
+  },
+  "environment": {
+    "profile": "goal8-memops-bounded-development",
+    "python": "3.13.3",
+    "implementation": "CPython",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "executable": "python.exe",
+    "github_run_id": null,
+    "github_runner_os": null
+  },
+  "claim_boundary": "Development-only MemOps typed lifecycle diagnostic. No validation/final rows, product tuning, general quality claim, or held-out verdict.",
+  "raw_evidence": {
+    "filename": "evaluation_lifecycle_diagnostic_raw_9a66d6d.json",
+    "sha256": "16d949fe9c437213c41f3a358f1a7aa4749f19417aca3b2535e91e48a198fc3e",
+    "row_count": 369,
+    "retention": "CI artifact; not checked into the repository"
+  },
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "99bdd37623cb0c43dcd2cc5fe0bd89d12576f62e92c0e6ad013879b2f49eb941"
+  }
+}
