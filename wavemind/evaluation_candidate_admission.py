@@ -23,8 +23,6 @@ SOURCE_PATHS = (
     "wavemind/evaluation_lifecycle_diagnostic.py",
     "wavemind/evaluation_candidate_admission.py",
     "benchmarks/evaluation_candidate_admission.py",
-    "benchmarks/evaluation_hypothesis_stateful_correction_v1.json",
-    "benchmarks/evaluation_lifecycle_candidate1_results.json",
     "tests/test_core_persistence.py",
     "tests/test_evaluation_lifecycle_diagnostic.py",
     "tests/test_evaluation_candidate_admission.py",
@@ -383,6 +381,17 @@ def build_candidate_admission(
         "candidate_source_sha": result["source_sha"],
         "hypothesis_id": hypothesis["id"],
         "scope": "bounded_development_candidate_only",
+        "evidence_inputs": {
+            "hypothesis": {
+                "path": "benchmarks/evaluation_hypothesis_stateful_correction_v1.json",
+                "payload_sha256": hypothesis["integrity"]["payload_sha256"],
+            },
+            "result": {
+                "path": "benchmarks/evaluation_lifecycle_candidate1_results.json",
+                "payload_sha256": result["integrity"]["payload_sha256"],
+            },
+            "raw_file_sha256": raw_binding["actual_sha256"],
+        },
         "checks": checks,
         "metrics": candidate,
         "source_manifest": build_source_manifest(root, SOURCE_PATHS),
@@ -426,4 +435,29 @@ def validate_candidate_admission(
                 require_current_files=require_current_files,
             )
         )
+    if require_current_files:
+        inputs = payload.get("evidence_inputs")
+        if not isinstance(inputs, Mapping):
+            errors.append("candidate evidence inputs are missing")
+        else:
+            for label in ("hypothesis", "result"):
+                binding = inputs.get(label)
+                if not isinstance(binding, Mapping):
+                    errors.append(f"candidate {label} binding is missing")
+                    continue
+                path = binding.get("path")
+                if not isinstance(path, str):
+                    errors.append(f"candidate {label} path is invalid")
+                    continue
+                artifact_path = (Path(project_root) / path).resolve()
+                if not artifact_path.is_file():
+                    errors.append(f"candidate {label} artifact is missing")
+                    continue
+                artifact = _json(artifact_path)
+                if validate_artifact_integrity(artifact):
+                    errors.append(f"candidate {label} artifact integrity is invalid")
+                elif artifact.get("integrity", {}).get("payload_sha256") != binding.get(
+                    "payload_sha256"
+                ):
+                    errors.append(f"candidate {label} artifact binding mismatch")
     return errors
