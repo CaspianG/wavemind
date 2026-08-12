@@ -16,7 +16,7 @@ from .evidence import (
 )
 
 
-SCHEMA = "wavemind.evaluation_development_protocol.v1"
+SCHEMA = "wavemind.evaluation_development_protocol.v2"
 BASELINE_SOURCE_SHA = "8a11e037ff8616211cb640da044c137a1ed28a2b"
 SAMPLE_SALT = "wavemind-goal8-bounded-development-v1"
 STATE_PER_DOMAIN = 5
@@ -37,6 +37,15 @@ ERROR_TAXONOMY = (
     "procedural_applicability_miss",
     "reader_failure",
     "latency_or_cost_overhead",
+)
+MEMOPS_PRIMARY_CONDITIONS = (
+    "target_correct",
+    "provenance_supported",
+    "not_stale_leakage",
+    "not_over_forgetting",
+    "not_deleted_resurfacing",
+    "not_unverified_injection",
+    "not_namespace_leakage",
 )
 
 
@@ -124,7 +133,7 @@ def build_evaluation_development_protocol(
     unit_digest = sha256_bytes(canonical_json_bytes(bounded_units))
     payload = {
         "schema": SCHEMA,
-        "revision": "goal8-bounded-development-v1-20260812",
+        "revision": "goal8-bounded-development-v2-20260812",
         "source_sha": repository_commit(root),
         "baseline_source_sha": BASELINE_SOURCE_SHA,
         "phase": "development_only",
@@ -171,6 +180,11 @@ def build_evaluation_development_protocol(
                 "id": "memops-lifecycle",
                 "layer": "lifecycle",
                 "primary_metric": "operation_state_transition",
+                "primary_metric_definition": {
+                    "pass_when_all": list(MEMOPS_PRIMARY_CONDITIONS),
+                    "unit": "target_state",
+                    "aggregation": "mean_then_paired_by_subject_id",
+                },
                 "secondary_metrics": [
                     "target_binding",
                     "provenance_support",
@@ -295,6 +309,28 @@ def validate_evaluation_development_protocol(
     taxonomy = payload.get("error_taxonomy")
     if taxonomy != list(ERROR_TAXONOMY):
         errors.append("development protocol error taxonomy changed")
+    families = payload.get("families")
+    if not isinstance(families, list):
+        errors.append("development protocol task families are missing")
+    else:
+        memops = next(
+            (
+                family
+                for family in families
+                if isinstance(family, Mapping)
+                and family.get("id") == "memops-lifecycle"
+            ),
+            None,
+        )
+        definition = (
+            memops.get("primary_metric_definition")
+            if isinstance(memops, Mapping)
+            else None
+        )
+        if not isinstance(definition, Mapping) or definition.get(
+            "pass_when_all"
+        ) != list(MEMOPS_PRIMARY_CONDITIONS):
+            errors.append("MemOps primary lifecycle metric definition changed")
     go_no_go = payload.get("bounded_go_no_go")
     if not isinstance(go_no_go, Mapping):
         errors.append("development protocol go/no-go policy is missing")

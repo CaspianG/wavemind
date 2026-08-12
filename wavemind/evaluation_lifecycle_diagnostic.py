@@ -24,7 +24,6 @@ SOURCE_PATHS = (
     "wavemind/evaluation_lifecycle_diagnostic.py",
     "benchmarks/evaluation_lifecycle_diagnostic.py",
     "tests/test_evaluation_lifecycle_diagnostic.py",
-    "benchmarks/evaluation_development_protocol_v1.json",
 )
 
 
@@ -266,7 +265,17 @@ def score_observation(
         if isinstance(selected, Mapping)
         else []
     )
+    operation_state_transition = bool(
+        target_correct
+        and not stale_values
+        and not (expected is not None and selected_value is None)
+        and not (expected is None and bool(active_values))
+        and not unverified
+        and not wrong_namespace
+        and (expected is None or bool(provenance))
+    )
     return {
+        "operation_state_transition": operation_state_transition,
         "target_correct": target_correct,
         "selected_value": selected_value,
         "expected_value": expected_value,
@@ -305,6 +314,7 @@ def _backend_summary(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     if total == 0:
         raise ValueError("lifecycle diagnostic backend has no target rows")
     fields = (
+        "operation_state_transition",
         "target_correct",
         "stale_leakage",
         "over_forgetting",

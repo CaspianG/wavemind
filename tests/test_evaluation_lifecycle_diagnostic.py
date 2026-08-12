@@ -55,6 +55,7 @@ def test_static_lww_is_strong_valid_operation_baseline():
     )
     assert score["target_correct"] is True
     assert score["stale_leakage"] is False
+    assert score["operation_state_transition"] is True
 
 
 def test_no_memory_exposes_missing_state_transition():
@@ -99,6 +100,7 @@ def test_core_append_only_update_is_detected_as_stale(tmp_path: Path):
             observation=backend.observe("preference", "Preference"),
         )
         assert score["stale_leakage"] is True
+        assert score["operation_state_transition"] is False
         assert (
             classify_error(operation_type="Update", score=score)
             == "stale_or_contradictory_selection"

@@ -60,6 +60,11 @@ def test_protocol_has_complete_taxonomy_and_two_candidate_stop_rule():
         payload["run_requirements"]["product_tuning_before_baseline_error_taxonomy"]
         is False
     )
+    memops = next(
+        family for family in payload["families"] if family["id"] == "memops-lifecycle"
+    )
+    assert memops["primary_metric"] == "operation_state_transition"
+    assert "not_stale_leakage" in memops["primary_metric_definition"]["pass_when_all"]
 
 
 def test_protocol_rejects_heldout_access_even_when_resigned():

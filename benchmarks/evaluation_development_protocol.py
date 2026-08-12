@@ -38,7 +38,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument(
         "--output",
         type=Path,
-        default=PROJECT_ROOT / "benchmarks/evaluation_development_protocol_v1.json",
+        default=PROJECT_ROOT / "benchmarks/evaluation_development_protocol_v2.json",
     )
     args = parser.parse_args(argv)
     payload = build_evaluation_development_protocol(
