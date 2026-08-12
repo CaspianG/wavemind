@@ -7,6 +7,7 @@ import re
 import shutil
 import sqlite3
 import time
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from functools import wraps
@@ -162,9 +163,9 @@ def append_recovery_journal_entry(
     created_at: float | None = None,
     metadata: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    if action not in {"remember", "forget", "purge_expired"}:
+    if action not in {"remember", "forget", "purge_expired", "supersede"}:
         raise ValueError(
-            "Recovery journal action must be remember, forget, or purge_expired"
+            "Recovery journal action must be remember, forget, purge_expired, or supersede"
         )
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -221,6 +222,22 @@ def restore_recovery_journal(
             elif entry["action"] in {"forget", "purge_expired"}:
                 for record in records:
                     deleted += len(store.delete(id=record.id))
+            elif entry["action"] == "supersede":
+                if len(records) != 2:
+                    raise ValueError("Supersede journal entries require two records")
+                predecessor, replacement = records
+                if predecessor.id is None or replacement.id is None:
+                    raise ValueError("Supersede journal records require ids")
+                if store.get(predecessor.id) is None:
+                    store.insert_recovered(predecessor)
+                else:
+                    store.update_memory_state(
+                        predecessor.id,
+                        metadata=predecessor.metadata,
+                    )
+                if store.get(replacement.id) is None:
+                    store.insert_recovered(replacement)
+                    remembered += 1
             else:
                 raise ValueError(f"Unsupported recovery journal action: {entry['action']}")
         restored = store.count(include_expired=True)
@@ -243,6 +260,65 @@ def _safe_identifier(value: str, label: str) -> str:
     if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", value):
         raise ValueError(f"{label} must be a simple SQL identifier")
     return value
+
+
+def _prepare_supersession(
+    predecessor: MemoryRecord,
+    replacement: MemoryRecord,
+    *,
+    transition_id: str | None,
+) -> tuple[dict[str, Any], dict[str, Any], str]:
+    if predecessor.id is None:
+        raise ValueError("superseded memory requires a persisted id")
+    if replacement.namespace != predecessor.namespace:
+        raise ValueError("replacement must remain in the same namespace")
+    identifier = str(transition_id or uuid.uuid4().hex).strip()
+    if not identifier:
+        raise ValueError("transition_id must not be empty")
+    old_transition = predecessor.metadata.get("_wavemind_transition")
+    old_transition = dict(old_transition) if isinstance(old_transition, dict) else {}
+    try:
+        old_version = int(old_transition.get("version", 1))
+    except (TypeError, ValueError):
+        old_version = 1
+    predecessor_metadata = dict(predecessor.metadata)
+    replacement_metadata = dict(replacement.metadata)
+    verification_status = str(
+        replacement_metadata.get("verification_status") or ""
+    ).strip().lower()
+    provenance = replacement_metadata.get("provenance")
+    if (
+        replacement_metadata.get("verified") is not True
+        or verification_status != "verified"
+        or not isinstance(provenance, list)
+        or not provenance
+    ):
+        raise ValueError(
+            "replacement requires independent verified provenance"
+        )
+    replacement_metadata["memory_status"] = "active"
+    replacement_metadata["_wavemind_transition"] = {
+        "status": "active",
+        "version": old_version + 1,
+        "supersedes_id": int(predecessor.id),
+        "transition_id": identifier,
+    }
+    predecessor_metadata["memory_status"] = "stale"
+    predecessor_metadata["_wavemind_transition"] = {
+        **old_transition,
+        "status": "superseded",
+        "version": old_version,
+        "transition_id": identifier,
+    }
+    return predecessor_metadata, replacement_metadata, identifier
+
+
+def _transition_id(record: MemoryRecord) -> str | None:
+    value = record.metadata.get("_wavemind_transition")
+    if not isinstance(value, dict):
+        return None
+    identifier = str(value.get("transition_id") or "").strip()
+    return identifier or None
 
 
 def _row_get(row: Any, key: str) -> Any:
@@ -409,6 +485,121 @@ class SQLiteMemoryStore:
         return ids
 
     @_serialized_sqlite
+    def supersede(
+        self,
+        predecessor_id: int,
+        replacement: MemoryRecord,
+        *,
+        transition_id: str | None = None,
+    ) -> tuple[MemoryRecord, MemoryRecord, bool]:
+        now = time.time()
+        with self.conn:
+            row = self.conn.execute(
+                "SELECT * FROM memories WHERE id = ?", (int(predecessor_id),)
+            ).fetchone()
+            if row is None:
+                raise KeyError(f"memory not found: {predecessor_id}")
+            predecessor = self._row_to_record(row)
+            requested_transition = str(transition_id or "").strip() or None
+            if requested_transition is not None:
+                rows = self.conn.execute(
+                    "SELECT * FROM memories WHERE namespace = ?",
+                    (predecessor.namespace,),
+                ).fetchall()
+                for candidate_row in rows:
+                    candidate = self._row_to_record(candidate_row)
+                    if _transition_id(candidate) != requested_transition:
+                        continue
+                    transition = candidate.metadata.get("_wavemind_transition", {})
+                    if "supersedes_id" not in transition:
+                        continue
+                    if (
+                        int(transition.get("supersedes_id", -1))
+                        != int(predecessor_id)
+                        or candidate.text != replacement.text
+                    ):
+                        raise ValueError(
+                            "transition_id already exists with different data"
+                        )
+                    return predecessor, candidate, False
+            current_transition = predecessor.metadata.get("_wavemind_transition")
+            if (
+                isinstance(current_transition, dict)
+                and current_transition.get("status") == "superseded"
+            ):
+                raise ValueError("memory has already been superseded")
+            predecessor_metadata, replacement_metadata, identifier = (
+                _prepare_supersession(
+                    predecessor,
+                    replacement,
+                    transition_id=requested_transition,
+                )
+            )
+            replacement.metadata = replacement_metadata
+            replacement.created_at = replacement.created_at or now
+            replacement.updated_at = now
+            cur = self.conn.execute(
+                """
+                INSERT INTO memories (
+                    namespace, text, vector, vector_dim, pattern, pattern_shape,
+                    tags, metadata, created_at, updated_at, expires_at, priority,
+                    access_count
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    replacement.namespace,
+                    replacement.text,
+                    _array_to_blob(replacement.vector),
+                    int(replacement.vector.shape[0]),
+                    _array_to_blob(replacement.pattern),
+                    json.dumps(list(replacement.pattern.shape)),
+                    json.dumps(list(replacement.tags), ensure_ascii=False),
+                    json.dumps(replacement.metadata, ensure_ascii=False),
+                    replacement.created_at,
+                    replacement.updated_at,
+                    replacement.expires_at,
+                    float(replacement.priority),
+                    int(replacement.access_count),
+                ),
+            )
+            replacement.id = int(cur.lastrowid)
+            predecessor_metadata["_wavemind_transition"]["superseded_by_id"] = int(
+                replacement.id
+            )
+            predecessor.metadata = predecessor_metadata
+            predecessor.updated_at = now
+            self.conn.execute(
+                "UPDATE memories SET metadata = ?, updated_at = ? WHERE id = ?",
+                (
+                    json.dumps(predecessor.metadata, ensure_ascii=False),
+                    now,
+                    int(predecessor_id),
+                ),
+            )
+            self.conn.execute(
+                """
+                INSERT INTO audit_events (
+                    created_at, action, namespace, memory_id, metadata
+                ) VALUES (?, ?, ?, ?, ?)
+                """,
+                (
+                    now,
+                    "supersede",
+                    predecessor.namespace,
+                    int(replacement.id),
+                    json.dumps(
+                        {
+                            "predecessor_id": int(predecessor_id),
+                            "replacement_id": int(replacement.id),
+                            "transition_id": identifier,
+                        },
+                        ensure_ascii=False,
+                    ),
+                ),
+            )
+        return predecessor, replacement, True
+
+    @_serialized_sqlite
     def insert_recovered(self, record: MemoryRecord) -> int:
         if record.id is None:
             raise ValueError("Recovered records require an explicit id")
@@ -543,6 +734,7 @@ class SQLiteMemoryStore:
         *,
         priority: float | None = None,
         access_count: int | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         fields = []
         params: list[Any] = []
@@ -552,6 +744,9 @@ class SQLiteMemoryStore:
         if access_count is not None:
             fields.append("access_count = ?")
             params.append(int(access_count))
+        if metadata is not None:
+            fields.append("metadata = ?")
+            params.append(json.dumps(metadata, ensure_ascii=False))
         if not fields:
             return
         fields.append("updated_at = ?")
@@ -1006,6 +1201,128 @@ class PostgresMemoryStore:
             record.id = memory_id
         return ids
 
+    def supersede(
+        self,
+        predecessor_id: int,
+        replacement: MemoryRecord,
+        *,
+        transition_id: str | None = None,
+    ) -> tuple[MemoryRecord, MemoryRecord, bool]:
+        transaction = getattr(self.conn, "transaction", None)
+        if not callable(transaction):
+            raise RuntimeError("PostgreSQL supersede requires transaction support")
+        now = time.time()
+        with transaction():
+            row = self.conn.execute(
+                f"SELECT * FROM {self.memories_table} WHERE id = %s FOR UPDATE",
+                (int(predecessor_id),),
+            ).fetchone()
+            if row is None:
+                raise KeyError(f"memory not found: {predecessor_id}")
+            predecessor = self._row_to_record(row)
+            requested_transition = str(transition_id or "").strip() or None
+            if requested_transition is not None:
+                rows = self.conn.execute(
+                    f"SELECT * FROM {self.memories_table} WHERE namespace = %s",
+                    (predecessor.namespace,),
+                ).fetchall()
+                for candidate_row in rows:
+                    candidate = self._row_to_record(candidate_row)
+                    if _transition_id(candidate) != requested_transition:
+                        continue
+                    candidate_transition = candidate.metadata.get(
+                        "_wavemind_transition", {}
+                    )
+                    if "supersedes_id" not in candidate_transition:
+                        continue
+                    if (
+                        int(candidate_transition.get("supersedes_id", -1))
+                        != int(predecessor_id)
+                        or candidate.text != replacement.text
+                    ):
+                        raise ValueError(
+                            "transition_id already exists with different data"
+                        )
+                    return predecessor, candidate, False
+            current_transition = predecessor.metadata.get("_wavemind_transition")
+            if (
+                isinstance(current_transition, dict)
+                and current_transition.get("status") == "superseded"
+            ):
+                raise ValueError("memory has already been superseded")
+            predecessor_metadata, replacement_metadata, identifier = (
+                _prepare_supersession(
+                    predecessor,
+                    replacement,
+                    transition_id=requested_transition,
+                )
+            )
+            replacement.metadata = replacement_metadata
+            replacement.created_at = replacement.created_at or now
+            replacement.updated_at = now
+            replacement_row = self.conn.execute(
+                f"""
+                INSERT INTO {self.memories_table} (
+                    namespace, text, vector, vector_dim, pattern, pattern_shape,
+                    tags, metadata, created_at, updated_at, expires_at, priority,
+                    access_count
+                ) VALUES (
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                ) RETURNING id
+                """,
+                (
+                    replacement.namespace,
+                    replacement.text,
+                    _array_to_blob(replacement.vector),
+                    int(replacement.vector.shape[0]),
+                    _array_to_blob(replacement.pattern),
+                    json.dumps(list(replacement.pattern.shape)),
+                    json.dumps(list(replacement.tags), ensure_ascii=False),
+                    json.dumps(replacement.metadata, ensure_ascii=False),
+                    replacement.created_at,
+                    replacement.updated_at,
+                    replacement.expires_at,
+                    float(replacement.priority),
+                    int(replacement.access_count),
+                ),
+            ).fetchone()
+            replacement.id = int(_row_get(replacement_row, "id"))
+            predecessor_metadata["_wavemind_transition"]["superseded_by_id"] = int(
+                replacement.id
+            )
+            predecessor.metadata = predecessor_metadata
+            predecessor.updated_at = now
+            self.conn.execute(
+                f"UPDATE {self.memories_table} SET metadata = %s, updated_at = %s WHERE id = %s",
+                (
+                    json.dumps(predecessor.metadata, ensure_ascii=False),
+                    now,
+                    int(predecessor_id),
+                ),
+            )
+            self.conn.execute(
+                f"""
+                INSERT INTO {self.audit_table} (
+                    created_at, action, namespace, memory_id, metadata
+                ) VALUES (%s, %s, %s, %s, %s)
+                """,
+                (
+                    now,
+                    "supersede",
+                    predecessor.namespace,
+                    int(replacement.id),
+                    json.dumps(
+                        {
+                            "predecessor_id": int(predecessor_id),
+                            "replacement_id": int(replacement.id),
+                            "transition_id": identifier,
+                        },
+                        ensure_ascii=False,
+                    ),
+                ),
+            )
+        return predecessor, replacement, True
+
     def get(self, id: int) -> MemoryRecord | None:
         row = self.conn.execute(
             f"SELECT * FROM {self.memories_table} WHERE id = %s",
@@ -1112,6 +1429,7 @@ class PostgresMemoryStore:
         *,
         priority: float | None = None,
         access_count: int | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         fields = []
         params: list[Any] = []
@@ -1121,6 +1439,9 @@ class PostgresMemoryStore:
         if access_count is not None:
             fields.append("access_count = %s")
             params.append(int(access_count))
+        if metadata is not None:
+            fields.append("metadata = %s")
+            params.append(json.dumps(metadata, ensure_ascii=False))
         if not fields:
             return
         fields.append("updated_at = %s")

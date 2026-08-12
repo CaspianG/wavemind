@@ -6,6 +6,7 @@ from wavemind.evaluation_lifecycle_diagnostic import (
     NoMemoryBackend,
     StaticLastWriteWinsBackend,
     WaveMindCoreLifecycleBackend,
+    WaveMindVersionedLifecycleBackend,
     classify_error,
     compact_lifecycle_diagnostic,
     expected_state,
@@ -106,6 +107,29 @@ def test_core_append_only_update_is_detected_as_stale(tmp_path: Path):
             classify_error(operation_type="Update", score=score)
             == "stale_or_contradictory_selection"
         )
+    finally:
+        backend.close()
+
+
+def test_versioned_backend_supersedes_update_without_stale_recall(tmp_path: Path):
+    backend = WaveMindVersionedLifecycleBackend(
+        tmp_path / "versioned.sqlite3", namespace="tenant:one"
+    )
+    try:
+        for operation in (
+            _operation("one", "remember", value="old"),
+            _operation("two", "update", value="current"),
+        ):
+            backend.apply(operation)
+        score = score_observation(
+            expected={"value": "current"},
+            observation=backend.observe("preference", "Preference"),
+        )
+        assert score["operation_state_transition"] is True
+        assert score["stale_leakage"] is False
+        records = backend.mind.list_records("tenant:one")
+        assert len(records) == 2
+        assert sum(record.metadata.get("memory_status") == "stale" for record in records) == 1
     finally:
         backend.close()
 

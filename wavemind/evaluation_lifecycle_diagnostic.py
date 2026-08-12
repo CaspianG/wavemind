@@ -228,6 +228,58 @@ class WaveMindCoreLifecycleBackend:
         self.mind.close()
 
 
+class WaveMindVersionedLifecycleBackend(WaveMindCoreLifecycleBackend):
+    name = "wavemind_versioned"
+
+    def __init__(self, db_path: str | Path, *, namespace: str) -> None:
+        super().__init__(db_path, namespace=namespace)
+        self._active_id_by_target: dict[str, int] = {}
+
+    def apply(self, operation: Mapping[str, Any]) -> None:
+        target_id, target_name = _target(operation)
+        kind = str(operation.get("type") or "").lower()
+        confirmed = _confirmed(operation)
+        if kind == "forget" and confirmed:
+            super().apply(operation)
+            self._active_id_by_target.pop(target_id, None)
+            return
+        if kind == "update" and confirmed:
+            value = _value(operation)
+            if value is None:
+                raise ValueError("MemOps update operation has no new value")
+            predecessor_id = self._active_id_by_target.get(target_id)
+            if predecessor_id is None:
+                super().apply(operation)
+                self._active_id_by_target[target_id] = self._ids_by_target[target_id][
+                    -1
+                ]
+                return
+            replacement_id = self.mind.supersede(
+                predecessor_id,
+                f"{target_name}: {value}",
+                namespace=self.namespace,
+                metadata={
+                    "target_id": target_id,
+                    "target_name": target_name,
+                    "value": value,
+                    "operation_type": kind,
+                    "operation_id": str(operation.get("operation_id") or ""),
+                    "verification_status": "verified",
+                    "verified": True,
+                    "provenance": list(operation.get("evidence_spans") or []),
+                },
+                transition_id=(
+                    f"{self.namespace}:{str(operation.get('operation_id') or '')}"
+                ),
+            )
+            self._ids_by_target.setdefault(target_id, []).append(replacement_id)
+            self._active_id_by_target[target_id] = replacement_id
+            return
+        super().apply(operation)
+        if confirmed and kind in {"remember", "reflect"}:
+            self._active_id_by_target[target_id] = self._ids_by_target[target_id][-1]
+
+
 def score_observation(
     *,
     expected: Mapping[str, Any] | None,
@@ -417,7 +469,10 @@ def run_memops_lifecycle_diagnostic(
         if unit["dataset"] == "memops"
     ]
     raw_rows: list[dict[str, Any]] = []
-    taxonomy: Counter[str] = Counter()
+    taxonomy_by_backend: dict[str, Counter[str]] = {
+        "wavemind_core": Counter(),
+        "wavemind_versioned": Counter(),
+    }
     for case_index, unit in enumerate(units):
         case_id = str(unit["unit_id"])
         case_path = memops / "generated_result" / "2-evidence_conversation" / f"{case_id}.json"
@@ -433,6 +488,10 @@ def run_memops_lifecycle_diagnostic(
             StaticLastWriteWinsBackend(),
             WaveMindCoreLifecycleBackend(
                 temporary / f"{case_index:03d}-{case_id}.sqlite3",
+                namespace=namespace,
+            ),
+            WaveMindVersionedLifecycleBackend(
+                temporary / f"{case_index:03d}-{case_id}-versioned.sqlite3",
                 namespace=namespace,
             ),
         ]
@@ -466,17 +525,23 @@ def run_memops_lifecycle_diagnostic(
                         "error_taxonomy": error,
                     }
                     raw_rows.append(row)
-                    if backend.name == "wavemind_core" and error is not None:
-                        taxonomy[error] += 1
+                    if backend.name in taxonomy_by_backend and error is not None:
+                        taxonomy_by_backend[backend.name][error] += 1
         finally:
             for backend in backends:
                 backend.close()
 
+    backend_names = (
+        "no_memory",
+        "static_lww",
+        "wavemind_core",
+        "wavemind_versioned",
+    )
     by_backend = {
         backend: _backend_summary(
             [row for row in raw_rows if row["backend"] == backend]
         )
-        for backend in ("no_memory", "static_lww", "wavemind_core")
+        for backend in backend_names
     }
     operation_types = sorted({str(row["operation_type"]) for row in raw_rows})
     by_operation_type = {
@@ -489,7 +554,7 @@ def run_memops_lifecycle_diagnostic(
                     and row["backend"] == backend
                 ]
             )
-            for backend in ("no_memory", "static_lww", "wavemind_core")
+            for backend in backend_names
         }
         for operation_type in operation_types
     }
@@ -517,7 +582,12 @@ def run_memops_lifecycle_diagnostic(
         },
         "summary": by_backend,
         "by_operation_type": by_operation_type,
-        "wavemind_error_taxonomy": dict(sorted(taxonomy.items())),
+        "wavemind_error_taxonomy": dict(
+            sorted(taxonomy_by_backend["wavemind_core"].items())
+        ),
+        "candidate_error_taxonomy": dict(
+            sorted(taxonomy_by_backend["wavemind_versioned"].items())
+        ),
         "per_target": raw_rows,
         "source_manifest": build_source_manifest(root, SOURCE_PATHS),
         "environment": execution_environment(

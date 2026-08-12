@@ -1,4 +1,5 @@
 import sys
+from contextlib import contextmanager
 from types import SimpleNamespace
 
 import numpy as np
@@ -48,6 +49,12 @@ class FakePostgresConnection:
                 self.memories.pop(row["id"], None)
             return FakeResult()
         if compact.startswith("UPDATE wm_memories"):
+            if "metadata = %s" in compact:
+                id = int(params[-1])
+                row = self.memories[id]
+                row["metadata"] = params[0]
+                row["updated_at"] = float(params[1])
+                return FakeResult()
             if "priority = %s" in compact and "access_count = %s" in compact:
                 id = int(params[3])
                 row = self.memories[id]
@@ -68,6 +75,10 @@ class FakePostgresConnection:
         if compact.startswith("SELECT COUNT(*) AS count FROM wm_audit"):
             return FakeResult([{"count": len(self._filter_audit(compact, params))}])
         raise AssertionError(f"Unhandled SQL: {compact}")
+
+    @contextmanager
+    def transaction(self):
+        yield self
 
     def _insert_memory(self, params):
         id = self.next_memory_id
@@ -281,6 +292,51 @@ def test_postgres_store_batch_contract(fake_psycopg):
         "second batch memory",
     ]
     assert store.audit_count(namespace="pg", action="remember") == 2
+    store.close()
+
+
+def test_postgres_store_supersede_is_atomic_and_idempotent(fake_psycopg):
+    store = create_memory_store("postgres")
+    predecessor = make_record("Current city: Berlin", namespace="pg")
+    predecessor.metadata.update(
+        {
+            "verification_status": "verified",
+            "verified": True,
+            "provenance": [{"source": "operator", "reference": "city-0"}],
+        }
+    )
+    predecessor_id = store.insert(predecessor)
+    replacement = make_record("Current city: Lisbon", namespace="pg")
+    replacement.metadata.update(
+        {
+            "verification_status": "verified",
+            "verified": True,
+            "provenance": [{"source": "operator", "reference": "city-1"}],
+        }
+    )
+
+    stale, active, inserted = store.supersede(
+        predecessor_id,
+        replacement,
+        transition_id="city-correction-1",
+    )
+
+    assert inserted is True
+    assert stale.metadata["memory_status"] == "stale"
+    assert active.metadata["memory_status"] == "active"
+    assert active.metadata["_wavemind_transition"]["supersedes_id"] == predecessor_id
+    assert store.audit_count(namespace="pg", action="supersede") == 1
+
+    retry = make_record("Current city: Lisbon", namespace="pg")
+    retry.metadata.update(active.metadata)
+    _, retried, inserted = store.supersede(
+        predecessor_id,
+        retry,
+        transition_id="city-correction-1",
+    )
+    assert inserted is False
+    assert retried.id == active.id
+    assert store.count(namespace="pg", include_expired=True) == 2
     store.close()
 
 

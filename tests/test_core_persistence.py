@@ -336,6 +336,178 @@ def test_feedback_batch_updates_state_and_rejects_bad_items(tmp_path):
         mind.close()
 
 
+def test_supersede_is_persistent_idempotent_and_namespace_safe(tmp_path):
+    db_path = tmp_path / "supersede.sqlite3"
+    mind = make_mind(db_path, score_threshold=0.0)
+    try:
+        predecessor_id = mind.remember(
+            "Current city: Berlin",
+            namespace="tenant:versioned",
+            metadata={
+                "target_id": "city",
+                "value": "Berlin",
+                "verification_status": "verified",
+                "verified": True,
+                "provenance": [{"source": "operator", "reference": "city-0"}],
+            },
+        )
+        with pytest.raises(ValueError, match="independent verified provenance"):
+            mind.supersede(
+                predecessor_id,
+                "Current city: Lisbon",
+                namespace="tenant:versioned",
+            )
+        assert mind.store.count(namespace="tenant:versioned") == 1
+        assert mind.store.get(predecessor_id).metadata.get("memory_status") != "stale"
+
+        replacement_id = mind.supersede(
+            predecessor_id,
+            "Current city: Lisbon",
+            namespace="tenant:versioned",
+            metadata={
+                "target_id": "city",
+                "value": "Lisbon",
+                "verification_status": "verified",
+                "verified": True,
+                "provenance": [{"source": "operator", "reference": "city-1"}],
+            },
+            transition_id="city-correction-1",
+        )
+        assert replacement_id != predecessor_id
+        assert mind.query("current city", namespace="tenant:versioned", top_k=5)[
+            0
+        ].id == replacement_id
+        predecessor = mind.store.get(predecessor_id)
+        replacement = mind.store.get(replacement_id)
+        assert predecessor is not None and replacement is not None
+        assert predecessor.metadata["memory_status"] == "stale"
+        assert predecessor.metadata["_wavemind_transition"][
+            "superseded_by_id"
+        ] == replacement_id
+        assert replacement.metadata["_wavemind_transition"][
+            "supersedes_id"
+        ] == predecessor_id
+
+        retried_id = mind.supersede(
+            predecessor_id,
+            "Current city: Lisbon",
+            namespace="tenant:versioned",
+            metadata={
+                "target_id": "city",
+                "value": "Lisbon",
+                "verification_status": "verified",
+                "verified": True,
+                "provenance": [{"source": "operator", "reference": "city-1"}],
+            },
+            transition_id="city-correction-1",
+        )
+        assert retried_id == replacement_id
+        assert len(mind.list_records("tenant:versioned")) == 2
+        assert len(
+            mind.audit_events(
+                namespace="tenant:versioned", action="supersede", limit=10
+            )
+        ) == 1
+
+        with pytest.raises(ValueError, match="same namespace"):
+            mind.supersede(
+                replacement_id,
+                "Current city: Porto",
+                namespace="tenant:other",
+            )
+        with pytest.raises(ValueError, match="different data"):
+            mind.supersede(
+                predecessor_id,
+                "Current city: Porto",
+                namespace="tenant:versioned",
+                metadata={
+                    "verification_status": "verified",
+                    "verified": True,
+                    "provenance": [{"source": "operator", "reference": "city-2"}],
+                },
+                transition_id="city-correction-1",
+            )
+    finally:
+        mind.close()
+
+    reopened = make_mind(db_path, score_threshold=0.0)
+    try:
+        results = reopened.query(
+            "current city", namespace="tenant:versioned", top_k=5
+        )
+        assert [result.id for result in results] == [replacement_id]
+    finally:
+        reopened.close()
+
+
+def test_supersede_storage_failure_rolls_back_predecessor(tmp_path):
+    mind = make_mind(tmp_path / "supersede-rollback.sqlite3", score_threshold=0.0)
+    try:
+        predecessor_id = mind.remember(
+            "Current editor: Vim", namespace="tenant:rollback"
+        )
+        with pytest.raises(TypeError):
+            mind.supersede(
+                predecessor_id,
+                "Current editor: Helix",
+                namespace="tenant:rollback",
+                metadata={
+                    "verification_status": "verified",
+                    "verified": True,
+                    "provenance": [{"source": "operator", "reference": "editor-1"}],
+                    "not_json": object(),
+                },
+                transition_id="editor-correction-1",
+            )
+        predecessor = mind.store.get(predecessor_id)
+        assert predecessor is not None
+        assert predecessor.metadata.get("memory_status") != "stale"
+        assert mind.store.count(namespace="tenant:rollback") == 1
+        assert mind.query("current editor", namespace="tenant:rollback")[0].id == predecessor_id
+    finally:
+        mind.close()
+
+
+def test_supersede_recovery_journal_restores_active_version_and_provenance(tmp_path):
+    source = tmp_path / "source.sqlite3"
+    journal = tmp_path / "recovery.jsonl"
+    mind = make_mind(source, recovery_journal_path=journal, score_threshold=0.0)
+    try:
+        predecessor_id = mind.remember(
+            "Current branch: main", namespace="tenant:journal"
+        )
+        replacement_id = mind.supersede(
+            predecessor_id,
+            "Current branch: release",
+            namespace="tenant:journal",
+            metadata={
+                "verification_status": "verified",
+                "verified": True,
+                "provenance": [{"source": "test", "reference": "branch-1"}],
+            },
+            transition_id="branch-correction-1",
+        )
+    finally:
+        mind.close()
+
+    restored_path = tmp_path / "restored.sqlite3"
+    report = SQLiteMemoryStore.restore_recovery_journal(journal, restored_path)
+    assert report.restored_records == 2
+    restored = make_mind(restored_path, score_threshold=0.0)
+    try:
+        results = restored.query(
+            "current branch", namespace="tenant:journal", top_k=5
+        )
+        assert [result.id for result in results] == [replacement_id]
+        predecessor = restored.store.get(predecessor_id)
+        assert predecessor is not None
+        assert predecessor.metadata["_wavemind_transition"][
+            "superseded_by_id"
+        ] == replacement_id
+    finally:
+        restored.close()
+
+
 def test_audit_events_track_mutations_without_query_audit_by_default(tmp_path):
     db_path = tmp_path / "audit.sqlite3"
     mind = make_mind(db_path)

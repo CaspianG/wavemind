@@ -435,6 +435,108 @@ class WaveMind:
         )
         return ids
 
+    def supersede(
+        self,
+        id: int,
+        text: str,
+        *,
+        namespace: str | None = None,
+        tags: Iterable[str] | None = None,
+        ttl_seconds: float | None = None,
+        metadata: dict[str, Any] | None = None,
+        priority: float | None = None,
+        strength: float = 1.0,
+        transition_id: str | None = None,
+    ) -> int:
+        """Create a verified replacement while retaining predecessor provenance."""
+
+        predecessor = self.store.get(int(id))
+        if predecessor is None or predecessor.is_expired:
+            raise KeyError(f"memory not found: {id}")
+        selected_namespace = predecessor.namespace if namespace is None else str(namespace)
+        if selected_namespace != predecessor.namespace:
+            raise ValueError("replacement must remain in the same namespace")
+        replacement_metadata = dict(predecessor.metadata)
+        for lifecycle_key in (
+            "_wavemind_transition",
+            "memory_status",
+            "verification_status",
+            "verified",
+            "provenance",
+        ):
+            replacement_metadata.pop(lifecycle_key, None)
+        replacement_metadata.update(dict(metadata or {}))
+        with trace_span(
+            "wavemind.supersede.encode",
+            {
+                "wavemind.namespace": selected_namespace,
+                "wavemind.predecessor_id": int(id),
+                "wavemind.text_length": len(text),
+            },
+        ):
+            vector = self.encoder.encode_vector(text)
+            pattern = self.projector.to_pattern(vector)
+        expires_at = (
+            time.time() + float(ttl_seconds)
+            if ttl_seconds is not None
+            else predecessor.expires_at
+        )
+        replacement = MemoryRecord(
+            text=text,
+            namespace=selected_namespace,
+            tags=tuple(predecessor.tags if tags is None else tags),
+            metadata=replacement_metadata,
+            vector=vector,
+            pattern=pattern,
+            expires_at=expires_at,
+            priority=(predecessor.priority if priority is None else float(priority)),
+        )
+        store_supersede = getattr(self.store, "supersede", None)
+        if not callable(store_supersede):
+            raise RuntimeError("configured memory store does not support supersede")
+        with trace_span(
+            "wavemind.supersede.store",
+            {
+                "wavemind.namespace": selected_namespace,
+                "wavemind.predecessor_id": int(id),
+            },
+        ):
+            stored_predecessor, stored_replacement, inserted = store_supersede(
+                int(id), replacement, transition_id=transition_id
+            )
+        if stored_replacement.id is None:
+            raise RuntimeError("memory store returned an unpersisted replacement")
+        replacement_id = int(stored_replacement.id)
+        if not inserted:
+            if replacement_id not in self._records_by_id:
+                self._cache_record(stored_replacement)
+                self.index.add(replacement_id, stored_replacement.vector)
+            return replacement_id
+        self._uncache_record(int(id))
+        self._cache_record(stored_predecessor)
+        self._cache_record(stored_replacement)
+        self.index.add(replacement_id, stored_replacement.vector)
+        self._mark_graph_dirty()
+        self.field.forget(predecessor.pattern, strength=0.7)
+        self.field.feed(
+            stored_replacement.pattern,
+            strength=float(strength) * stored_replacement.priority,
+        )
+        self.field.evolve(max(1, self._evolve_n))
+        self._refresh_field_magnitude()
+        self._append_recovery_journal(
+            "supersede",
+            [stored_predecessor, stored_replacement],
+            metadata={
+                "predecessor_id": int(id),
+                "replacement_id": replacement_id,
+                "transition_id": stored_replacement.metadata[
+                    "_wavemind_transition"
+                ]["transition_id"],
+            },
+        )
+        return replacement_id
+
     def query(
         self,
         text: str,
@@ -624,12 +726,16 @@ class WaveMind:
         if not self.confidence_gate:
             return "confidence_gate_disabled"
         metadata = record.metadata if isinstance(record.metadata, dict) else {}
-        status = str(
-            metadata.get("verification_status")
-            or metadata.get("memory_status")
-            or ""
-        ).strip().lower()
-        if status in {"unverified", "rejected", "stale", "contradictory", "rolled_back"}:
+        verification_status = str(metadata.get("verification_status") or "").strip().lower()
+        memory_status = str(metadata.get("memory_status") or "").strip().lower()
+        blocked_statuses = {
+            "unverified",
+            "rejected",
+            "stale",
+            "contradictory",
+            "rolled_back",
+        }
+        if verification_status in blocked_statuses or memory_status in blocked_statuses:
             return None
         if metadata.get("stale") is True or metadata.get("contradictory") is True:
             return None
