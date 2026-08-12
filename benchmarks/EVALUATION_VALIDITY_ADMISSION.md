@@ -2,14 +2,14 @@
 
 Status: **blocked**
 
-Source SHA: `ffdc41f3c80e85484c3819b5c371bf51bf3b1f22`
+Source SHA: `2afc4492e40ff1393e81bda9983c9259f58daa32`
 
-Rows: `13/16` implemented
+Rows: `14/16` implemented
 
 | Row | Status | Requirement |
 |---|---|---|
 | `dataset-provenance` | `implemented` | Dataset revisions, licenses, and checksums are pinned. |
-| `split-isolation` | `blocked` | Dev, validation, and final splits have zero row, conversation, trajectory, or derived-fingerprint overlap. |
+| `split-isolation` | `implemented` | Dev, validation, and final splits have zero row, conversation, trajectory, or derived-fingerprint overlap. |
 | `native-metric-mapping` | `implemented` | Every task uses its native scorer and semantic coercion is rejected. |
 | `positive-controls` | `implemented` | Oracle evidence or correct-state controls are executed. |
 | `negative-controls` | `implemented` | Random, no-memory, stale, wrong-namespace, and deleted-evidence controls are executed. |

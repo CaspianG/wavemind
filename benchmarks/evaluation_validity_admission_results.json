@@ -1,11 +1,11 @@
 {
   "schema": "wavemind.evaluation_validity_admission.v1",
-  "generated_at": "2026-08-12T11:29:53Z",
-  "source_sha": "ffdc41f3c80e85484c3819b5c371bf51bf3b1f22",
-  "expected_source_sha": "ffdc41f3c80e85484c3819b5c371bf51bf3b1f22",
+  "generated_at": "2026-08-12T11:38:34Z",
+  "source_sha": "2afc4492e40ff1393e81bda9983c9259f58daa32",
+  "expected_source_sha": "2afc4492e40ff1393e81bda9983c9259f58daa32",
   "status": "blocked",
   "admitted": false,
-  "implemented_rows": 13,
+  "implemented_rows": 14,
   "required_rows": 16,
   "rows": [
     {
@@ -18,10 +18,22 @@
     },
     {
       "id": "split-isolation",
-      "status": "blocked",
+      "status": "implemented",
       "requirement": "Dev, validation, and final splits have zero row, conversation, trajectory, or derived-fingerprint overlap.",
       "evidence": {
-        "missing_artifact": "split_isolation"
+        "errors": [],
+        "counts": {
+          "state-bench": {
+            "development": 240,
+            "validation": 60,
+            "final": 150
+          },
+          "memops": {
+            "development": 240,
+            "validation": 82,
+            "final": 81
+          }
+        }
       }
     },
     {
@@ -210,8 +222,8 @@
       "status": "implemented",
       "requirement": "Admission is tied to the exact source SHA and a current source manifest.",
       "evidence": {
-        "source_sha": "ffdc41f3c80e85484c3819b5c371bf51bf3b1f22",
-        "expected_source_sha": "ffdc41f3c80e85484c3819b5c371bf51bf3b1f22",
+        "source_sha": "2afc4492e40ff1393e81bda9983c9259f58daa32",
+        "expected_source_sha": "2afc4492e40ff1393e81bda9983c9259f58daa32",
         "source_manifest": {
           "schema": "wavemind.source_manifest.v1",
           "algorithm": "sha256",
@@ -229,8 +241,12 @@
               "sha256": "37e85ffff630144b1ae3295ff9ad9562cd12e229712534f24bf29c421ae71477"
             },
             {
+              "path": "benchmarks/evaluation_split_manifest.py",
+              "sha256": "fa838fc54987455ec3331bc3ee74cd4133ac7afee1da33105496efc9ddef81dc"
+            },
+            {
               "path": "benchmarks/evaluation_validity_admission.py",
-              "sha256": "14ffebe6dcedbb3286ad0e2164e91619cf39cd69d5faeeada7ca0aad0ad70707"
+              "sha256": "b3ed16a3b8ed4c1124946c305c7cf9ca31d03f8a3abf57d189829262f4c254c4"
             },
             {
               "path": "benchmarks/evaluation_validity_controls.py",
@@ -245,12 +261,16 @@
               "sha256": "db218fa7dd989d58ec3dec6415b9b1ed6a94156e0f897c4f78037d4cdf71767f"
             },
             {
+              "path": "tests/test_evaluation_splits.py",
+              "sha256": "62fe2c40674561e3300e190a6f037286254af03cb1617e7c52808e50966c1205"
+            },
+            {
               "path": "tests/test_evaluation_statistics.py",
               "sha256": "43a5e09b3771cf5f3c3f4f3148fac5b057922dd3504b50d5e19bc617c9b592a5"
             },
             {
               "path": "tests/test_evaluation_validity_admission.py",
-              "sha256": "92e4ec5bb3c6a4f7ba0b8ed56c14f90d6d0a8f1955aa11a893f23dc565a890f4"
+              "sha256": "db92fe10ddb663464b8dbaaa7bbe0649bc658d7ef089ef1c52c041cbc720c9f3"
             },
             {
               "path": "tests/test_evaluation_validity_controls.py",
@@ -261,19 +281,23 @@
               "sha256": "6c7b3a6345ff0c8c43cce9c68c38d9c5391ff00c24bb78b646a38428c66fa8bb"
             },
             {
+              "path": "wavemind/evaluation_splits.py",
+              "sha256": "9f5ac9021860759e54cd49b6cfbfeb4f5b835690acc8d57d19e199a5a8f1f9a0"
+            },
+            {
               "path": "wavemind/evaluation_statistics.py",
               "sha256": "113f2aa1562875661396951e7d8e864816ed072d08398b364b7a6942699f8118"
             },
             {
               "path": "wavemind/evaluation_validity_admission.py",
-              "sha256": "7aae4c2582ff87245c6c78c43c9fb619f827728e93df1bf78db7960535afad59"
+              "sha256": "a4bc135cd3f6112a8e2092e4f154907b457a70e2b06301a0f93bc51d77fa8fa9"
             },
             {
               "path": "wavemind/evaluation_validity_controls.py",
               "sha256": "50e9d29b386b2aba5b1c9426fc990275bf46e46e7adcffeca0a5022ab7336d76"
             }
           ],
-          "digest": "c9777bacb6e221988aad2db456a7b1e7289c46091487364a54e2a17e33c56714"
+          "digest": "89bd823302a748ec00312e9ea5be2fd90e4576a4ee0f4679b8c31844ad8500f5"
         }
       }
     },
@@ -299,6 +323,6 @@
   "integrity": {
     "schema": "wavemind.artifact_integrity.v1",
     "algorithm": "sha256",
-    "payload_sha256": "4796f80151216da6ce73d8eb8850dcb02981a44944f59a9658c72c21d00e9803"
+    "payload_sha256": "2ed9d78761370566b95aef057cd73db16dbeac914fa2275d7d5269c58629dffc"
   }
 }
