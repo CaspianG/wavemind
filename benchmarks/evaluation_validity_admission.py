@@ -25,6 +25,7 @@ def main() -> int:
     )
     parser.add_argument("--validity-evidence", type=Path)
     parser.add_argument("--split-evidence", type=Path)
+    parser.add_argument("--judge-evidence", type=Path)
     parser.add_argument("--expected-source-sha")
     parser.add_argument(
         "--output",
@@ -43,6 +44,7 @@ def main() -> int:
         dataset_manifest_path=args.dataset_manifest,
         validity_evidence_path=args.validity_evidence,
         split_evidence_path=args.split_evidence,
+        judge_evidence_path=args.judge_evidence,
         expected_source_sha=args.expected_source_sha,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)

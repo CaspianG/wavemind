@@ -10,6 +10,7 @@ from wavemind.evaluation_validity_admission import (
     run_evaluation_validity_admission,
 )
 from wavemind.evaluation_validity_controls import run_evaluation_validity_controls
+from wavemind.evaluation_judges import build_evaluation_judge_policy
 from wavemind.evidence import attach_artifact_integrity
 from wavemind.evidence import validate_artifact_integrity
 
@@ -205,3 +206,18 @@ def test_missing_split_evidence_stays_blocked_even_with_valid_controls(tmp_path)
     assert row["evidence"]["errors"] == [
         "evaluation split evidence artifact is missing"
     ]
+
+
+def test_valid_judge_policy_closes_judge_row_without_claiming_excluded_lanes(tmp_path):
+    judge = build_evaluation_judge_policy(project_root=ROOT)
+    path = tmp_path / "judge.json"
+    path.write_text(json.dumps(judge), encoding="utf-8")
+    report = run_evaluation_validity_admission(
+        project_root=ROOT,
+        dataset_manifest_path=DATASET_MANIFEST,
+        judge_evidence_path=path,
+    )
+    row = next(item for item in report["rows"] if item["id"] == "judge-calibration")
+    assert row["status"] == "implemented"
+    assert len(row["evidence"]["active_primary_scorers"]) == 2
+    assert len(row["evidence"]["excluded_native_judge_lanes"]) >= 4
