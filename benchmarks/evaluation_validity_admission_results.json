@@ -1,11 +1,11 @@
 {
   "schema": "wavemind.evaluation_validity_admission.v1",
-  "generated_at": "2026-08-12T11:38:34Z",
-  "source_sha": "2afc4492e40ff1393e81bda9983c9259f58daa32",
-  "expected_source_sha": "2afc4492e40ff1393e81bda9983c9259f58daa32",
+  "generated_at": "2026-08-12T11:43:17Z",
+  "source_sha": "3ca92c4b35aee16d3a4c51bbcddae8a41ec71df4",
+  "expected_source_sha": "3ca92c4b35aee16d3a4c51bbcddae8a41ec71df4",
   "status": "blocked",
   "admitted": false,
-  "implemented_rows": 14,
+  "implemented_rows": 15,
   "required_rows": 16,
   "rows": [
     {
@@ -174,10 +174,57 @@
     },
     {
       "id": "judge-calibration",
-      "status": "blocked",
+      "status": "implemented",
       "requirement": "Every required LLM judge is pinned, calibrated, and has inter-run agreement evidence.",
       "evidence": {
-        "missing_artifact": "judge_calibration"
+        "errors": [],
+        "active_primary_scorers": [
+          {
+            "family": "state-bench-agent-learning",
+            "metric": "deterministic_final_state",
+            "kind": "deterministic",
+            "llm_judge_required": false
+          },
+          {
+            "family": "memops-lifecycle",
+            "metric": "structured_operation_state_transition",
+            "kind": "deterministic",
+            "llm_judge_required": false
+          }
+        ],
+        "excluded_native_judge_lanes": [
+          {
+            "lane": "state-bench-ux",
+            "reason": "The official GPT-5.4 UX judge is pinned but not locally calibrated; UX is excluded from the mandatory local claim.",
+            "official_model": "gpt-5.4",
+            "temperature": 0,
+            "seed": 17,
+            "prompt_hashes": {
+              "travel/judge_task_requirements.md": "dd4abe82eedb4873cfa015708df99f59cfbfeaa85ac090b01bd1d75eb0500487",
+              "travel/judge_ux_quality.md": "b04009d159fb477c3a215f30f10793c4e0a5587e578d07fcd2bfc7d719f90598",
+              "customer_support/judge_task_requirements.md": "246c76f59f3cd0e736da35b9beb985088778ff233287454b8bae674285718c72",
+              "customer_support/judge_ux_quality.md": "8b6ecae22872ab860d4a54f37e5bd4a6a160033b833cd1b0de6a3673640d7067",
+              "shopping_assistant/judge_task_requirements.md": "558947b2ce0b5d90a633e7d44e8599c329a96ac5ed9e43c9d37ffb5e6cf3c055",
+              "shopping_assistant/judge_ux_quality.md": "0234643a8dcf766c390aff2dc11b2f74f0e13ef7a38b29df70165bd333b82656"
+            }
+          },
+          {
+            "lane": "longmemeval-answer-judge",
+            "reason": "No local open-weight judge calibration and agreement artifact exists yet; the lane is excluded before product tuning."
+          },
+          {
+            "lane": "longmemeval-v2-local-reader",
+            "reason": "The official-compatible local reader and judge profile is not calibrated yet; the lane is excluded before product tuning."
+          },
+          {
+            "lane": "memory-agent-bench-generative-components",
+            "reason": "Generated-answer and official judge components remain excluded until a pinned local reader/scorer calibration exists."
+          },
+          {
+            "lane": "memops-generated-answer",
+            "reason": "Generated-answer quality is secondary to the active structured lifecycle scorer until a pinned reader calibration exists."
+          }
+        ]
       }
     },
     {
@@ -222,8 +269,8 @@
       "status": "implemented",
       "requirement": "Admission is tied to the exact source SHA and a current source manifest.",
       "evidence": {
-        "source_sha": "2afc4492e40ff1393e81bda9983c9259f58daa32",
-        "expected_source_sha": "2afc4492e40ff1393e81bda9983c9259f58daa32",
+        "source_sha": "3ca92c4b35aee16d3a4c51bbcddae8a41ec71df4",
+        "expected_source_sha": "3ca92c4b35aee16d3a4c51bbcddae8a41ec71df4",
         "source_manifest": {
           "schema": "wavemind.source_manifest.v1",
           "algorithm": "sha256",
@@ -237,16 +284,20 @@
               "sha256": "523c0a3b91772c23a1db5216faacf599179b666a0d3984fb94d288bfb5aadfef"
             },
             {
+              "path": "benchmarks/evaluation_judge_policy.py",
+              "sha256": "50d5bf3dd04284e5da8865cad7e6cc87ac134161eebb820102fa098270df791b"
+            },
+            {
               "path": "benchmarks/evaluation_salvage_manifest.json",
               "sha256": "37e85ffff630144b1ae3295ff9ad9562cd12e229712534f24bf29c421ae71477"
             },
             {
               "path": "benchmarks/evaluation_split_manifest.py",
-              "sha256": "fa838fc54987455ec3331bc3ee74cd4133ac7afee1da33105496efc9ddef81dc"
+              "sha256": "47eb31afc4837dc08432c4bbda33d55ca3fdec90925aee65af98b4f6851cefd1"
             },
             {
               "path": "benchmarks/evaluation_validity_admission.py",
-              "sha256": "b3ed16a3b8ed4c1124946c305c7cf9ca31d03f8a3abf57d189829262f4c254c4"
+              "sha256": "98eb2429303134028de17c5c85fcd4d27c529bf46d43a6ea67e6c649362a9bf6"
             },
             {
               "path": "benchmarks/evaluation_validity_controls.py",
@@ -261,6 +312,10 @@
               "sha256": "db218fa7dd989d58ec3dec6415b9b1ed6a94156e0f897c4f78037d4cdf71767f"
             },
             {
+              "path": "tests/test_evaluation_judges.py",
+              "sha256": "a37c7a4ca0c24fc37e2a62c6a4b167c1b912b27872ac732c8ccf7da44e380ecc"
+            },
+            {
               "path": "tests/test_evaluation_splits.py",
               "sha256": "62fe2c40674561e3300e190a6f037286254af03cb1617e7c52808e50966c1205"
             },
@@ -270,7 +325,7 @@
             },
             {
               "path": "tests/test_evaluation_validity_admission.py",
-              "sha256": "db92fe10ddb663464b8dbaaa7bbe0649bc658d7ef089ef1c52c041cbc720c9f3"
+              "sha256": "43366e7c2c2d786c04dc24575d15e595839d0d532973185a02331107a3944e6b"
             },
             {
               "path": "tests/test_evaluation_validity_controls.py",
@@ -279,6 +334,10 @@
             {
               "path": "wavemind/evaluation_contracts.py",
               "sha256": "6c7b3a6345ff0c8c43cce9c68c38d9c5391ff00c24bb78b646a38428c66fa8bb"
+            },
+            {
+              "path": "wavemind/evaluation_judges.py",
+              "sha256": "8aa4510f8533859307aa4bd5c4405d4a4798081f68eb4d65fec1f2c55a93f728"
             },
             {
               "path": "wavemind/evaluation_splits.py",
@@ -290,14 +349,14 @@
             },
             {
               "path": "wavemind/evaluation_validity_admission.py",
-              "sha256": "a4bc135cd3f6112a8e2092e4f154907b457a70e2b06301a0f93bc51d77fa8fa9"
+              "sha256": "eada8637830c3f5e7ccfc2022e38c7504e0186e7217856d793864a270ed4c1d1"
             },
             {
               "path": "wavemind/evaluation_validity_controls.py",
               "sha256": "50e9d29b386b2aba5b1c9426fc990275bf46e46e7adcffeca0a5022ab7336d76"
             }
           ],
-          "digest": "89bd823302a748ec00312e9ea5be2fd90e4576a4ee0f4679b8c31844ad8500f5"
+          "digest": "9b3157f34fe328906766d6171c549809e1be74b0263ba84534314c7045a7164d"
         }
       }
     },
@@ -323,6 +382,6 @@
   "integrity": {
     "schema": "wavemind.artifact_integrity.v1",
     "algorithm": "sha256",
-    "payload_sha256": "2ed9d78761370566b95aef057cd73db16dbeac914fa2275d7d5269c58629dffc"
+    "payload_sha256": "b3fc521973dc2ff8a4ff60cbd3d835e7092fd1d5c74f9be2fa45c939e8f28ef1"
   }
 }

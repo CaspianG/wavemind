@@ -2,9 +2,9 @@
 
 Status: **blocked**
 
-Source SHA: `2afc4492e40ff1393e81bda9983c9259f58daa32`
+Source SHA: `3ca92c4b35aee16d3a4c51bbcddae8a41ec71df4`
 
-Rows: `14/16` implemented
+Rows: `15/16` implemented
 
 | Row | Status | Requirement |
 |---|---|---|
@@ -18,7 +18,7 @@ Rows: `14/16` implemented
 | `power-and-mde` | `implemented` | Sample size, minimum detectable effect, and cluster unit are preregistered per primary metric. |
 | `paired-clustered-statistics` | `implemented` | Paired confidence intervals cluster by conversation, task, or trajectory. |
 | `multiple-comparison-policy` | `implemented` | Multiple primary comparisons use the preregistered Holm correction. |
-| `judge-calibration` | `blocked` | Every required LLM judge is pinned, calibrated, and has inter-run agreement evidence. |
+| `judge-calibration` | `implemented` | Every required LLM judge is pinned, calibrated, and has inter-run agreement evidence. |
 | `deterministic-verdict` | `implemented` | Three deterministic repeats produce one verdict fingerprint. |
 | `per-case-completeness` | `implemented` | Raw evidence includes every pass, failure, error, and skipped row. |
 | `backend-blinding` | `implemented` | Backend input excludes gold, IDs, task type, split, and evaluator metadata. |
