@@ -664,7 +664,6 @@ Documentation map: [`docs/README.md`](docs/README.md).
 Release history: [`CHANGELOG.md`](CHANGELOG.md).
 
 Near-term priorities:
-
 - admit task-native measurement validity before resuming product quality tuning;
 - demonstrate paired generalizable benefit on an agent/workflow family and an independent memory family;
 - combine fast FAISS, Qdrant, or pgvector retrieval with bounded WaveMind reranking;
