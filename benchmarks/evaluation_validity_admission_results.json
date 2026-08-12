@@ -1,8 +1,8 @@
 {
   "schema": "wavemind.evaluation_validity_admission.v1",
-  "generated_at": "2026-08-12T11:43:17Z",
-  "source_sha": "3ca92c4b35aee16d3a4c51bbcddae8a41ec71df4",
-  "expected_source_sha": "3ca92c4b35aee16d3a4c51bbcddae8a41ec71df4",
+  "generated_at": "2026-08-12T11:55:15Z",
+  "source_sha": "61b183a6edbc29ac1047d8ca17ead77ec6d2b33e",
+  "expected_source_sha": "61b183a6edbc29ac1047d8ca17ead77ec6d2b33e",
   "status": "blocked",
   "admitted": false,
   "implemented_rows": 15,
@@ -269,12 +269,16 @@
       "status": "implemented",
       "requirement": "Admission is tied to the exact source SHA and a current source manifest.",
       "evidence": {
-        "source_sha": "3ca92c4b35aee16d3a4c51bbcddae8a41ec71df4",
-        "expected_source_sha": "3ca92c4b35aee16d3a4c51bbcddae8a41ec71df4",
+        "source_sha": "61b183a6edbc29ac1047d8ca17ead77ec6d2b33e",
+        "expected_source_sha": "61b183a6edbc29ac1047d8ca17ead77ec6d2b33e",
         "source_manifest": {
           "schema": "wavemind.source_manifest.v1",
           "algorithm": "sha256",
           "files": [
+            {
+              "path": ".github/workflows/safe-product.yml",
+              "sha256": "14adcd7ce0250fa28ae256a69823d8b637cf3c04d930e0871d1855f4392dcc10"
+            },
             {
               "path": "README.md",
               "sha256": "d0cd7a163ea40021ef9cdd30b18bdbdf35923cb05d1bc4615fabfc94a7a12df4"
@@ -297,7 +301,7 @@
             },
             {
               "path": "benchmarks/evaluation_validity_admission.py",
-              "sha256": "98eb2429303134028de17c5c85fcd4d27c529bf46d43a6ea67e6c649362a9bf6"
+              "sha256": "7e70f0fb04685a08057744d0e859201d031169772566fd87c0ce6258385e0db4"
             },
             {
               "path": "benchmarks/evaluation_validity_controls.py",
@@ -325,7 +329,7 @@
             },
             {
               "path": "tests/test_evaluation_validity_admission.py",
-              "sha256": "43366e7c2c2d786c04dc24575d15e595839d0d532973185a02331107a3944e6b"
+              "sha256": "3dba4cd9d6c5d759566bd8c0a2a3e4a279013afaac428fc296f6af1eec84a958"
             },
             {
               "path": "tests/test_evaluation_validity_controls.py",
@@ -349,14 +353,22 @@
             },
             {
               "path": "wavemind/evaluation_validity_admission.py",
-              "sha256": "eada8637830c3f5e7ccfc2022e38c7504e0186e7217856d793864a270ed4c1d1"
+              "sha256": "f222486e4932f6a3701ad497427a0e83ec07b1b01c2adaca1e20b3a92b19aa97"
             },
             {
               "path": "wavemind/evaluation_validity_controls.py",
               "sha256": "50e9d29b386b2aba5b1c9426fc990275bf46e46e7adcffeca0a5022ab7336d76"
+            },
+            {
+              "path": "wavemind/safe_product_admission.py",
+              "sha256": "4f4deef14acfebdb6801d2abc924da99bdceee25cdbe94ffa65843dd82118760"
+            },
+            {
+              "path": "wavemind/workspace_experience_admission.py",
+              "sha256": "c2f77366cf024f177e7c0919cbe435aa7685ccf76f56145ffea6365a1d129bae"
             }
           ],
-          "digest": "9b3157f34fe328906766d6171c549809e1be74b0263ba84534314c7045a7164d"
+          "digest": "8be8b44a3dbe36809b6aeec12c323283184240bcc3f5d3a8172ebb3645f61f71"
         }
       }
     },
@@ -365,7 +377,20 @@
       "status": "blocked",
       "requirement": "Safe Product and Workspace Experience are admitted on the same exact SHA.",
       "evidence": {
-        "missing_artifact": "safety_admissions_preserved"
+        "safe_product": {
+          "source_sha": null,
+          "status": null,
+          "errors": [
+            "exact-current Safe Product artifact is missing"
+          ]
+        },
+        "workspace_experience": {
+          "source_sha": null,
+          "status": null,
+          "errors": [
+            "exact-current Workspace Experience artifact is missing"
+          ]
+        }
       }
     }
   ],
@@ -382,6 +407,6 @@
   "integrity": {
     "schema": "wavemind.artifact_integrity.v1",
     "algorithm": "sha256",
-    "payload_sha256": "b3fc521973dc2ff8a4ff60cbd3d835e7092fd1d5c74f9be2fa45c939e8f28ef1"
+    "payload_sha256": "69aea3cefba1834a56843d85baac716bc121ee381ebdca7d0473f8c3395a973e"
   }
 }
