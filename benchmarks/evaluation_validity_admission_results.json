@@ -1,8 +1,8 @@
 {
   "schema": "wavemind.evaluation_validity_admission.v1",
-  "generated_at": "2026-08-12T12:20:14Z",
-  "source_sha": "b24f5e98b0be6a939cc1b3c6ef45beca8e45ca6d",
-  "expected_source_sha": "b24f5e98b0be6a939cc1b3c6ef45beca8e45ca6d",
+  "generated_at": "2026-08-12T12:30:57Z",
+  "source_sha": "dc15179004b0ef889fad0f9ea760457b5d7228e7",
+  "expected_source_sha": "dc15179004b0ef889fad0f9ea760457b5d7228e7",
   "status": "blocked",
   "admitted": false,
   "implemented_rows": 15,
@@ -269,19 +269,20 @@
       "status": "implemented",
       "requirement": "Admission is tied to the exact source SHA and a current source manifest.",
       "evidence": {
-        "source_sha": "b24f5e98b0be6a939cc1b3c6ef45beca8e45ca6d",
-        "expected_source_sha": "b24f5e98b0be6a939cc1b3c6ef45beca8e45ca6d",
+        "source_sha": "dc15179004b0ef889fad0f9ea760457b5d7228e7",
+        "expected_source_sha": "dc15179004b0ef889fad0f9ea760457b5d7228e7",
         "source_manifest": {
           "schema": "wavemind.source_manifest.v1",
           "algorithm": "sha256",
+          "text_normalization": "utf8-crlf-to-lf-v1",
           "files": [
             {
               "path": ".github/workflows/safe-product.yml",
-              "sha256": "14adcd7ce0250fa28ae256a69823d8b637cf3c04d930e0871d1855f4392dcc10"
+              "sha256": "15f9da3a4899db59c0c336c6aa0a9cc295653182dbdfdc70e02e05e4161f9975"
             },
             {
               "path": "README.md",
-              "sha256": "0cc11b679e49e74d5ecbbee25f8476aae2df896d650043a09acbad3362fe6be1"
+              "sha256": "09ffeed18abd6ddae81655ec42143d68881a474e770ee19c2427abd621c77d5c"
             },
             {
               "path": "benchmarks/evaluation_dataset_manifest_v1.json",
@@ -309,7 +310,7 @@
             },
             {
               "path": "docs/ROADMAP.md",
-              "sha256": "d8d25d9f50832d63d836a8f3d3952185fe288510cf260143d189d720300a8d26"
+              "sha256": "0dbedda76a9432cb53220529d41073d3f48936e44eeb54561931135d2f1c43ce"
             },
             {
               "path": "docs/adr/0001-task-native-evaluation-science.md",
@@ -361,14 +362,14 @@
             },
             {
               "path": "wavemind/safe_product_admission.py",
-              "sha256": "4f4deef14acfebdb6801d2abc924da99bdceee25cdbe94ffa65843dd82118760"
+              "sha256": "f264732c44b589398cd8403799d3e0772d71b0b9aeabce2aa9d7f92dfb12ea1d"
             },
             {
               "path": "wavemind/workspace_experience_admission.py",
-              "sha256": "c2f77366cf024f177e7c0919cbe435aa7685ccf76f56145ffea6365a1d129bae"
+              "sha256": "25c8e4b6f318a02141d8df44197b61a1b0fa92e25143f51ac6f96d651d4e5eb8"
             }
           ],
-          "digest": "d6ef570687bf867653bc8aaad80b6360a67db92d2f7c04f2bad83beb15658879"
+          "digest": "c761a7e70bdcbed0a75e5e21585fabe83d89419b7ca790c8a48bc601817fa4f7"
         }
       }
     },
@@ -407,6 +408,6 @@
   "integrity": {
     "schema": "wavemind.artifact_integrity.v1",
     "algorithm": "sha256",
-    "payload_sha256": "dcbabe4b185f0be358d2cc1c9f143357b647146da829a41f80f946ec35242332"
+    "payload_sha256": "0257c7f245dbc3a1f5807411bab3395f81a24e9206e6d32917110a3467b2aa63"
   }
 }
