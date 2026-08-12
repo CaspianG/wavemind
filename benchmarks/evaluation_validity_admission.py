@@ -26,6 +26,8 @@ def main() -> int:
     parser.add_argument("--validity-evidence", type=Path)
     parser.add_argument("--split-evidence", type=Path)
     parser.add_argument("--judge-evidence", type=Path)
+    parser.add_argument("--safe-product", type=Path)
+    parser.add_argument("--workspace-experience", type=Path)
     parser.add_argument("--expected-source-sha")
     parser.add_argument(
         "--output",
@@ -45,6 +47,8 @@ def main() -> int:
         validity_evidence_path=args.validity_evidence,
         split_evidence_path=args.split_evidence,
         judge_evidence_path=args.judge_evidence,
+        safe_product_path=args.safe_product,
+        workspace_experience_path=args.workspace_experience,
         expected_source_sha=args.expected_source_sha,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)

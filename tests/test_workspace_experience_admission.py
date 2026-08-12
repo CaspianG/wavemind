@@ -10,7 +10,11 @@ from benchmarks.workspace_experience_operational_evidence import (
     SCHEMA as OPERATIONAL_SCHEMA,
 )
 from wavemind.evidence import attach_artifact_integrity, build_source_manifest
-from wavemind.safe_product_admission import EXPECTED_CHECKS, SCHEMA as SAFE_PRODUCT_SCHEMA
+from wavemind.safe_product_admission import (
+    EXPECTED_CHECKS,
+    SAFE_PRODUCT_SOURCE_FILES,
+    SCHEMA as SAFE_PRODUCT_SCHEMA,
+)
 from wavemind.workspace_experience_admission import (
     WORKSPACE_EXPERIENCE_ADMISSION_SCHEMA,
     WORKSPACE_EXPERIENCE_PROTOCOL_SHA256,
@@ -54,7 +58,9 @@ def test_workspace_experience_gap_matrix_is_not_final_admission() -> None:
     }
     rows = {row["id"]: row for row in payload["rows"]}
     assert rows["historical-v3-checksum-selection-experiment"]["status"] == "historical"
-    assert rows["historical-v3-checksum-selection-experiment"]["details"]["failed_gates"] == [
+    assert rows["historical-v3-checksum-selection-experiment"]["details"][
+        "failed_gates"
+    ] == [
         "task_success_lift_pp",
         "repeated_known_error_reduction",
     ]
@@ -76,11 +82,16 @@ def test_workspace_experience_gap_matrix_is_not_final_admission() -> None:
     assert rows["frozen-real-work-benchmark-v5"]["details"]["result_status"] == "passed"
     assert rows["frozen-real-work-benchmark-v5"]["details"]["split"] == "heldout"
     assert rows["frozen-real-work-benchmark-v5"]["details"]["failed_gates"] == []
-    assert rows["frozen-real-work-benchmark-v5"]["details"]["evidence_scope"] == "frozen_quality"
+    assert (
+        rows["frozen-real-work-benchmark-v5"]["details"]["evidence_scope"]
+        == "frozen_quality"
+    )
     freshness = rows["frozen-real-work-benchmark-v5"]["details"]["freshness"]
     assert freshness["quality_fresh"] is True
     assert freshness["allowed_operational_changes"]
-    assert rows["current-workspace-operational-evidence"]["status"] == "required_current"
+    assert (
+        rows["current-workspace-operational-evidence"]["status"] == "required_current"
+    )
     assert rows["workspace-experience-admission"]["status"] == "blocked"
     assert rows["safe-product-regression"]["status"] == "required_current"
     assert "not current" in rows["safe-product-regression"]["details"]["reason"]
@@ -88,6 +99,7 @@ def test_workspace_experience_gap_matrix_is_not_final_admission() -> None:
     assert rows["workspace-identity-isolation"]["test"]
     assert payload["source_manifest"]["files"]
     assert payload["source_manifest"]["digest"]
+    assert payload["integrity"]["payload_sha256"]
 
 
 def test_workspace_experience_admission_markdown_and_write(tmp_path: Path) -> None:
@@ -104,7 +116,9 @@ def test_workspace_experience_admission_markdown_and_write(tmp_path: Path) -> No
     written = json.loads(json_path.read_text(encoding="utf-8"))
     markdown = md_path.read_text(encoding="utf-8")
     assert written["source_manifest"]["digest"] == payload["source_manifest"]["digest"]
-    assert "| `current-workspace-operational-evidence` | `required_current` |" in markdown
+    assert (
+        "| `current-workspace-operational-evidence` | `required_current` |" in markdown
+    )
     assert "| `workspace-experience-admission` | `blocked` |" in markdown
     assert "| `safe-product-regression` | `required_current` |" in markdown
     assert "Evidence Snapshot Source SHA" in markdown
@@ -136,7 +150,9 @@ def test_workspace_experience_admission_artifact_writer_keeps_canonical_files_in
     assert matrix_md.read_text(encoding="utf-8").startswith(
         "# Workspace Experience Admission Matrix"
     )
-    assert report_md.read_text(encoding="utf-8").startswith("# Workspace Experience Admission")
+    assert report_md.read_text(encoding="utf-8").startswith(
+        "# Workspace Experience Admission"
+    )
     for row in payload["rows"]:
         row_markdown = f"| `{row['id']}` | `{row['status']}` |"
         assert row_markdown in matrix_md.read_text(encoding="utf-8")
@@ -167,7 +183,9 @@ def test_checked_in_workspace_admission_artifacts_are_consistent() -> None:
         "benchmarks/workspace_experience_admission_results.json"
     )
     assert rows["workspace-experience-admission"]["status"] == "blocked"
-    assert rows["current-workspace-operational-evidence"]["status"] == "required_current"
+    assert (
+        rows["current-workspace-operational-evidence"]["status"] == "required_current"
+    )
     assert rows["safe-product-regression"]["status"] == "required_current"
     referenced = json.loads(
         (root / rows["workspace-experience-admission"]["artifact"]).read_text(
@@ -239,9 +257,9 @@ def test_workspace_admission_rejects_wrong_sha_tampered_or_missing_manifest_oper
         safe_product_path=safe_path,
         operational_evidence_path=wrong_path,
     )
-    wrong_row = {
-        row["id"]: row for row in wrong_payload["rows"]
-    }["current-workspace-operational-evidence"]
+    wrong_row = {row["id"]: row for row in wrong_payload["rows"]}[
+        "current-workspace-operational-evidence"
+    ]
     assert wrong_row["status"] == "failed"
     assert "source SHA mismatch" in " ".join(wrong_row["details"]["validator_errors"])
 
@@ -254,9 +272,9 @@ def test_workspace_admission_rejects_wrong_sha_tampered_or_missing_manifest_oper
         safe_product_path=safe_path,
         operational_evidence_path=tampered_path,
     )
-    tampered_errors = {
-        row["id"]: row for row in tampered_payload["rows"]
-    }["current-workspace-operational-evidence"]["details"]["validator_errors"]
+    tampered_errors = {row["id"]: row for row in tampered_payload["rows"]}[
+        "current-workspace-operational-evidence"
+    ]["details"]["validator_errors"]
     assert "artifact payload digest mismatch" in tampered_errors
     assert "workspace operational namespace leakage is not zero" in tampered_errors
 
@@ -270,9 +288,9 @@ def test_workspace_admission_rejects_wrong_sha_tampered_or_missing_manifest_oper
         safe_product_path=safe_path,
         operational_evidence_path=missing_path,
     )
-    missing_errors = {
-        row["id"]: row for row in missing_payload["rows"]
-    }["current-workspace-operational-evidence"]["details"]["validator_errors"]
+    missing_errors = {row["id"]: row for row in missing_payload["rows"]}[
+        "current-workspace-operational-evidence"
+    ]["details"]["validator_errors"]
     assert "workspace operational source manifest is missing" in missing_errors
 
 
@@ -282,7 +300,9 @@ def test_workspace_admission_blocks_unallowlisted_quality_critical_change(
 ) -> None:
     root = Path.cwd()
     source_sha = _current_sha(root)
-    safe_path, operational_path = _write_exact_current_fixtures(tmp_path, root, source_sha)
+    safe_path, operational_path = _write_exact_current_fixtures(
+        tmp_path, root, source_sha
+    )
     real_blob = admission._git_blob_id  # noqa: SLF001 - direct freshness regression.
 
     def fake_blob(selected_root: Path, selected_sha: str, relative: str) -> str:
@@ -303,10 +323,16 @@ def test_workspace_admission_blocks_unallowlisted_quality_critical_change(
     assert rows["frozen-real-work-benchmark-v5"]["status"] == "blocked"
     freshness = rows["frozen-real-work-benchmark-v5"]["details"]["freshness"]
     assert freshness["quality_fresh"] is False
-    assert freshness["unallowed_quality_changes"][0]["path"] == "wavemind/experience_runtime.py"
-    assert "new independent quality evidence required" in rows["frozen-real-work-benchmark-v5"]["details"][
-        "not_admission_evidence_reason"
-    ]
+    assert (
+        freshness["unallowed_quality_changes"][0]["path"]
+        == "wavemind/experience_runtime.py"
+    )
+    assert (
+        "new independent quality evidence required"
+        in rows["frozen-real-work-benchmark-v5"]["details"][
+            "not_admission_evidence_reason"
+        ]
+    )
 
 
 def test_workspace_admission_blocks_v5_runner_or_result_tamper(
@@ -315,7 +341,9 @@ def test_workspace_admission_blocks_v5_runner_or_result_tamper(
 ) -> None:
     root = Path.cwd()
     source_sha = _current_sha(root)
-    safe_path, operational_path = _write_exact_current_fixtures(tmp_path, root, source_sha)
+    safe_path, operational_path = _write_exact_current_fixtures(
+        tmp_path, root, source_sha
+    )
     real_blob = admission._git_blob_id  # noqa: SLF001 - direct freshness regression.
 
     def fake_blob(selected_root: Path, selected_sha: str, relative: str) -> str:
@@ -334,9 +362,9 @@ def test_workspace_admission_blocks_v5_runner_or_result_tamper(
         operational_evidence_path=operational_path,
     )
 
-    row = {
-        item["id"]: item for item in payload["rows"]
-    }["frozen-real-work-benchmark-v5"]
+    row = {item["id"]: item for item in payload["rows"]}[
+        "frozen-real-work-benchmark-v5"
+    ]
     freshness = row["details"]["freshness"]
     assert row["status"] == "blocked"
     assert freshness["v5_result_blob_ok"] is False
@@ -374,14 +402,6 @@ def _write_exact_current_fixtures(
 
 
 def _safe_product_fixture(root: Path, source_sha: str) -> dict:
-    checked_in = json.loads(
-        (root / "benchmarks" / "safe_product_admission_results.json").read_text(
-            encoding="utf-8"
-        )
-    )
-    source_paths = [
-        entry["path"] for entry in checked_in["source_manifest"]["files"]
-    ]
     payload = {
         "schema": SAFE_PRODUCT_SCHEMA,
         "status": "admitted",
@@ -395,7 +415,7 @@ def _safe_product_fixture(root: Path, source_sha: str) -> dict:
             {"id": check_id, "status": "pass", "passed": True}
             for check_id in sorted(EXPECTED_CHECKS)
         ],
-        "source_manifest": build_source_manifest(root, source_paths),
+        "source_manifest": build_source_manifest(root, SAFE_PRODUCT_SOURCE_FILES),
         "claim_boundary": "test fixture",
     }
     return attach_artifact_integrity(payload)

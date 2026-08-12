@@ -4,6 +4,11 @@ import copy
 import json
 from pathlib import Path
 
+from benchmarks.workspace_experience_operational_evidence import (
+    OPERATIONAL_SOURCE_FILES,
+    REQUIRED_CHECKS as WORKSPACE_OPERATIONAL_CHECKS,
+    SCHEMA as WORKSPACE_OPERATIONAL_SCHEMA,
+)
 from wavemind.evaluation_contracts import backend_query_view, validate_dataset_manifest
 from wavemind.evaluation_validity_admission import (
     EXPECTED_ROWS,
@@ -11,8 +16,20 @@ from wavemind.evaluation_validity_admission import (
 )
 from wavemind.evaluation_validity_controls import run_evaluation_validity_controls
 from wavemind.evaluation_judges import build_evaluation_judge_policy
-from wavemind.evidence import attach_artifact_integrity
-from wavemind.evidence import validate_artifact_integrity
+from wavemind.evidence import (
+    attach_artifact_integrity,
+    build_source_manifest,
+    repository_commit,
+    validate_artifact_integrity,
+)
+from wavemind.safe_product_admission import (
+    EXPECTED_CHECKS as SAFE_PRODUCT_CHECKS,
+    SAFE_PRODUCT_SOURCE_FILES,
+    SCHEMA as SAFE_PRODUCT_SCHEMA,
+)
+from wavemind.workspace_experience_admission import (
+    evaluate_workspace_experience_admission_matrix,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,6 +43,65 @@ def _manifest() -> dict:
 def _resign(payload: dict) -> dict:
     payload.pop("integrity", None)
     return attach_artifact_integrity(payload)
+
+
+def _write_current_safety_artifacts(tmp_path: Path) -> tuple[Path, Path]:
+    source_sha = repository_commit(ROOT)
+    safe_product = attach_artifact_integrity(
+        {
+            "schema": SAFE_PRODUCT_SCHEMA,
+            "status": "admitted",
+            "admitted": True,
+            "source_sha": source_sha,
+            "summary": {
+                "checks_passed": len(SAFE_PRODUCT_CHECKS),
+                "checks_total": len(SAFE_PRODUCT_CHECKS),
+            },
+            "checks": [
+                {"id": check_id, "status": "pass", "passed": True}
+                for check_id in sorted(SAFE_PRODUCT_CHECKS)
+            ],
+            "source_manifest": build_source_manifest(ROOT, SAFE_PRODUCT_SOURCE_FILES),
+            "claim_boundary": "test fixture",
+        }
+    )
+    operational = attach_artifact_integrity(
+        {
+            "schema": WORKSPACE_OPERATIONAL_SCHEMA,
+            "status": "admitted",
+            "admitted": True,
+            "source_sha": source_sha,
+            "summary": {
+                "checks_passed": len(WORKSPACE_OPERATIONAL_CHECKS),
+                "checks_total": len(WORKSPACE_OPERATIONAL_CHECKS),
+            },
+            "checks": [
+                {"id": check_id, "passed": True, "details": {}}
+                for check_id in sorted(WORKSPACE_OPERATIONAL_CHECKS)
+            ],
+            "metrics": {
+                "workspace_namespace_leakage": 0,
+                "mandatory_event_capture": 1.0,
+                "cross_client_citation_state_parity": 1.0,
+                "packet_selection_p95_ms": 10.0,
+                "packet_selection_p99_ms": 20.0,
+            },
+            "source_manifest": build_source_manifest(ROOT, OPERATIONAL_SOURCE_FILES),
+            "claim_boundary": "test fixture",
+        }
+    )
+    safe_path = tmp_path / "safe-product.json"
+    operational_path = tmp_path / "workspace-operational.json"
+    workspace_path = tmp_path / "workspace-experience.json"
+    safe_path.write_text(json.dumps(safe_product), encoding="utf-8")
+    operational_path.write_text(json.dumps(operational), encoding="utf-8")
+    workspace = evaluate_workspace_experience_admission_matrix(
+        root=ROOT,
+        safe_product_path=safe_path,
+        operational_evidence_path=operational_path,
+    )
+    workspace_path.write_text(json.dumps(workspace), encoding="utf-8")
+    return safe_path, workspace_path
 
 
 def test_dataset_manifest_has_pinned_sources_and_native_task_semantics():
@@ -221,3 +297,45 @@ def test_valid_judge_policy_closes_judge_row_without_claiming_excluded_lanes(tmp
     assert row["status"] == "implemented"
     assert len(row["evidence"]["active_primary_scorers"]) == 2
     assert len(row["evidence"]["excluded_native_judge_lanes"]) >= 4
+
+
+def test_exact_current_safety_artifacts_close_safety_row(tmp_path):
+    safe_path, workspace_path = _write_current_safety_artifacts(tmp_path)
+
+    report = run_evaluation_validity_admission(
+        project_root=ROOT,
+        dataset_manifest_path=DATASET_MANIFEST,
+        safe_product_path=safe_path,
+        workspace_experience_path=workspace_path,
+    )
+
+    row = next(
+        item for item in report["rows"] if item["id"] == "safety-admissions-preserved"
+    )
+    assert row["status"] == "implemented"
+    assert row["evidence"]["safe_product"]["errors"] == []
+    assert row["evidence"]["workspace_experience"]["errors"] == []
+
+
+def test_resigned_non_admitted_workspace_artifact_blocks_safety_row(tmp_path):
+    safe_path, workspace_path = _write_current_safety_artifacts(tmp_path)
+    workspace = json.loads(workspace_path.read_text(encoding="utf-8"))
+    workspace["status"] = "blocked"
+    workspace["admitted"] = False
+    workspace_path.write_text(json.dumps(_resign(workspace)), encoding="utf-8")
+
+    report = run_evaluation_validity_admission(
+        project_root=ROOT,
+        dataset_manifest_path=DATASET_MANIFEST,
+        safe_product_path=safe_path,
+        workspace_experience_path=workspace_path,
+    )
+
+    row = next(
+        item for item in report["rows"] if item["id"] == "safety-admissions-preserved"
+    )
+    assert row["status"] == "blocked"
+    assert (
+        "workspace experience admission is not admitted"
+        in row["evidence"]["workspace_experience"]["errors"]
+    )

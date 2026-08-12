@@ -8,6 +8,11 @@ from .evaluation_contracts import backend_query_view, validate_dataset_manifest
 from .evaluation_judges import validate_evaluation_judge_policy
 from .evaluation_splits import validate_evaluation_split_manifest
 from .evaluation_validity_controls import SCHEMA as CONTROLS_SCHEMA
+from .safe_product_admission import validate_safe_product_artifact
+from .workspace_experience_admission import (
+    WORKSPACE_EXPERIENCE_ADMISSION_SCHEMA,
+    _source_manifest as workspace_source_manifest,
+)
 from .evidence import (
     attach_artifact_integrity,
     build_source_manifest,
@@ -46,12 +51,15 @@ SOURCE_PATHS = (
     "wavemind/evaluation_statistics.py",
     "wavemind/evaluation_validity_admission.py",
     "wavemind/evaluation_validity_controls.py",
+    "wavemind/safe_product_admission.py",
+    "wavemind/workspace_experience_admission.py",
     "benchmarks/evaluation_dataset_manifest_v1.json",
     "benchmarks/evaluation_salvage_manifest.json",
     "benchmarks/evaluation_judge_policy.py",
     "benchmarks/evaluation_split_manifest.py",
     "benchmarks/evaluation_validity_admission.py",
     "benchmarks/evaluation_validity_controls.py",
+    ".github/workflows/safe-product.yml",
     "docs/adr/0001-task-native-evaluation-science.md",
     "docs/ROADMAP.md",
     "tests/test_evaluation_validity_admission.py",
@@ -105,6 +113,38 @@ def _validate_validity_evidence(
     return errors
 
 
+def _validate_workspace_admission_artifact(
+    root: Path, payload: Mapping[str, Any], source_sha: str
+) -> list[str]:
+    errors = validate_artifact_integrity(payload)
+    if payload.get("schema") != WORKSPACE_EXPERIENCE_ADMISSION_SCHEMA:
+        errors.append("workspace experience admission schema is invalid")
+    if payload.get("source_sha") != source_sha:
+        errors.append("workspace experience admission source SHA mismatch")
+    if payload.get("status") != "admitted" or payload.get("admitted") is not True:
+        errors.append("workspace experience admission is not admitted")
+    source_manifest = payload.get("source_manifest")
+    if not isinstance(source_manifest, Mapping):
+        errors.append("workspace experience admission source manifest is missing")
+    elif source_manifest != workspace_source_manifest(root):
+        errors.append("workspace experience admission source manifest mismatch")
+    rows = payload.get("rows")
+    if not isinstance(rows, list) or not rows:
+        errors.append("workspace experience admission rows are missing")
+    else:
+        invalid = [
+            str(row.get("id"))
+            for row in rows
+            if isinstance(row, Mapping)
+            and row.get("status") not in {"implemented", "historical"}
+        ]
+        if invalid:
+            errors.append(
+                f"workspace experience admission has non-admitted rows: {invalid}"
+            )
+    return errors
+
+
 def run_evaluation_validity_admission(
     *,
     project_root: str | Path,
@@ -112,6 +152,8 @@ def run_evaluation_validity_admission(
     validity_evidence_path: str | Path | None = None,
     split_evidence_path: str | Path | None = None,
     judge_evidence_path: str | Path | None = None,
+    safe_product_path: str | Path | None = None,
+    workspace_experience_path: str | Path | None = None,
     expected_source_sha: str | None = None,
 ) -> dict[str, Any]:
     root = Path(project_root).resolve()
@@ -140,6 +182,24 @@ def run_evaluation_validity_admission(
         )
         if judge_evidence
         else ["evaluation judge evidence artifact is missing"]
+    )
+    safe_product = _load_json(safe_product_path) if safe_product_path else {}
+    safe_product_errors = (
+        validate_safe_product_artifact(
+            safe_product,
+            project_root=root,
+            expected_source_sha=source_sha,
+        )
+        if safe_product
+        else ["exact-current Safe Product artifact is missing"]
+    )
+    workspace_experience = (
+        _load_json(workspace_experience_path) if workspace_experience_path else {}
+    )
+    workspace_errors = (
+        _validate_workspace_admission_artifact(root, workspace_experience, source_sha)
+        if workspace_experience
+        else ["exact-current Workspace Experience artifact is missing"]
     )
 
     contract = dataset_manifest.get("backend_query_contract", {})
@@ -277,12 +337,19 @@ def run_evaluation_validity_admission(
             requirements["exact-sha-integrity"],
         )
     )
-    safety_passed, safety_detail = _evidence_passed(
-        evidence, "safety_admissions_preserved"
-    )
-    if evidence_errors:
-        safety_passed = False
-        safety_detail = {"errors": evidence_errors, "reported": safety_detail}
+    safety_passed = not safe_product_errors and not workspace_errors
+    safety_detail = {
+        "safe_product": {
+            "source_sha": safe_product.get("source_sha"),
+            "status": safe_product.get("status"),
+            "errors": safe_product_errors,
+        },
+        "workspace_experience": {
+            "source_sha": workspace_experience.get("source_sha"),
+            "status": workspace_experience.get("status"),
+            "errors": workspace_errors,
+        },
+    }
     rows.append(
         _row(
             "safety-admissions-preserved",

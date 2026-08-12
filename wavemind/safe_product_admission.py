@@ -60,6 +60,25 @@ EXPECTED_CHECKS = {
     "canonical-product-status",
     "exact-source-manifest",
 }
+SAFE_PRODUCT_SOURCE_FILES = (
+    ".github/workflows/benchmark-leaderboard.yml",
+    ".github/workflows/codeql.yml",
+    ".github/workflows/full-check.yml",
+    ".github/workflows/release.yml",
+    ".github/workflows/safe-product.yml",
+    ".github/workflows/tests.yml",
+    "Dockerfile",
+    "docker-compose.yml",
+    "docs/data/product-status.json",
+    "scripts/sync_product_status.py",
+    "wavemind/api.py",
+    "wavemind/cli.py",
+    "wavemind/core.py",
+    "wavemind/evidence.py",
+    "wavemind/onboarding.py",
+    "wavemind/product_backup.py",
+    "wavemind/safe_product_admission.py",
+)
 
 
 def _load_json(path: str | Path) -> dict[str, Any]:
@@ -149,7 +168,9 @@ def _serve_safety_checks() -> tuple[dict[str, Any], dict[str, Any]]:
     return local, public
 
 
-def _api_isolation_and_secret_checks(root: Path) -> tuple[dict[str, Any], dict[str, Any]]:
+def _api_isolation_and_secret_checks(
+    root: Path,
+) -> tuple[dict[str, Any], dict[str, Any]]:
     principals = json.dumps(
         {
             "tenant-a-key": {
@@ -466,14 +487,20 @@ def run_safe_product_admission(
         _check(
             "namespace-leakage-zero",
             not safe_errors and int(safe_metrics.get("namespace_leakage", -1)) == 0,
-            {"validator_errors": safe_errors, "count": safe_metrics.get("namespace_leakage")},
+            {
+                "validator_errors": safe_errors,
+                "count": safe_metrics.get("namespace_leakage"),
+            },
         ),
         _check(
             "secret-leakage-zero",
             secrets["secret_visible"] is False
             and secrets["redaction_present"] is True
             and persistence_checks.get("secret_leakage_zero") is True,
-            {"api": secrets, "container": persistence_checks.get("secret_leakage_zero")},
+            {
+                "api": secrets,
+                "container": persistence_checks.get("secret_leakage_zero"),
+            },
         ),
         _check(
             "container-recreate-persistence",
@@ -493,12 +520,18 @@ def run_safe_product_admission(
             "false-memory-injection",
             not safe_errors
             and float(safe_metrics.get("false_memory_injection_rate", 1.0)) <= 0.02,
-            {"validator_errors": safe_errors, "rate": safe_metrics.get("false_memory_injection_rate")},
+            {
+                "validator_errors": safe_errors,
+                "rate": safe_metrics.get("false_memory_injection_rate"),
+            },
         ),
         _check(
             "unverified-injection-zero",
             not safe_errors and int(safe_metrics.get("unverified_injection", -1)) == 0,
-            {"validator_errors": safe_errors, "count": safe_metrics.get("unverified_injection")},
+            {
+                "validator_errors": safe_errors,
+                "count": safe_metrics.get("unverified_injection"),
+            },
         ),
     ]
     for check_id in (
@@ -533,28 +566,7 @@ def run_safe_product_admission(
             ),
         ]
     )
-    manifest = build_source_manifest(
-        root,
-        [
-            ".github/workflows/benchmark-leaderboard.yml",
-            ".github/workflows/codeql.yml",
-            ".github/workflows/full-check.yml",
-            ".github/workflows/release.yml",
-            ".github/workflows/safe-product.yml",
-            ".github/workflows/tests.yml",
-            "Dockerfile",
-            "docker-compose.yml",
-            "docs/data/product-status.json",
-            "scripts/sync_product_status.py",
-            "wavemind/api.py",
-            "wavemind/cli.py",
-            "wavemind/core.py",
-            "wavemind/evidence.py",
-            "wavemind/onboarding.py",
-            "wavemind/product_backup.py",
-            "wavemind/safe_product_admission.py",
-        ],
-    )
+    manifest = build_source_manifest(root, SAFE_PRODUCT_SOURCE_FILES)
     checks.append(
         _check(
             "exact-source-manifest",
@@ -573,7 +585,9 @@ def run_safe_product_admission(
         "checks": checks,
         "component_artifacts": {
             "safe_retrieval": safe_retrieval.get("integrity", {}).get("payload_sha256"),
-            "product_persistence": product_persistence.get("integrity", {}).get("payload_sha256"),
+            "product_persistence": product_persistence.get("integrity", {}).get(
+                "payload_sha256"
+            ),
             "quickstarts": quickstarts.get("integrity", {}).get("payload_sha256"),
         },
         "source_manifest": manifest,
@@ -605,6 +619,11 @@ def validate_safe_product_artifact(
                 Path(project_root), manifest, require_current_files=True
             )
         )
+        expected_manifest = build_source_manifest(
+            Path(project_root), SAFE_PRODUCT_SOURCE_FILES
+        )
+        if manifest != expected_manifest:
+            errors.append("safe product source manifest is incomplete or unexpected")
     checks = report.get("checks")
     if not isinstance(checks, list):
         errors.append("safe product checks are missing")

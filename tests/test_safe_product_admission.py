@@ -6,6 +6,7 @@ from pathlib import Path
 from wavemind.evidence import attach_artifact_integrity, build_source_manifest
 from wavemind.safe_product_admission import (
     EXPECTED_CHECKS,
+    SAFE_PRODUCT_SOURCE_FILES,
     SCHEMA,
     _backup_restore_rollback_check,
     _canonical_product_status_check,
@@ -29,9 +30,7 @@ def _artifact(root: Path, source_sha: str):
             for check_id in sorted(EXPECTED_CHECKS)
         ],
         "claim_boundary": "repository-controlled evidence",
-        "source_manifest": build_source_manifest(
-            root, ["wavemind/safe_product_admission.py"]
-        ),
+        "source_manifest": build_source_manifest(root, SAFE_PRODUCT_SOURCE_FILES),
     }
     return attach_artifact_integrity(report)
 
@@ -40,9 +39,12 @@ def test_safe_product_validator_requires_all_exact_sha_checks():
     root = Path.cwd()
     source_sha = "a" * 40
     report = _artifact(root, source_sha)
-    assert validate_safe_product_artifact(
-        report, project_root=root, expected_source_sha=source_sha
-    ) == []
+    assert (
+        validate_safe_product_artifact(
+            report, project_root=root, expected_source_sha=source_sha
+        )
+        == []
+    )
 
     missing = copy.deepcopy(report)
     missing["checks"] = missing["checks"][:-1]
@@ -60,6 +62,23 @@ def test_safe_product_validator_requires_all_exact_sha_checks():
     )
     assert "artifact payload digest mismatch" in errors
     assert "safe product checks contain plan-only or proxy evidence" in errors
+
+
+def test_safe_product_validator_rejects_signed_incomplete_source_manifest():
+    root = Path.cwd()
+    source_sha = "a" * 40
+    report = _artifact(root, source_sha)
+    incomplete = copy.deepcopy(report)
+    incomplete["source_manifest"] = build_source_manifest(
+        root, SAFE_PRODUCT_SOURCE_FILES[1:]
+    )
+    incomplete = attach_artifact_integrity(incomplete)
+
+    errors = validate_safe_product_artifact(
+        incomplete, project_root=root, expected_source_sha=source_sha
+    )
+
+    assert "safe product source manifest is incomplete or unexpected" in errors
 
 
 def test_safe_product_markdown_lists_machine_checks():
