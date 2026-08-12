@@ -1,8 +1,8 @@
 {
   "schema": "wavemind.evaluation_validity_admission.v1",
-  "generated_at": "2026-08-12T11:55:15Z",
-  "source_sha": "61b183a6edbc29ac1047d8ca17ead77ec6d2b33e",
-  "expected_source_sha": "61b183a6edbc29ac1047d8ca17ead77ec6d2b33e",
+  "generated_at": "2026-08-12T12:20:14Z",
+  "source_sha": "b24f5e98b0be6a939cc1b3c6ef45beca8e45ca6d",
+  "expected_source_sha": "b24f5e98b0be6a939cc1b3c6ef45beca8e45ca6d",
   "status": "blocked",
   "admitted": false,
   "implemented_rows": 15,
@@ -269,8 +269,8 @@
       "status": "implemented",
       "requirement": "Admission is tied to the exact source SHA and a current source manifest.",
       "evidence": {
-        "source_sha": "61b183a6edbc29ac1047d8ca17ead77ec6d2b33e",
-        "expected_source_sha": "61b183a6edbc29ac1047d8ca17ead77ec6d2b33e",
+        "source_sha": "b24f5e98b0be6a939cc1b3c6ef45beca8e45ca6d",
+        "expected_source_sha": "b24f5e98b0be6a939cc1b3c6ef45beca8e45ca6d",
         "source_manifest": {
           "schema": "wavemind.source_manifest.v1",
           "algorithm": "sha256",
@@ -281,7 +281,7 @@
             },
             {
               "path": "README.md",
-              "sha256": "d0cd7a163ea40021ef9cdd30b18bdbdf35923cb05d1bc4615fabfc94a7a12df4"
+              "sha256": "0cc11b679e49e74d5ecbbee25f8476aae2df896d650043a09acbad3362fe6be1"
             },
             {
               "path": "benchmarks/evaluation_dataset_manifest_v1.json",
@@ -368,7 +368,7 @@
               "sha256": "c2f77366cf024f177e7c0919cbe435aa7685ccf76f56145ffea6365a1d129bae"
             }
           ],
-          "digest": "8be8b44a3dbe36809b6aeec12c323283184240bcc3f5d3a8172ebb3645f61f71"
+          "digest": "d6ef570687bf867653bc8aaad80b6360a67db92d2f7c04f2bad83beb15658879"
         }
       }
     },
@@ -407,6 +407,6 @@
   "integrity": {
     "schema": "wavemind.artifact_integrity.v1",
     "algorithm": "sha256",
-    "payload_sha256": "69aea3cefba1834a56843d85baac716bc121ee381ebdca7d0473f8c3395a973e"
+    "payload_sha256": "dcbabe4b185f0be358d2cc1c9f143357b647146da829a41f80f946ec35242332"
   }
 }
