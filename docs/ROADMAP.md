@@ -103,12 +103,46 @@ verified agent-work memory layer on the declared public scenarios and sits on
 their task-success, context, safety, and latency Pareto frontier. It is not a
 universal "fastest database" claim.
 
-### Phase B: WaveMind Connect
+### Phase B: Safe One-Command Upgrade
 
-After Phase A1 and A2 are admitted, the next expansion is zero-config cross-agent
-verified memory: one auditable experience lifecycle that follows a workspace
-across supported agents without silently reading private histories or rewriting
-user files.
+After measurement validity and generalizable quality are admitted, WaveMind
+must make routine upgrades safe for persistent user memory before adding new
+distribution surfaces. This is a separate future goal; Goal 8 does not
+implement an updater.
+
+The planned user entrypoint is `wavemind upgrade`. It must provide:
+
+- a preflight for current and target versions, free disk space, active writers,
+  running processes, and compatibility;
+- an exclusive upgrade lock and an idempotent journal so an interrupted or
+  repeated command is safe;
+- a verified backup of both Core and Verified Experience databases, config,
+  policy/state manifests, and object-store references;
+- an explicit versioned schema and config migration ledger instead of treating
+  hidden `CREATE TABLE` behavior as a migration system;
+- checksum and release-identity verification, followed by migration and smoke
+  tests on a staged copy before switching live state;
+- parity checks for IDs, namespaces, metadata, vectors, TTL, provenance, audit,
+  experience state, and forgotten/deleted state;
+- atomic activation and automatic rollback to the previous code, both
+  databases, and configuration after any failed migration, doctor, health, or
+  recall check;
+- opt-in updates only, with no silent background auto-update.
+
+Required proof includes supported local Python package/tool installs and Docker
+Compose, cross-version fixtures for at least `N-2 -> N` and `N-1 -> N`, and
+failure injection for interruption, corrupt artifacts, checksum mismatch, disk
+full, incompatible schema, active writers, repeated commands, and failed health
+checks. Helm or Kubernetes support enters the claim only after a reproducible
+test exists. A separate exact-SHA `upgrade-admission` and rollback artifact are
+mandatory before this phase is complete.
+
+### Phase C: WaveMind Connect
+
+After Phase A1, A2, and the Safe One-Command Upgrade phase are admitted, the
+next expansion is zero-config cross-agent verified memory: one auditable
+experience lifecycle that follows a workspace across supported agents without
+silently reading private histories or rewriting user files.
 
 Planned product surface:
 
@@ -1007,10 +1041,12 @@ Enterprise requirements:
   Recovery. Task-native outcomes, competitor, confidence-interval, context,
   safety, and latency gates above are the release boundary; controlled local
   wins alone do not close it.
-- After Phase A1 and A2 are admitted, deliver the first WaveMind Connect slice: opt-in
-  setup, workspace identity, cross-client Experience Packet replay, Studio
-  review and rollback, and a frozen public-repository proof. Do not delay the
-  quality gate by building this expansion early.
+- After Phase A1 and A2 are admitted, complete Safe One-Command Upgrade with
+  cross-version migration, rollback, and exact-SHA admission evidence.
+- After the upgrade phase is admitted, deliver the first WaveMind Connect
+  slice: opt-in setup, workspace identity, cross-client Experience Packet
+  replay, Studio review and rollback, and a frozen public-repository proof. Do
+  not delay the quality gate by building this expansion early.
 - Larger service-mode benchmark profiles for persisted FAISS, Qdrant, and
   further-tuned pgvector, with SLO and cost gates tracked for every checked-in
   production result.

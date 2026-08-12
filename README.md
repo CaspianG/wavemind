@@ -668,7 +668,7 @@ Near-term priorities:
 - admit task-native measurement validity before resuming product quality tuning;
 - demonstrate paired generalizable benefit on an agent/workflow family and an independent memory family;
 - combine fast FAISS, Qdrant, or pgvector retrieval with bounded WaveMind reranking;
-- after quality admission, deliver WaveMind Connect for opt-in cross-agent replay, review, and rollback;
+- after quality admission, deliver safe one-command upgrades with rollback before WaveMind Connect;
 - complete multi-region and 100M scale claims only on matching infrastructure.
 
 Longer-term direction:
