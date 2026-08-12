@@ -1,0 +1,121 @@
+{
+  "schema": "wavemind.evaluation_product_hypothesis.v1",
+  "id": "stateful-target-versioning-v1",
+  "status": "preregistered",
+  "candidate_number": 1,
+  "hypothesis_group": "atomic-versioned-correction",
+  "preregistered_at_source_sha": "341f26841c18c848b9646ae7f66124938ac036b2",
+  "protocol": {
+    "revision": "goal8-bounded-development-v2-20260812",
+    "payload_sha256": "803a291df1fed8fc0f344f5c8984b81d164315abf18518cf2ff34dec26f8971b"
+  },
+  "baseline": {
+    "artifact": "benchmarks/evaluation_lifecycle_diagnostic_v3_results.json",
+    "source_sha": "9f88903c3481b51405609db622152392e2a08d7f",
+    "payload_sha256": "509f3be38b0b0980e2fc43910103e2388b345ca92c86d8a8536362bca907675e",
+    "operation_state_transition": 0.9186991869918699,
+    "target_correct": 0.959349593495935,
+    "stale_leakage": 0.08130081300813008,
+    "context_characters_mean": 45.10569105691057,
+    "warm_p95_ms": 4.452010028762742,
+    "namespace_leakage": 0.0,
+    "unverified_injection": 0.0,
+    "deleted_resurfacing": 0.0
+  },
+  "causal_hypothesis": "WaveMind Core appends confirmed updates without a versioned supersession transition. Old verified values remain eligible for recall, causing all observed bounded-development failures. An atomic supersede operation should preserve old provenance while making the predecessor ineligible for production recall.",
+  "implementation_scope": {
+    "public_api": "WaveMind.supersede(memory_id, replacement_text, namespace=..., metadata=...)",
+    "storage": "Atomic predecessor status update plus replacement insert for SQLite and PostgreSQL stores.",
+    "retrieval": "Existing confidence policy rejects the predecessor after its persisted memory_status becomes stale.",
+    "provenance": "Replacement records supersedes_id and predecessor records superseded_by_id without hard deletion.",
+    "recovery": "Restart and recovery-journal replay preserve the same active version and provenance chain.",
+    "out_of_scope": [
+      "conversation extraction",
+      "reader or embedding changes",
+      "ranking-weight tuning",
+      "validation or final data",
+      "STATE-Bench agent execution"
+    ]
+  },
+  "expected_affected_rows": [
+    {
+      "case_id": "A06_update",
+      "target_id": "lauren_desired_dog_breed",
+      "operation_type": "Update"
+    },
+    {
+      "case_id": "A07_trajectory_ops",
+      "target_id": "daniel_theatre_role",
+      "operation_type": "TrajectoryOps"
+    },
+    {
+      "case_id": "A26_trajectory_ops",
+      "target_id": "current_job_level",
+      "operation_type": "TrajectoryOps"
+    },
+    {
+      "case_id": "A28_update",
+      "target_id": "voss_sabbatical_start_date",
+      "operation_type": "Update"
+    },
+    {
+      "case_id": "B26_trajectory_ops",
+      "target_id": "chloe_city",
+      "operation_type": "TrajectoryOps"
+    },
+    {
+      "case_id": "C23_update",
+      "target_id": "user_passport_expiry",
+      "operation_type": "Update"
+    },
+    {
+      "case_id": "E03_trajectory_ops",
+      "target_id": "colleague_correct_name",
+      "operation_type": "TrajectoryOps"
+    },
+    {
+      "case_id": "E07_update",
+      "target_id": "health_insurance_policy_number",
+      "operation_type": "Update"
+    },
+    {
+      "case_id": "E13_update",
+      "target_id": "dentist_office_name_spelling",
+      "operation_type": "Update"
+    },
+    {
+      "case_id": "F16_trajectory_ops",
+      "target_id": "support_group_meeting_day",
+      "operation_type": "TrajectoryOps"
+    }
+  ],
+  "expected_unaffected_strata": [
+    "Remember",
+    "Forget",
+    "Reflect"
+  ],
+  "acceptance": {
+    "minimum_operation_state_transition": 0.9686991869918699,
+    "maximum_stale_leakage": 0.02,
+    "minimum_unaffected_stratum_transition": 0.98,
+    "maximum_context_characters_mean": 49.61626016260163,
+    "maximum_warm_p95_ms": 5.34241203451529,
+    "maximum_namespace_leakage": 0.0,
+    "maximum_unverified_injection": 0.0,
+    "maximum_deleted_resurfacing": 0.0,
+    "restart_persistence_required": true,
+    "atomic_failure_rollback_required": true,
+    "provenance_chain_required": true
+  },
+  "stop_rule": {
+    "maximum_candidates_in_hypothesis_group": 2,
+    "failed_candidate_does_not_change_sample_or_thresholds": true,
+    "heldout_access": "forbidden"
+  },
+  "claim_boundary": "Preregistered development hypothesis only. It is not implementation evidence or a quality claim.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "cce7937a337a37f7c89ad87984300f0e93487c09b89b055facc6452457b3232f"
+  }
+}
