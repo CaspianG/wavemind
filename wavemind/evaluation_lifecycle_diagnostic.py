@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import statistics
 import time
 from collections import Counter
 from pathlib import Path
@@ -15,6 +16,7 @@ from .evidence import (
     build_source_manifest,
     execution_environment,
     repository_commit,
+    validate_artifact_integrity,
 )
 
 
@@ -25,6 +27,7 @@ SOURCE_PATHS = (
     "wavemind/storage.py",
     "wavemind/evaluation_lifecycle_diagnostic.py",
     "benchmarks/evaluation_lifecycle_diagnostic.py",
+    "benchmarks/evaluation_candidate1_latency_protocol_addendum.json",
     "tests/test_evaluation_lifecycle_diagnostic.py",
 )
 
@@ -41,6 +44,29 @@ class LifecycleBackend(Protocol):
 
 def _json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def measure_warm_observation(
+    backend: LifecycleBackend,
+    target_id: str,
+    target_name: str,
+    *,
+    warmup_count: int,
+    measured_count: int,
+) -> tuple[dict[str, Any], float, list[float]]:
+    if warmup_count < 0 or measured_count <= 0:
+        raise ValueError("warmup_count must be non-negative and measured_count positive")
+    for _ in range(warmup_count):
+        backend.observe(target_id, target_name)
+    samples: list[float] = []
+    observation: dict[str, Any] | None = None
+    for _ in range(measured_count):
+        started = time.perf_counter()
+        observation = backend.observe(target_id, target_name)
+        samples.append((time.perf_counter() - started) * 1000.0)
+    if observation is None:
+        raise RuntimeError("warm observation produced no measured result")
+    return observation, float(statistics.median(samples)), samples
 
 
 def _target(operation: Mapping[str, Any]) -> tuple[str, str]:
@@ -440,6 +466,7 @@ def run_memops_lifecycle_diagnostic(
     dataset_manifest_path: str | Path,
     split_manifest_path: str | Path,
     judge_policy_path: str | Path,
+    latency_addendum_path: str | Path,
     temp_root: str | Path,
 ) -> dict[str, Any]:
     root = Path(project_root).resolve()
@@ -456,6 +483,21 @@ def run_memops_lifecycle_diagnostic(
     )
     if protocol_errors:
         raise ValueError(f"development protocol is invalid: {protocol_errors}")
+    latency_addendum = _json(Path(latency_addendum_path))
+    latency_integrity_errors = validate_artifact_integrity(latency_addendum)
+    if latency_integrity_errors:
+        raise ValueError(
+            f"latency protocol addendum is invalid: {latency_integrity_errors}"
+        )
+    correction = latency_addendum.get("frozen_correction")
+    if not isinstance(correction, Mapping):
+        raise ValueError("latency protocol addendum has no frozen correction")
+    warmup_count = int(correction.get("warmup_queries_per_target", -1))
+    measured_count = int(correction.get("measured_queries_per_target", 0))
+    if warmup_count != 2 or measured_count != 5:
+        raise ValueError("latency protocol addendum does not match the frozen 2/5 plan")
+    if correction.get("heldout_access") != "forbidden":
+        raise ValueError("latency protocol addendum must forbid heldout access")
     revision = (
         __import__("subprocess")
         .check_output(
@@ -505,9 +547,15 @@ def run_memops_lifecycle_diagnostic(
                 apply_ms = (time.perf_counter() - started) * 1000.0
                 target_ids = sorted(set(catalog).union(expected))
                 for target_id in target_ids:
-                    observed_at = time.perf_counter()
-                    observation = backend.observe(target_id, catalog[target_id])
-                    latency_ms = (time.perf_counter() - observed_at) * 1000.0
+                    observation, latency_ms, latency_samples_ms = (
+                        measure_warm_observation(
+                            backend,
+                            target_id,
+                            catalog[target_id],
+                            warmup_count=warmup_count,
+                            measured_count=measured_count,
+                        )
+                    )
                     score = score_observation(
                         expected=expected.get(target_id), observation=observation
                     )
@@ -523,6 +571,7 @@ def run_memops_lifecycle_diagnostic(
                         "backend": backend.name,
                         "apply_ms": apply_ms,
                         "latency_ms": latency_ms,
+                        "latency_samples_ms": latency_samples_ms,
                         **score,
                         "error_taxonomy": error,
                     }
@@ -568,6 +617,13 @@ def run_memops_lifecycle_diagnostic(
             "revision": protocol["revision"],
             "payload_sha256": protocol["integrity"]["payload_sha256"],
             "heldout_access": protocol["heldout_access"],
+            "latency_addendum": {
+                "id": latency_addendum["id"],
+                "payload_sha256": latency_addendum["integrity"]["payload_sha256"],
+                "warmup_queries_per_target": warmup_count,
+                "measured_queries_per_target": measured_count,
+                "per_target_latency_value": correction["per_target_latency_value"],
+            },
         },
         "upstream": {"memops_revision": revision},
         "scope": {

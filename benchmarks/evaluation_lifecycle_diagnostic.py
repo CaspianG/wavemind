@@ -34,6 +34,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         type=Path,
         default=PROJECT_ROOT / "benchmarks/evaluation_lifecycle_diagnostic_v3_results.json",
     )
+    parser.add_argument(
+        "--latency-addendum",
+        type=Path,
+        default=PROJECT_ROOT
+        / "benchmarks/evaluation_candidate1_latency_protocol_addendum.json",
+    )
     args = parser.parse_args(argv)
     payload = run_memops_lifecycle_diagnostic(
         project_root=PROJECT_ROOT,
@@ -45,6 +51,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         / "benchmarks/evaluation_split_manifest_results.json",
         judge_policy_path=PROJECT_ROOT
         / "benchmarks/evaluation_judge_policy_results.json",
+        latency_addendum_path=args.latency_addendum,
         temp_root=args.temp_root,
     )
     args.raw_output.parent.mkdir(parents=True, exist_ok=True)

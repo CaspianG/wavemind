@@ -10,6 +10,7 @@ from wavemind.evaluation_lifecycle_diagnostic import (
     classify_error,
     compact_lifecycle_diagnostic,
     expected_state,
+    measure_warm_observation,
     score_observation,
 )
 
@@ -30,6 +31,38 @@ def _operation(
         "new_value": value,
         "evidence_spans": [{"segment_index": 1, "turn_index": 1, "quote": value}],
     }
+
+
+class _CountingBackend:
+    name = "counting"
+
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def apply(self, operation: dict) -> None:
+        del operation
+
+    def observe(self, target_id: str, target_name: str) -> dict:
+        self.calls += 1
+        return {"selected": {"value": f"{target_id}:{target_name}:{self.calls}"}}
+
+    def close(self) -> None:
+        return None
+
+
+def test_warm_latency_measurement_uses_frozen_warmups_and_repeats():
+    backend = _CountingBackend()
+    observation, latency_ms, samples = measure_warm_observation(
+        backend,
+        "target",
+        "Target",
+        warmup_count=2,
+        measured_count=5,
+    )
+    assert backend.calls == 7
+    assert len(samples) == 5
+    assert latency_ms == sorted(samples)[2]
+    assert observation["selected"]["value"].endswith(":7")
 
 
 def test_expected_state_applies_confirmed_updates_and_forgetting():
