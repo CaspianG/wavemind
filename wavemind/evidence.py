@@ -13,6 +13,7 @@ from typing import Any, Iterable, Mapping
 
 
 SOURCE_MANIFEST_SCHEMA = "wavemind.source_manifest.v1"
+SOURCE_MANIFEST_TEXT_NORMALIZATION = "utf8-crlf-to-lf-v1"
 ARTIFACT_INTEGRITY_SCHEMA = "wavemind.artifact_integrity.v1"
 GIT_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 
@@ -40,6 +41,19 @@ def file_sha256(path: Path) -> str:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def source_file_sha256(path: Path) -> str:
+    """Hash source bytes consistently across Git LF/CRLF checkouts."""
+    content = Path(path).read_bytes()
+    if b"\x00" not in content:
+        try:
+            content.decode("utf-8")
+        except UnicodeDecodeError:
+            pass
+        else:
+            content = content.replace(b"\r\n", b"\n")
+    return sha256_bytes(content)
 
 
 def repository_commit(root: Path) -> str:
@@ -96,19 +110,22 @@ def build_source_manifest(root: Path, paths: Iterable[Path | str]) -> dict[str, 
         try:
             relative = absolute.relative_to(root).as_posix()
         except ValueError as exc:
-            raise EvidenceError(f"manifest path escapes repository: {raw_path}") from exc
+            raise EvidenceError(
+                f"manifest path escapes repository: {raw_path}"
+            ) from exc
         if relative in seen:
             continue
         if not absolute.is_file():
             raise EvidenceError(f"manifest source file is missing: {relative}")
         seen.add(relative)
-        files.append({"path": relative, "sha256": file_sha256(absolute)})
+        files.append({"path": relative, "sha256": source_file_sha256(absolute)})
     files.sort(key=lambda item: item["path"])
     if not files:
         raise EvidenceError("source manifest must contain at least one file")
     return {
         "schema": SOURCE_MANIFEST_SCHEMA,
         "algorithm": "sha256",
+        "text_normalization": SOURCE_MANIFEST_TEXT_NORMALIZATION,
         "files": files,
         "digest": sha256_bytes(canonical_json_bytes(files)),
     }
@@ -125,6 +142,9 @@ def validate_source_manifest(
         errors.append("source manifest schema is invalid")
     if manifest.get("algorithm") != "sha256":
         errors.append("source manifest algorithm is not sha256")
+    normalization = manifest.get("text_normalization")
+    if normalization not in {None, SOURCE_MANIFEST_TEXT_NORMALIZATION}:
+        errors.append("source manifest text normalization is invalid")
     files = manifest.get("files")
     if not isinstance(files, list) or not files:
         errors.append("source manifest has no files")
@@ -160,7 +180,11 @@ def validate_source_manifest(
         if require_current_files:
             if not candidate.is_file():
                 errors.append(f"source manifest file is missing: {relative}")
-            elif file_sha256(candidate) != digest:
+            elif (
+                source_file_sha256(candidate)
+                if normalization == SOURCE_MANIFEST_TEXT_NORMALIZATION
+                else file_sha256(candidate)
+            ) != digest:
                 errors.append(f"source manifest file hash mismatch: {relative}")
     return errors
 
@@ -206,4 +230,9 @@ def execution_environment(*, profile: str) -> dict[str, Any]:
 
 
 def utc_now() -> str:
-    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    return (
+        datetime.now(timezone.utc)
+        .replace(microsecond=0)
+        .isoformat()
+        .replace("+00:00", "Z")
+    )

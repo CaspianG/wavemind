@@ -664,10 +664,10 @@ Documentation map: [`docs/README.md`](docs/README.md).
 Release history: [`CHANGELOG.md`](CHANGELOG.md).
 
 Near-term priorities:
-
-- close the published Quality Leadership Recovery gates on LongMemEval-V2, LoCoMo, LongMemEval, and fair local competitor baselines;
+- admit task-native measurement validity before resuming product quality tuning;
+- demonstrate paired generalizable benefit on an agent/workflow family and an independent memory family;
 - combine fast FAISS, Qdrant, or pgvector retrieval with bounded WaveMind reranking;
-- after quality admission, deliver WaveMind Connect for opt-in cross-agent replay, review, and rollback;
+- after quality admission, deliver safe one-command upgrades with rollback before WaveMind Connect;
 - complete multi-region and 100M scale claims only on matching infrastructure.
 
 Longer-term direction:

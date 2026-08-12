@@ -1,0 +1,413 @@
+{
+  "schema": "wavemind.evaluation_validity_admission.v1",
+  "generated_at": "2026-08-12T12:30:57Z",
+  "source_sha": "dc15179004b0ef889fad0f9ea760457b5d7228e7",
+  "expected_source_sha": "dc15179004b0ef889fad0f9ea760457b5d7228e7",
+  "status": "blocked",
+  "admitted": false,
+  "implemented_rows": 15,
+  "required_rows": 16,
+  "rows": [
+    {
+      "id": "dataset-provenance",
+      "status": "implemented",
+      "requirement": "Dataset revisions, licenses, and checksums are pinned.",
+      "evidence": {
+        "errors": []
+      }
+    },
+    {
+      "id": "split-isolation",
+      "status": "implemented",
+      "requirement": "Dev, validation, and final splits have zero row, conversation, trajectory, or derived-fingerprint overlap.",
+      "evidence": {
+        "errors": [],
+        "counts": {
+          "state-bench": {
+            "development": 240,
+            "validation": 60,
+            "final": 150
+          },
+          "memops": {
+            "development": 240,
+            "validation": 82,
+            "final": 81
+          }
+        }
+      }
+    },
+    {
+      "id": "native-metric-mapping",
+      "status": "implemented",
+      "requirement": "Every task uses its native scorer and semantic coercion is rejected.",
+      "evidence": {
+        "errors": []
+      }
+    },
+    {
+      "id": "positive-controls",
+      "status": "implemented",
+      "requirement": "Oracle evidence or correct-state controls are executed.",
+      "evidence": {
+        "passed": true,
+        "oracle_score": 1.0,
+        "expected": 1.0
+      }
+    },
+    {
+      "id": "negative-controls",
+      "status": "implemented",
+      "requirement": "Random, no-memory, stale, wrong-namespace, and deleted-evidence controls are executed.",
+      "evidence": {
+        "passed": true,
+        "random_score": 0.16666666666666666,
+        "no_memory_score": 0.0,
+        "poison_isolation": true
+      }
+    },
+    {
+      "id": "control-ordering",
+      "status": "implemented",
+      "requirement": "Oracle is above a strong valid baseline, which is above random and no-memory; poison affects only its safety target.",
+      "evidence": {
+        "passed": true,
+        "scores": {
+          "oracle": 1.0,
+          "strong_valid_baseline": 0.6666666666666666,
+          "random": 0.16666666666666666,
+          "no_memory": 0.0
+        },
+        "required_order": "oracle > strong_valid_baseline > random > no_memory"
+      }
+    },
+    {
+      "id": "metric-range",
+      "status": "implemented",
+      "requirement": "Primary metrics have no floor or ceiling that makes preregistered improvement impossible.",
+      "evidence": {
+        "passed": true,
+        "observed_floor": 0.0,
+        "observed_ceiling": 1.0,
+        "strong_baseline": 0.6666666666666666,
+        "minimum_preregistered_lift": 0.1,
+        "headroom": 0.33333333333333337
+      }
+    },
+    {
+      "id": "power-and-mde",
+      "status": "implemented",
+      "requirement": "Sample size, minimum detectable effect, and cluster unit are preregistered per primary metric.",
+      "evidence": {
+        "passed": true,
+        "plans": [
+          {
+            "id": "workflow-pass-at-1",
+            "cluster_unit": "task",
+            "baseline_rate": 0.35,
+            "minimum_detectable_effect": 0.1,
+            "target_rate": 0.44999999999999996,
+            "familywise_alpha": 0.05,
+            "per_comparison_alpha": 0.016666666666666666,
+            "power": 0.8,
+            "required_independent_clusters": 502,
+            "method": "two-sided normal approximation; conservative independent-cluster plan"
+          },
+          {
+            "id": "memory-answer-quality",
+            "cluster_unit": "conversation",
+            "baseline_rate": 0.45,
+            "minimum_detectable_effect": 0.08,
+            "target_rate": 0.53,
+            "familywise_alpha": 0.05,
+            "per_comparison_alpha": 0.016666666666666666,
+            "power": 0.8,
+            "required_independent_clusters": 817,
+            "method": "two-sided normal approximation; conservative independent-cluster plan"
+          },
+          {
+            "id": "lifecycle-correctness",
+            "cluster_unit": "trajectory",
+            "baseline_rate": 0.55,
+            "minimum_detectable_effect": 0.1,
+            "target_rate": 0.65,
+            "familywise_alpha": 0.05,
+            "per_comparison_alpha": 0.016666666666666666,
+            "power": 0.8,
+            "required_independent_clusters": 502,
+            "method": "two-sided normal approximation; conservative independent-cluster plan"
+          }
+        ],
+        "correction_policy": "holm"
+      }
+    },
+    {
+      "id": "paired-clustered-statistics",
+      "status": "implemented",
+      "requirement": "Paired confidence intervals cluster by conversation, task, or trajectory.",
+      "evidence": {
+        "passed": true,
+        "diagnostic": {
+          "paired": true,
+          "cluster_key": "cluster_id",
+          "cluster_count": 6,
+          "row_count": 6,
+          "repeats": 1000,
+          "seed": 17,
+          "confidence_level": 0.95,
+          "mean_difference": 0.3333333333333333,
+          "ci_lower": 0.0,
+          "ci_upper": 0.6666666666666666
+        }
+      }
+    },
+    {
+      "id": "multiple-comparison-policy",
+      "status": "implemented",
+      "requirement": "Multiple primary comparisons use the preregistered Holm correction.",
+      "evidence": {
+        "paired": true,
+        "cluster_unit_required": true,
+        "confidence_level": 0.95,
+        "multiple_primary_correction": "holm",
+        "primary_metrics_frozen_before_product_run": true
+      }
+    },
+    {
+      "id": "judge-calibration",
+      "status": "implemented",
+      "requirement": "Every required LLM judge is pinned, calibrated, and has inter-run agreement evidence.",
+      "evidence": {
+        "errors": [],
+        "active_primary_scorers": [
+          {
+            "family": "state-bench-agent-learning",
+            "metric": "deterministic_final_state",
+            "kind": "deterministic",
+            "llm_judge_required": false
+          },
+          {
+            "family": "memops-lifecycle",
+            "metric": "structured_operation_state_transition",
+            "kind": "deterministic",
+            "llm_judge_required": false
+          }
+        ],
+        "excluded_native_judge_lanes": [
+          {
+            "lane": "state-bench-ux",
+            "reason": "The official GPT-5.4 UX judge is pinned but not locally calibrated; UX is excluded from the mandatory local claim.",
+            "official_model": "gpt-5.4",
+            "temperature": 0,
+            "seed": 17,
+            "prompt_hashes": {
+              "travel/judge_task_requirements.md": "dd4abe82eedb4873cfa015708df99f59cfbfeaa85ac090b01bd1d75eb0500487",
+              "travel/judge_ux_quality.md": "b04009d159fb477c3a215f30f10793c4e0a5587e578d07fcd2bfc7d719f90598",
+              "customer_support/judge_task_requirements.md": "246c76f59f3cd0e736da35b9beb985088778ff233287454b8bae674285718c72",
+              "customer_support/judge_ux_quality.md": "8b6ecae22872ab860d4a54f37e5bd4a6a160033b833cd1b0de6a3673640d7067",
+              "shopping_assistant/judge_task_requirements.md": "558947b2ce0b5d90a633e7d44e8599c329a96ac5ed9e43c9d37ffb5e6cf3c055",
+              "shopping_assistant/judge_ux_quality.md": "0234643a8dcf766c390aff2dc11b2f74f0e13ef7a38b29df70165bd333b82656"
+            }
+          },
+          {
+            "lane": "longmemeval-answer-judge",
+            "reason": "No local open-weight judge calibration and agreement artifact exists yet; the lane is excluded before product tuning."
+          },
+          {
+            "lane": "longmemeval-v2-local-reader",
+            "reason": "The official-compatible local reader and judge profile is not calibrated yet; the lane is excluded before product tuning."
+          },
+          {
+            "lane": "memory-agent-bench-generative-components",
+            "reason": "Generated-answer and official judge components remain excluded until a pinned local reader/scorer calibration exists."
+          },
+          {
+            "lane": "memops-generated-answer",
+            "reason": "Generated-answer quality is secondary to the active structured lifecycle scorer until a pinned reader calibration exists."
+          }
+        ]
+      }
+    },
+    {
+      "id": "deterministic-verdict",
+      "status": "implemented",
+      "requirement": "Three deterministic repeats produce one verdict fingerprint.",
+      "evidence": {
+        "passed": true,
+        "repeat_count": 3,
+        "fingerprints": [
+          "70de5ca6b69771c03ab4489dd859c472bab36aee7cfdd8b857c46a4783ddb47f",
+          "70de5ca6b69771c03ab4489dd859c472bab36aee7cfdd8b857c46a4783ddb47f",
+          "70de5ca6b69771c03ab4489dd859c472bab36aee7cfdd8b857c46a4783ddb47f"
+        ]
+      }
+    },
+    {
+      "id": "per-case-completeness",
+      "status": "implemented",
+      "requirement": "Raw evidence includes every pass, failure, error, and skipped row.",
+      "evidence": {
+        "passed": true,
+        "expected_rows": 24,
+        "observed_rows": 24,
+        "filtered_rows": 0,
+        "missing_rows": 0
+      }
+    },
+    {
+      "id": "backend-blinding",
+      "status": "implemented",
+      "requirement": "Backend input excludes gold, IDs, task type, split, and evaluator metadata.",
+      "evidence": {
+        "backend_view_fields": [
+          "namespace",
+          "query"
+        ]
+      }
+    },
+    {
+      "id": "exact-sha-integrity",
+      "status": "implemented",
+      "requirement": "Admission is tied to the exact source SHA and a current source manifest.",
+      "evidence": {
+        "source_sha": "dc15179004b0ef889fad0f9ea760457b5d7228e7",
+        "expected_source_sha": "dc15179004b0ef889fad0f9ea760457b5d7228e7",
+        "source_manifest": {
+          "schema": "wavemind.source_manifest.v1",
+          "algorithm": "sha256",
+          "text_normalization": "utf8-crlf-to-lf-v1",
+          "files": [
+            {
+              "path": ".github/workflows/safe-product.yml",
+              "sha256": "15f9da3a4899db59c0c336c6aa0a9cc295653182dbdfdc70e02e05e4161f9975"
+            },
+            {
+              "path": "README.md",
+              "sha256": "09ffeed18abd6ddae81655ec42143d68881a474e770ee19c2427abd621c77d5c"
+            },
+            {
+              "path": "benchmarks/evaluation_dataset_manifest_v1.json",
+              "sha256": "523c0a3b91772c23a1db5216faacf599179b666a0d3984fb94d288bfb5aadfef"
+            },
+            {
+              "path": "benchmarks/evaluation_judge_policy.py",
+              "sha256": "50d5bf3dd04284e5da8865cad7e6cc87ac134161eebb820102fa098270df791b"
+            },
+            {
+              "path": "benchmarks/evaluation_salvage_manifest.json",
+              "sha256": "37e85ffff630144b1ae3295ff9ad9562cd12e229712534f24bf29c421ae71477"
+            },
+            {
+              "path": "benchmarks/evaluation_split_manifest.py",
+              "sha256": "47eb31afc4837dc08432c4bbda33d55ca3fdec90925aee65af98b4f6851cefd1"
+            },
+            {
+              "path": "benchmarks/evaluation_validity_admission.py",
+              "sha256": "7e70f0fb04685a08057744d0e859201d031169772566fd87c0ce6258385e0db4"
+            },
+            {
+              "path": "benchmarks/evaluation_validity_controls.py",
+              "sha256": "29c1cbcd4c532580bb40aa9abae45470488ecaafe8982ae7109d3cc94d7ffe40"
+            },
+            {
+              "path": "docs/ROADMAP.md",
+              "sha256": "0dbedda76a9432cb53220529d41073d3f48936e44eeb54561931135d2f1c43ce"
+            },
+            {
+              "path": "docs/adr/0001-task-native-evaluation-science.md",
+              "sha256": "db218fa7dd989d58ec3dec6415b9b1ed6a94156e0f897c4f78037d4cdf71767f"
+            },
+            {
+              "path": "tests/test_evaluation_judges.py",
+              "sha256": "a37c7a4ca0c24fc37e2a62c6a4b167c1b912b27872ac732c8ccf7da44e380ecc"
+            },
+            {
+              "path": "tests/test_evaluation_splits.py",
+              "sha256": "62fe2c40674561e3300e190a6f037286254af03cb1617e7c52808e50966c1205"
+            },
+            {
+              "path": "tests/test_evaluation_statistics.py",
+              "sha256": "43a5e09b3771cf5f3c3f4f3148fac5b057922dd3504b50d5e19bc617c9b592a5"
+            },
+            {
+              "path": "tests/test_evaluation_validity_admission.py",
+              "sha256": "3dba4cd9d6c5d759566bd8c0a2a3e4a279013afaac428fc296f6af1eec84a958"
+            },
+            {
+              "path": "tests/test_evaluation_validity_controls.py",
+              "sha256": "37780ee4a13172cee4d23b761c5132101f2198343aa71d9dd48544414d5c4506"
+            },
+            {
+              "path": "wavemind/evaluation_contracts.py",
+              "sha256": "6c7b3a6345ff0c8c43cce9c68c38d9c5391ff00c24bb78b646a38428c66fa8bb"
+            },
+            {
+              "path": "wavemind/evaluation_judges.py",
+              "sha256": "8aa4510f8533859307aa4bd5c4405d4a4798081f68eb4d65fec1f2c55a93f728"
+            },
+            {
+              "path": "wavemind/evaluation_splits.py",
+              "sha256": "9f5ac9021860759e54cd49b6cfbfeb4f5b835690acc8d57d19e199a5a8f1f9a0"
+            },
+            {
+              "path": "wavemind/evaluation_statistics.py",
+              "sha256": "113f2aa1562875661396951e7d8e864816ed072d08398b364b7a6942699f8118"
+            },
+            {
+              "path": "wavemind/evaluation_validity_admission.py",
+              "sha256": "f222486e4932f6a3701ad497427a0e83ec07b1b01c2adaca1e20b3a92b19aa97"
+            },
+            {
+              "path": "wavemind/evaluation_validity_controls.py",
+              "sha256": "50e9d29b386b2aba5b1c9426fc990275bf46e46e7adcffeca0a5022ab7336d76"
+            },
+            {
+              "path": "wavemind/safe_product_admission.py",
+              "sha256": "f264732c44b589398cd8403799d3e0772d71b0b9aeabce2aa9d7f92dfb12ea1d"
+            },
+            {
+              "path": "wavemind/workspace_experience_admission.py",
+              "sha256": "25c8e4b6f318a02141d8df44197b61a1b0fa92e25143f51ac6f96d651d4e5eb8"
+            }
+          ],
+          "digest": "c761a7e70bdcbed0a75e5e21585fabe83d89419b7ca790c8a48bc601817fa4f7"
+        }
+      }
+    },
+    {
+      "id": "safety-admissions-preserved",
+      "status": "blocked",
+      "requirement": "Safe Product and Workspace Experience are admitted on the same exact SHA.",
+      "evidence": {
+        "safe_product": {
+          "source_sha": null,
+          "status": null,
+          "errors": [
+            "exact-current Safe Product artifact is missing"
+          ]
+        },
+        "workspace_experience": {
+          "source_sha": null,
+          "status": null,
+          "errors": [
+            "exact-current Workspace Experience artifact is missing"
+          ]
+        }
+      }
+    }
+  ],
+  "environment": {
+    "profile": "evaluation-validity-local",
+    "python": "3.13.3",
+    "implementation": "CPython",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "executable": "python.exe",
+    "github_run_id": null,
+    "github_runner_os": null
+  },
+  "claim_boundary": "Measurement-validity admission only. Product tuning, benchmark quality, generalization, leaderboard, and production claims remain prohibited until admitted.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "0257c7f245dbc3a1f5807411bab3395f81a24e9206e6d32917110a3467b2aa63"
+  }
+}

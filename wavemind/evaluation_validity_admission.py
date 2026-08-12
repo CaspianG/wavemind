@@ -1,0 +1,402 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any, Mapping
+
+from .evaluation_contracts import backend_query_view, validate_dataset_manifest
+from .evaluation_judges import validate_evaluation_judge_policy
+from .evaluation_splits import validate_evaluation_split_manifest
+from .evaluation_validity_controls import SCHEMA as CONTROLS_SCHEMA
+from .safe_product_admission import validate_safe_product_artifact
+from .workspace_experience_admission import (
+    WORKSPACE_EXPERIENCE_ADMISSION_SCHEMA,
+    _source_manifest as workspace_source_manifest,
+)
+from .evidence import (
+    attach_artifact_integrity,
+    build_source_manifest,
+    execution_environment,
+    repository_commit,
+    utc_now,
+    validate_artifact_integrity,
+    validate_source_manifest,
+)
+
+
+SCHEMA = "wavemind.evaluation_validity_admission.v1"
+EXPECTED_ROWS = (
+    "dataset-provenance",
+    "split-isolation",
+    "native-metric-mapping",
+    "positive-controls",
+    "negative-controls",
+    "control-ordering",
+    "metric-range",
+    "power-and-mde",
+    "paired-clustered-statistics",
+    "multiple-comparison-policy",
+    "judge-calibration",
+    "deterministic-verdict",
+    "per-case-completeness",
+    "backend-blinding",
+    "exact-sha-integrity",
+    "safety-admissions-preserved",
+)
+SOURCE_PATHS = (
+    "README.md",
+    "wavemind/evaluation_contracts.py",
+    "wavemind/evaluation_judges.py",
+    "wavemind/evaluation_splits.py",
+    "wavemind/evaluation_statistics.py",
+    "wavemind/evaluation_validity_admission.py",
+    "wavemind/evaluation_validity_controls.py",
+    "wavemind/safe_product_admission.py",
+    "wavemind/workspace_experience_admission.py",
+    "benchmarks/evaluation_dataset_manifest_v1.json",
+    "benchmarks/evaluation_salvage_manifest.json",
+    "benchmarks/evaluation_judge_policy.py",
+    "benchmarks/evaluation_split_manifest.py",
+    "benchmarks/evaluation_validity_admission.py",
+    "benchmarks/evaluation_validity_controls.py",
+    ".github/workflows/safe-product.yml",
+    "docs/adr/0001-task-native-evaluation-science.md",
+    "docs/ROADMAP.md",
+    "tests/test_evaluation_validity_admission.py",
+    "tests/test_evaluation_judges.py",
+    "tests/test_evaluation_validity_controls.py",
+    "tests/test_evaluation_splits.py",
+    "tests/test_evaluation_statistics.py",
+)
+
+
+def _load_json(path: str | Path) -> dict[str, Any]:
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError(f"artifact must be a JSON object: {path}")
+    return payload
+
+
+def _row(row_id: str, passed: bool, evidence: Any, requirement: str) -> dict[str, Any]:
+    return {
+        "id": row_id,
+        "status": "implemented" if passed else "blocked",
+        "requirement": requirement,
+        "evidence": evidence,
+    }
+
+
+def _evidence_passed(evidence: Mapping[str, Any], key: str) -> tuple[bool, Any]:
+    value = evidence.get(key)
+    if not isinstance(value, Mapping):
+        return False, {"missing_artifact": key}
+    return bool(value.get("passed")), dict(value)
+
+
+def _validate_validity_evidence(
+    root: Path, evidence: Mapping[str, Any], source_sha: str
+) -> list[str]:
+    if not evidence:
+        return ["validity evidence artifact is missing"]
+    errors = validate_artifact_integrity(evidence)
+    if evidence.get("schema") != CONTROLS_SCHEMA:
+        errors.append("validity evidence schema is invalid")
+    if evidence.get("source_sha") != source_sha:
+        errors.append("validity evidence source SHA mismatch")
+    source_manifest = evidence.get("source_manifest")
+    if not isinstance(source_manifest, Mapping):
+        errors.append("validity evidence source manifest is missing")
+    else:
+        errors.extend(
+            validate_source_manifest(root, source_manifest, require_current_files=True)
+        )
+    return errors
+
+
+def _validate_workspace_admission_artifact(
+    root: Path, payload: Mapping[str, Any], source_sha: str
+) -> list[str]:
+    errors = validate_artifact_integrity(payload)
+    if payload.get("schema") != WORKSPACE_EXPERIENCE_ADMISSION_SCHEMA:
+        errors.append("workspace experience admission schema is invalid")
+    if payload.get("source_sha") != source_sha:
+        errors.append("workspace experience admission source SHA mismatch")
+    if payload.get("status") != "admitted" or payload.get("admitted") is not True:
+        errors.append("workspace experience admission is not admitted")
+    source_manifest = payload.get("source_manifest")
+    if not isinstance(source_manifest, Mapping):
+        errors.append("workspace experience admission source manifest is missing")
+    elif source_manifest != workspace_source_manifest(root):
+        errors.append("workspace experience admission source manifest mismatch")
+    rows = payload.get("rows")
+    if not isinstance(rows, list) or not rows:
+        errors.append("workspace experience admission rows are missing")
+    else:
+        invalid = [
+            str(row.get("id"))
+            for row in rows
+            if isinstance(row, Mapping)
+            and row.get("status") not in {"implemented", "historical"}
+        ]
+        if invalid:
+            errors.append(
+                f"workspace experience admission has non-admitted rows: {invalid}"
+            )
+    return errors
+
+
+def run_evaluation_validity_admission(
+    *,
+    project_root: str | Path,
+    dataset_manifest_path: str | Path,
+    validity_evidence_path: str | Path | None = None,
+    split_evidence_path: str | Path | None = None,
+    judge_evidence_path: str | Path | None = None,
+    safe_product_path: str | Path | None = None,
+    workspace_experience_path: str | Path | None = None,
+    expected_source_sha: str | None = None,
+) -> dict[str, Any]:
+    root = Path(project_root).resolve()
+    source_sha = repository_commit(root)
+    expected_sha = expected_source_sha or source_sha
+    dataset_manifest = _load_json(dataset_manifest_path)
+    dataset_errors = validate_dataset_manifest(dataset_manifest)
+    evidence = _load_json(validity_evidence_path) if validity_evidence_path else {}
+    evidence_errors = _validate_validity_evidence(root, evidence, source_sha)
+    split_evidence = _load_json(split_evidence_path) if split_evidence_path else {}
+    split_errors = (
+        validate_evaluation_split_manifest(
+            split_evidence,
+            project_root=root,
+            expected_source_sha=source_sha,
+        )
+        if split_evidence
+        else ["evaluation split evidence artifact is missing"]
+    )
+    judge_evidence = _load_json(judge_evidence_path) if judge_evidence_path else {}
+    judge_errors = (
+        validate_evaluation_judge_policy(
+            judge_evidence,
+            project_root=root,
+            expected_source_sha=source_sha,
+        )
+        if judge_evidence
+        else ["evaluation judge evidence artifact is missing"]
+    )
+    safe_product = _load_json(safe_product_path) if safe_product_path else {}
+    safe_product_errors = (
+        validate_safe_product_artifact(
+            safe_product,
+            project_root=root,
+            expected_source_sha=source_sha,
+        )
+        if safe_product
+        else ["exact-current Safe Product artifact is missing"]
+    )
+    workspace_experience = (
+        _load_json(workspace_experience_path) if workspace_experience_path else {}
+    )
+    workspace_errors = (
+        _validate_workspace_admission_artifact(root, workspace_experience, source_sha)
+        if workspace_experience
+        else ["exact-current Workspace Experience artifact is missing"]
+    )
+
+    contract = dataset_manifest.get("backend_query_contract", {})
+    blind_probe = {
+        "query": "allowed query",
+        "namespace": "tenant:a",
+        "gold_answer": "must-not-leak",
+        "gold_evidence": ["must-not-leak"],
+        "question_type": "must-not-leak",
+        "case_id": "must-not-leak",
+        "split": "must-not-leak",
+    }
+    try:
+        backend_view = backend_query_view(blind_probe, contract)
+        blinding_passed = not any(
+            "must-not-leak" in str(value) for value in backend_view.values()
+        )
+        blinding_evidence: Any = {"backend_view_fields": sorted(backend_view)}
+    except ValueError as exc:
+        blinding_passed = False
+        blinding_evidence = {"error": str(exc)}
+
+    statistics = dataset_manifest.get("statistics_policy", {})
+    correction_passed = (
+        isinstance(statistics, Mapping)
+        and statistics.get("multiple_primary_correction") == "holm"
+        and statistics.get("primary_metrics_frozen_before_product_run") is True
+    )
+
+    requirements = {
+        "dataset-provenance": "Dataset revisions, licenses, and checksums are pinned.",
+        "split-isolation": "Dev, validation, and final splits have zero row, conversation, trajectory, or derived-fingerprint overlap.",
+        "native-metric-mapping": "Every task uses its native scorer and semantic coercion is rejected.",
+        "positive-controls": "Oracle evidence or correct-state controls are executed.",
+        "negative-controls": "Random, no-memory, stale, wrong-namespace, and deleted-evidence controls are executed.",
+        "control-ordering": "Oracle is above a strong valid baseline, which is above random and no-memory; poison affects only its safety target.",
+        "metric-range": "Primary metrics have no floor or ceiling that makes preregistered improvement impossible.",
+        "power-and-mde": "Sample size, minimum detectable effect, and cluster unit are preregistered per primary metric.",
+        "paired-clustered-statistics": "Paired confidence intervals cluster by conversation, task, or trajectory.",
+        "multiple-comparison-policy": "Multiple primary comparisons use the preregistered Holm correction.",
+        "judge-calibration": "Every required LLM judge is pinned, calibrated, and has inter-run agreement evidence.",
+        "deterministic-verdict": "Three deterministic repeats produce one verdict fingerprint.",
+        "per-case-completeness": "Raw evidence includes every pass, failure, error, and skipped row.",
+        "backend-blinding": "Backend input excludes gold, IDs, task type, split, and evaluator metadata.",
+        "exact-sha-integrity": "Admission is tied to the exact source SHA and a current source manifest.",
+        "safety-admissions-preserved": "Safe Product and Workspace Experience are admitted on the same exact SHA.",
+    }
+
+    rows: list[dict[str, Any]] = []
+    rows.append(
+        _row(
+            "dataset-provenance",
+            not dataset_errors,
+            {"errors": dataset_errors},
+            requirements["dataset-provenance"],
+        )
+    )
+    rows.append(
+        _row(
+            "split-isolation",
+            not split_errors,
+            {"errors": split_errors, "counts": split_evidence.get("counts")},
+            requirements["split-isolation"],
+        )
+    )
+    for row_id, evidence_key in (
+        ("positive-controls", "positive_controls"),
+        ("negative-controls", "negative_controls"),
+        ("control-ordering", "control_ordering"),
+        ("metric-range", "metric_range"),
+        ("power-and-mde", "power_and_mde"),
+        ("paired-clustered-statistics", "paired_clustered_statistics"),
+    ):
+        passed, detail = _evidence_passed(evidence, evidence_key)
+        if evidence_errors:
+            passed = False
+            detail = {"errors": evidence_errors, "reported": detail}
+        rows.append(_row(row_id, passed, detail, requirements[row_id]))
+    rows.append(
+        _row(
+            "native-metric-mapping",
+            not dataset_errors,
+            {"errors": dataset_errors},
+            requirements["native-metric-mapping"],
+        )
+    )
+    rows.append(
+        _row(
+            "multiple-comparison-policy",
+            correction_passed,
+            dict(statistics) if isinstance(statistics, Mapping) else {},
+            requirements["multiple-comparison-policy"],
+        )
+    )
+    rows.append(
+        _row(
+            "judge-calibration",
+            not judge_errors,
+            {
+                "errors": judge_errors,
+                "active_primary_scorers": judge_evidence.get("active_primary_scorers"),
+                "excluded_native_judge_lanes": judge_evidence.get(
+                    "excluded_native_judge_lanes"
+                ),
+            },
+            requirements["judge-calibration"],
+        )
+    )
+    for row_id, evidence_key in (
+        ("deterministic-verdict", "deterministic_verdict"),
+        ("per-case-completeness", "per_case_completeness"),
+    ):
+        passed, detail = _evidence_passed(evidence, evidence_key)
+        if evidence_errors:
+            passed = False
+            detail = {"errors": evidence_errors, "reported": detail}
+        rows.append(_row(row_id, passed, detail, requirements[row_id]))
+    rows.append(
+        _row(
+            "backend-blinding",
+            blinding_passed,
+            blinding_evidence,
+            requirements["backend-blinding"],
+        )
+    )
+    rows.append(
+        _row(
+            "exact-sha-integrity",
+            source_sha == expected_sha,
+            {
+                "source_sha": source_sha,
+                "expected_source_sha": expected_sha,
+                "source_manifest": build_source_manifest(root, SOURCE_PATHS),
+            },
+            requirements["exact-sha-integrity"],
+        )
+    )
+    safety_passed = not safe_product_errors and not workspace_errors
+    safety_detail = {
+        "safe_product": {
+            "source_sha": safe_product.get("source_sha"),
+            "status": safe_product.get("status"),
+            "errors": safe_product_errors,
+        },
+        "workspace_experience": {
+            "source_sha": workspace_experience.get("source_sha"),
+            "status": workspace_experience.get("status"),
+            "errors": workspace_errors,
+        },
+    }
+    rows.append(
+        _row(
+            "safety-admissions-preserved",
+            safety_passed,
+            safety_detail,
+            requirements["safety-admissions-preserved"],
+        )
+    )
+    rows_by_id = {row["id"]: row for row in rows}
+    ordered_rows = [rows_by_id[row_id] for row_id in EXPECTED_ROWS]
+    admitted = all(row["status"] == "implemented" for row in ordered_rows)
+    return attach_artifact_integrity(
+        {
+            "schema": SCHEMA,
+            "generated_at": utc_now(),
+            "source_sha": source_sha,
+            "expected_source_sha": expected_sha,
+            "status": "admitted" if admitted else "blocked",
+            "admitted": admitted,
+            "implemented_rows": sum(
+                row["status"] == "implemented" for row in ordered_rows
+            ),
+            "required_rows": len(ordered_rows),
+            "rows": ordered_rows,
+            "environment": execution_environment(profile="evaluation-validity-local"),
+            "claim_boundary": (
+                "Measurement-validity admission only. Product tuning, benchmark quality, "
+                "generalization, leaderboard, and production claims remain prohibited until admitted."
+            ),
+        }
+    )
+
+
+def render_evaluation_validity_markdown(report: Mapping[str, Any]) -> str:
+    lines = [
+        "# Evaluation Validity Admission",
+        "",
+        f"Status: **{report.get('status', 'unknown')}**",
+        "",
+        f"Source SHA: `{report.get('source_sha', 'unknown')}`",
+        "",
+        f"Rows: `{report.get('implemented_rows', 0)}/{report.get('required_rows', 0)}` implemented",
+        "",
+        "| Row | Status | Requirement |",
+        "|---|---|---|",
+    ]
+    for row in report.get("rows", []):
+        lines.append(f"| `{row['id']}` | `{row['status']}` | {row['requirement']} |")
+    lines.extend(["", f"> {report.get('claim_boundary', '')}", ""])
+    return "\n".join(lines)

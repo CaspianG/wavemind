@@ -32,7 +32,30 @@ otherwise.
 WaveMind's next product work is intentionally ordered. Distribution and new
 surfaces must not hide an unresolved generalization gap.
 
-### Phase A: Quality Leadership Recovery (Next)
+### Phase A1: Measurement Validity (Next)
+
+WaveMind will not resume product quality tuning until its evaluator can prove
+that it measures the published tasks rather than an easier retrieval proxy.
+The previous recovery lane stopped correctly after two bounded development
+candidates failed, with its held-out split unopened. It also exposed a validity
+defect: non-literal MemoryAgentBench rows and the complete Long-Range
+Understanding category were removed by a literal-evidence adapter while a
+universal category gate still expected them to improve.
+
+Phase A1 builds a task-native evaluation system with separate lifecycle,
+retrieval, answer, workflow, and efficiency/safety layers. Public datasets,
+native scorers, split fingerprints, controls, statistical power, backend
+blinding, raw per-case evidence, and exact-SHA integrity must pass
+`evaluation-validity-admission` before product behavior changes. The design and
+claim boundary are recorded in
+[`ADR 0001`](adr/0001-task-native-evaluation-science.md).
+
+The initial pinned contract covers MemoryAgentBench, LongMemEval,
+LongMemEval-V2, STATE-Bench Agent Learning, and MemOps. A lane that cannot pass
+validity is excluded from the quality claim with a recorded reason. Synthetic
+controls may validate the evaluator but cannot prove general model quality.
+
+### Phase A2: Generalizable Quality Recovery
 
 The immediate goal is to create a measurable reason for an agent developer to
 switch: higher end-to-end task success, fewer stale or repeated mistakes, and
@@ -46,43 +69,80 @@ remains a failed result: Memory OS quality was below Core on both the full
 451-question run and the untouched 419-question split. That failure stays public
 and those rows must not be reused for tuning.
 
-Phase A is complete only when all of the following are true:
+Phase A2 starts only after Phase A1 is admitted. It is complete only when all of
+the following are true:
 
-1. A versioned replacement protocol is frozen before the next held-out run. It
-   has separate development and held-out data, pinned prompts, reader, token
-   budgets, embeddings, seeds, hardware profile, and per-query evidence.
-2. On the full isolated LongMemEval-V2 protocol, answer quality is at least
-   `0.18`, Memory OS improves over Core by at least `0.01`, at least four
-   categories improve, context falls by at least `35%`, stale or contradiction
-   errors stay at or below `2%`, and p95 overhead stays within both `5 ms` and
-   `20%`.
-3. LoCoMo and LongMemEval answer-quality profiles show no significant overall
-   regression and a statistically positive lift in at least two dynamic-memory
-   categories. Report at least five runs with 95% confidence intervals.
+1. A versioned protocol is frozen before any held-out run. It has separate
+   development, validation, and final data, pinned prompts, reader, token
+   budgets, embeddings, seeds, hardware profile, native scorers, and per-case
+   evidence.
+2. WaveMind + Memory OS has a positive paired lift whose lower 95% confidence
+   bound is above zero on at least one real agent/workflow family and one
+   independent lifecycle, retrieval, or end-to-end memory family.
+3. No mandatory family exceeds its preregistered non-inferiority margin;
+   stale, contradictory, forgotten, and cross-namespace evidence remain inside
+   their safety budgets.
 4. WaveMind Core and WaveMind Experience are compared fairly with the strongest
    runnable local baselines, including static Chroma or Qdrant retrieval, Mem0
    OSS, and LangMem or LangGraph. Dataset, reader, prompts, embeddings, token
    budgets, hardware, and seeds must match. A missing proprietary service is
    reported as skipped and cannot unlock a leadership claim.
-5. Candidate retrieval and bounded WaveMind reranking are profiled separately.
+5. On the declared use case, WaveMind Pareto-dominates the strongest fully
+   comparable local open-source baseline on at least two of task quality,
+   context/cost, and latency while remaining inside the third-axis budget.
+6. Candidate retrieval and bounded WaveMind reranking are profiled separately.
    The policy layer must preserve backend recall within `0.01`, stay inside the
    declared latency budget, and retain provenance, correction, namespace, and
    stale-suppression behavior.
-6. Every public claim is generated from fresh exact-SHA JSON evidence. Failed
+7. Every public claim is generated from fresh exact-SHA JSON evidence. Failed
    rows remain visible, thresholds are not weakened, and a full held-out run is
    not repeated until a bounded development gate passes.
 
-The release-facing claim after Phase A is deliberately specific: WaveMind is a
+The release-facing claim after Phase A2 is deliberately specific: WaveMind is a
 verified agent-work memory layer on the declared public scenarios and sits on
 their task-success, context, safety, and latency Pareto frontier. It is not a
 universal "fastest database" claim.
 
-### Phase B: WaveMind Connect
+### Phase B: Safe One-Command Upgrade
 
-After Phase A is admitted, the next expansion is zero-config cross-agent
-verified memory: one auditable experience lifecycle that follows a workspace
-across supported agents without silently reading private histories or rewriting
-user files.
+After measurement validity and generalizable quality are admitted, WaveMind
+must make routine upgrades safe for persistent user memory before adding new
+distribution surfaces. This is a separate future goal; Goal 8 does not
+implement an updater.
+
+The planned user entrypoint is `wavemind upgrade`. It must provide:
+
+- a preflight for current and target versions, free disk space, active writers,
+  running processes, and compatibility;
+- an exclusive upgrade lock and an idempotent journal so an interrupted or
+  repeated command is safe;
+- a verified backup of both Core and Verified Experience databases, config,
+  policy/state manifests, and object-store references;
+- an explicit versioned schema and config migration ledger instead of treating
+  hidden `CREATE TABLE` behavior as a migration system;
+- checksum and release-identity verification, followed by migration and smoke
+  tests on a staged copy before switching live state;
+- parity checks for IDs, namespaces, metadata, vectors, TTL, provenance, audit,
+  experience state, and forgotten/deleted state;
+- atomic activation and automatic rollback to the previous code, both
+  databases, and configuration after any failed migration, doctor, health, or
+  recall check;
+- opt-in updates only, with no silent background auto-update.
+
+Required proof includes supported local Python package/tool installs and Docker
+Compose, cross-version fixtures for at least `N-2 -> N` and `N-1 -> N`, and
+failure injection for interruption, corrupt artifacts, checksum mismatch, disk
+full, incompatible schema, active writers, repeated commands, and failed health
+checks. Helm or Kubernetes support enters the claim only after a reproducible
+test exists. A separate exact-SHA `upgrade-admission` and rollback artifact are
+mandatory before this phase is complete.
+
+### Phase C: WaveMind Connect
+
+After Phase A1, A2, and the Safe One-Command Upgrade phase are admitted, the
+next expansion is zero-config cross-agent verified memory: one auditable
+experience lifecycle that follows a workspace across supported agents without
+silently reading private histories or rewriting user files.
 
 Planned product surface:
 
@@ -876,9 +936,9 @@ different things and should not be mixed together.
 
 Near-term benchmark priorities:
 
-- Close Phase A Quality Leadership Recovery before expanding the product claim.
-  Improve on bounded development data first; do not tune on the previous frozen
-  419-question split or launch another full held-out run before the development
+- Admit Phase A1 Measurement Validity before resuming product tuning. Then
+  improve on bounded development data in Phase A2; do not tune on the previous
+  frozen 419-question split or launch a held-out run before the development
   gate passes.
 - Improve the complete LoCoMo and LongMemEval direct Memory OS results beyond
   Core rather than treating admission-tolerated non-regression as uplift.
@@ -977,14 +1037,16 @@ Enterprise requirements:
 
 ### Short Term: 1 To 3 Months
 
-- Complete Phase A Quality Leadership Recovery. The strict LongMemEval-V2,
-  LoCoMo, LongMemEval, competitor, confidence-interval, context, and latency
-  gates above are the release boundary; controlled local wins alone do not close
-  it.
-- After Phase A is admitted, deliver the first WaveMind Connect slice: opt-in
-  setup, workspace identity, cross-client Experience Packet replay, Studio
-  review and rollback, and a frozen public-repository proof. Do not delay the
-  quality gate by building this expansion early.
+- Complete Phase A1 Measurement Validity and Phase A2 Generalizable Quality
+  Recovery. Task-native outcomes, competitor, confidence-interval, context,
+  safety, and latency gates above are the release boundary; controlled local
+  wins alone do not close it.
+- After Phase A1 and A2 are admitted, complete Safe One-Command Upgrade with
+  cross-version migration, rollback, and exact-SHA admission evidence.
+- After the upgrade phase is admitted, deliver the first WaveMind Connect
+  slice: opt-in setup, workspace identity, cross-client Experience Packet
+  replay, Studio review and rollback, and a frozen public-repository proof. Do
+  not delay the quality gate by building this expansion early.
 - Larger service-mode benchmark profiles for persisted FAISS, Qdrant, and
   further-tuned pgvector, with SLO and cost gates tracked for every checked-in
   production result.

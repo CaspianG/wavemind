@@ -1,0 +1,425 @@
+{
+  "systems": {
+    "oracle": {
+      "system": "oracle",
+      "case_count": 6,
+      "completed_count": 6,
+      "mean_score": 1.0,
+      "rows": [
+        {
+          "case_id": "retrieval-substring",
+          "cluster_id": "conversation-a",
+          "scorer": "substring_exact_match",
+          "output": "alpha beta gamma",
+          "score": 1.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "answer-exact",
+          "cluster_id": "conversation-b",
+          "scorer": "exact_match",
+          "output": "current-policy",
+          "score": 1.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "recommendation-top5",
+          "cluster_id": "conversation-c",
+          "scorer": "recall_at_5",
+          "output": [
+            "item-7",
+            "item-3"
+          ],
+          "score": 1.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "lifecycle-update",
+          "cluster_id": "trajectory-a",
+          "scorer": "structured_exact",
+          "output": {
+            "state": "updated",
+            "version": 2
+          },
+          "score": 1.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "workflow-final-state",
+          "cluster_id": "trajectory-b",
+          "scorer": "structured_exact",
+          "output": {
+            "tests": "passed",
+            "exit_code": 0
+          },
+          "score": 1.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "temporal-answer",
+          "cluster_id": "conversation-d",
+          "scorer": "exact_match",
+          "output": "after-update",
+          "score": 1.0,
+          "status": "completed"
+        }
+      ]
+    },
+    "strong_valid_baseline": {
+      "system": "strong_valid_baseline",
+      "case_count": 6,
+      "completed_count": 6,
+      "mean_score": 0.6666666666666666,
+      "rows": [
+        {
+          "case_id": "retrieval-substring",
+          "cluster_id": "conversation-a",
+          "scorer": "substring_exact_match",
+          "output": "alpha beta gamma",
+          "score": 1.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "answer-exact",
+          "cluster_id": "conversation-b",
+          "scorer": "exact_match",
+          "output": "current-policy",
+          "score": 1.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "recommendation-top5",
+          "cluster_id": "conversation-c",
+          "scorer": "recall_at_5",
+          "output": [
+            "item-7",
+            "item-3"
+          ],
+          "score": 1.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "lifecycle-update",
+          "cluster_id": "trajectory-a",
+          "scorer": "structured_exact",
+          "output": {
+            "state": "updated",
+            "version": 2
+          },
+          "score": 1.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "workflow-final-state",
+          "cluster_id": "trajectory-b",
+          "scorer": "structured_exact",
+          "output": {
+            "tests": "failed",
+            "exit_code": 1
+          },
+          "score": 0.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "temporal-answer",
+          "cluster_id": "conversation-d",
+          "scorer": "exact_match",
+          "output": "before-update",
+          "score": 0.0,
+          "status": "completed"
+        }
+      ]
+    },
+    "random": {
+      "system": "random",
+      "case_count": 6,
+      "completed_count": 6,
+      "mean_score": 0.16666666666666666,
+      "rows": [
+        {
+          "case_id": "retrieval-substring",
+          "cluster_id": "conversation-a",
+          "scorer": "substring_exact_match",
+          "output": "unrelated",
+          "score": 0.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "answer-exact",
+          "cluster_id": "conversation-b",
+          "scorer": "exact_match",
+          "output": "unrelated",
+          "score": 0.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "recommendation-top5",
+          "cluster_id": "conversation-c",
+          "scorer": "recall_at_5",
+          "output": [
+            "item-2",
+            "item-9"
+          ],
+          "score": 0.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "lifecycle-update",
+          "cluster_id": "trajectory-a",
+          "scorer": "structured_exact",
+          "output": {
+            "state": "old",
+            "version": 1
+          },
+          "score": 0.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "workflow-final-state",
+          "cluster_id": "trajectory-b",
+          "scorer": "structured_exact",
+          "output": {
+            "tests": "failed",
+            "exit_code": 1
+          },
+          "score": 0.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "temporal-answer",
+          "cluster_id": "conversation-d",
+          "scorer": "exact_match",
+          "output": "after-update",
+          "score": 1.0,
+          "status": "completed"
+        }
+      ]
+    },
+    "no_memory": {
+      "system": "no_memory",
+      "case_count": 6,
+      "completed_count": 6,
+      "mean_score": 0.0,
+      "rows": [
+        {
+          "case_id": "retrieval-substring",
+          "cluster_id": "conversation-a",
+          "scorer": "substring_exact_match",
+          "output": null,
+          "score": 0.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "answer-exact",
+          "cluster_id": "conversation-b",
+          "scorer": "exact_match",
+          "output": null,
+          "score": 0.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "recommendation-top5",
+          "cluster_id": "conversation-c",
+          "scorer": "recall_at_5",
+          "output": [],
+          "score": 0.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "lifecycle-update",
+          "cluster_id": "trajectory-a",
+          "scorer": "structured_exact",
+          "output": null,
+          "score": 0.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "workflow-final-state",
+          "cluster_id": "trajectory-b",
+          "scorer": "structured_exact",
+          "output": null,
+          "score": 0.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "temporal-answer",
+          "cluster_id": "conversation-d",
+          "scorer": "exact_match",
+          "output": null,
+          "score": 0.0,
+          "status": "completed"
+        }
+      ]
+    }
+  },
+  "safety_probes": {
+    "clean": {
+      "stale_leakage": 0.0,
+      "namespace_leakage": 0.0,
+      "deleted_evidence_resurfacing": 0.0
+    },
+    "stale_poison": {
+      "stale_leakage": 1.0,
+      "namespace_leakage": 0.0,
+      "deleted_evidence_resurfacing": 0.0
+    },
+    "namespace_poison": {
+      "stale_leakage": 0.0,
+      "namespace_leakage": 1.0,
+      "deleted_evidence_resurfacing": 0.0
+    },
+    "deleted_poison": {
+      "stale_leakage": 0.0,
+      "namespace_leakage": 0.0,
+      "deleted_evidence_resurfacing": 1.0
+    }
+  },
+  "positive_controls": {
+    "passed": true,
+    "oracle_score": 1.0,
+    "expected": 1.0
+  },
+  "negative_controls": {
+    "passed": true,
+    "random_score": 0.16666666666666666,
+    "no_memory_score": 0.0,
+    "poison_isolation": true
+  },
+  "control_ordering": {
+    "passed": true,
+    "scores": {
+      "oracle": 1.0,
+      "strong_valid_baseline": 0.6666666666666666,
+      "random": 0.16666666666666666,
+      "no_memory": 0.0
+    },
+    "required_order": "oracle > strong_valid_baseline > random > no_memory"
+  },
+  "metric_range": {
+    "passed": true,
+    "observed_floor": 0.0,
+    "observed_ceiling": 1.0,
+    "strong_baseline": 0.6666666666666666,
+    "minimum_preregistered_lift": 0.1,
+    "headroom": 0.33333333333333337
+  },
+  "power_and_mde": {
+    "passed": true,
+    "plans": [
+      {
+        "id": "workflow-pass-at-1",
+        "cluster_unit": "task",
+        "baseline_rate": 0.35,
+        "minimum_detectable_effect": 0.1,
+        "target_rate": 0.44999999999999996,
+        "familywise_alpha": 0.05,
+        "per_comparison_alpha": 0.016666666666666666,
+        "power": 0.8,
+        "required_independent_clusters": 502,
+        "method": "two-sided normal approximation; conservative independent-cluster plan"
+      },
+      {
+        "id": "memory-answer-quality",
+        "cluster_unit": "conversation",
+        "baseline_rate": 0.45,
+        "minimum_detectable_effect": 0.08,
+        "target_rate": 0.53,
+        "familywise_alpha": 0.05,
+        "per_comparison_alpha": 0.016666666666666666,
+        "power": 0.8,
+        "required_independent_clusters": 817,
+        "method": "two-sided normal approximation; conservative independent-cluster plan"
+      },
+      {
+        "id": "lifecycle-correctness",
+        "cluster_unit": "trajectory",
+        "baseline_rate": 0.55,
+        "minimum_detectable_effect": 0.1,
+        "target_rate": 0.65,
+        "familywise_alpha": 0.05,
+        "per_comparison_alpha": 0.016666666666666666,
+        "power": 0.8,
+        "required_independent_clusters": 502,
+        "method": "two-sided normal approximation; conservative independent-cluster plan"
+      }
+    ],
+    "correction_policy": "holm"
+  },
+  "paired_clustered_statistics": {
+    "passed": true,
+    "diagnostic": {
+      "paired": true,
+      "cluster_key": "cluster_id",
+      "cluster_count": 6,
+      "row_count": 6,
+      "repeats": 1000,
+      "seed": 17,
+      "confidence_level": 0.95,
+      "mean_difference": 0.3333333333333333,
+      "ci_lower": 0.0,
+      "ci_upper": 0.6666666666666666
+    }
+  },
+  "per_case_completeness": {
+    "passed": true,
+    "expected_rows": 24,
+    "observed_rows": 24,
+    "filtered_rows": 0,
+    "missing_rows": 0
+  },
+  "claim_boundary": "Synthetic deterministic controls validate scorer ordering, poison isolation, and evidence completeness. They do not prove WaveMind product quality.",
+  "deterministic_verdict": {
+    "passed": true,
+    "repeat_count": 3,
+    "fingerprints": [
+      "70de5ca6b69771c03ab4489dd859c472bab36aee7cfdd8b857c46a4783ddb47f",
+      "70de5ca6b69771c03ab4489dd859c472bab36aee7cfdd8b857c46a4783ddb47f",
+      "70de5ca6b69771c03ab4489dd859c472bab36aee7cfdd8b857c46a4783ddb47f"
+    ]
+  },
+  "schema": "wavemind.evaluation_validity_controls.v1",
+  "generated_at": "2026-08-12T12:30:51Z",
+  "source_sha": "dc15179004b0ef889fad0f9ea760457b5d7228e7",
+  "source_manifest": {
+    "schema": "wavemind.source_manifest.v1",
+    "algorithm": "sha256",
+    "text_normalization": "utf8-crlf-to-lf-v1",
+    "files": [
+      {
+        "path": "benchmarks/evaluation_validity_controls.py",
+        "sha256": "29c1cbcd4c532580bb40aa9abae45470488ecaafe8982ae7109d3cc94d7ffe40"
+      },
+      {
+        "path": "tests/test_evaluation_statistics.py",
+        "sha256": "43a5e09b3771cf5f3c3f4f3148fac5b057922dd3504b50d5e19bc617c9b592a5"
+      },
+      {
+        "path": "tests/test_evaluation_validity_controls.py",
+        "sha256": "37780ee4a13172cee4d23b761c5132101f2198343aa71d9dd48544414d5c4506"
+      },
+      {
+        "path": "wavemind/evaluation_statistics.py",
+        "sha256": "113f2aa1562875661396951e7d8e864816ed072d08398b364b7a6942699f8118"
+      },
+      {
+        "path": "wavemind/evaluation_validity_controls.py",
+        "sha256": "50e9d29b386b2aba5b1c9426fc990275bf46e46e7adcffeca0a5022ab7336d76"
+      }
+    ],
+    "digest": "1d38b0cd280137bdbe8219d61c4f68df05c005a950d7e9b0ba17ddc1e2ebb560"
+  },
+  "environment": {
+    "profile": "evaluation-validity-controls",
+    "python": "3.13.3",
+    "implementation": "CPython",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "executable": "python.exe",
+    "github_run_id": null,
+    "github_runner_os": null
+  },
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "fd48ec96c4ae64a9434db928a87a26f549c62a3e619860ed7fbb2f804046d802"
+  }
+}

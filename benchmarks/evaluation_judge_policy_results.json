@@ -1,0 +1,104 @@
+{
+  "schema": "wavemind.evaluation_judge_policy.v1",
+  "generated_at": "2026-08-12T12:30:55Z",
+  "source_sha": "dc15179004b0ef889fad0f9ea760457b5d7228e7",
+  "active_primary_scorers": [
+    {
+      "family": "state-bench-agent-learning",
+      "metric": "deterministic_final_state",
+      "kind": "deterministic",
+      "llm_judge_required": false
+    },
+    {
+      "family": "memops-lifecycle",
+      "metric": "structured_operation_state_transition",
+      "kind": "deterministic",
+      "llm_judge_required": false
+    }
+  ],
+  "llm_judges": [],
+  "excluded_native_judge_lanes": [
+    {
+      "lane": "state-bench-ux",
+      "reason": "The official GPT-5.4 UX judge is pinned but not locally calibrated; UX is excluded from the mandatory local claim.",
+      "official_model": "gpt-5.4",
+      "temperature": 0,
+      "seed": 17,
+      "prompt_hashes": {
+        "travel/judge_task_requirements.md": "dd4abe82eedb4873cfa015708df99f59cfbfeaa85ac090b01bd1d75eb0500487",
+        "travel/judge_ux_quality.md": "b04009d159fb477c3a215f30f10793c4e0a5587e578d07fcd2bfc7d719f90598",
+        "customer_support/judge_task_requirements.md": "246c76f59f3cd0e736da35b9beb985088778ff233287454b8bae674285718c72",
+        "customer_support/judge_ux_quality.md": "8b6ecae22872ab860d4a54f37e5bd4a6a160033b833cd1b0de6a3673640d7067",
+        "shopping_assistant/judge_task_requirements.md": "558947b2ce0b5d90a633e7d44e8599c329a96ac5ed9e43c9d37ffb5e6cf3c055",
+        "shopping_assistant/judge_ux_quality.md": "0234643a8dcf766c390aff2dc11b2f74f0e13ef7a38b29df70165bd333b82656"
+      }
+    },
+    {
+      "lane": "longmemeval-answer-judge",
+      "reason": "No local open-weight judge calibration and agreement artifact exists yet; the lane is excluded before product tuning."
+    },
+    {
+      "lane": "longmemeval-v2-local-reader",
+      "reason": "The official-compatible local reader and judge profile is not calibrated yet; the lane is excluded before product tuning."
+    },
+    {
+      "lane": "memory-agent-bench-generative-components",
+      "reason": "Generated-answer and official judge components remain excluded until a pinned local reader/scorer calibration exists."
+    },
+    {
+      "lane": "memops-generated-answer",
+      "reason": "Generated-answer quality is secondary to the active structured lifecycle scorer until a pinned reader calibration exists."
+    }
+  ],
+  "policy": {
+    "mandatory_llm_judge_fields": [
+      "model_revision",
+      "prompt_sha256",
+      "temperature",
+      "seed",
+      "calibration_set_sha256",
+      "agreement_metric",
+      "agreement_value",
+      "minimum_agreement",
+      "repeat_count"
+    ],
+    "unavailable_judge_action": "exclude_lane_before_product_tuning",
+    "synthetic_agreement_forbidden": true,
+    "claim_cannot_expand_without_new_calibration": true
+  },
+  "source_manifest": {
+    "schema": "wavemind.source_manifest.v1",
+    "algorithm": "sha256",
+    "text_normalization": "utf8-crlf-to-lf-v1",
+    "files": [
+      {
+        "path": "benchmarks/evaluation_judge_policy.py",
+        "sha256": "50d5bf3dd04284e5da8865cad7e6cc87ac134161eebb820102fa098270df791b"
+      },
+      {
+        "path": "tests/test_evaluation_judges.py",
+        "sha256": "a37c7a4ca0c24fc37e2a62c6a4b167c1b912b27872ac732c8ccf7da44e380ecc"
+      },
+      {
+        "path": "wavemind/evaluation_judges.py",
+        "sha256": "8aa4510f8533859307aa4bd5c4405d4a4798081f68eb4d65fec1f2c55a93f728"
+      }
+    ],
+    "digest": "4b64d7743b1842e30cf7f6e55d92bcb6aac44b61fd9738845f16e8627210a530"
+  },
+  "environment": {
+    "profile": "evaluation-judge-policy",
+    "python": "3.13.3",
+    "implementation": "CPython",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "executable": "python.exe",
+    "github_run_id": null,
+    "github_runner_os": null
+  },
+  "claim_boundary": "Judge validity for the active deterministic STATE-Bench and MemOps primary metrics only. Excluded UX and generative lanes make no quality claim.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "89ebf6d33b48ba4c464444391e119e99eb7420fc1697fe2970613890a40f4c90"
+  }
+}

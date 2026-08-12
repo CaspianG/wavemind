@@ -1,0 +1,79 @@
+{
+  "schema": "wavemind.evaluation_salvage_manifest.v1",
+  "baseline_source_sha": "25e501b79b8210226bd577c926fc761db9936cc1",
+  "historical_branch": "goal/quality-leadership-recovery",
+  "historical_source_sha": "1e67af169d6b40bcfdbd4b83cbab2d05d92669d8",
+  "heldout_status": "not_opened",
+  "reusable": [
+    {
+      "component": "exact_sha_and_integrity_helpers",
+      "source": "wavemind/evidence.py",
+      "decision": "reuse_from_main",
+      "reason": "Canonical hashing, source manifests, environment fingerprints, and exact-SHA relations are task independent."
+    },
+    {
+      "component": "competitor_process_isolation",
+      "source": "historical branch competitor runners",
+      "decision": "redesign_then_reuse",
+      "reason": "Pinned isolated environments are useful, but comparability must be declared per metric and shared embeddings cannot be assumed."
+    },
+    {
+      "component": "split_and_per_case_guards",
+      "source": "historical branch protocol and per-query validators",
+      "decision": "redesign_then_reuse",
+      "reason": "Leakage checks and complete per-case evidence remain required after replacing the invalid task adapter."
+    },
+    {
+      "component": "negative_feedback_suppression",
+      "source_commit": "f080f580dd7901365ea6febee575108c9ab01ee2",
+      "decision": "reusable_pending_independent_validation",
+      "reason": "The behavior is product-facing and persists explicit feedback, but it must be extracted and regression-tested separately from benchmark changes before any merge."
+    }
+  ],
+  "historical_only": [
+    {
+      "component": "bounded_candidate_1",
+      "decision": "preserve_failed_evidence",
+      "reason": "Failed the frozen development gate; not a tuning set and not quality proof."
+    },
+    {
+      "component": "bounded_candidate_2",
+      "decision": "preserve_failed_evidence",
+      "reason": "Failed the frozen development gate; stop rule applied and held-out stayed closed."
+    },
+    {
+      "component": "quality_leadership_v1_admission",
+      "decision": "preserve_blocked_history",
+      "reason": "Its universal category requirement is incompatible with the filtered task semantics and cannot be continued as the Goal 8 admission."
+    },
+    {
+      "component": "goal4_full451_and_untouched419",
+      "decision": "preserve_failed_regression_evidence",
+      "reason": "The public failure remains visible and neither split may be used for Goal 8 tuning."
+    }
+  ],
+  "discard_or_redesign": [
+    {
+      "component": "literal_answer_to_evidence_adapter",
+      "reason": "It removes generative and long-range task semantics and makes the measured population differ from the published benchmark."
+    },
+    {
+      "component": "universal_four_category_gate",
+      "reason": "A universal gate cannot remain after the adapter removes an entire category; task families need native primary metrics and a preregistered Pareto analysis."
+    },
+    {
+      "component": "feedback_free_core_vs_memory_os_ranking",
+      "reason": "When no lifecycle feedback or learned state is present, identical rankings do not measure Memory OS policy gain."
+    },
+    {
+      "component": "single_synthetic_accuracy",
+      "reason": "Lifecycle, retrieval, answer, workflow, efficiency, and safety have different units and failure modes."
+    }
+  ],
+  "claim_boundary": "This manifest classifies prior work. It is not quality, benchmark, or production admission evidence.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "2d13004ff95170f7efedfb494ebb68113c2baa52e9c2fdd5da582dc759352890"
+  }
+}

@@ -196,3 +196,77 @@ jobs:
             ${{ runner.temp }}/WORKSPACE_EXPERIENCE_ADMISSION_MATRIX.md
             ${{ runner.temp }}/workspace-experience.json
             ${{ runner.temp }}/WORKSPACE_EXPERIENCE_ADMISSION.md
+
+  evaluation-validity:
+    name: evaluation-validity exact-SHA admission
+    needs: workspace-experience
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install evaluation admission dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,bench]"
+
+      - uses: actions/download-artifact@v5
+        with:
+          name: safe-product-admission-${{ github.sha }}
+          path: ${{ runner.temp }}/safe-product
+
+      - uses: actions/download-artifact@v5
+        with:
+          name: workspace-experience-admission-${{ github.sha }}
+          path: ${{ runner.temp }}/workspace-experience
+
+      - name: Checkout pinned public evaluation sources
+        run: |
+          git clone --filter=blob:none --no-checkout https://github.com/microsoft/STATE-Bench.git "${RUNNER_TEMP}/STATE-Bench"
+          git -C "${RUNNER_TEMP}/STATE-Bench" checkout --detach 5644b1838d96bc4483da29642d058ecaa6f80f7f
+          git clone --filter=blob:none --no-checkout https://github.com/MemTensor/MemOps.git "${RUNNER_TEMP}/MemOps"
+          git -C "${RUNNER_TEMP}/MemOps" checkout --detach 312af65e2c7b6d1b70f062ffa8b4cde32aaf6f35
+
+      - name: Generate exact-SHA validity evidence
+        run: |
+          python benchmarks/evaluation_validity_controls.py \
+            --output "${RUNNER_TEMP}/evaluation-controls.json" \
+            --require-passed
+          python benchmarks/evaluation_split_manifest.py \
+            --state-bench-root "${RUNNER_TEMP}/STATE-Bench" \
+            --memops-root "${RUNNER_TEMP}/MemOps" \
+            --output "${RUNNER_TEMP}/evaluation-splits.json" \
+            --require-valid
+          python benchmarks/evaluation_judge_policy.py \
+            --output "${RUNNER_TEMP}/evaluation-judges.json" \
+            --require-valid
+
+      - name: Enforce Evaluation Validity Admission
+        run: |
+          python benchmarks/evaluation_validity_admission.py \
+            --validity-evidence "${RUNNER_TEMP}/evaluation-controls.json" \
+            --split-evidence "${RUNNER_TEMP}/evaluation-splits.json" \
+            --judge-evidence "${RUNNER_TEMP}/evaluation-judges.json" \
+            --safe-product "${RUNNER_TEMP}/safe-product/safe-product.json" \
+            --workspace-experience "${RUNNER_TEMP}/workspace-experience/workspace-experience.json" \
+            --expected-source-sha "${GITHUB_SHA}" \
+            --output "${RUNNER_TEMP}/evaluation-validity.json" \
+            --markdown-output "${RUNNER_TEMP}/EVALUATION_VALIDITY_ADMISSION.md" \
+            --require-admitted
+
+      - name: Upload exact-current Evaluation Validity evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: evaluation-validity-admission-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/evaluation-controls.json
+            ${{ runner.temp }}/evaluation-splits.json
+            ${{ runner.temp }}/evaluation-judges.json
+            ${{ runner.temp }}/evaluation-validity.json
+            ${{ runner.temp }}/EVALUATION_VALIDITY_ADMISSION.md
