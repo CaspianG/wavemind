@@ -1,0 +1,269 @@
+{
+  "schema": "wavemind.state_bench_workflow_development_protocol.v1",
+  "phase": "bounded_development_only",
+  "protocol_parent_sha": "f32f6f45d8bb9c5748b05061428e797ae3f61c38",
+  "official_source": {
+    "repository": "https://github.com/microsoft/STATE-Bench",
+    "revision": "5644b1838d96bc4483da29642d058ecaa6f80f7f",
+    "license": "MIT",
+    "official_agent_learning_result": false
+  },
+  "access_policy": {
+    "allowed": [
+      "datasets/train_task_trajectories",
+      "frozen development tasks and task environments"
+    ],
+    "forbidden": [
+      "validation rows",
+      "official test/final tasks",
+      "held-out result inspection"
+    ],
+    "backend_forbidden_fields": [
+      "task_id",
+      "state_requirements",
+      "task_requirements",
+      "expected outcome",
+      "split",
+      "evaluator metadata"
+    ]
+  },
+  "execution_profile": {
+    "kind": "local_official-compatible_development",
+    "model": "qwen3:0.6b",
+    "model_manifest_digest": "7df6b6e09427",
+    "model_weight_sha256": "7f4030143c1c477224c5434f8272c662a8b042079a0a584f0a27a1684fe2e1fa",
+    "ollama_min_version": "0.31.1",
+    "cpu_only": true,
+    "num_gpu": 0,
+    "temperature": 0.0,
+    "think": false,
+    "context_window": 8192,
+    "max_output_tokens": 1024,
+    "seeds": [
+      101,
+      211,
+      307,
+      401,
+      503
+    ],
+    "same_model_for_agent_and_simulator": true,
+    "ux_judge": "disabled_no_pinned_calibration"
+  },
+  "treatments": [
+    {
+      "id": "no-memory",
+      "description": "Identical local agent with no learning retrieval surface."
+    },
+    {
+      "id": "wavemind-core",
+      "description": "Identical local agent with read-only WaveMind Core retrieval from the frozen training corpus."
+    },
+    {
+      "id": "wavemind-memory-os",
+      "description": "Identical local agent with read-only verified Experience Packet retrieval; unverified trajectory text cannot be promoted."
+    }
+  ],
+  "primary_metrics": {
+    "deterministic_state_pass_at_1": "mean state assertion pass across five paired seeds",
+    "deterministic_state_pass_power_5": "fraction of tasks passing deterministic state assertions on all five seeds",
+    "paired_task_ci": "paired cluster bootstrap by task with 95% confidence"
+  },
+  "secondary_metrics": [
+    "turns",
+    "tool_calls",
+    "tool_errors",
+    "repeated_tool_calls",
+    "context_tokens",
+    "output_tokens",
+    "latency_ms",
+    "cost_proxy"
+  ],
+  "claim_boundary": "This lane measures deterministic final-state workflow behavior on frozen development rows with a local open-weight model. It is not an official STATE-Bench result, does not score UX, and does not establish held-out generalization. No-state tasks are safety diagnostics and do not substitute for task-content judging.",
+  "preregistered_hypothesis": {
+    "id": "verified-correction-guidance-v1",
+    "statement": "On tasks whose training corpus contains independently admissible correction evidence, a minimal verified Experience Packet will reduce repeated policy/workflow errors without increasing forbidden writes. Raw TASK_DONE text is not verification evidence.",
+    "affected_metrics": [
+      "deterministic_state_pass_at_1",
+      "deterministic_state_pass_power_5",
+      "tool_errors",
+      "repeated_tool_calls"
+    ],
+    "development_gate": {
+      "memory_os_minus_strongest_baseline_pass_at_1": 0.01,
+      "lower_95_ci_above": 0.0,
+      "forbidden_write_regressions": 0,
+      "namespace_leakage": 0
+    }
+  },
+  "rows": [
+    {
+      "unit_id": "state-bench:customer_support:111-hard_exchange_downgrade_cash_demand",
+      "domain": "customer_support",
+      "task_id": "111-hard_exchange_downgrade_cash_demand",
+      "cluster_id": "state-bench:customer_support:111-hard_exchange_downgrade_cash_demand",
+      "split": "development",
+      "task_sha256": "e64ee1e04a17b409a00f65c9ae6e92a5dd9a445c47d3314cae04b467fb15f664",
+      "environment_sha256": "c92de88ce4bfd431a194ca8a175d458e73a84d5cefdb9d6ae05c9bfd6f5ed243",
+      "training_trajectory_sha256": "4d117ebd2ab57483dcc4349a0b98f536b7fa73cdf590aedbc0a9473685e79d77",
+      "has_state_requirements": true
+    },
+    {
+      "unit_id": "state-bench:customer_support:146-hard_compound_wrong_item_plus_late_comp",
+      "domain": "customer_support",
+      "task_id": "146-hard_compound_wrong_item_plus_late_comp",
+      "cluster_id": "state-bench:customer_support:146-hard_compound_wrong_item_plus_late_comp",
+      "split": "development",
+      "task_sha256": "90db8192cfe88c286b34e5eca35b3c1a5039c49e740f97e64d5f9d442692fdaf",
+      "environment_sha256": "f7f0fb219205f668194b6d2263605e53d7b0647bf22614836b99cd488e47564e",
+      "training_trajectory_sha256": "68df785abcb34a44a7c522f10b59ea96d2eadd949a1cddc8fcd11f1c244b5e33",
+      "has_state_requirements": true
+    },
+    {
+      "unit_id": "state-bench:customer_support:23-hard_customer_says_damaged_but_wrong_item_blender",
+      "domain": "customer_support",
+      "task_id": "23-hard_customer_says_damaged_but_wrong_item_blender",
+      "cluster_id": "state-bench:customer_support:23-hard_customer_says_damaged_but_wrong_item_blender",
+      "split": "development",
+      "task_sha256": "52b4ce9897c74cea563b361b53a4e6ee9b55da8ca6d3efddee0479941982945b",
+      "environment_sha256": "6637efc87f460054a061af9a6c1d17e53dac321b20c807280c2cff24b5b641e7",
+      "training_trajectory_sha256": "40ceb855922cc14f0dd066df689b55e33e42cc17cb7a2ce23ee4c05fd2f1025a",
+      "has_state_requirements": true
+    },
+    {
+      "unit_id": "state-bench:customer_support:65-challenge_defective_plus_clawback",
+      "domain": "customer_support",
+      "task_id": "65-challenge_defective_plus_clawback",
+      "cluster_id": "state-bench:customer_support:65-challenge_defective_plus_clawback",
+      "split": "development",
+      "task_sha256": "19deb9c14caa8de332b729b2ec4afa743594da58db3e500ab92439130b5a93b9",
+      "environment_sha256": "0238908a58f267ac29d4a13f86235d12a62c0d8efa69e0a2afdea1c9d7434b7f",
+      "training_trajectory_sha256": "a044c5ea4ffc4101d3d8bdc88fdd82a84ac854739bec8408f5b37702ba17f28a",
+      "has_state_requirements": true
+    },
+    {
+      "unit_id": "state-bench:customer_support:69-challenge_silver_restock_plus_shipping",
+      "domain": "customer_support",
+      "task_id": "69-challenge_silver_restock_plus_shipping",
+      "cluster_id": "state-bench:customer_support:69-challenge_silver_restock_plus_shipping",
+      "split": "development",
+      "task_sha256": "5bfce0604589fc491c23555cfe79bd045059076a75980d7ba316de5186e37070",
+      "environment_sha256": "74c34819337db6542f0ad3facf00e2fda6399e38e29358f94a633c631846eabe",
+      "training_trajectory_sha256": "008ddf0a7d1e296c82beb733c35874874565e158112b4552a5fc95a2b7472054",
+      "has_state_requirements": true
+    },
+    {
+      "unit_id": "state-bench:shopping_assistant:116-hard_loyalty_minimum_decline_no_topoff",
+      "domain": "shopping_assistant",
+      "task_id": "116-hard_loyalty_minimum_decline_no_topoff",
+      "cluster_id": "state-bench:shopping_assistant:116-hard_loyalty_minimum_decline_no_topoff",
+      "split": "development",
+      "task_sha256": "2d6ac84e35c6ad284e130e5a2242bc69850fc583671636485134f81a4c8f578d",
+      "environment_sha256": "ef08f1068110f06dd694d30cb9b6253c460aaad4ec54fa24660cf688118d7e4d",
+      "training_trajectory_sha256": "d9794f94226850b347e2905838724c98bdb75231da997a1a187ef488cb9c8674",
+      "has_state_requirements": true
+    },
+    {
+      "unit_id": "state-bench:shopping_assistant:125-hard_promo_expired_code_no_replacement",
+      "domain": "shopping_assistant",
+      "task_id": "125-hard_promo_expired_code_no_replacement",
+      "cluster_id": "state-bench:shopping_assistant:125-hard_promo_expired_code_no_replacement",
+      "split": "development",
+      "task_sha256": "f0a4dfa48bb11b7fe3d83595e22387e36bbd802c7b6f3dd0b862e73d113b6be8",
+      "environment_sha256": "f91904f0c0d7886d81bc1e4e02367908afc2d521e11d001a76aff0a485a73ff7",
+      "training_trajectory_sha256": "f0ae93d1497699f6975f13258ece171422da364284f26d455eb60b96b8f53ada",
+      "has_state_requirements": false
+    },
+    {
+      "unit_id": "state-bench:shopping_assistant:31-price_drop_loyalty_platinum_compound",
+      "domain": "shopping_assistant",
+      "task_id": "31-price_drop_loyalty_platinum_compound",
+      "cluster_id": "state-bench:shopping_assistant:31-price_drop_loyalty_platinum_compound",
+      "split": "development",
+      "task_sha256": "74281fdd5d2050f4f45e3f1990bc3e5adf6702413995839bb5682cecc394b2d6",
+      "environment_sha256": "f6e58402c540a0016d7f634669c7fa45304ff90bf5a6404eb9514436f303f3ef",
+      "training_trajectory_sha256": "a7b27adfa2b36d02060fcdaa1347d742c05f29fdd8aa947df96045511a081c01",
+      "has_state_requirements": true
+    },
+    {
+      "unit_id": "state-bench:shopping_assistant:37-history_driven_accessory",
+      "domain": "shopping_assistant",
+      "task_id": "37-history_driven_accessory",
+      "cluster_id": "state-bench:shopping_assistant:37-history_driven_accessory",
+      "split": "development",
+      "task_sha256": "67e5a6ed68424ea7e35acea89481f835a0f9d4ec66b12114db72653cfcc0c22c",
+      "environment_sha256": "ec85531775273577b1a464af1f687319acf651d0dd9d32d84b1ab068cf75f127",
+      "training_trajectory_sha256": "42af2a840e2d2ddc104ec34175fb039b83dd4226844f0e015e22481bd0b79c4b",
+      "has_state_requirements": true
+    },
+    {
+      "unit_id": "state-bench:shopping_assistant:99-refill_to_cap_overspends_on_shrink",
+      "domain": "shopping_assistant",
+      "task_id": "99-refill_to_cap_overspends_on_shrink",
+      "cluster_id": "state-bench:shopping_assistant:99-refill_to_cap_overspends_on_shrink",
+      "split": "development",
+      "task_sha256": "0b0bc466679b565090e1539fc8b1a3abec450da3af864200ee1ae7a971fc6bf9",
+      "environment_sha256": "60f4f2fb5558b1bbbafaa6569373772a934406bfa28f42d7bfe8709cd320089e",
+      "training_trajectory_sha256": "d67995ff4eea924af508c5f1402b6a514316415933cf204a1a5fb905ab78453b",
+      "has_state_requirements": true
+    },
+    {
+      "unit_id": "state-bench:travel:104-change_domestic_gt7d_personal_fee_tier",
+      "domain": "travel",
+      "task_id": "104-change_domestic_gt7d_personal_fee_tier",
+      "cluster_id": "state-bench:travel:104-change_domestic_gt7d_personal_fee_tier",
+      "split": "development",
+      "task_sha256": "79257a9c8f94a78d903e97c662f446419cee72f6f8e02b1af6bbe749d6ed1464",
+      "environment_sha256": "c309237e1adbd8409b79f5b626af0a21fa77779b9ad39ccce746a6f642c4e26e",
+      "training_trajectory_sha256": "4d83c503ca929a32019bcfc82ca457a359e72ec4c2c772da5b222034e692ce55",
+      "has_state_requirements": true
+    },
+    {
+      "unit_id": "state-bench:travel:139-strategy_business_international_change_cheaper",
+      "domain": "travel",
+      "task_id": "139-strategy_business_international_change_cheaper",
+      "cluster_id": "state-bench:travel:139-strategy_business_international_change_cheaper",
+      "split": "development",
+      "task_sha256": "469cae6a1437f776cb81d4420ce9a6192e2bf775eb3ab611a22c15d38a92ba12",
+      "environment_sha256": "efebbf08f4bebc7625bc3979f6eba88be1311f6741c1bdf64838de1af9aa4d6a",
+      "training_trajectory_sha256": "e5e0fe4b786207e573c8016e87ea8dba3010471f4b1c035935165de668972c7b",
+      "has_state_requirements": true
+    },
+    {
+      "unit_id": "state-bench:travel:22-policy_upgrade_path_blocked",
+      "domain": "travel",
+      "task_id": "22-policy_upgrade_path_blocked",
+      "cluster_id": "state-bench:travel:22-policy_upgrade_path_blocked",
+      "split": "development",
+      "task_sha256": "1b46aa4d41fdba6fb22bb4a3174d5c03b961f28571d098be4cb36ac724264859",
+      "environment_sha256": "2c0a6c9c7541f3cb430de7595edb9314b113a0554e0f0c975d4518c1886f610e",
+      "training_trajectory_sha256": "e48b6c096aac3e73b0cb24d452366c7b8582b497f766afb6a6646b329c8ad8bf",
+      "has_state_requirements": false
+    },
+    {
+      "unit_id": "state-bench:travel:3-delay_no_free_rebook_cheaper_paid_path_state",
+      "domain": "travel",
+      "task_id": "3-delay_no_free_rebook_cheaper_paid_path_state",
+      "cluster_id": "state-bench:travel:3-delay_no_free_rebook_cheaper_paid_path_state",
+      "split": "development",
+      "task_sha256": "618bc509b87f8a90e4ba9003cfcce8984dcd4bb5797a051e171f7d5e3909a883",
+      "environment_sha256": "9744409586d45189981067aed32d4bd0628009521bda258b0c65f17dd89a377a",
+      "training_trajectory_sha256": "e83b1d89b8fe660131a80ac01e1bf501e5735c01056808e3b9d43c2fbe0a27c9",
+      "has_state_requirements": true
+    },
+    {
+      "unit_id": "state-bench:travel:97-challenge_bereavement_intl_lt7d_fee",
+      "domain": "travel",
+      "task_id": "97-challenge_bereavement_intl_lt7d_fee",
+      "cluster_id": "state-bench:travel:97-challenge_bereavement_intl_lt7d_fee",
+      "split": "development",
+      "task_sha256": "458cec97ddfb3fd50c4d5cb79d3fd57dbd285d823cd16c1a0ea829d9c28bb5dc",
+      "environment_sha256": "c3595d0020ebf25901afba514e4fd03c8d659690d09573b06992e944b883315a",
+      "training_trajectory_sha256": "cede1936cfab58c7747c1effb74f814bf4dd0b04e0b7e5a9bbe1dbab3018bcf0",
+      "has_state_requirements": true
+    }
+  ],
+  "integrity": {
+    "algorithm": "sha256",
+    "payload_sha256": "110f1edcbe81a0d8aa7b2fd7b770788ffd01b7f2b98791ee98758d82a4e8beba"
+  }
+}

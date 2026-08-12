@@ -1,0 +1,23 @@
+{
+  "schema": "wavemind.state_bench_workflow_preflight.v1",
+  "status": "passed",
+  "source_sha": "f32f6f45d8bb9c5748b05061428e797ae3f61c38",
+  "protocol_payload_sha256": "110f1edcbe81a0d8aa7b2fd7b770788ffd01b7f2b98791ee98758d82a4e8beba",
+  "upstream_sha": "5644b1838d96bc4483da29642d058ecaa6f80f7f",
+  "model": "qwen3:0.6b",
+  "model_weight_sha256": "7f4030143c1c477224c5434f8272c662a8b042079a0a584f0a27a1684fe2e1fa",
+  "cpu_only": true,
+  "domain": "shopping_assistant",
+  "task_id": "125-hard_promo_expired_code_no_replacement",
+  "seed": 101,
+  "state_requirements_met": 1,
+  "state_reasoning": "Task defines no required state changes and the saved state_diff is empty.",
+  "turns": 1,
+  "tool_calls": 1,
+  "tool_errors": 0,
+  "repeated_calls": 0,
+  "input_tokens": 4898,
+  "output_tokens": 95,
+  "elapsed_ms": 41077.021,
+  "claim_boundary": "Execution plumbing preflight only; not a baseline, candidate, or official result."
+}
