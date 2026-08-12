@@ -1,0 +1,414 @@
+{
+  "schema": "wavemind.evaluation_development_protocol.v1",
+  "revision": "goal8-bounded-development-v1-20260812",
+  "source_sha": "8a11e037ff8616211cb640da044c137a1ed28a2b",
+  "baseline_source_sha": "8a11e037ff8616211cb640da044c137a1ed28a2b",
+  "phase": "development_only",
+  "heldout_access": "forbidden",
+  "frozen_inputs": {
+    "dataset_manifest_payload_sha256": "130558ca68cfff4d9e3d807f9668975170fb7475460ae972e23959e03cad09da",
+    "split_manifest_payload_sha256": "bbe38c525c2754ecfc93638312ff7a7ede3eda9cb607a12c01a9c21ab866d742",
+    "judge_policy_payload_sha256": "89ebf6d33b48ba4c464444391e119e99eb7420fc1697fe2970613890a40f4c90",
+    "sample_salt": "wavemind-goal8-bounded-development-v1",
+    "bounded_units_sha256": "cf3873f4f69d2047a88d271bf3998c014cb2366b0209ba27f792a17d189cb5cb"
+  },
+  "bounded_sample": {
+    "state_bench_per_domain": 5,
+    "memops_per_operation_type": 5,
+    "unit_count": 40,
+    "units": [
+      {
+        "dataset": "memops",
+        "unit_id": "A04_reflect",
+        "stratum": "Reflect",
+        "cluster_id": "A04",
+        "derived_fingerprint": "3aa711f46a0dca400c3973034f2106b82a135dff24d636194edc5aafcf48e0dc"
+      },
+      {
+        "dataset": "memops",
+        "unit_id": "A04_remember",
+        "stratum": "Remember",
+        "cluster_id": "A04",
+        "derived_fingerprint": "93695450c06dce3628a42fcca509fd3da04a5f865e5592c6e24e9515f33f221b"
+      },
+      {
+        "dataset": "memops",
+        "unit_id": "A06_update",
+        "stratum": "Update",
+        "cluster_id": "A06",
+        "derived_fingerprint": "3ee33d4754b61490f033365f0e981cede590de52b908d8031020303f906b3570"
+      },
+      {
+        "dataset": "memops",
+        "unit_id": "A07_trajectory_ops",
+        "stratum": "TrajectoryOps",
+        "cluster_id": "A07",
+        "derived_fingerprint": "242d38cc2b378d7eaa4a9d8e78f1b4939fdaf5d7057eda7129bc8b36083a9ee5"
+      },
+      {
+        "dataset": "memops",
+        "unit_id": "A26_trajectory_ops",
+        "stratum": "TrajectoryOps",
+        "cluster_id": "A26",
+        "derived_fingerprint": "230b36ad6c69aecb8cf01adb0ff7b7a21bf8e43ee3e63f90c0934e940a0f1abe"
+      },
+      {
+        "dataset": "memops",
+        "unit_id": "A28_update",
+        "stratum": "Update",
+        "cluster_id": "A28",
+        "derived_fingerprint": "062a1f49e74b9c81809a2232252452b0f539fa0ef9604323aa540da0e13d594c"
+      },
+      {
+        "dataset": "memops",
+        "unit_id": "B11_reflect",
+        "stratum": "Reflect",
+        "cluster_id": "B11",
+        "derived_fingerprint": "c7b6070dc9116869570eb07d6f98c4b33497b9fd4f1c254ead79ae659472ab4c"
+      },
+      {
+        "dataset": "memops",
+        "unit_id": "B26_trajectory_ops",
+        "stratum": "TrajectoryOps",
+        "cluster_id": "B26",
+        "derived_fingerprint": "c04d97fe576380fd11fd16928d40b4c51500f17e0b94d156bb8b2855c8329737"
+      },
+      {
+        "dataset": "memops",
+        "unit_id": "C03_reflect",
+        "stratum": "Reflect",
+        "cluster_id": "C03",
+        "derived_fingerprint": "fc659b1cfe2c7cef744801b03e63b7895655c853c4983ab6980ceaa42714d753"
+      },
+      {
+        "dataset": "memops",
+        "unit_id": "C05_remember",
+        "stratum": "Remember",
+        "cluster_id": "C05",
+        "derived_fingerprint": "2cb7f37a5837be2aa3e5ca5166208e9e68042d145ba20c664bc3a8b8cfb1242f"
+      },
+      {
+        "dataset": "memops",
+        "unit_id": "C22_reflect",
+        "stratum": "Reflect",
+        "cluster_id": "C22",
+        "derived_fingerprint": "f2ccbe84ce4acd4d5f43cd8dfbdbd126cb2bbe2a8e4f6345f38edc12cac6e68d"
+      },
+      {
+        "dataset": "memops",
+        "unit_id": "C23_update",
+        "stratum": "Update",
+        "cluster_id": "C23",
+        "derived_fingerprint": "a5d9bfd9b9cce367198774a3ceca31f745337d37f76025d8adf3b065628e6ad0"
+      },
+      {
+        "dataset": "memops",
+        "unit_id": "C24_forget",
+        "stratum": "Forget",
+        "cluster_id": "C24",
+        "derived_fingerprint": "a65f96fa82cc777d1db01a612fe9f5c49c3aab4346410ac60583d9cb825962a8"
+      },
+      {
+        "dataset": "memops",
+        "unit_id": "D05_reflect",
+        "stratum": "Reflect",
+        "cluster_id": "D05",
+        "derived_fingerprint": "e6641672834fc7b6df1ae5f2c29ad474819dd2de92479ba1b9178c52af31f2bb"
+      },
+      {
+        "dataset": "memops",
+        "unit_id": "E03_forget",
+        "stratum": "Forget",
+        "cluster_id": "E03",
+        "derived_fingerprint": "725ca936051bd51a8ac79cb508b5e2e90f1860bf047d0b1ec7b47ca6b3a44dc8"
+      },
+      {
+        "dataset": "memops",
+        "unit_id": "E03_trajectory_ops",
+        "stratum": "TrajectoryOps",
+        "cluster_id": "E03",
+        "derived_fingerprint": "620eef2e899892dd9681518342f3cd8f995d243e1af990922b7f96ca0e714ce1"
+      },
+      {
+        "dataset": "memops",
+        "unit_id": "E07_update",
+        "stratum": "Update",
+        "cluster_id": "E07",
+        "derived_fingerprint": "b498dfbf1f333848b85dee568f1ab7048efbd17957618f565395b4f4ff0a96a7"
+      },
+      {
+        "dataset": "memops",
+        "unit_id": "E13_update",
+        "stratum": "Update",
+        "cluster_id": "E13",
+        "derived_fingerprint": "8893f9d7de2c17f7ff782665c8accbef2bf651a3dab341afa885edd1cf355b1f"
+      },
+      {
+        "dataset": "memops",
+        "unit_id": "E15_remember",
+        "stratum": "Remember",
+        "cluster_id": "E15",
+        "derived_fingerprint": "ba3ec991192b02a31e74c74f0fdd5592a2a79d3369e1468cf317fa125924e448"
+      },
+      {
+        "dataset": "memops",
+        "unit_id": "F01_forget",
+        "stratum": "Forget",
+        "cluster_id": "F01",
+        "derived_fingerprint": "55695d66f53b7e2c41feb5b364794a347a9e30c51dfdad45bf3cbd406ab6a2e8"
+      },
+      {
+        "dataset": "memops",
+        "unit_id": "F12_remember",
+        "stratum": "Remember",
+        "cluster_id": "F12",
+        "derived_fingerprint": "f9914fb9eab5e8aa854f1600e70b17ab40426f3c5d831131bf7ee41c3667bdca"
+      },
+      {
+        "dataset": "memops",
+        "unit_id": "F15_forget",
+        "stratum": "Forget",
+        "cluster_id": "F15",
+        "derived_fingerprint": "fb2f78f02a5bb3632a0621f4a313267babe5f8ad822ed4d6fb6aa589ed5bd0eb"
+      },
+      {
+        "dataset": "memops",
+        "unit_id": "F15_remember",
+        "stratum": "Remember",
+        "cluster_id": "F15",
+        "derived_fingerprint": "bfd9969b33de61a7feaad3f01b08d490cb89e8b16fb671a66e6c41e7991339d6"
+      },
+      {
+        "dataset": "memops",
+        "unit_id": "F16_trajectory_ops",
+        "stratum": "TrajectoryOps",
+        "cluster_id": "F16",
+        "derived_fingerprint": "05959491e6e66c8f012bbb91918204d2813f2f6ca85546449e3e957d35f761f4"
+      },
+      {
+        "dataset": "memops",
+        "unit_id": "F17_forget",
+        "stratum": "Forget",
+        "cluster_id": "F17",
+        "derived_fingerprint": "5948f8b937f69824cf49104f12d74d3f7f6421f54490797e81a750b8a99ff2bd"
+      },
+      {
+        "dataset": "state-bench",
+        "unit_id": "state-bench:customer_support:111-hard_exchange_downgrade_cash_demand",
+        "stratum": "customer_support",
+        "cluster_id": "state-bench:customer_support:111-hard_exchange_downgrade_cash_demand",
+        "derived_fingerprint": "fca230e98d91d70679912609355304959c22566aa07d17ee1afbac4af7ae2807"
+      },
+      {
+        "dataset": "state-bench",
+        "unit_id": "state-bench:customer_support:146-hard_compound_wrong_item_plus_late_comp",
+        "stratum": "customer_support",
+        "cluster_id": "state-bench:customer_support:146-hard_compound_wrong_item_plus_late_comp",
+        "derived_fingerprint": "6aedf93cf2df075787e08d1726e633a53386c8ab78c9e3a112b622aadbe41be5"
+      },
+      {
+        "dataset": "state-bench",
+        "unit_id": "state-bench:customer_support:23-hard_customer_says_damaged_but_wrong_item_blender",
+        "stratum": "customer_support",
+        "cluster_id": "state-bench:customer_support:23-hard_customer_says_damaged_but_wrong_item_blender",
+        "derived_fingerprint": "bedee7da736edaec9552a8aa36fc2821d6f82f5ecab938c220b139cd74efc6a8"
+      },
+      {
+        "dataset": "state-bench",
+        "unit_id": "state-bench:customer_support:65-challenge_defective_plus_clawback",
+        "stratum": "customer_support",
+        "cluster_id": "state-bench:customer_support:65-challenge_defective_plus_clawback",
+        "derived_fingerprint": "c9fbf90bc09b545f497415d8c6f49278465aff6e32c17fc8911fe68c9c1ac246"
+      },
+      {
+        "dataset": "state-bench",
+        "unit_id": "state-bench:customer_support:69-challenge_silver_restock_plus_shipping",
+        "stratum": "customer_support",
+        "cluster_id": "state-bench:customer_support:69-challenge_silver_restock_plus_shipping",
+        "derived_fingerprint": "9631cd007886fc6ef37d470d621aed52bf2083bd2c4cc5525d8fe7b2d26cbf3c"
+      },
+      {
+        "dataset": "state-bench",
+        "unit_id": "state-bench:shopping_assistant:116-hard_loyalty_minimum_decline_no_topoff",
+        "stratum": "shopping_assistant",
+        "cluster_id": "state-bench:shopping_assistant:116-hard_loyalty_minimum_decline_no_topoff",
+        "derived_fingerprint": "5042edd764062b8bccc90c760efe96567129f1aff07da66334be62509d982e54"
+      },
+      {
+        "dataset": "state-bench",
+        "unit_id": "state-bench:shopping_assistant:125-hard_promo_expired_code_no_replacement",
+        "stratum": "shopping_assistant",
+        "cluster_id": "state-bench:shopping_assistant:125-hard_promo_expired_code_no_replacement",
+        "derived_fingerprint": "e3844900f4491d5c79493699349d81f3ddff31692dd5e9fd5b2fde949a5133fb"
+      },
+      {
+        "dataset": "state-bench",
+        "unit_id": "state-bench:shopping_assistant:31-price_drop_loyalty_platinum_compound",
+        "stratum": "shopping_assistant",
+        "cluster_id": "state-bench:shopping_assistant:31-price_drop_loyalty_platinum_compound",
+        "derived_fingerprint": "263ac8a8dac1e46165dae3ecc8e8f3f6abe8f283ef9e7f8ae3a1bcbeed37b7ae"
+      },
+      {
+        "dataset": "state-bench",
+        "unit_id": "state-bench:shopping_assistant:37-history_driven_accessory",
+        "stratum": "shopping_assistant",
+        "cluster_id": "state-bench:shopping_assistant:37-history_driven_accessory",
+        "derived_fingerprint": "535227c79fe12705acc56da68e50e8320efafdc1d221b7c43f8ab0ac2f25d3d6"
+      },
+      {
+        "dataset": "state-bench",
+        "unit_id": "state-bench:shopping_assistant:99-refill_to_cap_overspends_on_shrink",
+        "stratum": "shopping_assistant",
+        "cluster_id": "state-bench:shopping_assistant:99-refill_to_cap_overspends_on_shrink",
+        "derived_fingerprint": "c02aeae533c14015ee91eda8dfcf02706395196ba02a2447c5c73140ed0faced"
+      },
+      {
+        "dataset": "state-bench",
+        "unit_id": "state-bench:travel:104-change_domestic_gt7d_personal_fee_tier",
+        "stratum": "travel",
+        "cluster_id": "state-bench:travel:104-change_domestic_gt7d_personal_fee_tier",
+        "derived_fingerprint": "c0848ba3a2d825fbbb2480fc62a0097dc277161669481bbb47b9163dac5b8a88"
+      },
+      {
+        "dataset": "state-bench",
+        "unit_id": "state-bench:travel:139-strategy_business_international_change_cheaper",
+        "stratum": "travel",
+        "cluster_id": "state-bench:travel:139-strategy_business_international_change_cheaper",
+        "derived_fingerprint": "ee09d7abfc45934558eec10e2e61356ac3f573a9318980a46f6a10586165e6c0"
+      },
+      {
+        "dataset": "state-bench",
+        "unit_id": "state-bench:travel:22-policy_upgrade_path_blocked",
+        "stratum": "travel",
+        "cluster_id": "state-bench:travel:22-policy_upgrade_path_blocked",
+        "derived_fingerprint": "3b76906c58f02f5055571afe9c08ab380a26d67cabba13e84219812ed9e67b8c"
+      },
+      {
+        "dataset": "state-bench",
+        "unit_id": "state-bench:travel:3-delay_no_free_rebook_cheaper_paid_path_state",
+        "stratum": "travel",
+        "cluster_id": "state-bench:travel:3-delay_no_free_rebook_cheaper_paid_path_state",
+        "derived_fingerprint": "fe3772934a81e3982bab3733a17385702a4869ee525666810570cba994486b02"
+      },
+      {
+        "dataset": "state-bench",
+        "unit_id": "state-bench:travel:97-challenge_bereavement_intl_lt7d_fee",
+        "stratum": "travel",
+        "cluster_id": "state-bench:travel:97-challenge_bereavement_intl_lt7d_fee",
+        "derived_fingerprint": "7d37d59fc2e7a22a0adb71b6c0718aa55e1ab864295283d18ac1cb51ab743b2f"
+      }
+    ]
+  },
+  "families": [
+    {
+      "id": "state-bench-agent-learning",
+      "layer": "workflow",
+      "primary_metric": "deterministic_final_state_pass",
+      "secondary_metrics": [
+        "turns",
+        "tool_calls",
+        "tool_errors",
+        "context_characters"
+      ],
+      "cluster_unit": "task_id",
+      "quality_claim_eligible": false,
+      "blocked_until": "a local open-weight tool-calling agent profile is pinned before execution; recorded trajectories may validate the scorer but may not measure a WaveMind treatment effect"
+    },
+    {
+      "id": "memops-lifecycle",
+      "layer": "lifecycle",
+      "primary_metric": "operation_state_transition",
+      "secondary_metrics": [
+        "target_binding",
+        "provenance_support",
+        "stale_leakage",
+        "over_forgetting",
+        "unsupported_inference"
+      ],
+      "cluster_unit": "subject_id",
+      "quality_claim_eligible": true,
+      "reader": "deterministic_structured_state_v1"
+    }
+  ],
+  "comparators": [
+    "no_memory",
+    "full_correct_state_oracle",
+    "static_hybrid_same_corpus",
+    "wavemind_core",
+    "wavemind_memory_os"
+  ],
+  "fairness": {
+    "same_source_corpus": true,
+    "same_backend_query_view": true,
+    "same_context_budget": true,
+    "gold_and_evaluator_metadata_hidden": true,
+    "competitor_substitution_forbidden": true,
+    "non_comparable_embeddings_must_be_declared": true
+  },
+  "error_taxonomy": [
+    "capture_extraction_miss",
+    "wrong_granularity",
+    "retrieval_miss",
+    "stale_or_contradictory_selection",
+    "missing_state_transition",
+    "bad_consolidation",
+    "procedural_applicability_miss",
+    "reader_failure",
+    "latency_or_cost_overhead"
+  ],
+  "bounded_go_no_go": {
+    "minimum_primary_point_lift": 0.05,
+    "maximum_other_family_regression": 0.02,
+    "maximum_stale_or_contradictory_leakage": 0.02,
+    "maximum_namespace_leakage": 0.0,
+    "maximum_deleted_evidence_resurfacing": 0.0,
+    "maximum_context_regression": 0.1,
+    "maximum_warm_p95_latency_regression": 0.2,
+    "candidate_limit_per_hypothesis": 2,
+    "validation_or_final_error_analysis_forbidden": true
+  },
+  "statistics": {
+    "paired": true,
+    "clustered_by_family_cluster_unit": true,
+    "confidence_level": 0.95,
+    "bootstrap_repeats": 2000,
+    "seed": 17,
+    "multiple_primary_correction": "holm",
+    "bounded_dev_point_gate_is_not_final_quality_evidence": true
+  },
+  "run_requirements": {
+    "exact_source_sha": true,
+    "complete_per_case_evidence": true,
+    "failed_error_skipped_rows_retained": true,
+    "environment_fingerprint": true,
+    "dataset_and_protocol_checksums": true,
+    "product_tuning_before_baseline_error_taxonomy": false,
+    "heavy_or_gpu_run_requires_user_permission": true
+  },
+  "source_manifest": {
+    "schema": "wavemind.source_manifest.v1",
+    "algorithm": "sha256",
+    "text_normalization": "utf8-crlf-to-lf-v1",
+    "files": [
+      {
+        "path": "benchmarks/evaluation_development_protocol.py",
+        "sha256": "06ee3a0f5a4583aac30dfe5f547c8d81a325b7e919738709a37d6edc20423796"
+      },
+      {
+        "path": "tests/test_evaluation_development_protocol.py",
+        "sha256": "a0e0f06c9da2eae8abd7491f501838fa671aa8602ed53dd1601d60730a16b145"
+      },
+      {
+        "path": "wavemind/evaluation_development_protocol.py",
+        "sha256": "5beb79331f6e73318e8f268e9811478b2750f4fcb65a59674cbff6749e752b93"
+      }
+    ],
+    "digest": "699c67dd9dd6d465572eb9df921a658c9e764c86406e434d083813db4be1a65d"
+  },
+  "claim_boundary": "Frozen development-only protocol and sample selection. It does not run a benchmark, open validation/final data, or establish a quality claim.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "650ddf5542c34238d15aa50fa71d743f854b49f959acc1b60205cff9c635a5e5"
+  }
+}
