@@ -6,6 +6,8 @@ from pathlib import Path
 from benchmarks.state_bench_workflow_development import (
     MODEL_WEIGHT_SHA256,
     SEEDS,
+    TREATMENTS,
+    _aggregate_baseline,
     _ollama_messages,
     _ollama_tools,
     _payload_sha256,
@@ -86,3 +88,64 @@ def test_ollama_adapter_preserves_tool_names_and_results() -> None:
         "booking_id": "BK-1"
     }
     assert json.loads(messages[3]["content"])["status"] == "confirmed"
+
+
+def test_baseline_aggregation_is_paired_by_task_and_fail_closed(monkeypatch) -> None:
+    protocol = json.loads(PROTOCOL.read_text(encoding="utf-8"))
+    rows = []
+    for unit in protocol["rows"]:
+        for seed in SEEDS:
+            for treatment in TREATMENTS:
+                state_pass = int(
+                    treatment == "wavemind-memory-os"
+                    or (treatment == "wavemind-core" and seed != SEEDS[0])
+                )
+                rows.append(
+                    {
+                        "unit_id": unit["unit_id"],
+                        "treatment": treatment,
+                        "seed": seed,
+                        "status": "completed",
+                        "state_pass": state_pass,
+                        "has_state_requirements": unit["has_state_requirements"],
+                        "turns": 1,
+                        "tool_calls": 1,
+                        "memory_tool_calls": int(treatment != "no-memory"),
+                        "domain_tool_calls": int(treatment == "no-memory"),
+                        "tool_errors": 0,
+                        "repeated_calls": 0,
+                        "input_tokens": 10,
+                        "output_tokens": 2,
+                        "latency_ms": 20.0,
+                        "forbidden_memory_mutations": 0,
+                    }
+                )
+    monkeypatch.setattr(
+        "benchmarks.state_bench_workflow_development._git_sha",
+        lambda _root: "a" * 40,
+    )
+
+    result = _aggregate_baseline(repo_root=Path("."), protocol=protocol, rows=rows)
+
+    assert result["strongest_baseline"] == "wavemind-core"
+    assert result["treatments"]["wavemind-core"]["primary_state_task_count"] == 13
+    assert result["treatments"]["wavemind-core"]["diagnostic_no_state_task_count"] == 2
+    assert result["memory_os_paired_lift"]["mean"] == 0.2
+    assert result["memory_os_paired_lift"]["low"] == 0.2
+    assert result["admitted_for_product_candidate"] is True
+    assert result["integrity"]["payload_sha256"] == _payload_sha256(result)
+
+
+def test_baseline_aggregation_rejects_missing_rows(monkeypatch) -> None:
+    protocol = json.loads(PROTOCOL.read_text(encoding="utf-8"))
+    monkeypatch.setattr(
+        "benchmarks.state_bench_workflow_development._git_sha",
+        lambda _root: "a" * 40,
+    )
+
+    try:
+        _aggregate_baseline(repo_root=Path("."), protocol=protocol, rows=[])
+    except ValueError as exc:
+        assert "expected 225 completed rows" in str(exc)
+    else:
+        raise AssertionError("missing baseline rows must block aggregation")
