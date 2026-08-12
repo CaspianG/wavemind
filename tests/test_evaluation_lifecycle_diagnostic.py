@@ -7,6 +7,7 @@ from wavemind.evaluation_lifecycle_diagnostic import (
     StaticLastWriteWinsBackend,
     WaveMindCoreLifecycleBackend,
     classify_error,
+    compact_lifecycle_diagnostic,
     expected_state,
     score_observation,
 )
@@ -123,3 +124,25 @@ def test_core_forget_removes_target_without_neighbor_over_forgetting(tmp_path: P
         assert backend.observe("neighbor", "Neighbor")["selected"]["value"] == "keep"
     finally:
         backend.close()
+
+
+def test_compact_summary_references_raw_evidence_without_embedding_rows():
+    payload = {
+        "schema": "wavemind.evaluation_lifecycle_diagnostic.v1",
+        "status": "diagnostic_complete",
+        "per_target": [{"case_id": "one"}, {"case_id": "two"}],
+        "integrity": {"payload_sha256": "old"},
+    }
+    compact = compact_lifecycle_diagnostic(
+        payload,
+        raw_filename="raw.json",
+        raw_sha256="a" * 64,
+    )
+    assert "per_target" not in compact
+    assert compact["raw_evidence"] == {
+        "filename": "raw.json",
+        "sha256": "a" * 64,
+        "row_count": 2,
+        "retention": "CI artifact; not checked into the repository",
+    }
+    assert compact["integrity"]["payload_sha256"] != "old"

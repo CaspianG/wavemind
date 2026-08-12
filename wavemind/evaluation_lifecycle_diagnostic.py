@@ -325,6 +325,29 @@ def _backend_summary(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     }
 
 
+def compact_lifecycle_diagnostic(
+    payload: Mapping[str, Any],
+    *,
+    raw_filename: str,
+    raw_sha256: str,
+) -> dict[str, Any]:
+    rows = payload.get("per_target")
+    if not isinstance(rows, list) or not rows:
+        raise ValueError("lifecycle diagnostic raw target rows are missing")
+    compact = {
+        key: value
+        for key, value in payload.items()
+        if key not in {"per_target", "integrity"}
+    }
+    compact["raw_evidence"] = {
+        "filename": Path(raw_filename).name,
+        "sha256": raw_sha256,
+        "row_count": len(rows),
+        "retention": "CI artifact; not checked into the repository",
+    }
+    return attach_artifact_integrity(compact)
+
+
 def run_memops_lifecycle_diagnostic(
     *,
     project_root: str | Path,
@@ -425,6 +448,21 @@ def run_memops_lifecycle_diagnostic(
         )
         for backend in ("no_memory", "static_lww", "wavemind_core")
     }
+    operation_types = sorted({str(row["operation_type"]) for row in raw_rows})
+    by_operation_type = {
+        operation_type: {
+            backend: _backend_summary(
+                [
+                    row
+                    for row in raw_rows
+                    if row["operation_type"] == operation_type
+                    and row["backend"] == backend
+                ]
+            )
+            for backend in ("no_memory", "static_lww", "wavemind_core")
+        }
+        for operation_type in operation_types
+    }
     payload = {
         "schema": SCHEMA,
         "status": "diagnostic_complete",
@@ -448,6 +486,7 @@ def run_memops_lifecycle_diagnostic(
             ),
         },
         "summary": by_backend,
+        "by_operation_type": by_operation_type,
         "wavemind_error_taxonomy": dict(sorted(taxonomy.items())),
         "per_target": raw_rows,
         "source_manifest": build_source_manifest(root, SOURCE_PATHS),

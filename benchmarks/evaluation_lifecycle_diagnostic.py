@@ -11,8 +11,10 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from wavemind.evaluation_lifecycle_diagnostic import (
+    compact_lifecycle_diagnostic,
     run_memops_lifecycle_diagnostic,
 )
+from wavemind.evidence import file_sha256
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -21,6 +23,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     parser.add_argument("--memops-root", type=Path, required=True)
     parser.add_argument("--temp-root", type=Path, required=True)
+    parser.add_argument("--raw-output", type=Path, required=True)
     parser.add_argument(
         "--protocol",
         type=Path,
@@ -44,18 +47,29 @@ def main(argv: Sequence[str] | None = None) -> int:
         / "benchmarks/evaluation_judge_policy_results.json",
         temp_root=args.temp_root,
     )
+    args.raw_output.parent.mkdir(parents=True, exist_ok=True)
+    args.raw_output.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=True) + "\n", encoding="utf-8"
+    )
+    compact = compact_lifecycle_diagnostic(
+        payload,
+        raw_filename=args.raw_output.name,
+        raw_sha256=file_sha256(args.raw_output),
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
-        json.dumps(payload, indent=2, ensure_ascii=True) + "\n", encoding="utf-8"
+        json.dumps(compact, indent=2, ensure_ascii=True) + "\n", encoding="utf-8"
     )
     print(
         json.dumps(
             {
-                "status": payload["status"],
-                "source_sha": payload["source_sha"],
-                "scope": payload["scope"],
-                "summary": payload["summary"],
-                "wavemind_error_taxonomy": payload["wavemind_error_taxonomy"],
+                "status": compact["status"],
+                "source_sha": compact["source_sha"],
+                "scope": compact["scope"],
+                "summary": compact["summary"],
+                "by_operation_type": compact["by_operation_type"],
+                "wavemind_error_taxonomy": compact["wavemind_error_taxonomy"],
+                "raw_output": str(args.raw_output),
                 "output": str(args.output),
             },
             indent=2,
