@@ -18,7 +18,7 @@ from .evidence import (
 )
 
 
-SCHEMA = "wavemind.evaluation_lifecycle_diagnostic.v1"
+SCHEMA = "wavemind.evaluation_lifecycle_diagnostic.v2"
 MEMOPS_REVISION = "312af65e2c7b6d1b70f062ffa8b4cde32aaf6f35"
 SOURCE_PATHS = (
     "wavemind/evaluation_lifecycle_diagnostic.py",
@@ -245,6 +245,7 @@ def score_observation(
     active_values = [
         str(item.get("value")) for item in active if isinstance(item, Mapping)
     ]
+    context_characters = sum(len(value) for value in active_values)
     target_correct = (
         selected_value == expected_value
         if expected is not None
@@ -286,6 +287,7 @@ def score_observation(
         "unverified_injection": bool(unverified),
         "namespace_leakage": bool(wrong_namespace),
         "provenance_supported": expected is None or bool(provenance),
+        "context_characters": context_characters,
     }
 
 
@@ -323,14 +325,32 @@ def _backend_summary(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         "namespace_leakage",
         "provenance_supported",
     )
+    latencies = sorted(float(row["latency_ms"]) for row in rows)
+
+    def percentile(fraction: float) -> float:
+        if len(latencies) == 1:
+            return latencies[0]
+        position = fraction * (len(latencies) - 1)
+        lower = int(position)
+        upper = min(len(latencies) - 1, lower + 1)
+        weight = position - lower
+        return latencies[lower] * (1.0 - weight) + latencies[upper] * weight
+
     return {
         "target_count": total,
         **{
             field: sum(bool(row[field]) for row in rows) / total for field in fields
         },
+        "context_characters_mean": sum(
+            int(row["context_characters"]) for row in rows
+        )
+        / total,
         "latency_ms": {
-            "mean": sum(float(row["latency_ms"]) for row in rows) / total,
-            "max": max(float(row["latency_ms"]) for row in rows),
+            "mean": sum(latencies) / total,
+            "p50": percentile(0.50),
+            "p95": percentile(0.95),
+            "p99": percentile(0.99),
+            "max": latencies[-1],
         },
     }
 

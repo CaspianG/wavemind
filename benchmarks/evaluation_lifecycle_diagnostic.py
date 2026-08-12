@@ -32,7 +32,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument(
         "--output",
         type=Path,
-        default=PROJECT_ROOT / "benchmarks/evaluation_lifecycle_diagnostic_v2_results.json",
+        default=PROJECT_ROOT / "benchmarks/evaluation_lifecycle_diagnostic_v3_results.json",
     )
     args = parser.parse_args(argv)
     payload = run_memops_lifecycle_diagnostic(

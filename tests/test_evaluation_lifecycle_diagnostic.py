@@ -56,6 +56,7 @@ def test_static_lww_is_strong_valid_operation_baseline():
     assert score["target_correct"] is True
     assert score["stale_leakage"] is False
     assert score["operation_state_transition"] is True
+    assert score["context_characters"] == len("current")
 
 
 def test_no_memory_exposes_missing_state_transition():
