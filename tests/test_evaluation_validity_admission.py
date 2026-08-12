@@ -9,6 +9,7 @@ from wavemind.evaluation_validity_admission import (
     EXPECTED_ROWS,
     run_evaluation_validity_admission,
 )
+from wavemind.evaluation_validity_controls import run_evaluation_validity_controls
 from wavemind.evidence import attach_artifact_integrity
 from wavemind.evidence import validate_artifact_integrity
 
@@ -140,3 +141,48 @@ def test_missing_control_artifacts_cannot_be_inferred_from_protocol():
         "per-case-completeness",
         "safety-admissions-preserved",
     }.issubset(blocked)
+
+
+def test_signed_current_control_evidence_closes_only_measured_rows(tmp_path):
+    evidence = run_evaluation_validity_controls(project_root=ROOT)
+    path = tmp_path / "controls.json"
+    path.write_text(json.dumps(evidence), encoding="utf-8")
+    report = run_evaluation_validity_admission(
+        project_root=ROOT,
+        dataset_manifest_path=DATASET_MANIFEST,
+        validity_evidence_path=path,
+    )
+    rows = {row["id"]: row for row in report["rows"]}
+    for row_id in (
+        "positive-controls",
+        "negative-controls",
+        "control-ordering",
+        "deterministic-verdict",
+        "per-case-completeness",
+    ):
+        assert rows[row_id]["status"] == "implemented"
+    assert rows["split-isolation"]["status"] == "blocked"
+    assert rows["power-and-mde"]["status"] == "blocked"
+    assert rows["safety-admissions-preserved"]["status"] == "blocked"
+
+
+def test_tampered_or_wrong_sha_control_evidence_is_rejected(tmp_path):
+    evidence = run_evaluation_validity_controls(project_root=ROOT)
+    evidence["source_sha"] = "0" * 40
+    path = tmp_path / "tampered-controls.json"
+    path.write_text(json.dumps(evidence), encoding="utf-8")
+    report = run_evaluation_validity_admission(
+        project_root=ROOT,
+        dataset_manifest_path=DATASET_MANIFEST,
+        validity_evidence_path=path,
+    )
+    rows = {row["id"]: row for row in report["rows"]}
+    assert rows["positive-controls"]["status"] == "blocked"
+    assert (
+        "artifact payload digest mismatch"
+        in rows["positive-controls"]["evidence"]["errors"]
+    )
+    assert (
+        "validity evidence source SHA mismatch"
+        in rows["positive-controls"]["evidence"]["errors"]
+    )

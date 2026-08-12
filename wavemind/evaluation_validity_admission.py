@@ -5,12 +5,15 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from .evaluation_contracts import backend_query_view, validate_dataset_manifest
+from .evaluation_validity_controls import SCHEMA as CONTROLS_SCHEMA
 from .evidence import (
     attach_artifact_integrity,
     build_source_manifest,
     execution_environment,
     repository_commit,
     utc_now,
+    validate_artifact_integrity,
+    validate_source_manifest,
 )
 
 
@@ -37,12 +40,15 @@ SOURCE_PATHS = (
     "README.md",
     "wavemind/evaluation_contracts.py",
     "wavemind/evaluation_validity_admission.py",
+    "wavemind/evaluation_validity_controls.py",
     "benchmarks/evaluation_dataset_manifest_v1.json",
     "benchmarks/evaluation_salvage_manifest.json",
     "benchmarks/evaluation_validity_admission.py",
+    "benchmarks/evaluation_validity_controls.py",
     "docs/adr/0001-task-native-evaluation-science.md",
     "docs/ROADMAP.md",
     "tests/test_evaluation_validity_admission.py",
+    "tests/test_evaluation_validity_controls.py",
 )
 
 
@@ -69,6 +75,26 @@ def _evidence_passed(evidence: Mapping[str, Any], key: str) -> tuple[bool, Any]:
     return bool(value.get("passed")), dict(value)
 
 
+def _validate_validity_evidence(
+    root: Path, evidence: Mapping[str, Any], source_sha: str
+) -> list[str]:
+    if not evidence:
+        return ["validity evidence artifact is missing"]
+    errors = validate_artifact_integrity(evidence)
+    if evidence.get("schema") != CONTROLS_SCHEMA:
+        errors.append("validity evidence schema is invalid")
+    if evidence.get("source_sha") != source_sha:
+        errors.append("validity evidence source SHA mismatch")
+    source_manifest = evidence.get("source_manifest")
+    if not isinstance(source_manifest, Mapping):
+        errors.append("validity evidence source manifest is missing")
+    else:
+        errors.extend(
+            validate_source_manifest(root, source_manifest, require_current_files=True)
+        )
+    return errors
+
+
 def run_evaluation_validity_admission(
     *,
     project_root: str | Path,
@@ -82,6 +108,7 @@ def run_evaluation_validity_admission(
     dataset_manifest = _load_json(dataset_manifest_path)
     dataset_errors = validate_dataset_manifest(dataset_manifest)
     evidence = _load_json(validity_evidence_path) if validity_evidence_path else {}
+    evidence_errors = _validate_validity_evidence(root, evidence, source_sha)
 
     contract = dataset_manifest.get("backend_query_contract", {})
     blind_probe = {
@@ -148,6 +175,9 @@ def run_evaluation_validity_admission(
         ("paired-clustered-statistics", "paired_clustered_statistics"),
     ):
         passed, detail = _evidence_passed(evidence, evidence_key)
+        if evidence_errors:
+            passed = False
+            detail = {"errors": evidence_errors, "reported": detail}
         rows.append(_row(row_id, passed, detail, requirements[row_id]))
     rows.append(
         _row(
@@ -171,6 +201,9 @@ def run_evaluation_validity_admission(
         ("per-case-completeness", "per_case_completeness"),
     ):
         passed, detail = _evidence_passed(evidence, evidence_key)
+        if evidence_errors:
+            passed = False
+            detail = {"errors": evidence_errors, "reported": detail}
         rows.append(_row(row_id, passed, detail, requirements[row_id]))
     rows.append(
         _row(
@@ -195,6 +228,9 @@ def run_evaluation_validity_admission(
     safety_passed, safety_detail = _evidence_passed(
         evidence, "safety_admissions_preserved"
     )
+    if evidence_errors:
+        safety_passed = False
+        safety_detail = {"errors": evidence_errors, "reported": safety_detail}
     rows.append(
         _row(
             "safety-admissions-preserved",
