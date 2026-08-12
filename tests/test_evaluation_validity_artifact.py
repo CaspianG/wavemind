@@ -26,7 +26,7 @@ def test_checked_evaluation_validity_snapshot_is_consistent_and_fail_closed():
     assert validate_artifact_integrity(report) == []
     assert report["status"] == "blocked"
     assert report["admitted"] is False
-    assert report["implemented_rows"] == 10
+    assert report["implemented_rows"] == 13
     assert report["required_rows"] == len(EXPECTED_ROWS)
     assert tuple(row["id"] for row in report["rows"]) == EXPECTED_ROWS
     assert commit_relation(ROOT, report["source_sha"], current_sha) in {
@@ -42,7 +42,7 @@ def test_checked_evaluation_validity_snapshot_is_consistent_and_fail_closed():
 
     markdown = MARKDOWN_PATH.read_text(encoding="utf-8")
     assert "Status: **blocked**" in markdown
-    assert "Rows: `10/16` implemented" in markdown
+    assert "Rows: `13/16` implemented" in markdown
     for row_id in EXPECTED_ROWS:
         assert f"`{row_id}`" in markdown
 
@@ -61,4 +61,7 @@ def test_checked_control_evidence_is_complete_current_and_not_product_proof():
     assert report["per_case_completeness"]["filtered_rows"] == 0
     assert report["positive_controls"]["passed"] is True
     assert report["negative_controls"]["passed"] is True
+    assert report["metric_range"]["passed"] is True
+    assert report["power_and_mde"]["passed"] is True
+    assert report["paired_clustered_statistics"]["passed"] is True
     assert "do not prove WaveMind product quality" in report["claim_boundary"]

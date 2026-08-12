@@ -2,9 +2,9 @@
 
 Status: **blocked**
 
-Source SHA: `68e1bd0c0fb13e24f618a96c5f79b5d446bcc8cb`
+Source SHA: `ffdc41f3c80e85484c3819b5c371bf51bf3b1f22`
 
-Rows: `10/16` implemented
+Rows: `13/16` implemented
 
 | Row | Status | Requirement |
 |---|---|---|
@@ -14,9 +14,9 @@ Rows: `10/16` implemented
 | `positive-controls` | `implemented` | Oracle evidence or correct-state controls are executed. |
 | `negative-controls` | `implemented` | Random, no-memory, stale, wrong-namespace, and deleted-evidence controls are executed. |
 | `control-ordering` | `implemented` | Oracle is above a strong valid baseline, which is above random and no-memory; poison affects only its safety target. |
-| `metric-range` | `blocked` | Primary metrics have no floor or ceiling that makes preregistered improvement impossible. |
-| `power-and-mde` | `blocked` | Sample size, minimum detectable effect, and cluster unit are preregistered per primary metric. |
-| `paired-clustered-statistics` | `blocked` | Paired confidence intervals cluster by conversation, task, or trajectory. |
+| `metric-range` | `implemented` | Primary metrics have no floor or ceiling that makes preregistered improvement impossible. |
+| `power-and-mde` | `implemented` | Sample size, minimum detectable effect, and cluster unit are preregistered per primary metric. |
+| `paired-clustered-statistics` | `implemented` | Paired confidence intervals cluster by conversation, task, or trajectory. |
 | `multiple-comparison-policy` | `implemented` | Multiple primary comparisons use the preregistered Holm correction. |
 | `judge-calibration` | `blocked` | Every required LLM judge is pinned, calibrated, and has inter-run agreement evidence. |
 | `deterministic-verdict` | `implemented` | Three deterministic repeats produce one verdict fingerprint. |

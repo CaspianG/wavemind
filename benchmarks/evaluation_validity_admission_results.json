@@ -1,11 +1,11 @@
 {
   "schema": "wavemind.evaluation_validity_admission.v1",
-  "generated_at": "2026-08-12T11:24:09Z",
-  "source_sha": "68e1bd0c0fb13e24f618a96c5f79b5d446bcc8cb",
-  "expected_source_sha": "68e1bd0c0fb13e24f618a96c5f79b5d446bcc8cb",
+  "generated_at": "2026-08-12T11:29:53Z",
+  "source_sha": "ffdc41f3c80e85484c3819b5c371bf51bf3b1f22",
+  "expected_source_sha": "ffdc41f3c80e85484c3819b5c371bf51bf3b1f22",
   "status": "blocked",
   "admitted": false,
-  "implemented_rows": 10,
+  "implemented_rows": 13,
   "required_rows": 16,
   "rows": [
     {
@@ -70,26 +70,82 @@
     },
     {
       "id": "metric-range",
-      "status": "blocked",
+      "status": "implemented",
       "requirement": "Primary metrics have no floor or ceiling that makes preregistered improvement impossible.",
       "evidence": {
-        "missing_artifact": "metric_range"
+        "passed": true,
+        "observed_floor": 0.0,
+        "observed_ceiling": 1.0,
+        "strong_baseline": 0.6666666666666666,
+        "minimum_preregistered_lift": 0.1,
+        "headroom": 0.33333333333333337
       }
     },
     {
       "id": "power-and-mde",
-      "status": "blocked",
+      "status": "implemented",
       "requirement": "Sample size, minimum detectable effect, and cluster unit are preregistered per primary metric.",
       "evidence": {
-        "missing_artifact": "power_and_mde"
+        "passed": true,
+        "plans": [
+          {
+            "id": "workflow-pass-at-1",
+            "cluster_unit": "task",
+            "baseline_rate": 0.35,
+            "minimum_detectable_effect": 0.1,
+            "target_rate": 0.44999999999999996,
+            "familywise_alpha": 0.05,
+            "per_comparison_alpha": 0.016666666666666666,
+            "power": 0.8,
+            "required_independent_clusters": 502,
+            "method": "two-sided normal approximation; conservative independent-cluster plan"
+          },
+          {
+            "id": "memory-answer-quality",
+            "cluster_unit": "conversation",
+            "baseline_rate": 0.45,
+            "minimum_detectable_effect": 0.08,
+            "target_rate": 0.53,
+            "familywise_alpha": 0.05,
+            "per_comparison_alpha": 0.016666666666666666,
+            "power": 0.8,
+            "required_independent_clusters": 817,
+            "method": "two-sided normal approximation; conservative independent-cluster plan"
+          },
+          {
+            "id": "lifecycle-correctness",
+            "cluster_unit": "trajectory",
+            "baseline_rate": 0.55,
+            "minimum_detectable_effect": 0.1,
+            "target_rate": 0.65,
+            "familywise_alpha": 0.05,
+            "per_comparison_alpha": 0.016666666666666666,
+            "power": 0.8,
+            "required_independent_clusters": 502,
+            "method": "two-sided normal approximation; conservative independent-cluster plan"
+          }
+        ],
+        "correction_policy": "holm"
       }
     },
     {
       "id": "paired-clustered-statistics",
-      "status": "blocked",
+      "status": "implemented",
       "requirement": "Paired confidence intervals cluster by conversation, task, or trajectory.",
       "evidence": {
-        "missing_artifact": "paired_clustered_statistics"
+        "passed": true,
+        "diagnostic": {
+          "paired": true,
+          "cluster_key": "cluster_id",
+          "cluster_count": 6,
+          "row_count": 6,
+          "repeats": 1000,
+          "seed": 17,
+          "confidence_level": 0.95,
+          "mean_difference": 0.3333333333333333,
+          "ci_lower": 0.0,
+          "ci_upper": 0.6666666666666666
+        }
       }
     },
     {
@@ -120,9 +176,9 @@
         "passed": true,
         "repeat_count": 3,
         "fingerprints": [
-          "a8748e68df7fe182555ffb1fa5471efabd9a720538901622d5e652ea95fa3eac",
-          "a8748e68df7fe182555ffb1fa5471efabd9a720538901622d5e652ea95fa3eac",
-          "a8748e68df7fe182555ffb1fa5471efabd9a720538901622d5e652ea95fa3eac"
+          "70de5ca6b69771c03ab4489dd859c472bab36aee7cfdd8b857c46a4783ddb47f",
+          "70de5ca6b69771c03ab4489dd859c472bab36aee7cfdd8b857c46a4783ddb47f",
+          "70de5ca6b69771c03ab4489dd859c472bab36aee7cfdd8b857c46a4783ddb47f"
         ]
       }
     },
@@ -154,15 +210,15 @@
       "status": "implemented",
       "requirement": "Admission is tied to the exact source SHA and a current source manifest.",
       "evidence": {
-        "source_sha": "68e1bd0c0fb13e24f618a96c5f79b5d446bcc8cb",
-        "expected_source_sha": "68e1bd0c0fb13e24f618a96c5f79b5d446bcc8cb",
+        "source_sha": "ffdc41f3c80e85484c3819b5c371bf51bf3b1f22",
+        "expected_source_sha": "ffdc41f3c80e85484c3819b5c371bf51bf3b1f22",
         "source_manifest": {
           "schema": "wavemind.source_manifest.v1",
           "algorithm": "sha256",
           "files": [
             {
               "path": "README.md",
-              "sha256": "438ecdb20672bd18b79d516c4e1739dd2bbcbcea555edfd0577b69e7b28a438c"
+              "sha256": "d0cd7a163ea40021ef9cdd30b18bdbdf35923cb05d1bc4615fabfc94a7a12df4"
             },
             {
               "path": "benchmarks/evaluation_dataset_manifest_v1.json",
@@ -178,38 +234,46 @@
             },
             {
               "path": "benchmarks/evaluation_validity_controls.py",
-              "sha256": "f4ade44c1ea216ac866cf743061bbab7dafd49a993f33442dd691bdef640992c"
+              "sha256": "29c1cbcd4c532580bb40aa9abae45470488ecaafe8982ae7109d3cc94d7ffe40"
             },
             {
               "path": "docs/ROADMAP.md",
-              "sha256": "465ac12da7ec4273d94bed28a5502ecae67e96d62e99d4968873e6049cd3c9b7"
+              "sha256": "d8d25d9f50832d63d836a8f3d3952185fe288510cf260143d189d720300a8d26"
             },
             {
               "path": "docs/adr/0001-task-native-evaluation-science.md",
               "sha256": "db218fa7dd989d58ec3dec6415b9b1ed6a94156e0f897c4f78037d4cdf71767f"
             },
             {
+              "path": "tests/test_evaluation_statistics.py",
+              "sha256": "43a5e09b3771cf5f3c3f4f3148fac5b057922dd3504b50d5e19bc617c9b592a5"
+            },
+            {
               "path": "tests/test_evaluation_validity_admission.py",
-              "sha256": "b77caf7b18ce6f35d429bb5aa724cf9a25d86856e54e98b1aea40b2edf7bf71f"
+              "sha256": "92e4ec5bb3c6a4f7ba0b8ed56c14f90d6d0a8f1955aa11a893f23dc565a890f4"
             },
             {
               "path": "tests/test_evaluation_validity_controls.py",
-              "sha256": "63bf142146104e78cda71b2824b65dd30894db83cc7a5fab9c79672a9cfd0fcf"
+              "sha256": "37780ee4a13172cee4d23b761c5132101f2198343aa71d9dd48544414d5c4506"
             },
             {
               "path": "wavemind/evaluation_contracts.py",
               "sha256": "6c7b3a6345ff0c8c43cce9c68c38d9c5391ff00c24bb78b646a38428c66fa8bb"
             },
             {
+              "path": "wavemind/evaluation_statistics.py",
+              "sha256": "113f2aa1562875661396951e7d8e864816ed072d08398b364b7a6942699f8118"
+            },
+            {
               "path": "wavemind/evaluation_validity_admission.py",
-              "sha256": "7aae0bbf1a6a70f1b0aa2317acc7ef32454bddcfa53c1efdb56e868a516c9c9b"
+              "sha256": "7aae4c2582ff87245c6c78c43c9fb619f827728e93df1bf78db7960535afad59"
             },
             {
               "path": "wavemind/evaluation_validity_controls.py",
-              "sha256": "711d922b4f1b4836db36b8c9043bddf9a8767e453af60c56d68761945e2258df"
+              "sha256": "50e9d29b386b2aba5b1c9426fc990275bf46e46e7adcffeca0a5022ab7336d76"
             }
           ],
-          "digest": "6eb4029a9f074bab367ec48da52a64ab137b428897f3d3b5f56b24facd047d21"
+          "digest": "c9777bacb6e221988aad2db456a7b1e7289c46091487364a54e2a17e33c56714"
         }
       }
     },
@@ -235,6 +299,6 @@
   "integrity": {
     "schema": "wavemind.artifact_integrity.v1",
     "algorithm": "sha256",
-    "payload_sha256": "884e18b1272cab493ec77d56cde0494c1e22135f057e91fb4d48f3fdfe0d8ee5"
+    "payload_sha256": "4796f80151216da6ce73d8eb8850dcb02981a44944f59a9658c72c21d00e9803"
   }
 }

@@ -295,6 +295,71 @@
     },
     "required_order": "oracle > strong_valid_baseline > random > no_memory"
   },
+  "metric_range": {
+    "passed": true,
+    "observed_floor": 0.0,
+    "observed_ceiling": 1.0,
+    "strong_baseline": 0.6666666666666666,
+    "minimum_preregistered_lift": 0.1,
+    "headroom": 0.33333333333333337
+  },
+  "power_and_mde": {
+    "passed": true,
+    "plans": [
+      {
+        "id": "workflow-pass-at-1",
+        "cluster_unit": "task",
+        "baseline_rate": 0.35,
+        "minimum_detectable_effect": 0.1,
+        "target_rate": 0.44999999999999996,
+        "familywise_alpha": 0.05,
+        "per_comparison_alpha": 0.016666666666666666,
+        "power": 0.8,
+        "required_independent_clusters": 502,
+        "method": "two-sided normal approximation; conservative independent-cluster plan"
+      },
+      {
+        "id": "memory-answer-quality",
+        "cluster_unit": "conversation",
+        "baseline_rate": 0.45,
+        "minimum_detectable_effect": 0.08,
+        "target_rate": 0.53,
+        "familywise_alpha": 0.05,
+        "per_comparison_alpha": 0.016666666666666666,
+        "power": 0.8,
+        "required_independent_clusters": 817,
+        "method": "two-sided normal approximation; conservative independent-cluster plan"
+      },
+      {
+        "id": "lifecycle-correctness",
+        "cluster_unit": "trajectory",
+        "baseline_rate": 0.55,
+        "minimum_detectable_effect": 0.1,
+        "target_rate": 0.65,
+        "familywise_alpha": 0.05,
+        "per_comparison_alpha": 0.016666666666666666,
+        "power": 0.8,
+        "required_independent_clusters": 502,
+        "method": "two-sided normal approximation; conservative independent-cluster plan"
+      }
+    ],
+    "correction_policy": "holm"
+  },
+  "paired_clustered_statistics": {
+    "passed": true,
+    "diagnostic": {
+      "paired": true,
+      "cluster_key": "cluster_id",
+      "cluster_count": 6,
+      "row_count": 6,
+      "repeats": 1000,
+      "seed": 17,
+      "confidence_level": 0.95,
+      "mean_difference": 0.3333333333333333,
+      "ci_lower": 0.0,
+      "ci_upper": 0.6666666666666666
+    }
+  },
   "per_case_completeness": {
     "passed": true,
     "expected_rows": 24,
@@ -307,32 +372,40 @@
     "passed": true,
     "repeat_count": 3,
     "fingerprints": [
-      "a8748e68df7fe182555ffb1fa5471efabd9a720538901622d5e652ea95fa3eac",
-      "a8748e68df7fe182555ffb1fa5471efabd9a720538901622d5e652ea95fa3eac",
-      "a8748e68df7fe182555ffb1fa5471efabd9a720538901622d5e652ea95fa3eac"
+      "70de5ca6b69771c03ab4489dd859c472bab36aee7cfdd8b857c46a4783ddb47f",
+      "70de5ca6b69771c03ab4489dd859c472bab36aee7cfdd8b857c46a4783ddb47f",
+      "70de5ca6b69771c03ab4489dd859c472bab36aee7cfdd8b857c46a4783ddb47f"
     ]
   },
   "schema": "wavemind.evaluation_validity_controls.v1",
-  "generated_at": "2026-08-12T11:24:07Z",
-  "source_sha": "68e1bd0c0fb13e24f618a96c5f79b5d446bcc8cb",
+  "generated_at": "2026-08-12T11:29:52Z",
+  "source_sha": "ffdc41f3c80e85484c3819b5c371bf51bf3b1f22",
   "source_manifest": {
     "schema": "wavemind.source_manifest.v1",
     "algorithm": "sha256",
     "files": [
       {
         "path": "benchmarks/evaluation_validity_controls.py",
-        "sha256": "f4ade44c1ea216ac866cf743061bbab7dafd49a993f33442dd691bdef640992c"
+        "sha256": "29c1cbcd4c532580bb40aa9abae45470488ecaafe8982ae7109d3cc94d7ffe40"
+      },
+      {
+        "path": "tests/test_evaluation_statistics.py",
+        "sha256": "43a5e09b3771cf5f3c3f4f3148fac5b057922dd3504b50d5e19bc617c9b592a5"
       },
       {
         "path": "tests/test_evaluation_validity_controls.py",
-        "sha256": "63bf142146104e78cda71b2824b65dd30894db83cc7a5fab9c79672a9cfd0fcf"
+        "sha256": "37780ee4a13172cee4d23b761c5132101f2198343aa71d9dd48544414d5c4506"
+      },
+      {
+        "path": "wavemind/evaluation_statistics.py",
+        "sha256": "113f2aa1562875661396951e7d8e864816ed072d08398b364b7a6942699f8118"
       },
       {
         "path": "wavemind/evaluation_validity_controls.py",
-        "sha256": "711d922b4f1b4836db36b8c9043bddf9a8767e453af60c56d68761945e2258df"
+        "sha256": "50e9d29b386b2aba5b1c9426fc990275bf46e46e7adcffeca0a5022ab7336d76"
       }
     ],
-    "digest": "eeb616ae8ad09edea22a90340a26e2132f6a89419581ab0290ab58a905a54f28"
+    "digest": "1d38b0cd280137bdbe8219d61c4f68df05c005a950d7e9b0ba17ddc1e2ebb560"
   },
   "environment": {
     "profile": "evaluation-validity-controls",
@@ -346,6 +419,6 @@
   "integrity": {
     "schema": "wavemind.artifact_integrity.v1",
     "algorithm": "sha256",
-    "payload_sha256": "a5b4a520b93e64f483e7d33a63a589d81abf9f09982cc2516610a3cd37053cca"
+    "payload_sha256": "b99fbfbd44d3205a29cce5545c0dca08baa4411eea21c807a129441aa2ffdcbf"
   }
 }
