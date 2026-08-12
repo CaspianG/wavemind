@@ -1,0 +1,420 @@
+{
+  "schema": "wavemind.evaluation_lifecycle_diagnostic.v2",
+  "status": "diagnostic_complete",
+  "source_sha": "9f88903c3481b51405609db622152392e2a08d7f",
+  "protocol": {
+    "revision": "goal8-bounded-development-v2-20260812",
+    "payload_sha256": "803a291df1fed8fc0f344f5c8984b81d164315abf18518cf2ff34dec26f8971b",
+    "heldout_access": "forbidden"
+  },
+  "upstream": {
+    "memops_revision": "312af65e2c7b6d1b70f062ffa8b4cde32aaf6f35"
+  },
+  "scope": {
+    "split": "development",
+    "case_count": 25,
+    "target_row_count": 123,
+    "quality_claim_eligible": false,
+    "reason": "Operation-level typed-event capability diagnostic; it does not measure conversation extraction or generated-answer quality."
+  },
+  "summary": {
+    "no_memory": {
+      "target_count": 123,
+      "operation_state_transition": 0.08943089430894309,
+      "target_correct": 0.08943089430894309,
+      "stale_leakage": 0.0,
+      "over_forgetting": 0.9105691056910569,
+      "deleted_resurfacing": 0.0,
+      "unverified_injection": 0.0,
+      "namespace_leakage": 0.0,
+      "provenance_supported": 0.08943089430894309,
+      "context_characters_mean": 0.0,
+      "latency_ms": {
+        "mean": 0.001014635247004226,
+        "p50": 0.000600004568696022,
+        "p95": 0.003400025889277458,
+        "p99": 0.004678022814914584,
+        "max": 0.005699985194951296
+      }
+    },
+    "static_lww": {
+      "target_count": 123,
+      "operation_state_transition": 1.0,
+      "target_correct": 1.0,
+      "stale_leakage": 0.0,
+      "over_forgetting": 0.0,
+      "deleted_resurfacing": 0.0,
+      "unverified_injection": 0.0,
+      "namespace_leakage": 0.0,
+      "provenance_supported": 1.0,
+      "context_characters_mean": 42.91056910569106,
+      "latency_ms": {
+        "mean": 0.0008593490385124838,
+        "p50": 0.000700005330145359,
+        "p95": 0.0014000048395246267,
+        "p99": 0.0020679575391113767,
+        "max": 0.002200016751885414
+      }
+    },
+    "wavemind_core": {
+      "target_count": 123,
+      "operation_state_transition": 0.9186991869918699,
+      "target_correct": 0.959349593495935,
+      "stale_leakage": 0.08130081300813008,
+      "over_forgetting": 0.0,
+      "deleted_resurfacing": 0.0,
+      "unverified_injection": 0.0,
+      "namespace_leakage": 0.0,
+      "provenance_supported": 1.0,
+      "context_characters_mean": 45.10569105691057,
+      "latency_ms": {
+        "mean": 3.361960161738552,
+        "p50": 3.3736000186763704,
+        "p95": 4.452010028762742,
+        "p99": 4.978885968448594,
+        "max": 5.432399979326874
+      }
+    }
+  },
+  "by_operation_type": {
+    "Forget": {
+      "no_memory": {
+        "target_count": 28,
+        "operation_state_transition": 0.17857142857142858,
+        "target_correct": 0.17857142857142858,
+        "stale_leakage": 0.0,
+        "over_forgetting": 0.8214285714285714,
+        "deleted_resurfacing": 0.0,
+        "unverified_injection": 0.0,
+        "namespace_leakage": 0.0,
+        "provenance_supported": 0.17857142857142858,
+        "context_characters_mean": 0.0,
+        "latency_ms": {
+          "mean": 0.000999997220268207,
+          "p50": 0.000600004568696022,
+          "p95": 0.0032250245567411176,
+          "p99": 0.0034729839535430074,
+          "max": 0.0034999684430658817
+        }
+      },
+      "static_lww": {
+        "target_count": 28,
+        "operation_state_transition": 1.0,
+        "target_correct": 1.0,
+        "stale_leakage": 0.0,
+        "over_forgetting": 0.0,
+        "deleted_resurfacing": 0.0,
+        "unverified_injection": 0.0,
+        "namespace_leakage": 0.0,
+        "provenance_supported": 1.0,
+        "context_characters_mean": 28.785714285714285,
+        "latency_ms": {
+          "mean": 0.00093571309532438,
+          "p50": 0.000800006091594696,
+          "p95": 0.001465011155232787,
+          "p99": 0.0020109728211537004,
+          "max": 0.0021999585442245007
+        }
+      },
+      "wavemind_core": {
+        "target_count": 28,
+        "operation_state_transition": 1.0,
+        "target_correct": 1.0,
+        "stale_leakage": 0.0,
+        "over_forgetting": 0.0,
+        "deleted_resurfacing": 0.0,
+        "unverified_injection": 0.0,
+        "namespace_leakage": 0.0,
+        "provenance_supported": 1.0,
+        "context_characters_mean": 28.785714285714285,
+        "latency_ms": {
+          "mean": 3.2981892831490507,
+          "p50": 3.779699996812269,
+          "p95": 4.9053099734010175,
+          "p99": 5.326505974517204,
+          "max": 5.432399979326874
+        }
+      }
+    },
+    "Reflect": {
+      "no_memory": {
+        "target_count": 36,
+        "operation_state_transition": 0.1388888888888889,
+        "target_correct": 0.1388888888888889,
+        "stale_leakage": 0.0,
+        "over_forgetting": 0.8611111111111112,
+        "deleted_resurfacing": 0.0,
+        "unverified_injection": 0.0,
+        "namespace_leakage": 0.0,
+        "provenance_supported": 0.1388888888888889,
+        "context_characters_mean": 0.0,
+        "latency_ms": {
+          "mean": 0.0007444452623733216,
+          "p50": 0.000500003807246685,
+          "p95": 0.002224958734586835,
+          "p99": 0.002494998625479638,
+          "max": 0.002600019797682762
+        }
+      },
+      "static_lww": {
+        "target_count": 36,
+        "operation_state_transition": 1.0,
+        "target_correct": 1.0,
+        "stale_leakage": 0.0,
+        "over_forgetting": 0.0,
+        "deleted_resurfacing": 0.0,
+        "unverified_injection": 0.0,
+        "namespace_leakage": 0.0,
+        "provenance_supported": 1.0,
+        "context_characters_mean": 78.22222222222223,
+        "latency_ms": {
+          "mean": 0.0007833295967429876,
+          "p50": 0.000700005330145359,
+          "p95": 0.0012250093277543783,
+          "p99": 0.001494973548687994,
+          "max": 0.0015999539755284786
+        }
+      },
+      "wavemind_core": {
+        "target_count": 36,
+        "operation_state_transition": 1.0,
+        "target_correct": 1.0,
+        "stale_leakage": 0.0,
+        "over_forgetting": 0.0,
+        "deleted_resurfacing": 0.0,
+        "unverified_injection": 0.0,
+        "namespace_leakage": 0.0,
+        "provenance_supported": 1.0,
+        "context_characters_mean": 78.22222222222223,
+        "latency_ms": {
+          "mean": 3.1723055532590174,
+          "p50": 3.0801499960944057,
+          "p95": 3.64877498941496,
+          "p99": 4.075064981589093,
+          "max": 4.224199976306409
+        }
+      }
+    },
+    "Remember": {
+      "no_memory": {
+        "target_count": 35,
+        "operation_state_transition": 0.02857142857142857,
+        "target_correct": 0.02857142857142857,
+        "stale_leakage": 0.0,
+        "over_forgetting": 0.9714285714285714,
+        "deleted_resurfacing": 0.0,
+        "unverified_injection": 0.0,
+        "namespace_leakage": 0.0,
+        "provenance_supported": 0.02857142857142857,
+        "context_characters_mean": 0.0,
+        "latency_ms": {
+          "mean": 0.0008142885885068349,
+          "p50": 0.000500003807246685,
+          "p95": 0.002420018427073951,
+          "p99": 0.003795990487560628,
+          "max": 0.003999972250312567
+        }
+      },
+      "static_lww": {
+        "target_count": 35,
+        "operation_state_transition": 1.0,
+        "target_correct": 1.0,
+        "stale_leakage": 0.0,
+        "over_forgetting": 0.0,
+        "deleted_resurfacing": 0.0,
+        "unverified_injection": 0.0,
+        "namespace_leakage": 0.0,
+        "provenance_supported": 1.0,
+        "context_characters_mean": 34.114285714285714,
+        "latency_ms": {
+          "mean": 0.0007628596254757472,
+          "p50": 0.000700005330145359,
+          "p95": 0.001300009898841381,
+          "p99": 0.001366010401397943,
+          "max": 0.001400010660290718
+        }
+      },
+      "wavemind_core": {
+        "target_count": 35,
+        "operation_state_transition": 1.0,
+        "target_correct": 1.0,
+        "stale_leakage": 0.0,
+        "over_forgetting": 0.0,
+        "deleted_resurfacing": 0.0,
+        "unverified_injection": 0.0,
+        "namespace_leakage": 0.0,
+        "provenance_supported": 1.0,
+        "context_characters_mean": 34.114285714285714,
+        "latency_ms": {
+          "mean": 3.5559542876269137,
+          "p50": 3.4948999527841806,
+          "p95": 4.472320032073185,
+          "p99": 4.672318006632849,
+          "max": 4.761499993037432
+        }
+      }
+    },
+    "TrajectoryOps": {
+      "no_memory": {
+        "target_count": 10,
+        "operation_state_transition": 0.0,
+        "target_correct": 0.0,
+        "stale_leakage": 0.0,
+        "over_forgetting": 1.0,
+        "deleted_resurfacing": 0.0,
+        "unverified_injection": 0.0,
+        "namespace_leakage": 0.0,
+        "provenance_supported": 0.0,
+        "context_characters_mean": 0.0,
+        "latency_ms": {
+          "mean": 0.0019600032828748226,
+          "p50": 0.001500011421740055,
+          "p95": 0.0046550092520192266,
+          "p99": 0.004691030480898917,
+          "max": 0.004700035788118839
+        }
+      },
+      "static_lww": {
+        "target_count": 10,
+        "operation_state_transition": 1.0,
+        "target_correct": 1.0,
+        "stale_leakage": 0.0,
+        "over_forgetting": 0.0,
+        "deleted_resurfacing": 0.0,
+        "unverified_injection": 0.0,
+        "namespace_leakage": 0.0,
+        "provenance_supported": 1.0,
+        "context_characters_mean": 17.5,
+        "latency_ms": {
+          "mean": 0.0011300086043775082,
+          "p50": 0.001100008375942707,
+          "p95": 0.0017950136680155984,
+          "p99": 0.0021190161351114516,
+          "max": 0.002200016751885414
+        }
+      },
+      "wavemind_core": {
+        "target_count": 10,
+        "operation_state_transition": 0.5,
+        "target_correct": 0.7,
+        "stale_leakage": 0.5,
+        "over_forgetting": 0.0,
+        "deleted_resurfacing": 0.0,
+        "unverified_injection": 0.0,
+        "namespace_leakage": 0.0,
+        "provenance_supported": 1.0,
+        "context_characters_mean": 33.8,
+        "latency_ms": {
+          "mean": 3.4019500017166138,
+          "p50": 3.3545000187586993,
+          "p95": 3.7021949945483357,
+          "p99": 3.726999015780166,
+          "max": 3.7332000210881233
+        }
+      }
+    },
+    "Update": {
+      "no_memory": {
+        "target_count": 14,
+        "operation_state_transition": 0.0,
+        "target_correct": 0.0,
+        "stale_leakage": 0.0,
+        "over_forgetting": 1.0,
+        "deleted_resurfacing": 0.0,
+        "unverified_injection": 0.0,
+        "namespace_leakage": 0.0,
+        "provenance_supported": 0.0,
+        "context_characters_mean": 0.0,
+        "latency_ms": {
+          "mean": 0.001564289310148784,
+          "p50": 0.000700005330145359,
+          "p95": 0.004919979255646467,
+          "p99": 0.005543984007090329,
+          "max": 0.005699985194951296
+        }
+      },
+      "static_lww": {
+        "target_count": 14,
+        "operation_state_transition": 1.0,
+        "target_correct": 1.0,
+        "stale_leakage": 0.0,
+        "over_forgetting": 0.0,
+        "deleted_resurfacing": 0.0,
+        "unverified_injection": 0.0,
+        "namespace_leakage": 0.0,
+        "provenance_supported": 1.0,
+        "context_characters_mean": 20.5,
+        "latency_ms": {
+          "mean": 0.0009499947606985058,
+          "p50": 0.000800006091594696,
+          "p95": 0.0013999728253111243,
+          "p99": 0.0014000030932947993,
+          "max": 0.001400010660290718
+        }
+      },
+      "wavemind_core": {
+        "target_count": 14,
+        "operation_state_transition": 0.6428571428571429,
+        "target_correct": 0.8571428571428571,
+        "stale_leakage": 0.35714285714285715,
+        "over_forgetting": 0.0,
+        "deleted_resurfacing": 0.0,
+        "unverified_injection": 0.0,
+        "namespace_leakage": 0.0,
+        "provenance_supported": 1.0,
+        "context_characters_mean": 28.142857142857142,
+        "latency_ms": {
+          "mean": 3.463635711731123,
+          "p50": 3.3806500141508877,
+          "p95": 3.860599981271662,
+          "p99": 3.86788000643719,
+          "max": 3.869700012728572
+        }
+      }
+    }
+  },
+  "wavemind_error_taxonomy": {
+    "stale_or_contradictory_selection": 10
+  },
+  "source_manifest": {
+    "schema": "wavemind.source_manifest.v1",
+    "algorithm": "sha256",
+    "text_normalization": "utf8-crlf-to-lf-v1",
+    "files": [
+      {
+        "path": "benchmarks/evaluation_lifecycle_diagnostic.py",
+        "sha256": "fbafef823b7c4435782e8f7fc2eb356f091e69d149d8d37ff3453e4f6e8385ca"
+      },
+      {
+        "path": "tests/test_evaluation_lifecycle_diagnostic.py",
+        "sha256": "29fb7657d59f5acf359300a157fd43546a6f044e4340f366816fac428a21a8ea"
+      },
+      {
+        "path": "wavemind/evaluation_lifecycle_diagnostic.py",
+        "sha256": "be853dc031729898a7c55776d54e81fa4f2165fc482fd5a7af1967996bb9da32"
+      }
+    ],
+    "digest": "9c0b0e6396fa0e66a1d3d34542e4cada47d3320c5c243f9f2c09546a0cdea76e"
+  },
+  "environment": {
+    "profile": "goal8-memops-bounded-development",
+    "python": "3.13.3",
+    "implementation": "CPython",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "executable": "python.exe",
+    "github_run_id": null,
+    "github_runner_os": null
+  },
+  "claim_boundary": "Development-only MemOps typed lifecycle diagnostic. No validation/final rows, product tuning, general quality claim, or held-out verdict.",
+  "raw_evidence": {
+    "filename": "evaluation_lifecycle_diagnostic_raw_9f88903.json",
+    "sha256": "61ad9b0f0c837d0dd08ed0b7c8c2fc52105a69581651c530f157a1b8e9bb4edb",
+    "row_count": 369,
+    "retention": "CI artifact; not checked into the repository"
+  },
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "509f3be38b0b0980e2fc43910103e2388b345ca92c86d8a8536362bca907675e"
+  }
+}
