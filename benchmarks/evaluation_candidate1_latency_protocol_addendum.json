@@ -1,0 +1,49 @@
+{
+  "schema": "wavemind.evaluation_protocol_addendum.v1",
+  "id": "candidate1-warm-latency-correction-v1",
+  "status": "preregistered_before_corrected_run",
+  "source_sha": "ae5155365fa88c8f35bd6fb24e4feec08ecb7af6",
+  "applies_to_hypothesis": "stateful-target-versioning-v1",
+  "failed_attempt": {
+    "result_path": "benchmarks/evaluation_lifecycle_candidate1_attempt1_results.json",
+    "result_file_sha256": "e48499ea5e7e5a6c4ca3eb00d0cddb1f88c8e68bd9d493aea39035025fb83941",
+    "admission_path": "benchmarks/evaluation_candidate1_attempt1_admission_results.json",
+    "admission_file_sha256": "c6c0d24a8a8a7f70d45eadec1a4a25a9259fe57f2e9bf7dbf72d105957e8ab7d",
+    "raw_filename": "evaluation_lifecycle_candidate1_raw_ae51553.json",
+    "raw_file_sha256": "755305e3890fd31cb35f02ddcacce7b2394c89f272ccf820fec413d33ee7bb88",
+    "failed_gate": "warm-p95-budget",
+    "observed_candidate_p95_ms": 6.31232997984625,
+    "maximum_p95_ms": 5.34241203451529
+  },
+  "measurement_defect": {
+    "classification": "runner_protocol_defect",
+    "description": "The runner timed exactly one first query per target and labeled the aggregate warm p95. It performed no warmup and no repeated measurement, so startup and scheduler noise were included in a metric whose preregistered name and gate require warm latency.",
+    "same_run_core_p95_ms": 6.3897999702021435,
+    "same_run_candidate_p95_ms": 6.31232997984625,
+    "why_not_product_failure": "Candidate quality and all safety rows passed, and candidate p95 was lower than Core in the same attempt. The invalid warm measurement still correctly caused fail-closed admission."
+  },
+  "frozen_correction": {
+    "warmup_queries_per_target": 2,
+    "measured_queries_per_target": 5,
+    "per_target_latency_value": "median_of_five_measured_queries_ms",
+    "aggregate_latency": "percentiles_over_per_target_warm_medians",
+    "query_and_observation_unchanged": true,
+    "query_feedback_disabled": true,
+    "access_persistence_disabled": true,
+    "case_set_unchanged": true,
+    "quality_scorer_unchanged": true,
+    "thresholds_unchanged": true,
+    "heldout_access": "forbidden"
+  },
+  "rerun_limit": {
+    "corrected_candidate1_runs": 1,
+    "rerun_only_after_committed_runner_and_addendum": true,
+    "failure_means_candidate1_failed": true
+  },
+  "claim_boundary": "This addendum corrects a mislabeled latency measurement only. It does not change product behavior, cases, quality metrics, thresholds, or permit validation/final/held-out access.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "b5d604c4aaab8ef1e036f7be62ef61ae6be3b4fdc59d62094f74887ee296b92d"
+  }
+}

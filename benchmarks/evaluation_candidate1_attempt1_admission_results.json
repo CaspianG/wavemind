@@ -1,0 +1,218 @@
+{
+  "schema": "wavemind.evaluation_candidate_admission.v1",
+  "status": "failed",
+  "admitted": false,
+  "source_sha": "ae5155365fa88c8f35bd6fb24e4feec08ecb7af6",
+  "candidate_source_sha": "ae5155365fa88c8f35bd6fb24e4feec08ecb7af6",
+  "hypothesis_id": "stateful-target-versioning-v1",
+  "scope": "bounded_development_candidate_only",
+  "evidence_inputs": {
+    "hypothesis": {
+      "path": "benchmarks/evaluation_hypothesis_stateful_correction_v1.json",
+      "payload_sha256": "cce7937a337a37f7c89ad87984300f0e93487c09b89b055facc6452457b3232f"
+    },
+    "result": {
+      "path": "benchmarks/evaluation_lifecycle_candidate1_results.json",
+      "payload_sha256": "1c6181c8e00248d559535a6ff217a91a9f189f5f4cdc5a60612df79f410ea25a"
+    },
+    "raw_file_sha256": "755305e3890fd31cb35f02ddcacce7b2394c89f272ccf820fec413d33ee7bb88"
+  },
+  "checks": [
+    {
+      "id": "input-integrity",
+      "status": "passed",
+      "observed": {
+        "hypothesis": [],
+        "result": [],
+        "raw": []
+      },
+      "required": "no integrity errors"
+    },
+    {
+      "id": "raw-evidence-binding",
+      "status": "passed",
+      "observed": {
+        "expected_sha256": "755305e3890fd31cb35f02ddcacce7b2394c89f272ccf820fec413d33ee7bb88",
+        "actual_sha256": "755305e3890fd31cb35f02ddcacce7b2394c89f272ccf820fec413d33ee7bb88",
+        "expected_rows": 492,
+        "actual_rows": 492
+      },
+      "required": "matching SHA-256 and row count"
+    },
+    {
+      "id": "exact-source-and-protocol",
+      "status": "passed",
+      "observed": {
+        "result": "ae5155365fa88c8f35bd6fb24e4feec08ecb7af6",
+        "raw": "ae5155365fa88c8f35bd6fb24e4feec08ecb7af6",
+        "protocol": "803a291df1fed8fc0f344f5c8984b81d164315abf18518cf2ff34dec26f8971b",
+        "expected_protocol": "803a291df1fed8fc0f344f5c8984b81d164315abf18518cf2ff34dec26f8971b",
+        "heldout_access": "forbidden"
+      },
+      "required": "same source, frozen protocol, heldout forbidden"
+    },
+    {
+      "id": "primary-transition",
+      "status": "passed",
+      "observed": 1.0,
+      "required": {
+        "minimum": 0.9686991869918699
+      }
+    },
+    {
+      "id": "stale-leakage",
+      "status": "passed",
+      "observed": 0.0,
+      "required": {
+        "maximum": 0.02
+      }
+    },
+    {
+      "id": "context-budget",
+      "status": "passed",
+      "observed": 42.91056910569106,
+      "required": {
+        "maximum": 49.61626016260163
+      }
+    },
+    {
+      "id": "warm-p95-budget",
+      "status": "failed",
+      "observed": 6.31232997984625,
+      "required": {
+        "maximum": 5.34241203451529
+      }
+    },
+    {
+      "id": "namespace-safety",
+      "status": "passed",
+      "observed": 0.0,
+      "required": {
+        "maximum": 0.0
+      }
+    },
+    {
+      "id": "unverified-safety",
+      "status": "passed",
+      "observed": 0.0,
+      "required": {
+        "maximum": 0.0
+      }
+    },
+    {
+      "id": "deletion-safety",
+      "status": "passed",
+      "observed": 0.0,
+      "required": {
+        "maximum": 0.0
+      }
+    },
+    {
+      "id": "unaffected-strata",
+      "status": "passed",
+      "observed": {
+        "Remember": 1.0,
+        "Forget": 1.0,
+        "Reflect": 1.0
+      },
+      "required": {
+        "minimum_each": 0.98
+      }
+    },
+    {
+      "id": "preregistered-row-repair",
+      "status": "passed",
+      "observed": {
+        "expected": 10,
+        "prior_failures": 10,
+        "candidate_repairs": 10
+      },
+      "required": "all preregistered failures repaired and no row substituted"
+    },
+    {
+      "id": "operational-correction-safety",
+      "status": "passed",
+      "observed": {
+        "unsafe_unverified_replacement_rejected": true,
+        "rejection_preserves_predecessor": true,
+        "provenance_chain_preserved": true,
+        "retry_idempotent": true,
+        "namespace_change_rejected": true,
+        "atomic_failure_rolls_back": true,
+        "restart_preserves_active_version": true
+      },
+      "required": "all operational checks true"
+    },
+    {
+      "id": "candidate-error-taxonomy",
+      "status": "passed",
+      "observed": {},
+      "required": {}
+    }
+  ],
+  "metrics": {
+    "target_count": 123,
+    "operation_state_transition": 1.0,
+    "target_correct": 1.0,
+    "stale_leakage": 0.0,
+    "over_forgetting": 0.0,
+    "deleted_resurfacing": 0.0,
+    "unverified_injection": 0.0,
+    "namespace_leakage": 0.0,
+    "provenance_supported": 1.0,
+    "context_characters_mean": 42.91056910569106,
+    "latency_ms": {
+      "mean": 3.9928951210766366,
+      "p50": 3.733999968972057,
+      "p95": 6.31232997984625,
+      "p99": 8.601681999862196,
+      "max": 9.562999999616295
+    }
+  },
+  "source_manifest": {
+    "schema": "wavemind.source_manifest.v1",
+    "algorithm": "sha256",
+    "text_normalization": "utf8-crlf-to-lf-v1",
+    "files": [
+      {
+        "path": "benchmarks/evaluation_candidate_admission.py",
+        "sha256": "fe69a0c2dd006daf33d362a5f7a1ad2d898fcef8fdb48a67a46f89fe36e960ae"
+      },
+      {
+        "path": "tests/test_core_persistence.py",
+        "sha256": "41bae3e5392217ac7d5fa92c8d11e9f6ac0957ef7a89fb584cf9ed4d64b4a3f2"
+      },
+      {
+        "path": "tests/test_evaluation_candidate_admission.py",
+        "sha256": "69c30a86d524d1d27cfd745e21a7dd83f825e7e2087dfe09009b9838b02ddc0b"
+      },
+      {
+        "path": "tests/test_evaluation_lifecycle_diagnostic.py",
+        "sha256": "ce3688c514f51366156be6f3fcc251b7b212717354a8d82f81d4e2d40787b7ab"
+      },
+      {
+        "path": "wavemind/core.py",
+        "sha256": "8e07c4c361a9c8f04d1ee8c8f62c3ed09247496a9ddd413ea4a18cca7d6ae250"
+      },
+      {
+        "path": "wavemind/evaluation_candidate_admission.py",
+        "sha256": "bbd9ec653a6838ad0703e9d7b1b340e9d998e24cc60869f5c0b327cd11456c60"
+      },
+      {
+        "path": "wavemind/evaluation_lifecycle_diagnostic.py",
+        "sha256": "327949b508b3edd693d082944e664e14d611932feac6191ed0c60b1e3045f4ef"
+      },
+      {
+        "path": "wavemind/storage.py",
+        "sha256": "6eab222af27ae115968d9e3f58254142e2ce449886ed73adb6d82653fdd2cd29"
+      }
+    ],
+    "digest": "0ebaa6048424a01ec3e14b61e36bdeb506b0c3740744a9abeb9bdabd99e7f283"
+  },
+  "claim_boundary": "Candidate 1 passed its preregistered MemOps development gate. This is not validation, held-out, answer-quality, workflow, or general quality evidence.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "124e7a3f5243ccc84384527d7b78d5f792a0982759f7b12dcaed7d4a6825e13f"
+  }
+}
