@@ -1,0 +1,206 @@
+{
+  "schema": "wavemind.evaluation_validity_admission.v1",
+  "generated_at": "2026-08-12T11:18:49Z",
+  "source_sha": "8b5295e70008b57a8b151b3abdcd0a67bc813e4e",
+  "expected_source_sha": "8b5295e70008b57a8b151b3abdcd0a67bc813e4e",
+  "status": "blocked",
+  "admitted": false,
+  "implemented_rows": 5,
+  "required_rows": 16,
+  "rows": [
+    {
+      "id": "dataset-provenance",
+      "status": "implemented",
+      "requirement": "Dataset revisions, licenses, and checksums are pinned.",
+      "evidence": {
+        "errors": []
+      }
+    },
+    {
+      "id": "split-isolation",
+      "status": "blocked",
+      "requirement": "Dev, validation, and final splits have zero row, conversation, trajectory, or derived-fingerprint overlap.",
+      "evidence": {
+        "missing_artifact": "split_isolation"
+      }
+    },
+    {
+      "id": "native-metric-mapping",
+      "status": "implemented",
+      "requirement": "Every task uses its native scorer and semantic coercion is rejected.",
+      "evidence": {
+        "errors": []
+      }
+    },
+    {
+      "id": "positive-controls",
+      "status": "blocked",
+      "requirement": "Oracle evidence or correct-state controls are executed.",
+      "evidence": {
+        "missing_artifact": "positive_controls"
+      }
+    },
+    {
+      "id": "negative-controls",
+      "status": "blocked",
+      "requirement": "Random, no-memory, stale, wrong-namespace, and deleted-evidence controls are executed.",
+      "evidence": {
+        "missing_artifact": "negative_controls"
+      }
+    },
+    {
+      "id": "control-ordering",
+      "status": "blocked",
+      "requirement": "Oracle is above a strong valid baseline, which is above random and no-memory; poison affects only its safety target.",
+      "evidence": {
+        "missing_artifact": "control_ordering"
+      }
+    },
+    {
+      "id": "metric-range",
+      "status": "blocked",
+      "requirement": "Primary metrics have no floor or ceiling that makes preregistered improvement impossible.",
+      "evidence": {
+        "missing_artifact": "metric_range"
+      }
+    },
+    {
+      "id": "power-and-mde",
+      "status": "blocked",
+      "requirement": "Sample size, minimum detectable effect, and cluster unit are preregistered per primary metric.",
+      "evidence": {
+        "missing_artifact": "power_and_mde"
+      }
+    },
+    {
+      "id": "paired-clustered-statistics",
+      "status": "blocked",
+      "requirement": "Paired confidence intervals cluster by conversation, task, or trajectory.",
+      "evidence": {
+        "missing_artifact": "paired_clustered_statistics"
+      }
+    },
+    {
+      "id": "multiple-comparison-policy",
+      "status": "implemented",
+      "requirement": "Multiple primary comparisons use the preregistered Holm correction.",
+      "evidence": {
+        "paired": true,
+        "cluster_unit_required": true,
+        "confidence_level": 0.95,
+        "multiple_primary_correction": "holm",
+        "primary_metrics_frozen_before_product_run": true
+      }
+    },
+    {
+      "id": "judge-calibration",
+      "status": "blocked",
+      "requirement": "Every required LLM judge is pinned, calibrated, and has inter-run agreement evidence.",
+      "evidence": {
+        "missing_artifact": "judge_calibration"
+      }
+    },
+    {
+      "id": "deterministic-verdict",
+      "status": "blocked",
+      "requirement": "Three deterministic repeats produce one verdict fingerprint.",
+      "evidence": {
+        "missing_artifact": "deterministic_verdict"
+      }
+    },
+    {
+      "id": "per-case-completeness",
+      "status": "blocked",
+      "requirement": "Raw evidence includes every pass, failure, error, and skipped row.",
+      "evidence": {
+        "missing_artifact": "per_case_completeness"
+      }
+    },
+    {
+      "id": "backend-blinding",
+      "status": "implemented",
+      "requirement": "Backend input excludes gold, IDs, task type, split, and evaluator metadata.",
+      "evidence": {
+        "backend_view_fields": [
+          "namespace",
+          "query"
+        ]
+      }
+    },
+    {
+      "id": "exact-sha-integrity",
+      "status": "implemented",
+      "requirement": "Admission is tied to the exact source SHA and a current source manifest.",
+      "evidence": {
+        "source_sha": "8b5295e70008b57a8b151b3abdcd0a67bc813e4e",
+        "expected_source_sha": "8b5295e70008b57a8b151b3abdcd0a67bc813e4e",
+        "source_manifest": {
+          "schema": "wavemind.source_manifest.v1",
+          "algorithm": "sha256",
+          "files": [
+            {
+              "path": "README.md",
+              "sha256": "438ecdb20672bd18b79d516c4e1739dd2bbcbcea555edfd0577b69e7b28a438c"
+            },
+            {
+              "path": "benchmarks/evaluation_dataset_manifest_v1.json",
+              "sha256": "523c0a3b91772c23a1db5216faacf599179b666a0d3984fb94d288bfb5aadfef"
+            },
+            {
+              "path": "benchmarks/evaluation_salvage_manifest.json",
+              "sha256": "37e85ffff630144b1ae3295ff9ad9562cd12e229712534f24bf29c421ae71477"
+            },
+            {
+              "path": "benchmarks/evaluation_validity_admission.py",
+              "sha256": "14ffebe6dcedbb3286ad0e2164e91619cf39cd69d5faeeada7ca0aad0ad70707"
+            },
+            {
+              "path": "docs/ROADMAP.md",
+              "sha256": "465ac12da7ec4273d94bed28a5502ecae67e96d62e99d4968873e6049cd3c9b7"
+            },
+            {
+              "path": "docs/adr/0001-task-native-evaluation-science.md",
+              "sha256": "db218fa7dd989d58ec3dec6415b9b1ed6a94156e0f897c4f78037d4cdf71767f"
+            },
+            {
+              "path": "tests/test_evaluation_validity_admission.py",
+              "sha256": "f661c944f1e00216037cb73119c357c289891dac427f0a08f0bd229634e8bf42"
+            },
+            {
+              "path": "wavemind/evaluation_contracts.py",
+              "sha256": "6c7b3a6345ff0c8c43cce9c68c38d9c5391ff00c24bb78b646a38428c66fa8bb"
+            },
+            {
+              "path": "wavemind/evaluation_validity_admission.py",
+              "sha256": "f4fcf2d01cb62e8b84337c69d821621340c82b99a5d411ae013e94ea8001e24a"
+            }
+          ],
+          "digest": "01255ca4732f425685399285f5f81bbf336ad8c909a2e8241aa21200fd95a001"
+        }
+      }
+    },
+    {
+      "id": "safety-admissions-preserved",
+      "status": "blocked",
+      "requirement": "Safe Product and Workspace Experience are admitted on the same exact SHA.",
+      "evidence": {
+        "missing_artifact": "safety_admissions_preserved"
+      }
+    }
+  ],
+  "environment": {
+    "profile": "evaluation-validity-local",
+    "python": "3.13.3",
+    "implementation": "CPython",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "executable": "python.exe",
+    "github_run_id": null,
+    "github_runner_os": null
+  },
+  "claim_boundary": "Measurement-validity admission only. Product tuning, benchmark quality, generalization, leaderboard, and production claims remain prohibited until admitted.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "4e51ba004c5b6d0546cd023e3ddc5500f95925ad68659d28c443421fe5040581"
+  }
+}
