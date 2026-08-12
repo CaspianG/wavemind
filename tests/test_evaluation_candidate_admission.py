@@ -22,13 +22,12 @@ def test_operational_correction_checks_are_fail_closed(tmp_path: Path):
 
 def test_checked_candidate_admission_is_consistent_and_integrity_protected():
     path = ROOT / "benchmarks/evaluation_candidate1_admission_results.json"
-    if not path.exists():
-        return
+    assert path.exists()
     payload = json.loads(path.read_text(encoding="utf-8"))
     assert validate_candidate_admission(
         payload,
         project_root=ROOT,
-        require_current_files=False,
+        require_current_files=True,
     ) == []
 
 
