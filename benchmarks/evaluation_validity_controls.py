@@ -29,6 +29,9 @@ def main() -> int:
         "positive_controls",
         "negative_controls",
         "control_ordering",
+        "metric_range",
+        "power_and_mde",
+        "paired_clustered_statistics",
         "deterministic_verdict",
         "per_case_completeness",
     )

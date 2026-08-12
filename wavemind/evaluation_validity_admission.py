@@ -39,6 +39,7 @@ EXPECTED_ROWS = (
 SOURCE_PATHS = (
     "README.md",
     "wavemind/evaluation_contracts.py",
+    "wavemind/evaluation_statistics.py",
     "wavemind/evaluation_validity_admission.py",
     "wavemind/evaluation_validity_controls.py",
     "benchmarks/evaluation_dataset_manifest_v1.json",
@@ -49,6 +50,7 @@ SOURCE_PATHS = (
     "docs/ROADMAP.md",
     "tests/test_evaluation_validity_admission.py",
     "tests/test_evaluation_validity_controls.py",
+    "tests/test_evaluation_statistics.py",
 )
 
 

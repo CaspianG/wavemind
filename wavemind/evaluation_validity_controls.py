@@ -13,13 +13,37 @@ from .evidence import (
     sha256_bytes,
     utc_now,
 )
+from .evaluation_statistics import paired_cluster_bootstrap, plan_primary_metrics
 
 
 SCHEMA = "wavemind.evaluation_validity_controls.v1"
 SOURCE_PATHS = (
+    "wavemind/evaluation_statistics.py",
     "wavemind/evaluation_validity_controls.py",
     "benchmarks/evaluation_validity_controls.py",
     "tests/test_evaluation_validity_controls.py",
+    "tests/test_evaluation_statistics.py",
+)
+
+PRIMARY_METRIC_SPECIFICATIONS = (
+    {
+        "id": "workflow-pass-at-1",
+        "cluster_unit": "task",
+        "baseline_rate": 0.35,
+        "minimum_detectable_effect": 0.10,
+    },
+    {
+        "id": "memory-answer-quality",
+        "cluster_unit": "conversation",
+        "baseline_rate": 0.45,
+        "minimum_detectable_effect": 0.08,
+    },
+    {
+        "id": "lifecycle-correctness",
+        "cluster_unit": "trajectory",
+        "baseline_rate": 0.55,
+        "minimum_detectable_effect": 0.10,
+    },
 )
 
 
@@ -176,6 +200,32 @@ def _control_payload() -> dict[str, Any]:
             poison_isolation = poison_isolation and value == expected
     all_rows = [row for result in systems.values() for row in result["rows"]]
     expected_rows = len(CASES) * len(SYSTEM_OUTPUTS)
+    paired_rows = []
+    for case in CASES:
+        paired_rows.append(
+            {
+                "cluster_id": case.cluster_id,
+                "baseline": next(
+                    row["score"]
+                    for row in systems["strong_valid_baseline"]["rows"]
+                    if row["case_id"] == case.case_id
+                ),
+                "treatment": next(
+                    row["score"]
+                    for row in systems["oracle"]["rows"]
+                    if row["case_id"] == case.case_id
+                ),
+            }
+        )
+    bootstrap = paired_cluster_bootstrap(
+        paired_rows,
+        cluster_key="cluster_id",
+        baseline_key="baseline",
+        treatment_key="treatment",
+        repeats=1000,
+        seed=17,
+    )
+    power_plans = plan_primary_metrics(PRIMARY_METRIC_SPECIFICATIONS)
     return {
         "systems": systems,
         "safety_probes": safety,
@@ -194,6 +244,30 @@ def _control_payload() -> dict[str, Any]:
             "passed": ordering_passed and poison_isolation,
             "scores": scores,
             "required_order": "oracle > strong_valid_baseline > random > no_memory",
+        },
+        "metric_range": {
+            "passed": scores["no_memory"] == 0.0
+            and scores["oracle"] == 1.0
+            and (1.0 - scores["strong_valid_baseline"]) >= 0.10,
+            "observed_floor": scores["no_memory"],
+            "observed_ceiling": scores["oracle"],
+            "strong_baseline": scores["strong_valid_baseline"],
+            "minimum_preregistered_lift": 0.10,
+            "headroom": 1.0 - scores["strong_valid_baseline"],
+        },
+        "power_and_mde": {
+            "passed": all(
+                plan["required_independent_clusters"] > 0 and plan["cluster_unit"]
+                for plan in power_plans
+            ),
+            "plans": power_plans,
+            "correction_policy": "holm",
+        },
+        "paired_clustered_statistics": {
+            "passed": bootstrap["paired"]
+            and bootstrap["cluster_key"] == "cluster_id"
+            and bootstrap["cluster_count"] >= 2,
+            "diagnostic": bootstrap,
         },
         "per_case_completeness": {
             "passed": len(all_rows) == expected_rows

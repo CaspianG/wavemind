@@ -34,6 +34,9 @@ def test_controls_measure_expected_order_and_poison_isolation():
     assert report["positive_controls"]["passed"] is True
     assert report["negative_controls"]["passed"] is True
     assert report["control_ordering"]["passed"] is True
+    assert report["metric_range"]["passed"] is True
+    assert report["power_and_mde"]["passed"] is True
+    assert report["paired_clustered_statistics"]["passed"] is True
     assert report["deterministic_verdict"]["passed"] is True
     assert report["per_case_completeness"]["passed"] is True
     assert report["control_ordering"]["scores"] == {
@@ -57,6 +60,11 @@ def test_control_results_do_not_drop_failed_or_zero_score_rows():
     assert any(row["score"] == 0.0 for row in rows)
     assert all(row["status"] == "completed" for row in rows)
     assert report["per_case_completeness"]["filtered_rows"] == 0
+    assert {plan["cluster_unit"] for plan in report["power_and_mde"]["plans"]} == {
+        "task",
+        "conversation",
+        "trajectory",
+    }
 
 
 def test_control_ordering_fails_if_strong_baseline_is_artificially_broken():

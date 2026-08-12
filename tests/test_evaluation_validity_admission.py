@@ -157,12 +157,15 @@ def test_signed_current_control_evidence_closes_only_measured_rows(tmp_path):
         "positive-controls",
         "negative-controls",
         "control-ordering",
+        "metric-range",
+        "power-and-mde",
+        "paired-clustered-statistics",
         "deterministic-verdict",
         "per-case-completeness",
     ):
         assert rows[row_id]["status"] == "implemented"
     assert rows["split-isolation"]["status"] == "blocked"
-    assert rows["power-and-mde"]["status"] == "blocked"
+    assert rows["judge-calibration"]["status"] == "blocked"
     assert rows["safety-admissions-preserved"]["status"] == "blocked"
 
 
