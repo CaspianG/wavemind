@@ -1,0 +1,351 @@
+{
+  "systems": {
+    "oracle": {
+      "system": "oracle",
+      "case_count": 6,
+      "completed_count": 6,
+      "mean_score": 1.0,
+      "rows": [
+        {
+          "case_id": "retrieval-substring",
+          "cluster_id": "conversation-a",
+          "scorer": "substring_exact_match",
+          "output": "alpha beta gamma",
+          "score": 1.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "answer-exact",
+          "cluster_id": "conversation-b",
+          "scorer": "exact_match",
+          "output": "current-policy",
+          "score": 1.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "recommendation-top5",
+          "cluster_id": "conversation-c",
+          "scorer": "recall_at_5",
+          "output": [
+            "item-7",
+            "item-3"
+          ],
+          "score": 1.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "lifecycle-update",
+          "cluster_id": "trajectory-a",
+          "scorer": "structured_exact",
+          "output": {
+            "state": "updated",
+            "version": 2
+          },
+          "score": 1.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "workflow-final-state",
+          "cluster_id": "trajectory-b",
+          "scorer": "structured_exact",
+          "output": {
+            "tests": "passed",
+            "exit_code": 0
+          },
+          "score": 1.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "temporal-answer",
+          "cluster_id": "conversation-d",
+          "scorer": "exact_match",
+          "output": "after-update",
+          "score": 1.0,
+          "status": "completed"
+        }
+      ]
+    },
+    "strong_valid_baseline": {
+      "system": "strong_valid_baseline",
+      "case_count": 6,
+      "completed_count": 6,
+      "mean_score": 0.6666666666666666,
+      "rows": [
+        {
+          "case_id": "retrieval-substring",
+          "cluster_id": "conversation-a",
+          "scorer": "substring_exact_match",
+          "output": "alpha beta gamma",
+          "score": 1.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "answer-exact",
+          "cluster_id": "conversation-b",
+          "scorer": "exact_match",
+          "output": "current-policy",
+          "score": 1.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "recommendation-top5",
+          "cluster_id": "conversation-c",
+          "scorer": "recall_at_5",
+          "output": [
+            "item-7",
+            "item-3"
+          ],
+          "score": 1.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "lifecycle-update",
+          "cluster_id": "trajectory-a",
+          "scorer": "structured_exact",
+          "output": {
+            "state": "updated",
+            "version": 2
+          },
+          "score": 1.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "workflow-final-state",
+          "cluster_id": "trajectory-b",
+          "scorer": "structured_exact",
+          "output": {
+            "tests": "failed",
+            "exit_code": 1
+          },
+          "score": 0.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "temporal-answer",
+          "cluster_id": "conversation-d",
+          "scorer": "exact_match",
+          "output": "before-update",
+          "score": 0.0,
+          "status": "completed"
+        }
+      ]
+    },
+    "random": {
+      "system": "random",
+      "case_count": 6,
+      "completed_count": 6,
+      "mean_score": 0.16666666666666666,
+      "rows": [
+        {
+          "case_id": "retrieval-substring",
+          "cluster_id": "conversation-a",
+          "scorer": "substring_exact_match",
+          "output": "unrelated",
+          "score": 0.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "answer-exact",
+          "cluster_id": "conversation-b",
+          "scorer": "exact_match",
+          "output": "unrelated",
+          "score": 0.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "recommendation-top5",
+          "cluster_id": "conversation-c",
+          "scorer": "recall_at_5",
+          "output": [
+            "item-2",
+            "item-9"
+          ],
+          "score": 0.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "lifecycle-update",
+          "cluster_id": "trajectory-a",
+          "scorer": "structured_exact",
+          "output": {
+            "state": "old",
+            "version": 1
+          },
+          "score": 0.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "workflow-final-state",
+          "cluster_id": "trajectory-b",
+          "scorer": "structured_exact",
+          "output": {
+            "tests": "failed",
+            "exit_code": 1
+          },
+          "score": 0.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "temporal-answer",
+          "cluster_id": "conversation-d",
+          "scorer": "exact_match",
+          "output": "after-update",
+          "score": 1.0,
+          "status": "completed"
+        }
+      ]
+    },
+    "no_memory": {
+      "system": "no_memory",
+      "case_count": 6,
+      "completed_count": 6,
+      "mean_score": 0.0,
+      "rows": [
+        {
+          "case_id": "retrieval-substring",
+          "cluster_id": "conversation-a",
+          "scorer": "substring_exact_match",
+          "output": null,
+          "score": 0.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "answer-exact",
+          "cluster_id": "conversation-b",
+          "scorer": "exact_match",
+          "output": null,
+          "score": 0.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "recommendation-top5",
+          "cluster_id": "conversation-c",
+          "scorer": "recall_at_5",
+          "output": [],
+          "score": 0.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "lifecycle-update",
+          "cluster_id": "trajectory-a",
+          "scorer": "structured_exact",
+          "output": null,
+          "score": 0.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "workflow-final-state",
+          "cluster_id": "trajectory-b",
+          "scorer": "structured_exact",
+          "output": null,
+          "score": 0.0,
+          "status": "completed"
+        },
+        {
+          "case_id": "temporal-answer",
+          "cluster_id": "conversation-d",
+          "scorer": "exact_match",
+          "output": null,
+          "score": 0.0,
+          "status": "completed"
+        }
+      ]
+    }
+  },
+  "safety_probes": {
+    "clean": {
+      "stale_leakage": 0.0,
+      "namespace_leakage": 0.0,
+      "deleted_evidence_resurfacing": 0.0
+    },
+    "stale_poison": {
+      "stale_leakage": 1.0,
+      "namespace_leakage": 0.0,
+      "deleted_evidence_resurfacing": 0.0
+    },
+    "namespace_poison": {
+      "stale_leakage": 0.0,
+      "namespace_leakage": 1.0,
+      "deleted_evidence_resurfacing": 0.0
+    },
+    "deleted_poison": {
+      "stale_leakage": 0.0,
+      "namespace_leakage": 0.0,
+      "deleted_evidence_resurfacing": 1.0
+    }
+  },
+  "positive_controls": {
+    "passed": true,
+    "oracle_score": 1.0,
+    "expected": 1.0
+  },
+  "negative_controls": {
+    "passed": true,
+    "random_score": 0.16666666666666666,
+    "no_memory_score": 0.0,
+    "poison_isolation": true
+  },
+  "control_ordering": {
+    "passed": true,
+    "scores": {
+      "oracle": 1.0,
+      "strong_valid_baseline": 0.6666666666666666,
+      "random": 0.16666666666666666,
+      "no_memory": 0.0
+    },
+    "required_order": "oracle > strong_valid_baseline > random > no_memory"
+  },
+  "per_case_completeness": {
+    "passed": true,
+    "expected_rows": 24,
+    "observed_rows": 24,
+    "filtered_rows": 0,
+    "missing_rows": 0
+  },
+  "claim_boundary": "Synthetic deterministic controls validate scorer ordering, poison isolation, and evidence completeness. They do not prove WaveMind product quality.",
+  "deterministic_verdict": {
+    "passed": true,
+    "repeat_count": 3,
+    "fingerprints": [
+      "a8748e68df7fe182555ffb1fa5471efabd9a720538901622d5e652ea95fa3eac",
+      "a8748e68df7fe182555ffb1fa5471efabd9a720538901622d5e652ea95fa3eac",
+      "a8748e68df7fe182555ffb1fa5471efabd9a720538901622d5e652ea95fa3eac"
+    ]
+  },
+  "schema": "wavemind.evaluation_validity_controls.v1",
+  "generated_at": "2026-08-12T11:24:07Z",
+  "source_sha": "68e1bd0c0fb13e24f618a96c5f79b5d446bcc8cb",
+  "source_manifest": {
+    "schema": "wavemind.source_manifest.v1",
+    "algorithm": "sha256",
+    "files": [
+      {
+        "path": "benchmarks/evaluation_validity_controls.py",
+        "sha256": "f4ade44c1ea216ac866cf743061bbab7dafd49a993f33442dd691bdef640992c"
+      },
+      {
+        "path": "tests/test_evaluation_validity_controls.py",
+        "sha256": "63bf142146104e78cda71b2824b65dd30894db83cc7a5fab9c79672a9cfd0fcf"
+      },
+      {
+        "path": "wavemind/evaluation_validity_controls.py",
+        "sha256": "711d922b4f1b4836db36b8c9043bddf9a8767e453af60c56d68761945e2258df"
+      }
+    ],
+    "digest": "eeb616ae8ad09edea22a90340a26e2132f6a89419581ab0290ab58a905a54f28"
+  },
+  "environment": {
+    "profile": "evaluation-validity-controls",
+    "python": "3.13.3",
+    "implementation": "CPython",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "executable": "python.exe",
+    "github_run_id": null,
+    "github_runner_os": null
+  },
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "a5b4a520b93e64f483e7d33a63a589d81abf9f09982cc2516610a3cd37053cca"
+  }
+}

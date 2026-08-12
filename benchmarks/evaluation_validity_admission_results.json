@@ -1,11 +1,11 @@
 {
   "schema": "wavemind.evaluation_validity_admission.v1",
-  "generated_at": "2026-08-12T11:18:49Z",
-  "source_sha": "8b5295e70008b57a8b151b3abdcd0a67bc813e4e",
-  "expected_source_sha": "8b5295e70008b57a8b151b3abdcd0a67bc813e4e",
+  "generated_at": "2026-08-12T11:24:09Z",
+  "source_sha": "68e1bd0c0fb13e24f618a96c5f79b5d446bcc8cb",
+  "expected_source_sha": "68e1bd0c0fb13e24f618a96c5f79b5d446bcc8cb",
   "status": "blocked",
   "admitted": false,
-  "implemented_rows": 5,
+  "implemented_rows": 10,
   "required_rows": 16,
   "rows": [
     {
@@ -34,26 +34,38 @@
     },
     {
       "id": "positive-controls",
-      "status": "blocked",
+      "status": "implemented",
       "requirement": "Oracle evidence or correct-state controls are executed.",
       "evidence": {
-        "missing_artifact": "positive_controls"
+        "passed": true,
+        "oracle_score": 1.0,
+        "expected": 1.0
       }
     },
     {
       "id": "negative-controls",
-      "status": "blocked",
+      "status": "implemented",
       "requirement": "Random, no-memory, stale, wrong-namespace, and deleted-evidence controls are executed.",
       "evidence": {
-        "missing_artifact": "negative_controls"
+        "passed": true,
+        "random_score": 0.16666666666666666,
+        "no_memory_score": 0.0,
+        "poison_isolation": true
       }
     },
     {
       "id": "control-ordering",
-      "status": "blocked",
+      "status": "implemented",
       "requirement": "Oracle is above a strong valid baseline, which is above random and no-memory; poison affects only its safety target.",
       "evidence": {
-        "missing_artifact": "control_ordering"
+        "passed": true,
+        "scores": {
+          "oracle": 1.0,
+          "strong_valid_baseline": 0.6666666666666666,
+          "random": 0.16666666666666666,
+          "no_memory": 0.0
+        },
+        "required_order": "oracle > strong_valid_baseline > random > no_memory"
       }
     },
     {
@@ -102,18 +114,28 @@
     },
     {
       "id": "deterministic-verdict",
-      "status": "blocked",
+      "status": "implemented",
       "requirement": "Three deterministic repeats produce one verdict fingerprint.",
       "evidence": {
-        "missing_artifact": "deterministic_verdict"
+        "passed": true,
+        "repeat_count": 3,
+        "fingerprints": [
+          "a8748e68df7fe182555ffb1fa5471efabd9a720538901622d5e652ea95fa3eac",
+          "a8748e68df7fe182555ffb1fa5471efabd9a720538901622d5e652ea95fa3eac",
+          "a8748e68df7fe182555ffb1fa5471efabd9a720538901622d5e652ea95fa3eac"
+        ]
       }
     },
     {
       "id": "per-case-completeness",
-      "status": "blocked",
+      "status": "implemented",
       "requirement": "Raw evidence includes every pass, failure, error, and skipped row.",
       "evidence": {
-        "missing_artifact": "per_case_completeness"
+        "passed": true,
+        "expected_rows": 24,
+        "observed_rows": 24,
+        "filtered_rows": 0,
+        "missing_rows": 0
       }
     },
     {
@@ -132,8 +154,8 @@
       "status": "implemented",
       "requirement": "Admission is tied to the exact source SHA and a current source manifest.",
       "evidence": {
-        "source_sha": "8b5295e70008b57a8b151b3abdcd0a67bc813e4e",
-        "expected_source_sha": "8b5295e70008b57a8b151b3abdcd0a67bc813e4e",
+        "source_sha": "68e1bd0c0fb13e24f618a96c5f79b5d446bcc8cb",
+        "expected_source_sha": "68e1bd0c0fb13e24f618a96c5f79b5d446bcc8cb",
         "source_manifest": {
           "schema": "wavemind.source_manifest.v1",
           "algorithm": "sha256",
@@ -155,6 +177,10 @@
               "sha256": "14ffebe6dcedbb3286ad0e2164e91619cf39cd69d5faeeada7ca0aad0ad70707"
             },
             {
+              "path": "benchmarks/evaluation_validity_controls.py",
+              "sha256": "f4ade44c1ea216ac866cf743061bbab7dafd49a993f33442dd691bdef640992c"
+            },
+            {
               "path": "docs/ROADMAP.md",
               "sha256": "465ac12da7ec4273d94bed28a5502ecae67e96d62e99d4968873e6049cd3c9b7"
             },
@@ -164,7 +190,11 @@
             },
             {
               "path": "tests/test_evaluation_validity_admission.py",
-              "sha256": "f661c944f1e00216037cb73119c357c289891dac427f0a08f0bd229634e8bf42"
+              "sha256": "b77caf7b18ce6f35d429bb5aa724cf9a25d86856e54e98b1aea40b2edf7bf71f"
+            },
+            {
+              "path": "tests/test_evaluation_validity_controls.py",
+              "sha256": "63bf142146104e78cda71b2824b65dd30894db83cc7a5fab9c79672a9cfd0fcf"
             },
             {
               "path": "wavemind/evaluation_contracts.py",
@@ -172,10 +202,14 @@
             },
             {
               "path": "wavemind/evaluation_validity_admission.py",
-              "sha256": "f4fcf2d01cb62e8b84337c69d821621340c82b99a5d411ae013e94ea8001e24a"
+              "sha256": "7aae0bbf1a6a70f1b0aa2317acc7ef32454bddcfa53c1efdb56e868a516c9c9b"
+            },
+            {
+              "path": "wavemind/evaluation_validity_controls.py",
+              "sha256": "711d922b4f1b4836db36b8c9043bddf9a8767e453af60c56d68761945e2258df"
             }
           ],
-          "digest": "01255ca4732f425685399285f5f81bbf336ad8c909a2e8241aa21200fd95a001"
+          "digest": "6eb4029a9f074bab367ec48da52a64ab137b428897f3d3b5f56b24facd047d21"
         }
       }
     },
@@ -201,6 +235,6 @@
   "integrity": {
     "schema": "wavemind.artifact_integrity.v1",
     "algorithm": "sha256",
-    "payload_sha256": "4e51ba004c5b6d0546cd023e3ddc5500f95925ad68659d28c443421fe5040581"
+    "payload_sha256": "884e18b1272cab493ec77d56cde0494c1e22135f057e91fb4d48f3fdfe0d8ee5"
   }
 }
