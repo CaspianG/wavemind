@@ -39,8 +39,8 @@ jobs:
         with:
           node-version: "24"
 
-      - name: Install pinned site dependencies
-        run: npm install --prefix website --no-audit --no-fund
+      - name: Install locked site dependencies
+        run: npm ci --prefix website --no-audit --no-fund
 
       - name: Build product site
         env:
