@@ -150,7 +150,7 @@ checked evidence. Remote multi-region active-active, managed serverless,
 until their own admission artifacts pass. The pinned local multimodal suite is
 admitted only within the boundaries above.
 
-Use the [living dashboard](https://caspiang.github.io/wavemind/),
+Use the [public evidence ledger](https://caspiang.github.io/wavemind/evidence/),
 [Benchmark Guide](BENCHMARKS.md), and
 [Scale And Production](SCALE_AND_PRODUCTION.md) for the current machine-readable
 status.

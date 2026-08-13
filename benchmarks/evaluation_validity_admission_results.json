@@ -1,8 +1,8 @@
 {
   "schema": "wavemind.evaluation_validity_admission.v1",
-  "generated_at": "2026-08-12T12:30:57Z",
-  "source_sha": "dc15179004b0ef889fad0f9ea760457b5d7228e7",
-  "expected_source_sha": "dc15179004b0ef889fad0f9ea760457b5d7228e7",
+  "generated_at": "2026-08-13T20:15:57Z",
+  "source_sha": "3fa14e0b6f9544ae7191f4ba118b2abb8dc27832",
+  "expected_source_sha": "3fa14e0b6f9544ae7191f4ba118b2abb8dc27832",
   "status": "blocked",
   "admitted": false,
   "implemented_rows": 15,
@@ -269,8 +269,8 @@
       "status": "implemented",
       "requirement": "Admission is tied to the exact source SHA and a current source manifest.",
       "evidence": {
-        "source_sha": "dc15179004b0ef889fad0f9ea760457b5d7228e7",
-        "expected_source_sha": "dc15179004b0ef889fad0f9ea760457b5d7228e7",
+        "source_sha": "3fa14e0b6f9544ae7191f4ba118b2abb8dc27832",
+        "expected_source_sha": "3fa14e0b6f9544ae7191f4ba118b2abb8dc27832",
         "source_manifest": {
           "schema": "wavemind.source_manifest.v1",
           "algorithm": "sha256",
@@ -282,7 +282,7 @@
             },
             {
               "path": "README.md",
-              "sha256": "09ffeed18abd6ddae81655ec42143d68881a474e770ee19c2427abd621c77d5c"
+              "sha256": "42d1e046b317319c59b7d1ed77e165831501f95c699c2bacdf2bb0ff6723d17e"
             },
             {
               "path": "benchmarks/evaluation_dataset_manifest_v1.json",
@@ -369,7 +369,7 @@
               "sha256": "25c8e4b6f318a02141d8df44197b61a1b0fa92e25143f51ac6f96d651d4e5eb8"
             }
           ],
-          "digest": "c761a7e70bdcbed0a75e5e21585fabe83d89419b7ca790c8a48bc601817fa4f7"
+          "digest": "82bc939be75783a2a77c1b756b1ec510599597bc197ac05e943a1cb52c43f12a"
         }
       }
     },
@@ -408,6 +408,6 @@
   "integrity": {
     "schema": "wavemind.artifact_integrity.v1",
     "algorithm": "sha256",
-    "payload_sha256": "0257c7f245dbc3a1f5807411bab3395f81a24e9206e6d32917110a3467b2aa63"
+    "payload_sha256": "f37de5ec6cd9767c974a7f88e3579438211807813a65594abcfd0b773f0a7970"
   }
 }

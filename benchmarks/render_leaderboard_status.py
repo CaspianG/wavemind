@@ -284,7 +284,7 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "source_ref": matrix.get("source_ref"),
         "workflow_run_id": matrix.get("workflow_run_id"),
         "refresh_profile": matrix.get("refresh_profile"),
-        "public_url": "https://caspiang.github.io/wavemind/",
+        "public_url": "https://caspiang.github.io/wavemind/evidence/",
         "publishing_status": publishing_status,
         "publication_contract": _publication_contract(
             root,
@@ -596,19 +596,24 @@ def _publication_contract(
     refresh_profile: Any,
 ) -> dict[str, Any]:
     workflow_path = root / ".github" / "workflows" / "benchmark-leaderboard.yml"
+    pages_workflow_path = root / ".github" / "workflows" / "pages.yml"
     try:
         workflow = workflow_path.read_text(encoding="utf-8")
     except FileNotFoundError:
         workflow = ""
+    try:
+        pages_workflow = pages_workflow_path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        pages_workflow = ""
 
     weekly_cron = 'cron: "17 4 * * 1"' in workflow or "cron: '17 4 * * 1'" in workflow
     manual_dispatch = "workflow_dispatch:" in workflow
-    pages_upload = "actions/upload-pages-artifact@v5" in workflow
-    pages_deploy = "actions/deploy-pages@v5" in workflow
+    pages_upload = "actions/upload-pages-artifact@v5" in pages_workflow
+    pages_deploy = "actions/deploy-pages@v5" in pages_workflow
     review_artifact = "name: benchmark-leaderboard" in workflow
     no_bot_commit_to_main = "git push" not in workflow and "git commit -m" not in workflow
     strict_freshness = "--max-age-days 8" in workflow
-    status_json_copied = "docs/data/leaderboard-status.json" in workflow
+    status_json_copied = "website/dist/data/leaderboard-status.json" in pages_workflow
 
     checks = {
         "weekly_schedule": weekly_cron,
@@ -624,9 +629,10 @@ def _publication_contract(
         "schema": "wavemind.leaderboard_publication.v1",
         "status": "pass" if all(checks.values()) else "action_required",
         "workflow": ".github/workflows/benchmark-leaderboard.yml",
+        "pages_workflow": ".github/workflows/pages.yml",
         "schedule_cron": "17 4 * * 1",
         "timezone": "UTC",
-        "public_url": "https://caspiang.github.io/wavemind/",
+        "public_url": "https://caspiang.github.io/wavemind/evidence/",
         "publishing_status": publishing_status,
         "source_ref": source_ref,
         "workflow_run_id": workflow_run_id,
@@ -638,9 +644,9 @@ def _publication_contract(
             "status_json": "data/leaderboard-status.json",
         },
         "review_policy": (
-            "Scheduled runs publish GitHub Pages and upload the benchmark-leaderboard "
-            "artifact for maintainer review; they do not commit generated benchmark "
-            "artifacts back to main."
+            "Scheduled benchmark runs upload the benchmark-leaderboard artifact for "
+            "maintainer review and do not deploy or commit it. The product-site workflow "
+            "publishes reviewed evidence from main."
         ),
         "claim_policy": (
             "Dashboard rows may publish checked-in benchmark evidence; remote, "

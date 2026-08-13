@@ -81,18 +81,19 @@ def test_benchmark_leaderboard_renderer_writes_compact_leaderboard(tmp_path):
 
 def test_benchmark_leaderboard_workflow_reruns_core_artifacts():
     workflow = Path(".github/workflows/benchmark-leaderboard.yml").read_text(encoding="utf-8")
+    pages_workflow = Path(".github/workflows/pages.yml").read_text(encoding="utf-8")
 
     assert "schedule:" in workflow
     assert "workflow_dispatch:" in workflow
     assert "contents: read" in workflow
-    assert "pages: write" in workflow
-    assert "id-token: write" in workflow
+    assert "pages: write" not in workflow
+    assert "id-token: write" not in workflow
     assert "Build GitHub Pages leaderboard" in workflow
     assert "cp docs/benchmark-dashboard.html site/index.html" in workflow
     assert "cp docs/data/product-status.json site/data/product-status.json" in workflow
-    assert "actions/configure-pages@v6" in workflow
-    assert "actions/upload-pages-artifact@v5" in workflow
-    assert "actions/deploy-pages@v5" in workflow
+    assert "actions/configure-pages@v6" in pages_workflow
+    assert "actions/upload-pages-artifact@v5" in pages_workflow
+    assert "actions/deploy-pages@v5" in pages_workflow
     assert "agent_coherence_benchmark.py" in workflow
     assert "benchmarks/agent_coherence_results.json" in workflow
     assert "tests/test_agent_coherence_benchmark.py" in workflow

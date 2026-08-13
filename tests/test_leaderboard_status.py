@@ -25,12 +25,15 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     payload = json.loads(output.read_text(encoding="utf-8"))
 
     assert payload["schema"] == "wavemind.leaderboard_status.v1"
-    assert payload["public_url"] == "https://caspiang.github.io/wavemind/"
+    assert payload["public_url"] == "https://caspiang.github.io/wavemind/evidence/"
     assert payload["publishing_status"] == "publishable_with_claim_limits"
     assert payload["publication_contract"]["schema"] == "wavemind.leaderboard_publication.v1"
     assert payload["publication_contract"]["status"] == "pass"
     assert payload["publication_contract"]["workflow"] == (
         ".github/workflows/benchmark-leaderboard.yml"
+    )
+    assert payload["publication_contract"]["pages_workflow"] == (
+        ".github/workflows/pages.yml"
     )
     assert payload["publication_contract"]["schedule_cron"] == "17 4 * * 1"
     assert payload["publication_contract"]["expected_scheduled_refresh_profile"] == "weekly-fast"
@@ -47,7 +50,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
         "strict_freshness_gate": True,
         "machine_status_published": True,
     }
-    assert "do not commit generated benchmark artifacts back to main" in (
+    assert "do not deploy or commit it" in (
         payload["publication_contract"]["review_policy"]
     )
     assert "100M production claims stay locked" in (
