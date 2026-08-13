@@ -1,0 +1,95 @@
+name: product-site
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "website/**"
+      - "benchmarks/*.json"
+      - "benchmarks/*.md"
+      - "docs/data/*.json"
+      - "docs/assets/benchmark-summary.svg"
+      - "docs/benchmark-dashboard.html"
+      - ".github/workflows/pages.yml"
+  pull_request:
+    paths:
+      - "website/**"
+      - "benchmarks/*.json"
+      - "benchmarks/*.md"
+      - "docs/data/*.json"
+      - "docs/assets/benchmark-summary.svg"
+      - "docs/benchmark-dashboard.html"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+
+      - name: Install pinned site dependencies
+        run: npm install --prefix website --no-audit --no-fund
+
+      - name: Build product site
+        env:
+          VITE_SOURCE_SHA: ${{ github.sha }}
+        run: npm run build --prefix website
+
+      - name: Assemble evidence library
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p website/dist/evidence website/dist/benchmarks website/dist/data website/dist/assets
+          cp website/dist/index.html website/dist/evidence/index.html
+          cp docs/benchmark-dashboard.html website/dist/evidence/legacy.html
+          cp docs/assets/benchmark-summary.svg website/dist/assets/benchmark-summary.svg
+          find benchmarks -maxdepth 1 -type f -name '*.md' -exec cp '{}' website/dist/benchmarks/ ';'
+          find benchmarks -maxdepth 1 -type f -name '*.json' -exec cp '{}' website/dist/data/ ';'
+          find docs/data -maxdepth 1 -type f -name '*.json' -exec cp '{}' website/dist/data/ ';'
+          touch website/dist/.nojekyll
+
+      - name: Validate deploy bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s website/dist/index.html
+          test -s website/dist/evidence/index.html
+          test -s website/dist/evidence/legacy.html
+          test -s website/dist/data/product-status.json
+          test -s website/dist/data/leaderboard-status.json
+          test -s website/dist/data/evaluation_validity_admission_results.json
+          test -s website/dist/benchmarks/BENCHMARK_LEADERBOARD.md
+          ! grep -R -E 'manus-storage|sonner|Connect this CTA' website/dist
+
+      - uses: actions/upload-pages-artifact@v5
+        if: github.event_name != 'pull_request'
+        with:
+          path: website/dist
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/configure-pages@v6
+      - name: Deploy product site and evidence library
+        id: deployment
+        uses: actions/deploy-pages@v5

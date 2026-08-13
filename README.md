@@ -15,7 +15,8 @@ state changes, workflows, errors, and feedback; returns compact relevant context
   <a href="#quick-start"><strong>Quick Start</strong></a> &middot;
   <a href="docs/README.md">Documentation</a> &middot;
   <a href="#wavemind-studio">Studio</a> &middot;
-  <a href="https://caspiang.github.io/wavemind/">Benchmarks</a> &middot;
+  <a href="https://caspiang.github.io/wavemind/"><strong>Product site</strong></a> &middot;
+  <a href="https://caspiang.github.io/wavemind/evidence/">Evidence</a> &middot;
   <a href="docs/ROADMAP.md">Roadmap</a> &middot;
   <a href="#contributing">Contributing</a>
 </p>
@@ -78,7 +79,7 @@ because the repository moved forward.
 Remote multi-region, managed serverless, 100M service evidence, and universal
 multimodal admission remain explicitly gated. See
 [Known Limitations](#known-limitations) and the
-[evidence dashboard](https://caspiang.github.io/wavemind/).
+[evidence ledger](https://caspiang.github.io/wavemind/evidence/).
 
 ## Quick Start
 
@@ -602,7 +603,7 @@ loopback, and production evidence.
 These results do not claim universal vector-database leadership or completed
 remote 100M/multi-region proof. See the full [Benchmark Guide](docs/BENCHMARKS.md),
 [real public memory-system report](benchmarks/PUBLIC_MEMORY_COMPETITORS.md),
-[living dashboard](https://caspiang.github.io/wavemind/), and
+[public evidence ledger](https://caspiang.github.io/wavemind/evidence/), and
 [Benchmark Brief](docs/BENCHMARK_BRIEF.md) for methods, commands, limitations,
 and machine-readable artifacts.
 

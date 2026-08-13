@@ -40,11 +40,12 @@ STATE-Bench Agent Learning interoperability:
 The checked artifact validates the official 300-trajectory train split at an
 exact upstream commit and the required read-only `retrieve_learnings` contract;
 the paid official simulator/judge run remains explicitly unperformed.
-Living HTML dashboard: [`docs/benchmark-dashboard.html`](benchmark-dashboard.html).
+Legacy HTML dashboard: [`docs/benchmark-dashboard.html`](benchmark-dashboard.html).
 Machine-readable dashboard status: [`docs/data/leaderboard-status.json`](data/leaderboard-status.json).
-The weekly workflow also publishes the refreshed dashboard to GitHub Pages at
-[`caspiang.github.io/wavemind`](https://caspiang.github.io/wavemind/) without
-writing scheduled bot commits to `main`.
+The weekly workflow uploads refreshed artifacts for maintainer review without
+deploying or writing scheduled bot commits to `main`. The lightweight product-site
+workflow publishes reviewed evidence from `main` at
+[`caspiang.github.io/wavemind/evidence`](https://caspiang.github.io/wavemind/evidence/).
 The status JSON exposes first-class `publication_contract`, `freshness_gate`,
 `agent_quality`, `agent_impact`, `structured_memory`, `memory_os_intelligence`,
 `cluster_autoscale`, `memory_os_policy`, `memory_os_policy_evolution`,
@@ -193,14 +194,14 @@ the strict evidence readiness runbook, and the production-admission report,
 validates freshness with `benchmarks/validate_benchmark_artifacts.py`, writes
 `benchmarks/benchmark_artifact_audit.json`, renders
 `docs/data/leaderboard-status.json`, and uploads changed benchmark artifacts for
-maintainer review. It also builds a static GitHub Pages bundle from the
-dashboard, reports, summary SVG, public status JSON, and machine-readable JSON evidence,
-then deploys the living leaderboard with `actions/upload-pages-artifact@v5` and
-`actions/deploy-pages@v5`. `docs/data/leaderboard-status.json` records this as a
-machine-readable `publication_contract`, including the cron schedule, Pages
-deployment actions, status JSON path, review policy, and claim boundary. The
-workflow does not push scheduled bot commits to `main`; reviewed benchmark
-refreshes should be committed from a maintainer account.
+maintainer review. It does not deploy GitHub Pages. The separate
+`.github/workflows/pages.yml` workflow builds the product site, copies every
+checked-in benchmark Markdown/JSON artifact into the evidence library, and
+deploys only reviewed state from `main`. `docs/data/leaderboard-status.json`
+records both workflows in its machine-readable `publication_contract`, including
+the cron schedule, Pages deployment actions, status JSON path, review policy, and
+claim boundary. Reviewed benchmark refreshes should be committed from a
+maintainer account.
 `full-check` and the release workflow also run the same freshness gate with
 `--max-age-days 8`, so stale or manually edited public benchmark artifacts block
 normal CI and package releases.

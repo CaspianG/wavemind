@@ -46,7 +46,7 @@ benchmarks only when the deployment requires them.
 | Verified agent-experience admission | [Verified Experience Admission](../benchmarks/VERIFIED_EXPERIENCE_ADMISSION.md) |
 | STATE-Bench Agent Learning interoperability | [STATE-Bench Adapter](../benchmarks/STATE_BENCH_AGENT_LEARNING_ADAPTER.md) |
 | Provider and SDK integration admission | [Integration Admission](../benchmarks/INTEGRATION_ADMISSION.md) |
-| Live checked-in status | [Living Benchmark Dashboard](https://caspiang.github.io/wavemind/) |
+| Live checked-in status | [Public Evidence Ledger](https://caspiang.github.io/wavemind/evidence/) |
 | Release history | [Changelog](../CHANGELOG.md) |
 
 Public claims must trace to checked JSON artifacts. Local, loopback, planned,

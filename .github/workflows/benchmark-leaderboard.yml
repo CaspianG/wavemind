@@ -8,15 +8,10 @@ on:
 permissions:
   actions: read
   contents: read
-  id-token: write
-  pages: write
 
 jobs:
   update-leaderboard:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     services:
       qdrant-0:
         image: qdrant/qdrant:v1.18.2
@@ -469,6 +464,7 @@ jobs:
           git diff --stat -- benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html docs/data/leaderboard-status.json deploy/serverless/observed-telemetry.loopback.json deploy/cluster/production-evidence.env.example
 
       - name: Build GitHub Pages leaderboard
+        if: ${{ false }}
         run: |
           rm -rf site
           mkdir -p site/assets site/benchmarks site/data
@@ -533,12 +529,15 @@ jobs:
           cp docs/data/product-status.json site/data/product-status.json
 
       - uses: actions/configure-pages@v6
+        if: ${{ false }}
 
       - uses: actions/upload-pages-artifact@v5
+        if: ${{ false }}
         with:
           path: site
 
       - name: Deploy living leaderboard to GitHub Pages
+        if: ${{ false }}
         id: deployment
         uses: actions/deploy-pages@v5
 
