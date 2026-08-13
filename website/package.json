@@ -7,7 +7,6 @@
     "build": "tsc -b && vite build"
   },
   "dependencies": {
-    "framer-motion": "12.23.22",
     "lucide-react": "0.453.0",
     "react": "19.2.1",
     "react-dom": "19.2.1"

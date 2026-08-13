@@ -15,6 +15,7 @@ def test_product_site_has_no_manus_runtime_dependencies():
 
     assert "manus-storage" not in source
     assert "sonner" not in source
+    assert "framer-motion" not in source
     assert 'from "express"' not in source
     assert (website / "public" / "wavemind-studio.png").stat().st_size > 0
 

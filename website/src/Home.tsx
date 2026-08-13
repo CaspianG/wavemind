@@ -1,7 +1,7 @@
 // Material Intelligence design: warm editorial canvas, tactile paper packets, cobalt memory thread, and calm motion.
-import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { ArrowDownRight, ArrowUpRight, Check, Clipboard, Github, Menu, Minus, Plus, X } from "lucide-react";
+import { AnimatePresence, motion } from "./motion";
 
 const base = import.meta.env.BASE_URL;
 const discussionsUrl = "https://github.com/CaspianG/wavemind/discussions";
