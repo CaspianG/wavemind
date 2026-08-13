@@ -5,16 +5,18 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     workflow = Path(".github/workflows/benchmark-leaderboard.yml").read_text(
         encoding="utf-8"
     )
+    pages_workflow = Path(".github/workflows/pages.yml").read_text(encoding="utf-8")
 
     assert "cron: \"17 4 * * 1\"" in workflow
     assert "workflow_dispatch" in workflow
     assert "contents: read" in workflow
     assert "actions: read" in workflow
-    assert "pages: write" in workflow
-    assert "id-token: write" in workflow
-    assert "environment:" in workflow
-    assert "name: github-pages" in workflow
-    assert "url: ${{ steps.deployment.outputs.page_url }}" in workflow
+    assert "pages: write" not in workflow
+    assert "id-token: write" not in workflow
+    assert "pages: write" in pages_workflow
+    assert "id-token: write" in pages_workflow
+    assert "name: github-pages" in pages_workflow
+    assert "url: ${{ steps.deployment.outputs.page_url }}" in pages_workflow
     assert 'python -m pip install -e ".[dev,bench,redis]"' in workflow
     assert "Import latest Kubernetes production evidence" in workflow
     assert "gh run list" in workflow
@@ -170,13 +172,12 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "Benchmark artifacts changed" in workflow
     assert "commit the reviewed files from a maintainer account" in workflow
     assert "git push" not in workflow
-    assert "Build GitHub Pages leaderboard" in workflow
-    assert "cp docs/benchmark-dashboard.html site/index.html" in workflow
-    assert "cp docs/data/leaderboard-status.json site/data/leaderboard-status.json" in workflow
-    assert "cp benchmarks/benchmark_matrix_results.json site/data/benchmark_matrix_results.json" in workflow
-    assert "actions/configure-pages@v6" in workflow
-    assert "actions/upload-pages-artifact@v5" in workflow
-    assert "actions/deploy-pages@v5" in workflow
+    assert "find benchmarks" in pages_workflow
+    assert "cp docs/benchmark-dashboard.html website/dist/evidence/legacy.html" in pages_workflow
+    assert "website/dist/data/leaderboard-status.json" in pages_workflow
+    assert "actions/configure-pages@v6" in pages_workflow
+    assert "actions/upload-pages-artifact@v5" in pages_workflow
+    assert "actions/deploy-pages@v5" in pages_workflow
     assert "docs/assets/benchmark-summary.svg" in workflow
     assert "docs/benchmark-dashboard.html" in workflow
     assert "docs/data/leaderboard-status.json" in workflow

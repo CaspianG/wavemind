@@ -15,8 +15,7 @@ state changes, workflows, errors, and feedback; returns compact relevant context
   <a href="#quick-start"><strong>Quick Start</strong></a> &middot;
   <a href="docs/README.md">Documentation</a> &middot;
   <a href="#wavemind-studio">Studio</a> &middot;
-  <a href="https://caspiang.github.io/wavemind/"><strong>Product site</strong></a> &middot;
-  <a href="https://caspiang.github.io/wavemind/evidence/">Evidence</a> &middot;
+  <a href="https://caspiang.github.io/wavemind/"><strong>Product site</strong></a> &middot; <a href="https://caspiang.github.io/wavemind/evidence/">Evidence</a> &middot;
   <a href="docs/ROADMAP.md">Roadmap</a> &middot;
   <a href="#contributing">Contributing</a>
 </p>

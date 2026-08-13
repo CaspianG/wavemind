@@ -197,7 +197,9 @@ validates freshness with `benchmarks/validate_benchmark_artifacts.py`, writes
 maintainer review. It does not deploy GitHub Pages. The separate
 `.github/workflows/pages.yml` workflow builds the product site, copies every
 checked-in benchmark Markdown/JSON artifact into the evidence library, and
-deploys only reviewed state from `main`. `docs/data/leaderboard-status.json`
+deploys only reviewed state from `main` through
+`actions/upload-pages-artifact@v5` and `actions/deploy-pages@v5`.
+`docs/data/leaderboard-status.json`
 records both workflows in its machine-readable `publication_contract`, including
 the cron schedule, Pages deployment actions, status JSON path, review policy, and
 claim boundary. Reviewed benchmark refreshes should be committed from a
