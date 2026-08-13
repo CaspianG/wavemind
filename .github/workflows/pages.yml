@@ -73,6 +73,28 @@ jobs:
           test -s website/dist/benchmarks/BENCHMARK_LEADERBOARD.md
           ! grep -R -E 'manus-storage|sonner|Connect this CTA' website/dist
 
+      - name: Capture desktop and mobile previews
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          browser="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          mkdir -p website/preview-root website/preview
+          ln -s ../dist website/preview-root/wavemind
+          python3 -m http.server 4173 --directory website/preview-root >/tmp/wavemind-site.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          for attempt in {1..20}; do
+            curl --fail --silent http://127.0.0.1:4173/wavemind/ >/dev/null && break
+            sleep 0.25
+          done
+          "$browser" --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=1440,1000 --screenshot=website/preview/home-desktop.png http://127.0.0.1:4173/wavemind/
+          "$browser" --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=390,844 --screenshot=website/preview/home-mobile.png http://127.0.0.1:4173/wavemind/
+          "$browser" --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=1440,1000 --screenshot=website/preview/evidence-desktop.png http://127.0.0.1:4173/wavemind/evidence/
+          test "$(stat -c%s website/preview/home-desktop.png)" -gt 20000
+          test "$(stat -c%s website/preview/home-mobile.png)" -gt 12000
+          test "$(stat -c%s website/preview/evidence-desktop.png)" -gt 20000
+
       - uses: actions/upload-artifact@v7
         if: github.event_name == 'pull_request'
         with:
@@ -80,6 +102,7 @@ jobs:
           path: |
             website/dist
             website/package-lock.json
+            website/preview
           retention-days: 7
 
       - uses: actions/upload-pages-artifact@v5
