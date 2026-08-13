@@ -73,6 +73,15 @@ jobs:
           test -s website/dist/benchmarks/BENCHMARK_LEADERBOARD.md
           ! grep -R -E 'manus-storage|sonner|Connect this CTA' website/dist
 
+      - uses: actions/upload-artifact@v7
+        if: github.event_name == 'pull_request'
+        with:
+          name: product-site-preview
+          path: |
+            website/dist
+            website/package-lock.json
+          retention-days: 7
+
       - uses: actions/upload-pages-artifact@v5
         if: github.event_name != 'pull_request'
         with:
