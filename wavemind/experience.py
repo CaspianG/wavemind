@@ -600,6 +600,7 @@ class CandidateValidationSummary:
 class SQLiteExperienceStore:
     def __init__(self, path: str | Path | None = None):
         self.path = str(path or ":memory:")
+        self._initialize_schema_ledger = self.path == ":memory:" or not Path(self.path).exists()
         if self.path != ":memory:":
             Path(self.path).parent.mkdir(parents=True, exist_ok=True)
         self._lock = RLock()
@@ -629,6 +630,13 @@ class SQLiteExperienceStore:
         return path
 
     def ensure_schema(self) -> None:
+        from . import __version__
+        from .schema_migrations import (
+            EXPERIENCE_COMPONENT,
+            ensure_schema_migration,
+            validate_runtime_schema,
+        )
+
         with self._lock, self.conn:
             self.conn.execute(
                 """
@@ -745,6 +753,15 @@ class SQLiteExperienceStore:
                 "CREATE INDEX IF NOT EXISTS idx_experience_validation "
                 "ON experience_candidate_validations(experience_id, created_at)"
             )
+            if self._initialize_schema_ledger:
+                ensure_schema_migration(
+                    self.conn,
+                    EXPERIENCE_COMPONENT,
+                    release=__version__,
+                )
+                self._initialize_schema_ledger = False
+            else:
+                validate_runtime_schema(self.conn, EXPERIENCE_COMPONENT)
 
     def put(
         self,

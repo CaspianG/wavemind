@@ -39,6 +39,8 @@ dependencies = [
   "uvicorn[standard]>=0.27",
   "pydantic>=2",
   "pypdf>=4",
+  "packaging>=24",
+  "psutil>=5.9",
 ]
 
 [project.optional-dependencies]
