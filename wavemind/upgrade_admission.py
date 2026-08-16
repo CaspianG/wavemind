@@ -197,6 +197,7 @@ def evaluate_upgrade_admission(
                 "benchmarks/upgrade_operational_evidence.py",
                 "benchmarks/upgrade_python_cross_version.py",
                 "benchmarks/upgrade_docker_compose.py",
+                "benchmarks/pytest_exact_exit.py",
                 "benchmarks/upgrade_admission.py",
                 ".github/workflows/upgrade-admission.yml",
             ],

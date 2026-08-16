@@ -45,8 +45,8 @@ jobs:
         env:
           PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
         run: |
-          python -m pytest -q tests/test_upgrade.py
-          python -m pytest -q tests/test_upgrade_admission.py
+          python benchmarks/pytest_exact_exit.py -q tests/test_upgrade.py
+          python benchmarks/pytest_exact_exit.py -q tests/test_upgrade_admission.py
 
   exact-sha-upgrade-admission:
     needs: upgrade-platform-matrix
