@@ -158,6 +158,15 @@ class ExperiencePacket:
                     f"[E{index}] {item.title}{canary} ({item.citation})"
                 )
             return "\n".join(lines)
+        compact_prompt = bool(self.compiler_policy.get("compact_prompt", False))
+        if compact_prompt:
+            lines = [f"Experience[{self.namespace}]; cite E#:"]
+            for index, item in enumerate(self.items, start=1):
+                canary = " [canary]" if item.canary else ""
+                lines.append(
+                    f"[E{index}]{canary} {item.excerpt} [{item.citation}]"
+                )
+            return "\n".join(lines)
         lines = [
             f"Experience packet for namespace {self.namespace}:",
             "Use only when applicable. Cite bracketed experience references.",
@@ -405,6 +414,7 @@ class ExperienceCompiler:
         tools: Iterable[str] = (),
         include_canary: bool = False,
         reference_only: bool = False,
+        compact_prompt: bool = False,
     ) -> ExperiencePacket:
         query = query.strip()
         if not query:
@@ -466,8 +476,12 @@ class ExperienceCompiler:
             f"Experience refs [{namespace}]:"
             if reference_only
             else (
-                f"Experience packet for namespace {namespace}:\n"
-                "Use only when applicable. Cite bracketed experience references."
+                f"Experience[{namespace}]; cite E#:"
+                if compact_prompt
+                else (
+                    f"Experience packet for namespace {namespace}:\n"
+                    "Use only when applicable. Cite bracketed experience references."
+                )
             )
         )
         header_tokens = _estimated_tokens(header)
@@ -494,8 +508,12 @@ class ExperienceCompiler:
                 )
                 excerpt = _truncate_tokens(_packet_excerpt_source(record), excerpt_budget)
                 item_tokens = _estimated_tokens(
-                    f"[E{index}] {record.title}{canary_label}: {excerpt} "
-                    f"({citation})"
+                    f"[E{index}]{canary_label} {excerpt} [{citation}]"
+                    if compact_prompt
+                    else (
+                        f"[E{index}] {record.title}{canary_label}: {excerpt} "
+                        f"({citation})"
+                    )
                 )
             if item_tokens > remaining:
                 continue
@@ -530,13 +548,18 @@ class ExperienceCompiler:
                 )
             )
             consumed += item_tokens
-        if reference_only:
+        if reference_only or compact_prompt:
             rendered = [header]
             for index, item in enumerate(items, start=1):
                 canary = " [canary]" if item.canary else ""
-                rendered.append(
-                    f"[E{index}] {item.title}{canary} ({item.citation})"
-                )
+                if reference_only:
+                    rendered.append(
+                        f"[E{index}] {item.title}{canary} ({item.citation})"
+                    )
+                else:
+                    rendered.append(
+                        f"[E{index}]{canary} {item.excerpt} [{item.citation}]"
+                    )
             consumed = _estimated_tokens("\n".join(rendered))
         return ExperiencePacket(
             namespace=namespace,
@@ -552,6 +575,7 @@ class ExperienceCompiler:
                 "active_only": not include_canary,
                 "progressive_disclosure": True,
                 "reference_only": bool(reference_only),
+                "compact_prompt": bool(compact_prompt),
             },
         )
 

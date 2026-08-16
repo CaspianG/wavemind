@@ -110,6 +110,7 @@ class EvidenceMetrics:
     ingest_total_ms: float = 0.0
     ingest_avg_ms: float = 0.0
     ingest_scope: str = ""
+    case_outcomes: tuple[dict[str, object], ...] = ()
 
 
 class CachedTextEncoder:
@@ -198,6 +199,34 @@ def build_synthetic_dataset(memory_count: int = 200) -> EvidenceDataset:
     return EvidenceDataset(name="synthetic", memories=memories, queries=list(QUERIES))
 
 
+def evidence_case_outcomes(
+    queries: Iterable[EvidenceQuery],
+    rankings: dict[str, list[str]],
+    top_k: int,
+) -> tuple[dict[str, object], ...]:
+    outcomes: list[dict[str, object]] = []
+    for query in queries:
+        ranked = tuple(rankings.get(query.id, [])[:top_k])
+        expected = set(query.expected_evidence_ids)
+        forbidden = set(query.forbidden_evidence_ids)
+        expected_hits = tuple(item for item in ranked if item in expected)
+        forbidden_hits = tuple(item for item in ranked if item in forbidden)
+        success = bool(expected_hits) if expected else not forbidden_hits
+        success = success and not forbidden_hits
+        outcomes.append(
+            {
+                "query_id": query.id,
+                "namespace": query.namespace,
+                "category": query.category,
+                "success_rate": 1.0 if success else 0.0,
+                "returned_evidence_ids": ranked,
+                "expected_hits": expected_hits,
+                "forbidden_hits": forbidden_hits,
+            }
+        )
+    return tuple(outcomes)
+
+
 def compute_evidence_metrics(queries: Iterable[EvidenceQuery], rankings: dict[str, list[str]], returned_texts: dict[str, list[str]], latencies_ms: list[float], full_context_tokens: int, top_k: int, engine: str) -> EvidenceMetrics:
     query_list = list(queries)
     recalls: list[float] = []
@@ -249,6 +278,7 @@ def compute_evidence_metrics(queries: Iterable[EvidenceQuery], rankings: dict[st
         p95_latency_ms=sorted_latencies[p95_index] if sorted_latencies else 0.0,
         p99_latency_ms=sorted_latencies[p99_index] if sorted_latencies else 0.0,
         queries=len(query_list),
+        case_outcomes=evidence_case_outcomes(query_list, rankings, top_k),
     )
 
 

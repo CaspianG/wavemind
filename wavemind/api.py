@@ -1347,6 +1347,7 @@ class ExperiencePacketRequest(BaseModel):
     task_types: list[str] = Field(default_factory=list)
     tools: list[str] = Field(default_factory=list)
     include_canary: bool = False
+    compact_prompt: bool = False
 
 
 class ExperienceTrajectoryRequest(BaseModel):
@@ -1381,6 +1382,7 @@ class ExperienceRuntimeStartRequest(BaseModel):
     token_budget: int = Field(default=400, ge=32)
     top_k: int = Field(default=3, ge=1, le=100)
     canary: bool = False
+    compact_prompt: bool = False
 
 
 class ExperienceRuntimeEventRequest(BaseModel):
@@ -2135,6 +2137,7 @@ def create_app(
             task_types=request.task_types,
             tools=request.tools,
             include_canary=request.include_canary,
+            compact_prompt=request.compact_prompt,
         )
         return packet.as_dict()
 
@@ -2311,6 +2314,7 @@ def create_app(
                 token_budget=request.token_budget,
                 top_k=request.top_k,
                 canary=request.canary,
+                compact_prompt=request.compact_prompt,
             )
             applied = (
                 tuple(item.experience_id for item in intervention.packet.items)

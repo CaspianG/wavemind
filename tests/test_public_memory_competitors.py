@@ -136,6 +136,14 @@ def test_mem0_adapter_uses_real_metadata_provenance_and_namespace_filters():
     assert result.ingest_total_ms >= 0.0
     assert configs[0]["embedder"]["provider"] == "fastembed"
     assert configs[0]["vector_store"]["provider"] == "qdrant"
+    assert [row["query_id"] for row in result.case_outcomes] == [
+        "conversation-a::Q1",
+        "conversation-b::Q1",
+    ]
+    assert all(row["success_rate"] == 1.0 for row in result.case_outcomes)
+    assert result.case_outcomes[0]["returned_evidence_ids"] == (
+        "conversation-a::D1:1",
+    )
     assert all(memory.closed for memory in created)
     assert all(memory.vector_store.client.closed for memory in created)
 
@@ -219,6 +227,7 @@ def test_langgraph_store_uses_shared_encoder_namespace_and_provenance():
         ("conversation-a", "memories"),
         ("conversation-b", "memories"),
     }
+    assert all(row["success_rate"] == 1.0 for row in result.case_outcomes)
     assert created[0].closed is True
 
 

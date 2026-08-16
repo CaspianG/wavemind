@@ -566,6 +566,7 @@ class AgentExperienceRuntime:
         token_budget: int | None = None,
         top_k: int | None = None,
         canary: bool = False,
+        compact_prompt: bool = False,
     ) -> ExperienceIntervention:
         clean_query = str(self._sanitize_payload({"query": query})["query"])
         packet = self.compiler.compile_packet(
@@ -584,6 +585,7 @@ class AgentExperienceRuntime:
             task_types=task_types,
             tools=tools,
             include_canary=canary,
+            compact_prompt=compact_prompt,
         )
         best_score = packet.items[0].score if packet.items else 0.0
         inject = bool(packet.items) and best_score >= self.policy.intervention_score_threshold

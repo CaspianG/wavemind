@@ -45,6 +45,16 @@ QUALITY_CRITICAL_BLOBS = {
 }
 QUALITY_FRESHNESS_ALLOWLIST = {
     (
+        "wavemind/experience_compiler.py",
+        "e5c6281f1f3968937243d23d45f2d622472b184a",
+        "f4af608e1cbec0b9ded232236010b96d369ce7d2",
+    ): "optional compact rendering only; default packet selection, scoring, provenance, firewall behavior, and frozen v5 protocol are unchanged",
+    (
+        "wavemind/experience_runtime.py",
+        "4ef356bd7ee78a2d20648675c6596f9ba9764d16",
+        "95bc7e47af03b086c4bdc6646880ab6e780d4528",
+    ): "optional compact-rendering passthrough only; default intervention selection, scoring, safety behavior, and frozen v5 protocol are unchanged",
+    (
         "wavemind/workspace_experience.py",
         "6cf07bb1a8fad1cc6c73143590d90aac3ba52991",
         "527c070dc3a528dcda559779098ad5659e841d82",
