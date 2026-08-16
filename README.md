@@ -34,10 +34,9 @@ opaque history dump.
 | Agent-platform teams | Rebuilding provenance, promotion, deletion, and rollback per framework | Share one governed Experience Packet contract across providers |
 | Private workflows | Learning without a reviewable source or exit path | Keep verified experience local, inspectable, and reversible |
 
-The flagship loop is `trace -> independent verification -> Experience Packet
--> better next run -> explainable diff -> rollback`. The dated
-[market and product audit](docs/MARKET_AUDIT_2026-08-16.md) records the user,
-competitor, forecast, gap, decision, and roadmap evidence behind that focus.
+The flagship loop is `trace -> verification -> Experience Packet -> better
+next run -> explainable diff -> rollback`. See the dated
+[market and product audit](docs/MARKET_AUDIT_2026-08-16.md) for the evidence.
 
 ## What Makes It Different
 
@@ -128,13 +127,9 @@ cd my-agent
 python app.py
 ```
 
-The starter runs a cold attempt, records independently verified outcomes,
-promotes a bounded procedure only after its evidence threshold, and reuses a
-cited packet. For the explicit cold-run -> packet -> replay -> rollback example:
-
-```sh
-python examples/verified_experience_runtime.py
-```
+The starter runs a cold attempt, verifies it, promotes a bounded procedure, and
+reuses a cited packet. Run `python examples/verified_experience_runtime.py` for
+the explicit cold-run -> packet -> replay -> rollback path.
 
 Use `--template typescript`, `--template mcp`, or `--template docker` for the
 other starter paths. The Docker starter runs with
@@ -400,32 +395,9 @@ Query: "Andrey trader preferences"
 
 The demo is offline, keyless, and uses the built-in hash encoder.
 
-To see the behavior that plain vector search does not provide:
-
-```sh
-python examples/dynamic_memory_demo.py
-```
-
-That demo shows corrected facts outranking stale facts, temporary memory
-expiring, namespace isolation, and index-health reporting.
-
-To see the same behavior in a practical support/CRM workflow:
-
-```sh
-python examples/customer_support_memory.py
-```
-
-That demo stores customer preferences, billing tickets, stale CRM data,
-temporary discount codes, and separate customer namespaces.
-
-To see source-aware research memory:
-
-```sh
-python examples/research_notebook_memory.py
-```
-
-That demo stores analyst findings, temporary hypotheses, decisions, source
-metadata, and isolated project namespaces.
+For correction, TTL, support/CRM, and research variants, use the linked examples
+in [Common Ways To Use It](#common-ways-to-use-it) or the
+[demo script](docs/DEMO_SCRIPT.md).
 
 ## How The Memory Field Works
 
