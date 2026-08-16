@@ -822,6 +822,7 @@ def _install_wheel(artifact: ReleaseArtifact, runner: CommandRunner) -> None:
     runner(
         [
             sys.executable,
+            "-I",
             "-m",
             "pip",
             "install",

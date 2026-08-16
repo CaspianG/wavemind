@@ -171,6 +171,36 @@ def test_production_command_runner_preserves_failure_diagnostics(monkeypatch):
         upgrade._run_command(["example", "command"])
 
 
+def test_wheel_install_is_isolated_from_operator_pythonpath(tmp_path):
+    wheel, digest = _wheel(tmp_path / "wavemind-2.12.1-py3-none-any.whl", "2.12.1")
+    artifact = upgrade.verify_release_artifact(
+        wheel,
+        expected_version="2.12.1",
+        expected_sha256=digest,
+        source_url="local-test",
+    )
+    commands: list[list[str]] = []
+
+    def runner(command, _cwd):
+        commands.append(list(command))
+        return _completed(command)
+
+    upgrade._install_wheel(artifact, runner)
+
+    assert commands == [
+        [
+            sys.executable,
+            "-I",
+            "-m",
+            "pip",
+            "install",
+            "--upgrade",
+            "--force-reinstall",
+            str(wheel.resolve()),
+        ]
+    ]
+
+
 def test_process_preflight_never_queries_docker_command_line(tmp_path, monkeypatch):
     protected = tmp_path / "core.sqlite3"
     protected.write_bytes(b"state")
