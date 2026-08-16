@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+import pytest
+
 from benchmarks.long_memory_evidence_benchmark import (
     EvidenceDataset,
     EvidenceQuery,
@@ -218,6 +220,24 @@ def test_langgraph_store_uses_shared_encoder_namespace_and_provenance():
         ("conversation-b", "memories"),
     }
     assert created[0].closed is True
+
+
+def test_real_langgraph_store_adapter():
+    pytest.importorskip("langgraph.store.memory")
+    from wavemind.encoders import HashingTextEncoder
+
+    result = run_langgraph_store_evidence(
+        _dataset(),
+        HashingTextEncoder(vector_dim=64),
+        3,
+    )
+
+    assert result.engine == "LangGraph BaseStore"
+    assert result.queries == 2
+    assert result.evidence_recall_at_k == 1.0
+    assert result.system_version != "unknown"
+    assert result.embedding_profile == "shared:HashingTextEncoder"
+    assert result.provenance_mode == "value.evidence_id"
 
 
 class FakeHindsightTransport:

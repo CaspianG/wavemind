@@ -153,7 +153,10 @@ jobs:
           npm ci --prefix sdk/typescript
 
       - name: Run official provider contract tests
-        run: pytest -q tests/test_official_provider_contracts.py
+        run: |
+          pytest -q \
+            tests/test_official_provider_contracts.py \
+            tests/test_public_memory_competitors.py::test_real_langgraph_store_adapter
 
       - name: Run strict integration admission
         run: |
@@ -170,3 +173,4 @@ jobs:
           path: |
             integration_admission_results.json
             INTEGRATION_ADMISSION.md
+
