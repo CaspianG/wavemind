@@ -120,6 +120,9 @@ class _BenchmarkEmbeddings:
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         return self.encoder.encode_vectors(texts).tolist()
 
+    def __call__(self, texts: list[str]) -> list[list[float]]:
+        return self.embed_documents(texts)
+
     def embed_query(self, text: str) -> list[float]:
         return self.encoder.encode_vector(text).tolist()
 
