@@ -150,7 +150,7 @@ Start here if you only want to use WaveMind from the terminal:
 | Show first-run help | `wavemind quickstart` |
 | Create a runnable starter | `wavemind init my-agent --template python` |
 | Diagnose the local environment | `wavemind doctor --project my-agent` |
-| Preview a safe package or Compose upgrade | `wavemind upgrade --dry-run --json` |
+| [Preview a safe package or Compose upgrade](docs/UPGRADE.md) | `wavemind upgrade --dry-run --json` |
 | Store a memory | `wavemind remember "Andrey prefers short answers" --namespace user:42` |
 | Search memory | `wavemind query "answer style" --namespace user:42` |
 | Consolidate active patterns | `wavemind consolidate --namespace user:42 --seed "Rust compiler systems"` |
@@ -161,14 +161,7 @@ Start here if you only want to use WaveMind from the terminal:
 | Use another database file | `wavemind --db ./state/memory.sqlite3 query "budget" --namespace user:42` |
 | Start the HTTP API | `wavemind --db ./state/memory.sqlite3 serve --host 127.0.0.1 --port 8000` |
 
-After this point, choose the integration path you need: Python, HTTP, LangChain,
-framework adapters, benchmarks, or production deployment.
-
-The candidate safe-upgrade workflow backs up Core and Verified Experience,
-verifies artifacts, stages migrations, and automatically rolls back package or
-container, both databases, and configuration after any failed health gate. See
-the [Safe Upgrade Guide](docs/UPGRADE.md). The capability becomes a supported
-release claim only after its exact-SHA admission and publication checks pass.
+After this point, choose the integration path you need: Python, HTTP, LangChain, framework adapters, benchmarks, or production deployment.
 
 ## WaveMind Studio
 

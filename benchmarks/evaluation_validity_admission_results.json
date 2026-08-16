@@ -282,7 +282,7 @@
             },
             {
               "path": "README.md",
-              "sha256": "42d1e046b317319c59b7d1ed77e165831501f95c699c2bacdf2bb0ff6723d17e"
+              "sha256": "24873f08db045c150bf459e2f9ba84c0f5f209a6ebbeea4d2cfdf7869ec0856f"
             },
             {
               "path": "benchmarks/evaluation_dataset_manifest_v1.json",
@@ -366,10 +366,10 @@
             },
             {
               "path": "wavemind/workspace_experience_admission.py",
-              "sha256": "25c8e4b6f318a02141d8df44197b61a1b0fa92e25143f51ac6f96d651d4e5eb8"
+              "sha256": "7f9709e16378939fceb50bf12338c433bd2b561e11f80ee38ae98b69be08e701"
             }
           ],
-          "digest": "82bc939be75783a2a77c1b756b1ec510599597bc197ac05e943a1cb52c43f12a"
+          "digest": "31bfc5fcf1c743f01a07efca2b9713424e27342ce3c7679b1f7de36a557a17c8"
         }
       }
     },
@@ -408,6 +408,6 @@
   "integrity": {
     "schema": "wavemind.artifact_integrity.v1",
     "algorithm": "sha256",
-    "payload_sha256": "9af93d658720608749e2b5d46e8c7605133ab2d8500957e6ff4e089771f2a236"
+    "payload_sha256": "af1a406866793ba83c0b67858989682ed2ff223c8016d4c395389ef66a7af60f"
   }
 }

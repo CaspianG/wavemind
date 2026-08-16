@@ -915,7 +915,11 @@ def test_external_python_process_holding_database_is_reported(tmp_path):
             run_upgrade(_options(tmp_path, core, experience, wheel, digest))
     finally:
         holder.terminate()
-        holder.wait(timeout=5)
+        try:
+            holder.communicate(timeout=5)
+        except subprocess.TimeoutExpired:
+            holder.kill()
+            holder.communicate(timeout=5)
 
 
 def test_live_upgrade_lock_rejects_second_operator(tmp_path):
