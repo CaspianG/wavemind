@@ -366,10 +366,10 @@
             },
             {
               "path": "wavemind/workspace_experience_admission.py",
-              "sha256": "7f9709e16378939fceb50bf12338c433bd2b561e11f80ee38ae98b69be08e701"
+              "sha256": "4bd3ee49396e05e0380b19889dda10d553fec9a90b5debed217311a416f4bba4"
             }
           ],
-          "digest": "fc050f0d0ffb73355555391c8816a1c11ffbd19dba78b05d223b0f1ec33ff615"
+          "digest": "a016ee069b782551912f7e9aad9728dd4ec7dbc866b15417b1492dc26d87e062"
         }
       }
     },
@@ -408,6 +408,6 @@
   "integrity": {
     "schema": "wavemind.artifact_integrity.v1",
     "algorithm": "sha256",
-    "payload_sha256": "2ea40f241c345c4139b7056ae35ad256222ece16cea0dc6a72d94c28138339d3"
+    "payload_sha256": "a57b8a07a57de6c6643528f1a5d589b66e4a192fe3906276356d47c99f2201cd"
   }
 }
