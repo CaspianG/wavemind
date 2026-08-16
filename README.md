@@ -48,7 +48,7 @@ claim that one vector database should replace every other system.
 
 | Product truth | Status | Evidence |
 |---|---|---|
-| Public release | `v2.12.1`; runtime source `6d6fac04904b` | PyPI package `wavemind` and `ghcr.io/caspiang/wavemind:2.12.1` |
+| Public release | `v2.13.0`; runtime source `6e30491b8a47` | PyPI package `wavemind` and `ghcr.io/caspiang/wavemind:2.13.0` |
 | Safe Product snapshot | `historical`, 18/18 checks at `92c539d0a069` | [`benchmarks/safe_product_admission_results.json`](benchmarks/safe_product_admission_results.json) |
 | Current-source admission | Required per exact source SHA | [`.github/workflows/safe-product.yml`](.github/workflows/safe-product.yml) |
 | TypeScript SDK | `@wavemind/http`, repository-local; npm claim disabled | Repository package only |
@@ -150,6 +150,7 @@ Start here if you only want to use WaveMind from the terminal:
 | Show first-run help | `wavemind quickstart` |
 | Create a runnable starter | `wavemind init my-agent --template python` |
 | Diagnose the local environment | `wavemind doctor --project my-agent` |
+| [Preview a safe package or Compose upgrade](docs/UPGRADE.md) | `wavemind upgrade --dry-run --json` |
 | Store a memory | `wavemind remember "Andrey prefers short answers" --namespace user:42` |
 | Search memory | `wavemind query "answer style" --namespace user:42` |
 | Consolidate active patterns | `wavemind consolidate --namespace user:42 --seed "Rust compiler systems"` |
@@ -160,8 +161,7 @@ Start here if you only want to use WaveMind from the terminal:
 | Use another database file | `wavemind --db ./state/memory.sqlite3 query "budget" --namespace user:42` |
 | Start the HTTP API | `wavemind --db ./state/memory.sqlite3 serve --host 127.0.0.1 --port 8000` |
 
-After this point, choose the integration path you need: Python, HTTP, LangChain,
-framework adapters, benchmarks, or production deployment.
+After this point, choose the integration path you need: Python, HTTP, LangChain, framework adapters, benchmarks, or production deployment.
 
 ## WaveMind Studio
 

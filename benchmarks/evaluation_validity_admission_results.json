@@ -282,7 +282,7 @@
             },
             {
               "path": "README.md",
-              "sha256": "42d1e046b317319c59b7d1ed77e165831501f95c699c2bacdf2bb0ff6723d17e"
+              "sha256": "81b58caad093a3eb88a6ca035a51aae4551875dd31b9bdfd1d92c4fadb4d3814"
             },
             {
               "path": "benchmarks/evaluation_dataset_manifest_v1.json",
@@ -310,7 +310,7 @@
             },
             {
               "path": "docs/ROADMAP.md",
-              "sha256": "0dbedda76a9432cb53220529d41073d3f48936e44eeb54561931135d2f1c43ce"
+              "sha256": "4e75deb4421c4ae9c0ef64293d3264fab6eac8ea7ab6d84e45a7e26239a14b90"
             },
             {
               "path": "docs/adr/0001-task-native-evaluation-science.md",
@@ -366,10 +366,10 @@
             },
             {
               "path": "wavemind/workspace_experience_admission.py",
-              "sha256": "25c8e4b6f318a02141d8df44197b61a1b0fa92e25143f51ac6f96d651d4e5eb8"
+              "sha256": "7f9709e16378939fceb50bf12338c433bd2b561e11f80ee38ae98b69be08e701"
             }
           ],
-          "digest": "82bc939be75783a2a77c1b756b1ec510599597bc197ac05e943a1cb52c43f12a"
+          "digest": "235cb82ab4b324ec190199cd5a3cd0dc123ac33186b9b84b9c9d3c082d202812"
         }
       }
     },
@@ -408,6 +408,6 @@
   "integrity": {
     "schema": "wavemind.artifact_integrity.v1",
     "algorithm": "sha256",
-    "payload_sha256": "9af93d658720608749e2b5d46e8c7605133ab2d8500957e6ff4e089771f2a236"
+    "payload_sha256": "5c0eb4d5105a347957f192c96aac61620452c749acd546aee25886d16b080a87"
   }
 }

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wavemind"
-version = "2.12.1"
+version = "2.13.0"
 description = "Adaptive, local-first memory infrastructure for agents and applications"
 readme = "README.md"
 license = "MIT"
@@ -39,6 +39,8 @@ dependencies = [
   "uvicorn[standard]>=0.27",
   "pydantic>=2",
   "pypdf>=4",
+  "packaging>=24",
+  "psutil>=5.9",
 ]
 
 [project.optional-dependencies]

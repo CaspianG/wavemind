@@ -266,6 +266,7 @@ def _serialized_sqlite(method):
 class SQLiteMemoryStore:
     def __init__(self, path: str | Path | None = None):
         self.path = str(path or ":memory:")
+        self._initialize_schema_ledger = self.path == ":memory:" or not Path(self.path).exists()
         if self.path != ":memory:":
             Path(self.path).parent.mkdir(parents=True, exist_ok=True)
         self._connection_lock = RLock()
@@ -297,6 +298,13 @@ class SQLiteMemoryStore:
 
     @_serialized_sqlite
     def ensure_schema(self) -> None:
+        from . import __version__
+        from .schema_migrations import (
+            CORE_COMPONENT,
+            ensure_schema_migration,
+            validate_runtime_schema,
+        )
+
         self.conn.execute(
             """
             CREATE TABLE IF NOT EXISTS memories (
@@ -334,6 +342,15 @@ class SQLiteMemoryStore:
         self.conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_events_action ON audit_events(action)")
         self.conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_events_namespace ON audit_events(namespace)")
         self.conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_events_created_at ON audit_events(created_at)")
+        if self._initialize_schema_ledger:
+            ensure_schema_migration(
+                self.conn,
+                CORE_COMPONENT,
+                release=__version__,
+            )
+            self._initialize_schema_ledger = False
+        else:
+            validate_runtime_schema(self.conn, CORE_COMPONENT)
         self.conn.commit()
 
     @_serialized_sqlite

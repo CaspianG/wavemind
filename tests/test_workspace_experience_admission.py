@@ -89,6 +89,9 @@ def test_workspace_experience_gap_matrix_is_not_final_admission() -> None:
     freshness = rows["frozen-real-work-benchmark-v5"]["details"]["freshness"]
     assert freshness["quality_fresh"] is True
     assert freshness["allowed_operational_changes"]
+    assert "wavemind/experience.py" in {
+        row["path"] for row in freshness["allowed_operational_changes"]
+    }
     assert (
         rows["current-workspace-operational-evidence"]["status"] == "required_current"
     )

@@ -158,7 +158,10 @@ def test_docker_files_track_runtime_package_version():
 
     assert "pytest" not in requirements
     assert "httpx" not in requirements
-    assert f"image: wavemind:{wavemind.__version__}" in compose
+    assert (
+        f"image: ${{WAVEMIND_IMAGE:-ghcr.io/caspiang/wavemind:{wavemind.__version__}}}"
+        in compose
+    )
 
 
 def test_dockerfile_copies_readme_before_editable_install():

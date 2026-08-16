@@ -383,7 +383,7 @@ from .work_agent import (
     WorkRuntime,
 )
 
-__version__ = "2.12.1"
+__version__ = "2.13.0"
 
 __all__ = [
     "FieldProjector",

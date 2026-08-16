@@ -3,6 +3,13 @@ FROM python:3.11-slim
 ARG INSTALL_OPTIONAL=false
 ARG INSTALL_OTEL=false
 ARG INSTALL_PRODUCTION=false
+ARG WAVEMIND_VERSION=dev
+ARG VCS_REF=unknown
+
+LABEL org.opencontainers.image.title="WaveMind" \
+      org.opencontainers.image.version="${WAVEMIND_VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.source="https://github.com/CaspianG/wavemind"
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1

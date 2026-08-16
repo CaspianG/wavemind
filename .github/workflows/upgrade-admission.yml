@@ -1,0 +1,176 @@
+name: upgrade-admission
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: upgrade-admission-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  upgrade-platform-matrix:
+    name: upgrade (${{ matrix.os }}, py${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install upgrade test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Run bounded upgrade and admission tests
+        if: runner.os != 'Windows'
+        env:
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+        run: |
+          python -m pytest -q tests/test_upgrade.py
+          python -m pytest -q tests/test_upgrade_admission.py
+
+      - name: Run bounded Windows tests with exact pytest verdicts
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+        run: |
+          $ErrorActionPreference = 'Continue'
+          $verdict = Join-Path $env:RUNNER_TEMP 'pytest-verdict.txt'
+          $stdout = Join-Path $env:RUNNER_TEMP 'pytest-stdout.txt'
+          $stderr = Join-Path $env:RUNNER_TEMP 'pytest-stderr.txt'
+
+          function Invoke-ExactPytest([string[]] $Arguments) {
+            Remove-Item -LiteralPath $verdict, $stdout, $stderr -ErrorAction SilentlyContinue
+            $env:WAVEMIND_PYTEST_VERDICT_PATH = $verdict
+            $env:WAVEMIND_PYTEST_ARGS_JSON = ConvertTo-Json -Compress $Arguments
+            $startInfo = @{
+              FilePath = 'python'
+              ArgumentList = 'benchmarks/pytest_exact_exit.py'
+              WindowStyle = 'Hidden'
+              Wait = $true
+              PassThru = $true
+              RedirectStandardOutput = $stdout
+              RedirectStandardError = $stderr
+            }
+            $process = Start-Process @startInfo
+            if (Test-Path -LiteralPath $stdout) { Get-Content -LiteralPath $stdout }
+            if (Test-Path -LiteralPath $stderr) { Get-Content -LiteralPath $stderr }
+            if (-not (Test-Path -LiteralPath $verdict)) {
+              throw "pytest did not produce a verdict file (launcher exit $($process.ExitCode))"
+            }
+            $pytestCode = [int](Get-Content -Raw -LiteralPath $verdict).Trim()
+            if ($pytestCode -ne 0) { exit $pytestCode }
+            $global:LASTEXITCODE = 0
+          }
+
+          $env:WAVEMIND_PYTEST_SHARD_COUNT = '3'
+          foreach ($index in 0..2) {
+            $env:WAVEMIND_PYTEST_SHARD_INDEX = [string]$index
+            Invoke-ExactPytest @('-q', 'tests/test_upgrade.py', '-k', 'not external_python_process_holding_database_is_reported')
+          }
+          Remove-Item Env:\WAVEMIND_PYTEST_SHARD_COUNT
+          Remove-Item Env:\WAVEMIND_PYTEST_SHARD_INDEX
+          Invoke-ExactPytest @('-q', 'tests/test_upgrade_admission.py')
+          Invoke-ExactPytest @('-q', 'tests/test_upgrade.py::test_external_python_process_holding_database_is_reported')
+          Remove-Item Env:\WAVEMIND_PYTEST_VERDICT_PATH
+          Remove-Item Env:\WAVEMIND_PYTEST_ARGS_JSON
+          exit 0
+
+  exact-sha-upgrade-admission:
+    needs: upgrade-platform-matrix
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install admission dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]" build
+
+      - name: Build exact-SHA wheel and image
+        run: |
+          python -m build --wheel
+          VERSION="$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')"
+          WHEEL="$(find dist -maxdepth 1 -name 'wavemind-*.whl' -print -quit)"
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+          echo "WHEEL=${WHEEL}" >> "$GITHUB_ENV"
+          echo "WHEEL_SHA256=$(sha256sum "$WHEEL" | cut -d' ' -f1)" >> "$GITHUB_ENV"
+          docker build \
+            --build-arg "WAVEMIND_VERSION=${VERSION}" \
+            --build-arg "VCS_REF=${GITHUB_SHA}" \
+            --tag "wavemind:upgrade-${GITHUB_SHA}" \
+            .
+
+      - name: Run bounded operational failure matrix
+        run: |
+          python benchmarks/upgrade_operational_evidence.py \
+            --output "${RUNNER_TEMP}/upgrade-operational.json"
+
+      - name: Run real N-2 and N-1 Python package upgrades
+        run: |
+          python benchmarks/upgrade_python_cross_version.py \
+            --candidate-wheel "$WHEEL" \
+            --candidate-sha256 "$WHEEL_SHA256" \
+            --source-version 2.11.0 \
+            --source-version 2.12.1 \
+            --work-root "${RUNNER_TEMP}/cross-version" \
+            --output "${RUNNER_TEMP}/upgrade-cross-version.json"
+
+      - name: Run real Docker Compose upgrade and rollback
+        run: |
+          python benchmarks/upgrade_docker_compose.py \
+            --candidate-image "wavemind:upgrade-${GITHUB_SHA}" \
+            --candidate-wheel "$WHEEL" \
+            --candidate-sha256 "$WHEEL_SHA256" \
+            --old-image ghcr.io/caspiang/wavemind:2.12.1 \
+            --expected-source-sha "$GITHUB_SHA" \
+            --work-root "${RUNNER_TEMP}/compose-upgrade" \
+            --output "${RUNNER_TEMP}/upgrade-docker-compose.json"
+
+      - name: Enforce exact-SHA upgrade admission
+        run: |
+          python benchmarks/upgrade_admission.py \
+            --operational "${RUNNER_TEMP}/upgrade-operational.json" \
+            --cross-version "${RUNNER_TEMP}/upgrade-cross-version.json" \
+            --docker-compose "${RUNNER_TEMP}/upgrade-docker-compose.json" \
+            --expected-source-sha "$GITHUB_SHA" \
+            --output "${RUNNER_TEMP}/upgrade-admission.json" \
+            --markdown-output "${RUNNER_TEMP}/UPGRADE_ADMISSION.md" \
+            --require-admitted
+
+      - name: Upload exact-SHA upgrade evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: upgrade-admission-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/upgrade-operational.json
+            ${{ runner.temp }}/upgrade-cross-version.json
+            ${{ runner.temp }}/upgrade-docker-compose.json
+            ${{ runner.temp }}/upgrade-admission.json
+            ${{ runner.temp }}/UPGRADE_ADMISSION.md

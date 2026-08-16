@@ -49,6 +49,11 @@ QUALITY_FRESHNESS_ALLOWLIST = {
         "6cf07bb1a8fad1cc6c73143590d90aac3ba52991",
         "527c070dc3a528dcda559779098ad5659e841d82",
     ): "workspace config path hardening only; packet selection, compiler, runtime, firewall, and v5 protocol are unchanged",
+    (
+        "wavemind/experience.py",
+        "e66d6cbfba2b42f767380790484bab947f870f90",
+        "9a6811c7caa87ca4c65c46558664d30aeb8bff22",
+    ): "upgrade schema-ledger initialization and runtime compatibility validation only; candidate selection, scoring, compiler, runtime, firewall, and v5 protocol are unchanged",
 }
 
 

@@ -69,6 +69,7 @@ from .memory_safety_admission import (
     render_memory_safety_admission_markdown,
 )
 from .product_backup import create_product_backup, restore_product_backup
+from .upgrade import UpgradeError, UpgradeOptions, run_upgrade
 from .integration_admission import (
     evaluate_integration_admission,
     render_integration_admission_markdown,
@@ -1764,6 +1765,57 @@ def build_parser() -> argparse.ArgumentParser:
     product_restore.add_argument("--experience-to", required=True)
     product_restore.add_argument("--overwrite", action="store_true")
 
+    upgrade = sub.add_parser(
+        "upgrade",
+        help="Safely upgrade WaveMind with verified backup and automatic rollback",
+    )
+    upgrade.add_argument("--to", dest="target", default="latest")
+    upgrade.add_argument(
+        "--mode",
+        choices=["auto", "python", "docker-compose"],
+        default="auto",
+    )
+    upgrade.add_argument(
+        "--experience-db",
+        default=os.environ.get("WAVEMIND_EXPERIENCE_DB"),
+    )
+    upgrade.add_argument(
+        "--backup-dir",
+        type=Path,
+        default=Path(os.environ.get("WAVEMIND_BACKUP_ROOT", ".wavemind/backups")),
+    )
+    upgrade.add_argument(
+        "--state-dir",
+        type=Path,
+        default=Path(os.environ.get("WAVEMIND_UPGRADE_STATE", ".wavemind/upgrade")),
+    )
+    upgrade.add_argument("--config", type=Path, action="append", default=[])
+    upgrade.add_argument(
+        "--object-store-manifest",
+        type=Path,
+        action="append",
+        default=[],
+    )
+    upgrade.add_argument("--artifact", type=Path)
+    upgrade.add_argument("--current-artifact", type=Path)
+    upgrade.add_argument("--expected-sha256")
+    upgrade.add_argument("--current-expected-sha256")
+    upgrade.add_argument("--allow-downgrade", action="store_true")
+    upgrade.add_argument("--dry-run", action="store_true")
+    upgrade.add_argument("--compose-file", type=Path)
+    upgrade.add_argument("--compose-env-file", type=Path)
+    upgrade.add_argument("--compose-service", default="wavemind")
+    upgrade.add_argument("--image-repository", default="ghcr.io/caspiang/wavemind")
+    upgrade.add_argument("--target-image")
+    upgrade.add_argument("--expected-image-digest")
+    upgrade.add_argument("--minimum-free-bytes", type=int, help=argparse.SUPPRESS)
+    upgrade.add_argument(
+        "--inject-failure",
+        choices=["preflight", "backup", "staged_migration", "code_activation", "data_activation", "health"],
+        help=argparse.SUPPRESS,
+    )
+    upgrade.add_argument("--json", action="store_true")
+
     restore = sub.add_parser("restore", help="Restore a SQLite backup")
     restore.add_argument("--from", dest="source", required=True)
     restore.add_argument("--to", dest="destination")
@@ -2001,6 +2053,29 @@ def _env_int(name: str, *, default: int = 0) -> int:
     if raw is None or raw.strip() == "":
         return default
     return int(raw)
+
+
+def _compose_defines_service(path: Path, service: str) -> bool:
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return False
+    in_services = False
+    services_indent = 0
+    for line in lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        indent = len(line) - len(line.lstrip())
+        if stripped == "services:":
+            in_services = True
+            services_indent = indent
+            continue
+        if in_services and indent <= services_indent:
+            in_services = False
+        if in_services and stripped.rstrip() == f"{service}:":
+            return True
+    return False
 
 
 def _is_loopback_host(host: str) -> bool:
@@ -3150,6 +3225,92 @@ def main(argv: list[str] | None = None) -> int:
         else:
             print_doctor(payload)
         return 0 if payload["status"] == "pass" else 2
+
+    if args.command == "upgrade":
+        if args.store not in {None, "sqlite"}:
+            message = "wavemind upgrade currently supports SQLite state; PostgreSQL is unchanged"
+            if args.json:
+                print(json.dumps({"status": "blocked", "error": message}, ensure_ascii=False))
+            else:
+                print(f"blocked: {message}", file=sys.stderr)
+            return 4
+        mode = args.mode
+        if mode == "auto":
+            default_compose = Path.cwd() / "docker-compose.yml"
+            mode = (
+                "docker-compose"
+                if args.compose_file
+                or _compose_defines_service(default_compose, args.compose_service)
+                else "python"
+            )
+        core_db = Path(args.db) if args.db else (
+            Path.cwd() / "data" / "wavemind.sqlite3"
+            if mode == "docker-compose"
+            else Path.cwd() / "wavemind.sqlite3"
+        )
+        experience_db = Path(args.experience_db) if args.experience_db else (
+            Path.cwd() / "data" / "wavemind-experience.sqlite3"
+            if mode == "docker-compose"
+            else core_db.with_name("wavemind-experience.sqlite3")
+        )
+        compose_file = args.compose_file
+        compose_env_file = args.compose_env_file
+        configs = list(args.config)
+        if mode == "docker-compose":
+            compose_file = compose_file or Path.cwd() / "docker-compose.yml"
+            compose_env_file = compose_env_file or compose_file.parent / ".env"
+            if compose_env_file not in configs:
+                configs.append(compose_env_file)
+        options = UpgradeOptions(
+            core_db=core_db,
+            experience_db=experience_db,
+            target=args.target,
+            mode=mode,
+            backup_dir=args.backup_dir,
+            state_dir=args.state_dir,
+            config_paths=tuple(configs),
+            object_manifest_paths=tuple(args.object_store_manifest),
+            target_artifact=args.artifact,
+            current_artifact=args.current_artifact,
+            expected_sha256=args.expected_sha256,
+            current_expected_sha256=args.current_expected_sha256,
+            allow_downgrade=args.allow_downgrade,
+            dry_run=args.dry_run,
+            compose_file=compose_file,
+            compose_env_file=compose_env_file,
+            compose_service=args.compose_service,
+            image_repository=args.image_repository,
+            target_image=args.target_image,
+            expected_image_digest=args.expected_image_digest,
+            minimum_free_bytes=args.minimum_free_bytes,
+            failure_phase=args.inject_failure,
+        )
+        try:
+            report = run_upgrade(options)
+        except UpgradeError as exc:
+            if args.json:
+                print(
+                    json.dumps(
+                        {"status": "blocked", "error": str(exc)},
+                        ensure_ascii=False,
+                        indent=2,
+                    )
+                )
+            else:
+                print(f"blocked: {exc}", file=sys.stderr)
+            return 4
+        payload = report.as_dict()
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print(f"upgrade: {payload['status']}")
+            print(f"version: {payload['source_version']} -> {payload['target_version']}")
+            if payload["backup_path"]:
+                print(f"backup: {payload['backup_path']}")
+            print(f"journal: {payload['journal_path']}")
+            if payload["parity"]:
+                print("data_parity: pass")
+        return 0
 
     if args.command == "test":
         import pytest
