@@ -1,8 +1,11 @@
 # WaveMind Market and Product Audit
 
-**Date:** 2026-08-16  
-**Decision horizon:** now, 6, 12, and 18 months  
-**Repository reviewed:** `CaspianG/wavemind` through `e7a688b5eaeeb00c34bf740c79e287ee02f25cce`  
+**Date:** 2026-08-16
+
+**Decision horizon:** now, 6, 12, and 18 months
+
+**Repository reviewed:** `CaspianG/wavemind` through `e7a688b5eaeeb00c34bf740c79e287ee02f25cce`
+
 **Claim rule:** repository evidence is historical unless an exact-SHA workflow artifact says otherwise.
 
 ## Executive decision
