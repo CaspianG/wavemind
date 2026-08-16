@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+import pytest
+
 from benchmarks.long_memory_evidence_benchmark import (
     EvidenceDataset,
     EvidenceQuery,
@@ -9,6 +11,7 @@ from benchmarks.long_memory_evidence_benchmark import (
 )
 from benchmarks.public_memory_competitors import (
     run_hindsight_evidence,
+    run_langgraph_store_evidence,
     run_mem0_evidence,
 )
 
@@ -137,6 +140,106 @@ def test_mem0_adapter_uses_real_metadata_provenance_and_namespace_filters():
     assert all(memory.vector_store.client.closed for memory in created)
 
 
+class FakeStoreItem:
+    def __init__(self, key: str, value: dict[str, Any]) -> None:
+        self.key = key
+        self.value = value
+
+
+class FakeLangGraphStore:
+    def __init__(self, index: dict[str, Any]) -> None:
+        self.index = index
+        self.rows: dict[tuple[str, ...], list[FakeStoreItem]] = {}
+        self.closed = False
+
+    def put(
+        self,
+        namespace: tuple[str, ...],
+        key: str,
+        value: dict[str, Any],
+        *,
+        index: list[str],
+    ) -> None:
+        assert index == ["text"]
+        self.rows.setdefault(namespace, []).append(FakeStoreItem(key, value))
+
+    def search(
+        self,
+        namespace: tuple[str, ...],
+        *,
+        query: str,
+        limit: int,
+    ) -> list[FakeStoreItem]:
+        candidates = list(self.rows.get(namespace, []))
+        if "trade" in query.lower():
+            candidates.sort(key=lambda row: "trades" not in row.value["text"])
+        return candidates[:limit]
+
+    def close(self) -> None:
+        self.closed = True
+
+
+def test_langgraph_store_uses_shared_encoder_namespace_and_provenance():
+    created: list[FakeLangGraphStore] = []
+
+    class FakeEncoder:
+        vector_dim = 2
+
+        def encode_vector(self, _text: str):
+            return FakeVector([1.0, 0.0])
+
+        def encode_vectors(self, texts: list[str]):
+            return FakeVector([[1.0, 0.0] for _ in texts])
+
+    class FakeVector(list):
+        def tolist(self):
+            return list(self)
+
+    def factory(index: dict[str, Any]) -> FakeLangGraphStore:
+        store = FakeLangGraphStore(index)
+        created.append(store)
+        return store
+
+    result = run_langgraph_store_evidence(
+        _dataset(),
+        FakeEncoder(),
+        1,
+        store_factory=factory,
+    )
+
+    assert result.engine == "LangGraph BaseStore"
+    assert result.precision_at_1 == 1.0
+    assert result.provenance_mode == "value.evidence_id"
+    assert result.ingest_scope == (
+        "end_to_end_shared_embedding_and_in_memory_persistence"
+    )
+    assert created[0].index["dims"] == 2
+    assert created[0].index["fields"] == ["text"]
+    assert set(created[0].rows) == {
+        ("conversation-a", "memories"),
+        ("conversation-b", "memories"),
+    }
+    assert created[0].closed is True
+
+
+def test_real_langgraph_store_adapter():
+    pytest.importorskip("langgraph.store.memory")
+    from wavemind.encoders import HashingTextEncoder
+
+    result = run_langgraph_store_evidence(
+        _dataset(),
+        HashingTextEncoder(vector_dim=64),
+        3,
+    )
+
+    assert result.engine == "LangGraph BaseStore"
+    assert result.queries == 2
+    assert result.evidence_recall_at_k == 1.0
+    assert result.system_version != "unknown"
+    assert result.embedding_profile == "shared:HashingTextEncoder"
+    assert result.provenance_mode == "value.evidence_id"
+
+
 class FakeHindsightTransport:
     def __init__(self) -> None:
         self.banks: dict[str, list[dict[str, Any]]] = {}
@@ -232,3 +335,4 @@ def test_hindsight_adapter_scores_document_provenance_and_cleans_banks():
         for item in payload["items"]
         if item["document_id"] != "conversation-a::D1:1"
     )
+
