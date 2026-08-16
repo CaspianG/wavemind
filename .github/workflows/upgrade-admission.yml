@@ -53,15 +53,28 @@ jobs:
           PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
         run: |
           $ErrorActionPreference = 'Continue'
-          $PSNativeCommandUseErrorActionPreference = $false
           $verdict = Join-Path $env:RUNNER_TEMP 'pytest-verdict.txt'
+          $stdout = Join-Path $env:RUNNER_TEMP 'pytest-stdout.txt'
+          $stderr = Join-Path $env:RUNNER_TEMP 'pytest-stderr.txt'
 
           function Invoke-ExactPytest([string[]] $Arguments) {
-            Remove-Item -LiteralPath $verdict -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $verdict, $stdout, $stderr -ErrorAction SilentlyContinue
             $env:WAVEMIND_PYTEST_VERDICT_PATH = $verdict
-            & python benchmarks/pytest_exact_exit.py @Arguments 2>&1
+            $env:WAVEMIND_PYTEST_ARGS_JSON = ConvertTo-Json -Compress $Arguments
+            $startInfo = @{
+              FilePath = 'python'
+              ArgumentList = 'benchmarks/pytest_exact_exit.py'
+              WindowStyle = 'Hidden'
+              Wait = $true
+              PassThru = $true
+              RedirectStandardOutput = $stdout
+              RedirectStandardError = $stderr
+            }
+            $process = Start-Process @startInfo
+            if (Test-Path -LiteralPath $stdout) { Get-Content -LiteralPath $stdout }
+            if (Test-Path -LiteralPath $stderr) { Get-Content -LiteralPath $stderr }
             if (-not (Test-Path -LiteralPath $verdict)) {
-              throw 'pytest did not produce a verdict file'
+              throw "pytest did not produce a verdict file (launcher exit $($process.ExitCode))"
             }
             $pytestCode = [int](Get-Content -Raw -LiteralPath $verdict).Trim()
             if ($pytestCode -ne 0) { exit $pytestCode }
@@ -72,6 +85,7 @@ jobs:
           Invoke-ExactPytest @('-q', 'tests/test_upgrade_admission.py')
           Invoke-ExactPytest @('-q', 'tests/test_upgrade.py::test_external_python_process_holding_database_is_reported')
           Remove-Item Env:\WAVEMIND_PYTEST_VERDICT_PATH
+          Remove-Item Env:\WAVEMIND_PYTEST_ARGS_JSON
           exit 0
 
   exact-sha-upgrade-admission:
