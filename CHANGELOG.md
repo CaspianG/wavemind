@@ -180,4 +180,3 @@ for earlier versions and attached evidence bundles.
 [2.8.0]: https://github.com/CaspianG/wavemind/compare/v2.7.0...v2.8.0
 [2.7.0]: https://github.com/CaspianG/wavemind/compare/v2.6.3...v2.7.0
 [2.6.3]: https://github.com/CaspianG/wavemind/compare/v2.6.2...v2.6.3
-

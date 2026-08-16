@@ -27,4 +27,3 @@ def test_product_status_rejects_version_and_npm_claim_drift():
 
     assert any("expected 999.0.0" in error for error in errors)
     assert "npm publication claim must remain disabled until verified" in errors
-

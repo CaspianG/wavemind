@@ -229,4 +229,3 @@ verified competitor customer counts, revenue, hosted throughput, or answer
 quality. The checked LoCoMo comparison is retrieval-only and uses non-equivalent
 native embedding/ingest paths for some systems. Current public package and
 release state can change after the report date.
-

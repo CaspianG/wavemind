@@ -45,4 +45,3 @@
   },
   "claim_boundary": "Checked-in admission files are historical snapshots after their source commit changes. Current claims require exact source SHA, source manifest, integrity validation, and a successful Safe Product workflow."
 }
-

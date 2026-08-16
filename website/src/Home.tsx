@@ -199,4 +199,3 @@ export default function Home() {
 }
 
 function LanguageSwitch({ language, setLanguage }: { language: Language; setLanguage: (language: Language) => void }) { return <div className="mi-language" aria-label="Language"><button className={language === "en" ? "active" : ""} onClick={() => setLanguage("en")}>EN</button><span>·</span><button className={language === "ru" ? "active" : ""} onClick={() => setLanguage("ru")}>RU</button></div>; }
-

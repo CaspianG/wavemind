@@ -695,4 +695,3 @@ artifact before they are added to README.
 
 ## License
 MIT. See [LICENSE](LICENSE).
-

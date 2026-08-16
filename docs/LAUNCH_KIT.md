@@ -409,4 +409,3 @@ Track weekly:
   <https://docs.github.com/articles/classifying-your-repository-with-topics>
 - X normal posts should fit the 280-character path unless using Premium long
   posts. Keep launch posts short enough to work on a normal account.
-
