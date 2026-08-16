@@ -56,14 +56,14 @@ jobs:
 
       - name: Run real task-native competitors
         run: |
-          python benchmarks/competitive_task_benchmark.py \
+          python -m benchmarks.competitive_task_benchmark \
             --source-sha "$GITHUB_SHA" \
             --repeats 5 \
             --output "${RUNNER_TEMP}/competitive-task-benchmark.json"
 
       - name: Enforce exact-SHA competitive admission
         run: |
-          python benchmarks/competitive_task_admission.py \
+          python -m benchmarks.competitive_task_admission \
             --benchmark "${RUNNER_TEMP}/competitive-task-benchmark.json" \
             --expected-source-sha "$GITHUB_SHA" \
             --output "${RUNNER_TEMP}/competitive-task-admission.json" \

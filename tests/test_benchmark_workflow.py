@@ -522,8 +522,8 @@ def test_competitive_task_workflow_is_exact_sha_and_fail_closed():
     ):
         assert package in workflow
     assert "python -m pip check" in workflow
-    assert "benchmarks/competitive_task_benchmark.py" in workflow
-    assert "benchmarks/competitive_task_admission.py" in workflow
+    assert "python -m benchmarks.competitive_task_benchmark" in workflow
+    assert "python -m benchmarks.competitive_task_admission" in workflow
     assert '--source-sha "$GITHUB_SHA"' in workflow
     assert '--expected-source-sha "$GITHUB_SHA"' in workflow
     assert "--fail-on-blocked" in workflow
