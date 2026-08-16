@@ -39,14 +39,14 @@ jobs:
           python -m pip install -e ".[dev]"
 
       - name: Run bounded upgrade and admission tests
-        # Keep the subprocess-heavy upgrade tests isolated from the admission
-        # manifest checks. On Windows, carrying the full process state into the
-        # second module can interrupt Git-for-Windows while it resolves HEAD.
+        # The real process-holder regression is last and isolated so Windows
+        # console/process teardown cannot interrupt a later assertion.
         env:
           PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
         run: |
-          python benchmarks/pytest_exact_exit.py -q tests/test_upgrade.py
+          python benchmarks/pytest_exact_exit.py -q tests/test_upgrade.py -k "not external_python_process_holding_database_is_reported"
           python benchmarks/pytest_exact_exit.py -q tests/test_upgrade_admission.py
+          python benchmarks/pytest_exact_exit.py -q tests/test_upgrade.py::test_external_python_process_holding_database_is_reported
 
   exact-sha-upgrade-admission:
     needs: upgrade-platform-matrix
