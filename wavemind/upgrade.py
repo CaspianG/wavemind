@@ -88,6 +88,7 @@ class UpgradeOptions:
     target_artifact: Path | None = None
     current_artifact: Path | None = None
     expected_sha256: str | None = None
+    current_expected_sha256: str | None = None
     allow_downgrade: bool = False
     dry_run: bool = False
     compose_file: Path | None = None
@@ -1313,10 +1314,15 @@ def run_upgrade(
                         raise UpgradeArtifactError("downloaded wheel does not match --expected-sha256")
                 if target_key != source_key:
                     if options.current_artifact is not None:
+                        if not options.current_expected_sha256:
+                            raise UpgradeArtifactError(
+                                "--current-artifact requires --current-expected-sha256 "
+                                "to establish rollback release identity"
+                            )
                         source_artifact = verify_release_artifact(
                             options.current_artifact,
                             expected_version=source_version,
-                            expected_sha256=None,
+                            expected_sha256=options.current_expected_sha256,
                             source_url="local",
                         )
                     else:

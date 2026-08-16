@@ -119,7 +119,8 @@ def evaluate_upgrade_admission(
         and has("test_interrupted_journal")
         and has("test_live_upgrade_lock"),
         "verified_release_identity_and_checksum": has("test_checksum_mismatch")
-        and has("test_docker_local_wheel_checksum"),
+        and has("test_docker_local_wheel_checksum")
+        and has("test_offline_rollback_wheel_requires_expected_checksum"),
         "core_experience_config_object_backup": has("test_same_version_upgrade"),
         "explicit_core_experience_schema_ledger": has("test_same_version_upgrade")
         and has("test_incompatible_future_schema"),

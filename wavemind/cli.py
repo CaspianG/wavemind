@@ -1799,6 +1799,7 @@ def build_parser() -> argparse.ArgumentParser:
     upgrade.add_argument("--artifact", type=Path)
     upgrade.add_argument("--current-artifact", type=Path)
     upgrade.add_argument("--expected-sha256")
+    upgrade.add_argument("--current-expected-sha256")
     upgrade.add_argument("--allow-downgrade", action="store_true")
     upgrade.add_argument("--dry-run", action="store_true")
     upgrade.add_argument("--compose-file", type=Path)
@@ -3272,6 +3273,7 @@ def main(argv: list[str] | None = None) -> int:
             target_artifact=args.artifact,
             current_artifact=args.current_artifact,
             expected_sha256=args.expected_sha256,
+            current_expected_sha256=args.current_expected_sha256,
             allow_downgrade=args.allow_downgrade,
             dry_run=args.dry_run,
             compose_file=compose_file,

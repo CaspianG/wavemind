@@ -15,6 +15,7 @@ benchmarks only when the deployment requires them.
 | Embed WaveMind in Python or HTTP | [Examples in the README](../README.md#python-example) |
 | Choose a real application pattern | [Use Cases](USE_CASES.md) |
 | Migrate local Chroma memory | [Chroma Migration](CHROMA_MIGRATION.md) |
+| Safely upgrade Python or Docker Compose state | [Safe Upgrade Guide](UPGRADE.md) |
 
 ## Build With WaveMind
 
@@ -34,6 +35,7 @@ benchmarks only when the deployment requires them.
 | Scale plans, replication, Kubernetes, Redis, Memory OS, and production gates | [Scale And Production](SCALE_AND_PRODUCTION.md) |
 | Current limits and locked claims | [Known Limitations And Claim Boundaries](KNOWN_LIMITATIONS.md) |
 | Release validation and publishing | [Release Process](RELEASE.md) |
+| Backup, migrate, retry, and roll back an upgrade | [Safe Upgrade Guide](UPGRADE.md) |
 | Security reporting and supported use | [Security](../SECURITY.md) / [Support](../SUPPORT.md) |
 
 ## Evidence

@@ -131,6 +131,11 @@ def _options(
         "health_command": [sys.executable, "-c", "print('upgrade-health-ok')"],
     }
     values.update(overrides)
+    current_artifact = values.get("current_artifact")
+    if current_artifact is not None and "current_expected_sha256" not in values:
+        values["current_expected_sha256"] = hashlib.sha256(
+            Path(current_artifact).read_bytes()
+        ).hexdigest()
     return UpgradeOptions(**values)
 
 
@@ -761,6 +766,32 @@ def test_python_installation_failure_reinstalls_verified_source_wheel(
     assert installs == [str(target.resolve()), str(source.resolve())]
     journal = json.loads((tmp_path / "upgrade-state" / "journal.json").read_text())
     assert journal["rollback_parity_verified"] is True
+
+
+def test_offline_rollback_wheel_requires_expected_checksum(tmp_path, monkeypatch):
+    core, experience, _memory_id, _experience_id = _state(tmp_path)
+    target, target_digest = _wheel(
+        tmp_path / "wavemind-2.12.1-py3-none-any.whl", "2.12.1"
+    )
+    source, _source_digest = _wheel(
+        tmp_path / "wavemind-2.11.0-py3-none-any.whl", "2.11.0"
+    )
+    monkeypatch.setattr(upgrade, "_installed_version", lambda: "2.11.0")
+    options = _options(
+        tmp_path,
+        core,
+        experience,
+        target,
+        target_digest,
+        current_artifact=source,
+    )
+
+    with pytest.raises(UpgradeError, match="current-expected-sha256"):
+        run_upgrade(
+            UpgradeOptions(
+                **{**options.__dict__, "current_expected_sha256": None}
+            )
+        )
 
 
 def test_dry_run_does_not_create_or_change_databases(tmp_path):

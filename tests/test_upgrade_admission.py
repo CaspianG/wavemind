@@ -37,6 +37,7 @@ def _inputs(root: Path) -> tuple[dict, dict, dict]:
         "test_live_upgrade_lock_rejects_second_operator",
         "test_checksum_mismatch_is_fail_closed",
         "test_docker_local_wheel_checksum_is_verified_before_docker_mutation",
+        "test_offline_rollback_wheel_requires_expected_checksum",
         "test_production_command_runner_applies_a_hard_timeout",
         "test_process_preflight_never_queries_docker_command_line",
         "test_same_version_upgrade_adopts_legacy_ledgers_and_preserves_all_state",
