@@ -145,13 +145,16 @@ def _load_product_status(root: Path) -> dict[str, Any]:
 
 
 def _safe_product_panel(product: dict[str, Any]) -> str:
-    release = product.get("stable_release", {})
+    candidate = product.get("stable_release", {})
+    release = product.get("public_release", {})
     safe = product.get("safe_product", {})
     if not isinstance(release, dict) or not isinstance(safe, dict) or not safe:
         return ""
     rows = [
         ("Public release", f"v{release.get('version', 'unknown')}"),
         ("Runtime source", release.get("source_sha", "unknown")),
+        ("Source candidate", f"v{candidate.get('version', 'unknown')}"),
+        ("Candidate status", candidate.get("publication_status", "unknown")),
         ("Checked-in status", safe.get("checked_in_status", "missing")),
         (
             "Checked-in checks",
@@ -860,3 +863,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

@@ -2,10 +2,12 @@
 
 # WaveMind
 
-**Adaptive memory infrastructure for agents and applications that need to learn from experience.**
+**Verified experience for coding, support, and operations agents that repeat consequential work.**
 
-WaveMind gives long-running software a durable, inspectable memory layer. It remembers facts, preferences,
-state changes, workflows, errors, and feedback; returns compact relevant context; reinforces what works, suppresses stale information, and forgets on purpose.
+WaveMind turns independently verified tool work into compact, cited Experience
+Packets for the next run. Every packet keeps provenance, applicability
+boundaries, correction and rollback instead of asking an agent to trust an
+opaque history dump.
 
 <p><a href="https://pypi.org/project/wavemind/"><strong>PyPI</strong></a> &middot; <a href="https://github.com/CaspianG/wavemind/actions/workflows/full-check.yml">Build status</a> &middot; <a href="https://github.com/CaspianG/wavemind/releases/latest">Latest release</a> &middot; <a href="https://github.com/CaspianG/wavemind/blob/main/pyproject.toml">Python &gt;=3.10</a> &middot; <a href="LICENSE">MIT</a></p>
 
@@ -21,6 +23,21 @@ state changes, workflows, errors, and feedback; returns compact relevant context
 </p>
 
 </div>
+
+## Built For Repeated Agent Work
+
+| Team | Pain WaveMind targets | First useful result |
+|---|---|---|
+| Coding agents | Repeating a known repository, build, test, or tool failure | Replay one verified fix with repository and environment scope |
+| Support and CRM agents | Reusing stale policy or leaking state between customers | Apply one independently verified resolution inside a customer namespace |
+| Browser and operations agents | Repeating an obsolete navigation or runbook step | Reuse a cited procedure after an external-state check |
+| Agent-platform teams | Rebuilding provenance, promotion, deletion, and rollback per framework | Share one governed Experience Packet contract across providers |
+| Private workflows | Learning without a reviewable source or exit path | Keep verified experience local, inspectable, and reversible |
+
+The flagship loop is `trace -> independent verification -> Experience Packet
+-> better next run -> explainable diff -> rollback`. The dated
+[market and product audit](docs/MARKET_AUDIT_2026-08-16.md) records the user,
+competitor, forecast, gap, decision, and roadmap evidence behind that focus.
 
 ## What Makes It Different
 
@@ -48,7 +65,8 @@ claim that one vector database should replace every other system.
 
 | Product truth | Status | Evidence |
 |---|---|---|
-| Public release | `v2.13.0`; runtime source `6e30491b8a47` | PyPI package `wavemind` and `ghcr.io/caspiang/wavemind:2.13.0` |
+| Public release | `v2.12.1`; runtime source `6d6fac04904b` | PyPI package `wavemind` and `ghcr.io/caspiang/wavemind:2.12.1` |
+| Release candidate | `v2.13.0` at `a23283123eb3`; `blocked` until its tag exists | Upgrade admission `admitted_19_of_19`; tag-only release workflow |
 | Safe Product snapshot | `historical`, 18/18 checks at `92c539d0a069` | [`benchmarks/safe_product_admission_results.json`](benchmarks/safe_product_admission_results.json) |
 | Current-source admission | Required per exact source SHA | [`.github/workflows/safe-product.yml`](.github/workflows/safe-product.yml) |
 | TypeScript SDK | `@wavemind/http`, repository-local; npm claim disabled | Repository package only |
@@ -102,12 +120,20 @@ Want to see and manage memory in a browser?
 wavemind studio
 ```
 
-Want a runnable project that produces a trusted Experience Packet?
+Want the differentiated five-minute loop instead of a generic add/search demo?
 
 ```sh
 wavemind init my-agent --template python
 cd my-agent
 python app.py
+```
+
+The starter runs a cold attempt, records independently verified outcomes,
+promotes a bounded procedure only after its evidence threshold, and reuses a
+cited packet. For the explicit cold-run -> packet -> replay -> rollback example:
+
+```sh
+python examples/verified_experience_runtime.py
 ```
 
 Use `--template typescript`, `--template mcp`, or `--template docker` for the
@@ -667,7 +693,7 @@ Near-term priorities:
 - admit task-native measurement validity before resuming product quality tuning;
 - demonstrate paired generalizable benefit on an agent/workflow family and an independent memory family;
 - combine fast FAISS, Qdrant, or pgvector retrieval with bounded WaveMind reranking;
-- after quality admission, deliver safe one-command upgrades with rollback before WaveMind Connect;
+- publish the already admitted safe one-command upgrade candidate before WaveMind Connect;
 - complete multi-region and 100M scale claims only on matching infrastructure.
 
 Longer-term direction:
@@ -697,3 +723,4 @@ artifact before they are added to README.
 
 ## License
 MIT. See [LICENSE](LICENSE).
+

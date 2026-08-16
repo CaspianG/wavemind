@@ -11,6 +11,8 @@ def test_canonical_product_status_matches_packages_and_public_docs():
     assert status["schema"] == "wavemind.product_status.v1"
     assert consistency_errors(status) == []
     assert status["safe_product"]["checked_in_status"] == "historical"
+    assert status["stable_release"]["publication_status"] == "unpublished_candidate"
+    assert status["public_release"]["version"] == "2.12.1"
     assert status["typescript"]["package_name"] == "@wavemind/http"
     assert status["typescript"]["npm_published"] is False
 
@@ -25,3 +27,4 @@ def test_product_status_rejects_version_and_npm_claim_drift():
 
     assert any("expected 999.0.0" in error for error in errors)
     assert "npm publication claim must remain disabled until verified" in errors
+
