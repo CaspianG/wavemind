@@ -28,7 +28,9 @@ def load_status() -> dict:
 
 
 def render_status(status: dict, *, docs_path: bool) -> str:
-    release = status["stable_release"]
+    candidate = status["stable_release"]
+    release = status["public_release"]
+    release_candidate = status["release_candidate"]
     safe = status["safe_product"]
     artifact = (
         "../" + safe["artifact"] if docs_path else safe["artifact"]
@@ -48,6 +50,7 @@ def render_status(status: dict, *, docs_path: bool) -> str:
             "| Product truth | Status | Evidence |",
             "|---|---|---|",
             f"| Public release | `v{release['version']}`; runtime source `{release['source_sha'][:12]}` | PyPI package `{release['python_package']}` and `{release['container']}` |",
+            f"| Release candidate | `v{candidate['version']}` at `{candidate['source_sha'][:12]}`; `{release_candidate['publication_status']}` until its tag exists | Upgrade admission `{release_candidate['upgrade_admission']}`; tag-only release workflow |",
             f"| Safe Product snapshot | `{safe['checked_in_status']}`, {safe['checked_in_checks_passed']}/{safe['checked_in_checks_total']} checks at `{safe['checked_in_source_sha'][:12]}` | [`{safe['artifact']}`]({artifact}) |",
             f"| Current-source admission | Required per exact source SHA | [`{safe['current_claim_source']}`]({workflow}) |",
             f"| TypeScript SDK | `{status['typescript']['package_name']}`, {status['typescript']['distribution']}; npm claim disabled | Repository package only |",
@@ -105,6 +108,10 @@ def consistency_errors(status: dict) -> list[str]:
         errors.append("TypeScript package name differs from product status")
     if status["typescript"]["npm_published"] is not False:
         errors.append("npm publication claim must remain disabled until verified")
+    if status["stable_release"].get("publication_status") != "unpublished_candidate":
+        errors.append("source version must remain an unpublished candidate until verified")
+    if status["public_release"].get("version") == expected:
+        errors.append("public release must not equal the unpublished source candidate")
     for target in TARGETS:
         expected_block = render_status(
             status,

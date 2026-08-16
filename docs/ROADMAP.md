@@ -1,12 +1,14 @@
 # WaveMind Roadmap
 
-WaveMind is an early dynamic-memory engine. The current core is intentionally
-local-first: SQLite for durable state, vector search for candidates, and a
-wave-field layer for hotness, decay, TTL, priority, namespaces, and graph
-dynamics.
+WaveMind is a local-first verified-experience layer for agents that repeat
+consequential work. SQLite and optional service indexes provide durable memory;
+the product focus is the governed lifecycle from trace and independent
+verification to scoped reuse, explanation, and rollback.
 
-This roadmap is the path from a useful local library to a memory layer that can
-handle larger systems, attract contributors, and become credible in production.
+This roadmap is constrained by the dated
+[market and product audit](MARKET_AUDIT_2026-08-16.md). Task value and user
+demand come before new modalities, storage engines, Kubernetes, multi-region,
+or large-scale infrastructure work.
 
 <!-- product-status:start -->
 > WaveMind is the trust layer that lets agents learn from completed work without silently learning incorrect behavior.
@@ -15,7 +17,8 @@ handle larger systems, attract contributors, and become credible in production.
 
 | Product truth | Status | Evidence |
 |---|---|---|
-| Public release | `v2.13.0`; runtime source `6e30491b8a47` | PyPI package `wavemind` and `ghcr.io/caspiang/wavemind:2.13.0` |
+| Public release | `v2.12.1`; runtime source `6d6fac04904b` | PyPI package `wavemind` and `ghcr.io/caspiang/wavemind:2.12.1` |
+| Release candidate | `v2.13.0` at `a23283123eb3`; `blocked` until its tag exists | Upgrade admission `admitted_19_of_19`; tag-only release workflow |
 | Safe Product snapshot | `historical`, 18/18 checks at `92c539d0a069` | [`benchmarks/safe_product_admission_results.json`](../benchmarks/safe_product_admission_results.json) |
 | Current-source admission | Required per exact source SHA | [`.github/workflows/safe-product.yml`](../.github/workflows/safe-product.yml) |
 | TypeScript SDK | `@wavemind/http`, repository-local; npm claim disabled | Repository package only |
@@ -30,11 +33,12 @@ otherwise.
 ## Strategic Sequence
 
 WaveMind's next product work is intentionally ordered. Distribution and new
-surfaces must not hide an unresolved generalization gap.
+surfaces must not hide an unresolved generalization gap or an unpublished
+release candidate.
 
-### Phase A1: Measurement Validity (Next)
+### Phase A1: Measurement Validity (Gate Implemented)
 
-WaveMind will not resume product quality tuning until its evaluator can prove
+WaveMind does not resume product quality tuning unless its evaluator can prove
 that it measures the published tasks rather than an easier retrieval proxy.
 The previous recovery lane stopped correctly after two bounded development
 candidates failed, with its held-out split unopened. It also exposed a validity
@@ -55,7 +59,7 @@ LongMemEval-V2, STATE-Bench Agent Learning, and MemOps. A lane that cannot pass
 validity is excluded from the quality claim with a recorded reason. Synthetic
 controls may validate the evaluator but cannot prove general model quality.
 
-### Phase A2: Generalizable Quality Recovery
+### Phase A2: Exact-Current Competitive Task Admission (P0 Now)
 
 The immediate goal is to create a measurable reason for an agent developer to
 switch: higher end-to-end task success, fewer stale or repeated mistakes, and
@@ -103,14 +107,15 @@ verified agent-work memory layer on the declared public scenarios and sits on
 their task-success, context, safety, and latency Pareto frontier. It is not a
 universal "fastest database" claim.
 
-### Phase B: Safe One-Command Upgrade
+### Phase B: Safe One-Command Upgrade (Implemented Candidate)
 
-After measurement validity and generalizable quality are admitted, WaveMind
-must make routine upgrades safe for persistent user memory before adding new
-distribution surfaces. This is a separate future goal; Goal 8 does not
-implement an updater.
+The `wavemind upgrade` candidate is implemented and merged at
+`a23283123eb37b187a755db7ab4c4776555198d8`. Exact-SHA admission passed all
+19/19 rows across real N-2/N-1 package upgrades, Docker Compose recreate and
+rollback, both databases, and the failure matrix. It is not a public release
+until tag `v2.13.0` triggers publication and clean wheel/container verification.
 
-The planned user entrypoint is `wavemind upgrade`. It must provide:
+The implemented user entrypoint is `wavemind upgrade`. It provides:
 
 - a preflight for current and target versions, free disk space, active writers,
   running processes, and compatibility;
@@ -137,10 +142,11 @@ checks. Helm or Kubernetes support enters the claim only after a reproducible
 test exists. A separate exact-SHA `upgrade-admission` and rollback artifact are
 mandatory before this phase is complete.
 
-### Phase C: WaveMind Connect
+### Phase C: WaveMind Connect (Deferred)
 
-After Phase A1, A2, and the Safe One-Command Upgrade phase are admitted, the
-next expansion is zero-config cross-agent verified memory: one auditable
+After competitive task admission and public verification of the Safe
+One-Command Upgrade release, the next possible expansion is zero-config
+cross-agent verified memory: one auditable
 experience lifecycle that follows a workspace across supported agents without
 silently reading private histories or rewriting user files.
 
@@ -1037,16 +1043,18 @@ Enterprise requirements:
 
 ### Short Term: 1 To 3 Months
 
-- Complete Phase A1 Measurement Validity and Phase A2 Generalizable Quality
-  Recovery. Task-native outcomes, competitor, confidence-interval, context,
-  safety, and latency gates above are the release boundary; controlled local
-  wins alone do not close it.
-- After Phase A1 and A2 are admitted, complete Safe One-Command Upgrade with
-  cross-version migration, rollback, and exact-SHA admission evidence.
-- After the upgrade phase is admitted, deliver the first WaveMind Connect
-  slice: opt-in setup, workspace identity, cross-client Experience Packet
-  replay, Studio review and rollback, and a frozen public-repository proof. Do
-  not delay the quality gate by building this expansion early.
+- Publish and clean-install verify `v2.13.0` from the already admitted exact
+  candidate SHA. Until the tag exists, public latest remains `v2.12.1`.
+- Complete the exact-current competitive P0 with real Mem0 OSS and LangGraph
+  BaseStore under the frozen task-native protocol. A true LangMem formation
+  row is separate and cannot be imitated by renaming BaseStore.
+- Admit one public flagship workflow with paired success, repeated-error,
+  context/cost, latency, safety, provenance, and rollback evidence.
+- Unify the existing trace, verifier, Experience Packet, replay, diff, and
+  rollback primitives into one five-minute user path only after the proof gate
+  passes.
+- Defer WaveMind Connect and Studio Learning Inbox until design-partner usage
+  validates cross-client and review demand.
 - Larger service-mode benchmark profiles for persisted FAISS, Qdrant, and
   further-tuned pgvector, with SLO and cost gates tracked for every checked-in
   production result.
