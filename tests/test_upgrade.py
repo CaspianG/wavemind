@@ -161,6 +161,16 @@ def test_production_command_runner_applies_a_hard_timeout(monkeypatch):
     assert captured["timeout"] == upgrade.DEFAULT_COMMAND_TIMEOUT_SECONDS
 
 
+def test_production_command_runner_preserves_failure_diagnostics(monkeypatch):
+    def fake_run(command, **_kwargs):
+        raise subprocess.CalledProcessError(7, command, stderr="health assertion failed")
+
+    monkeypatch.setattr(upgrade.subprocess, "run", fake_run)
+
+    with pytest.raises(UpgradeError, match="health assertion failed"):
+        upgrade._run_command(["example", "command"])
+
+
 def test_process_preflight_never_queries_docker_command_line(tmp_path, monkeypatch):
     protected = tmp_path / "core.sqlite3"
     protected.write_bytes(b"state")

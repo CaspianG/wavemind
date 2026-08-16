@@ -219,16 +219,23 @@ CommandRunner = Callable[[Sequence[str], Path | None], subprocess.CompletedProce
 
 
 def _run_command(command: Sequence[str], cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        list(command),
-        cwd=cwd,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        capture_output=True,
-        check=True,
-        timeout=DEFAULT_COMMAND_TIMEOUT_SECONDS,
-    )
+    try:
+        return subprocess.run(
+            list(command),
+            cwd=cwd,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            capture_output=True,
+            check=True,
+            timeout=DEFAULT_COMMAND_TIMEOUT_SECONDS,
+        )
+    except subprocess.CalledProcessError as exc:
+        output = str(exc.stderr or exc.stdout or "").strip()
+        detail = output[-4000:] if output else "no command output"
+        raise UpgradeError(
+            f"command failed with exit code {exc.returncode}: {detail}"
+        ) from exc
 
 
 def _sha256(path: Path) -> str:
