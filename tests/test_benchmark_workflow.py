@@ -503,3 +503,29 @@ def test_release_requires_exact_sha_safe_product_before_building():
     assert workflow.index("Validate release claim boundaries") < workflow.index(
         "Build and verify the release candidate once"
     )
+
+
+def test_competitive_task_workflow_is_exact_sha_and_fail_closed():
+    workflow = Path(
+        ".github/workflows/competitive-task-admission.yml"
+    ).read_text(encoding="utf-8")
+
+    assert "pull_request:" in workflow
+    assert "workflow_dispatch:" in workflow
+    assert "permissions:\n  contents: read" in workflow
+    for package in (
+        "chromadb==1.5.9",
+        "fastembed==0.8.0",
+        "langgraph==1.2.11",
+        "mem0ai==2.0.18",
+        "qdrant-client==1.19.0",
+    ):
+        assert package in workflow
+    assert "python -m pip check" in workflow
+    assert "benchmarks/competitive_task_benchmark.py" in workflow
+    assert "benchmarks/competitive_task_admission.py" in workflow
+    assert '--source-sha "$GITHUB_SHA"' in workflow
+    assert '--expected-source-sha "$GITHUB_SHA"' in workflow
+    assert "--fail-on-blocked" in workflow
+    assert "actions/upload-artifact@v7" in workflow
+    assert "competitive-task-pip-freeze.txt" in workflow

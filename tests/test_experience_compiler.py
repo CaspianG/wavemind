@@ -373,6 +373,41 @@ def test_packet_filters_explicit_applicability_and_supports_references(
     )
 
 
+def test_compact_packet_keeps_excerpt_and_citation_with_less_context(compiler):
+    record = _record(
+        id="compact-prompt",
+        title="Verified release recovery procedure",
+        content="Run preflight -> restore backup -> verify state -> cite evidence.",
+        status=ExperienceStatus.ACTIVE,
+    )
+    compiler.store.put(record)
+
+    standard = compiler.compile_packet(
+        "Recover release state",
+        namespace="agent",
+        context=FirewallContext(namespace="agent"),
+        top_k=1,
+    )
+    compact = compiler.compile_packet(
+        "Recover release state",
+        namespace="agent",
+        context=FirewallContext(namespace="agent"),
+        top_k=1,
+        compact_prompt=True,
+    )
+
+    assert compact.items[0].excerpt == standard.items[0].excerpt
+    assert compact.items[0].citation == standard.items[0].citation
+    assert compact.compiler_policy["compact_prompt"] is True
+    assert compact.as_prompt().startswith("Experience[agent]; cite E#:")
+    assert record.title not in compact.as_prompt()
+    assert record.content in compact.as_prompt()
+    assert compact.estimated_tokens == max(
+        1, (len(compact.as_prompt()) + 3) // 4
+    )
+    assert compact.estimated_tokens < standard.estimated_tokens
+
+
 def test_protected_delete_requires_privileged_consent(compiler):
     protected = _record(
         id="protected",

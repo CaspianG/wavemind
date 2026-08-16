@@ -339,6 +339,7 @@ def _evaluate_mode(
         context_tokens = 0
         interventions = 0
         unnecessary = 0
+        case_outcomes: list[dict[str, Any]] = []
         per_domain: dict[str, list[bool]] = {domain: [] for domain in DOMAINS}
         for task in tasks:
             started = time.perf_counter()
@@ -361,7 +362,7 @@ def _evaluate_mode(
                         for value in matching[0].metadata.get("tool_plan") or ()
                     )
                     injected = True
-            elif mode == "selective_verified":
+            elif mode in {"selective_verified", "selective_verified_compact"}:
                 decision = runtime.decide(
                     task.query,
                     namespace=namespace,
@@ -371,6 +372,7 @@ def _evaluate_mode(
                     tools=task.available_tools,
                     token_budget=192,
                     top_k=1,
+                    compact_prompt=mode == "selective_verified_compact",
                 )
                 injected = decision.inject
                 if decision.packet is not None:
@@ -389,6 +391,16 @@ def _evaluate_mode(
             successes += int(success)
             hard_failures += int(task.experience_needed and not success)
             per_domain[task.domain].append(success)
+            case_outcomes.append(
+                {
+                    "task_id": task.id,
+                    "domain": task.domain,
+                    "task_type": task.task_type,
+                    "experience_needed": task.experience_needed,
+                    "injected": injected,
+                    "success": success,
+                }
+            )
         for domain, values in per_domain.items():
             domain_successes[domain].append(sum(values) / len(values))
         repeat_rows.append(
@@ -400,6 +412,7 @@ def _evaluate_mode(
                 "context_tokens": context_tokens,
                 "interventions": interventions,
                 "unnecessary_intervention_rate": unnecessary / max(1, interventions),
+                "case_outcomes": case_outcomes,
             }
         )
     return {

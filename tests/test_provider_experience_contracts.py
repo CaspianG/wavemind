@@ -264,10 +264,12 @@ def test_http_experience_contract_supports_packet_trajectory_and_bundle(
                     "query": "recover health check",
                     "namespace": "agent",
                     "token_budget": 200,
+                    "compact_prompt": True,
                 },
             )
             assert packet.status_code == 200
             assert packet.json()["items"][0]["experience_id"] == "exp_http"
+            assert packet.json()["compiler_policy"]["compact_prompt"] is True
 
             detail = client.get(
                 "/experience/exp_http",
