@@ -36,7 +36,7 @@ def _run(
     check: bool = True,
     timeout: float = 600,
 ) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
+    completed = subprocess.run(
         command,
         cwd=cwd,
         env=env,
@@ -44,9 +44,17 @@ def _run(
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        check=check,
+        check=False,
         timeout=timeout,
     )
+    if check and completed.returncode != 0:
+        rendered = " ".join(command)
+        raise RuntimeError(
+            f"command failed with exit code {completed.returncode}: {rendered}\n"
+            f"stdout:\n{completed.stdout}\n"
+            f"stderr:\n{completed.stderr}"
+        )
+    return completed
 
 
 def _venv_python(root: Path) -> Path:
