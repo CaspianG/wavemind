@@ -16,7 +16,36 @@ permissions:
   contents: read
 
 jobs:
+  upgrade-platform-matrix:
+    name: upgrade (${{ matrix.os }}, py${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install upgrade test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Run bounded upgrade and admission tests
+        run: >-
+          python -m pytest -q
+          tests/test_upgrade.py
+          tests/test_upgrade_admission.py
+
   exact-sha-upgrade-admission:
+    needs: upgrade-platform-matrix
     runs-on: ubuntu-latest
     timeout-minutes: 45
 

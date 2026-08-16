@@ -12,6 +12,14 @@ def _artifact(root: Path, schema: str, payload: dict) -> dict:
             "schema": schema,
             "status": "admitted",
             "source_sha": repository_commit(root),
+            "generated_at": "2026-08-16T00:00:00+00:00",
+            "environment": {
+                "profile": "test",
+                "python": "3.13.2",
+                "implementation": "CPython",
+                "platform": "test-platform",
+            },
+            "inputs": {"fixture": True},
             "source_manifest": build_source_manifest(root, ["wavemind/upgrade.py"]),
             **payload,
         }
@@ -28,9 +36,14 @@ def _inputs(root: Path) -> tuple[dict, dict, dict]:
         "test_interrupted_journal_is_recovered_before_retry",
         "test_live_upgrade_lock_rejects_second_operator",
         "test_checksum_mismatch_is_fail_closed",
+        "test_docker_local_wheel_checksum_is_verified_before_docker_mutation",
+        "test_production_command_runner_applies_a_hard_timeout",
+        "test_process_preflight_never_queries_docker_command_line",
         "test_same_version_upgrade_adopts_legacy_ledgers_and_preserves_all_state",
         "test_incompatible_future_schema_is_rolled_back",
         "test_failure_injection_restores_both_databases_and_config[health]",
+        "test_python_installation_failure_reinstalls_verified_source_wheel",
+        "test_python_package_health_failure_reinstalls_verified_source_wheel",
     ]
     operational = _artifact(
         root,
@@ -92,7 +105,7 @@ def test_upgrade_admission_requires_all_exact_sha_evidence():
     )
 
     assert report["status"] == "admitted"
-    assert report["score"] == {"passed": 15, "total": 15}
+    assert report["score"] == {"passed": 18, "total": 18}
 
 
 def test_upgrade_admission_blocks_tampered_or_failed_evidence():

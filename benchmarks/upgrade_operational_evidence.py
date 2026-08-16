@@ -13,7 +13,12 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from wavemind.evidence import attach_artifact_integrity, build_source_manifest, repository_commit
+from wavemind.evidence import (
+    attach_artifact_integrity,
+    build_source_manifest,
+    execution_environment,
+    repository_commit,
+)
 
 
 SCHEMA = "wavemind.upgrade_operational_evidence.v1"
@@ -64,6 +69,8 @@ def run_operational_evidence() -> dict[str, object]:
         "status": "admitted" if all(checks.values()) else "blocked",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "source_sha": repository_commit(PROJECT_ROOT),
+        "environment": execution_environment(profile="upgrade-operational"),
+        "inputs": {"command": command, "timeout_seconds": 600},
         "command": command,
         "checks": checks,
         "metrics": {

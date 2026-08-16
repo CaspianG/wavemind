@@ -17,7 +17,12 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from wavemind.evidence import attach_artifact_integrity, build_source_manifest, repository_commit
+from wavemind.evidence import (
+    attach_artifact_integrity,
+    build_source_manifest,
+    execution_environment,
+    repository_commit,
+)
 from wavemind.upgrade import UpgradeError, UpgradeOptions, run_upgrade, verify_release_artifact
 
 
@@ -278,6 +283,14 @@ def run_docker_evidence(
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "source_sha": repository_commit(PROJECT_ROOT),
             "expected_source_sha": expected_source_sha,
+            "environment": execution_environment(profile="upgrade-docker-compose"),
+            "inputs": {
+                "old_image": old_image,
+                "candidate_image": candidate_image,
+                "candidate_wheel": artifact.filename,
+                "candidate_sha256": artifact.sha256,
+                "expected_source_sha": expected_source_sha,
+            },
             "candidate": {
                 "wheel": artifact.as_dict(),
                 "image": candidate_image,

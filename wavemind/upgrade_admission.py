@@ -28,6 +28,15 @@ def _artifact_valid(
         errors.append(f"expected {schema}")
     if artifact.get("source_sha") != expected_source_sha:
         errors.append("source SHA mismatch")
+    environment = artifact.get("environment")
+    if not isinstance(environment, Mapping):
+        errors.append("environment manifest is missing")
+    else:
+        for key in ("profile", "python", "implementation", "platform"):
+            if not environment.get(key):
+                errors.append(f"environment manifest is missing {key}")
+    if not isinstance(artifact.get("inputs"), Mapping):
+        errors.append("artifact inputs are missing")
     manifest = artifact.get("source_manifest")
     if not isinstance(manifest, Mapping):
         errors.append("source manifest is missing")
@@ -93,6 +102,15 @@ def evaluate_upgrade_admission(
 
     rows = {
         "exact_sha_evidence": operational_ok and cross_ok and docker_ok,
+        "environment_and_inputs_manifest": all(
+            isinstance(artifact.get("environment"), Mapping)
+            and isinstance(artifact.get("inputs"), Mapping)
+            for artifact in (operational, cross_version, docker_compose)
+        ),
+        "bounded_subprocess_and_safe_process_enumeration": has(
+            "test_production_command_runner_applies_a_hard_timeout"
+        )
+        and has("test_process_preflight_never_queries_docker_command_line"),
         "preflight_version_disk_writer_process": has("test_disk_full_preflight")
         and has("test_active_writer")
         and has("test_external_python_process")
@@ -100,7 +118,8 @@ def evaluate_upgrade_admission(
         "exclusive_lock_and_idempotent_journal": has("test_repeated_upgrade")
         and has("test_interrupted_journal")
         and has("test_live_upgrade_lock"),
-        "verified_release_identity_and_checksum": has("test_checksum_mismatch"),
+        "verified_release_identity_and_checksum": has("test_checksum_mismatch")
+        and has("test_docker_local_wheel_checksum"),
         "core_experience_config_object_backup": has("test_same_version_upgrade"),
         "explicit_core_experience_schema_ledger": has("test_same_version_upgrade")
         and has("test_incompatible_future_schema"),
@@ -112,6 +131,12 @@ def evaluate_upgrade_admission(
         and len(distinct_sources) >= 2
         and all(row.get("passed") is True for row in fixtures),
         "python_real_package_rollback": bool(rollback_fixtures),
+        "complete_install_health_and_state_rollback": has(
+            "test_python_installation_failure_reinstalls_verified_source_wheel"
+        )
+        and has("test_python_package_health_failure_reinstalls_verified_source_wheel")
+        and has("test_failure_injection")
+        and bool(docker_checks.get("failed_health_rolled_back")),
         "docker_immutable_digest": bool(docker_checks.get("immutable_target_digest")),
         "docker_both_databases_recreated": bool(docker_checks.get("core_state_preserved"))
         and bool(docker_checks.get("experience_state_preserved"))
