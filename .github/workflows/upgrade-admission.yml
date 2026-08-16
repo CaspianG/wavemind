@@ -81,7 +81,13 @@ jobs:
             $global:LASTEXITCODE = 0
           }
 
-          Invoke-ExactPytest @('-q', 'tests/test_upgrade.py', '-k', 'not external_python_process_holding_database_is_reported')
+          $env:WAVEMIND_PYTEST_SHARD_COUNT = '3'
+          foreach ($index in 0..2) {
+            $env:WAVEMIND_PYTEST_SHARD_INDEX = [string]$index
+            Invoke-ExactPytest @('-q', 'tests/test_upgrade.py', '-k', 'not external_python_process_holding_database_is_reported')
+          }
+          Remove-Item Env:\WAVEMIND_PYTEST_SHARD_COUNT
+          Remove-Item Env:\WAVEMIND_PYTEST_SHARD_INDEX
           Invoke-ExactPytest @('-q', 'tests/test_upgrade_admission.py')
           Invoke-ExactPytest @('-q', 'tests/test_upgrade.py::test_external_python_process_holding_database_is_reported')
           Remove-Item Env:\WAVEMIND_PYTEST_VERDICT_PATH
