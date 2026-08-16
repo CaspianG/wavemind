@@ -44,9 +44,9 @@ jobs:
         env:
           PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
         run: |
-          python benchmarks/pytest_exact_exit.py -q tests/test_upgrade.py -k "not external_python_process_holding_database_is_reported"
-          python benchmarks/pytest_exact_exit.py -q tests/test_upgrade_admission.py
-          python benchmarks/pytest_exact_exit.py -q tests/test_upgrade.py::test_external_python_process_holding_database_is_reported
+          python benchmarks/pytest_exact_exit.py -q tests/test_upgrade.py -k "not external_python_process_holding_database_is_reported" 2>&1
+          python benchmarks/pytest_exact_exit.py -q tests/test_upgrade_admission.py 2>&1
+          python benchmarks/pytest_exact_exit.py -q tests/test_upgrade.py::test_external_python_process_holding_database_is_reported 2>&1
 
   exact-sha-upgrade-admission:
     needs: upgrade-platform-matrix
