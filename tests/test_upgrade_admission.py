@@ -63,12 +63,14 @@ def _inputs(root: Path) -> tuple[dict, dict, dict]:
                 {
                     "source_version": "2.10.0",
                     "passed": True,
+                    "postcheck": {"remember_query_feedback": True},
                     "rollback_probe": None,
                 },
                 {
                     "source_version": "2.11.0",
                     "passed": True,
-                    "rollback_probe": {"passed": True},
+                    "postcheck": {"remember_query_feedback": True},
+                    "rollback_probe": {"passed": True, "runtime": {"passed": True}},
                 },
             ],
         },
@@ -86,6 +88,8 @@ def _inputs(root: Path) -> tuple[dict, dict, dict]:
                 "target_container_recreated": True,
                 "failed_health_rolled_back": True,
                 "previous_container_recreated": True,
+                "target_remember_query_feedback": True,
+                "rollback_remember_query_feedback": True,
             },
         },
     )
@@ -106,7 +110,7 @@ def test_upgrade_admission_requires_all_exact_sha_evidence():
     )
 
     assert report["status"] == "admitted"
-    assert report["score"] == {"passed": 18, "total": 18}
+    assert report["score"] == {"passed": 19, "total": 19}
 
 
 def test_upgrade_admission_blocks_tampered_or_failed_evidence():
@@ -126,3 +130,21 @@ def test_upgrade_admission_blocks_tampered_or_failed_evidence():
     assert report["status"] == "blocked"
     assert report["rows"]["exact_sha_evidence"] is False
     assert report["rows"]["docker_failed_health_rollback"] is False
+
+
+def test_upgrade_admission_blocks_missing_public_api_evidence():
+    root = Path(__file__).resolve().parents[1]
+    source_sha = repository_commit(root)
+    operational, cross, docker = _inputs(root)
+    cross["fixtures"][0]["postcheck"]["remember_query_feedback"] = False
+
+    report = evaluate_upgrade_admission(
+        operational=operational,
+        cross_version=cross,
+        docker_compose=docker,
+        project_root=root,
+        expected_source_sha=source_sha,
+    )
+
+    assert report["status"] == "blocked"
+    assert report["rows"]["remember_query_feedback_after_upgrade_and_rollback"] is False

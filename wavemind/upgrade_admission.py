@@ -91,6 +91,16 @@ def evaluate_upgrade_admission(
         if isinstance(row.get("rollback_probe"), Mapping)
         and row["rollback_probe"].get("passed") is True
     ]
+    python_public_api_ok = bool(fixtures) and all(
+        isinstance(row.get("postcheck"), Mapping)
+        and row["postcheck"].get("remember_query_feedback") is True
+        for row in fixtures
+    )
+    python_rollback_public_api_ok = bool(rollback_fixtures) and all(
+        isinstance(row["rollback_probe"].get("runtime"), Mapping)
+        and row["rollback_probe"]["runtime"].get("passed") is True
+        for row in rollback_fixtures
+    )
     docker_checks = docker_compose.get("checks", {})
     target_versions = {
         str(cross_version.get("candidate", {}).get("version")),
@@ -132,6 +142,10 @@ def evaluate_upgrade_admission(
         and len(distinct_sources) >= 2
         and all(row.get("passed") is True for row in fixtures),
         "python_real_package_rollback": bool(rollback_fixtures),
+        "remember_query_feedback_after_upgrade_and_rollback": python_public_api_ok
+        and python_rollback_public_api_ok
+        and bool(docker_checks.get("target_remember_query_feedback"))
+        and bool(docker_checks.get("rollback_remember_query_feedback")),
         "complete_install_health_and_state_rollback": has(
             "test_python_installation_failure_reinstalls_verified_source_wheel"
         )

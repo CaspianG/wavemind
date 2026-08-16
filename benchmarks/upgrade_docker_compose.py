@@ -111,6 +111,7 @@ print(kept, removed, stored.id)
 def _state_script(expected_version: str) -> str:
     return f"""
 import json, sqlite3, wavemind
+from wavemind import WaveMind
 assert wavemind.__version__ == {expected_version!r}, wavemind.__version__
 a=sqlite3.connect('/data/wavemind.sqlite3')
 b=sqlite3.connect('/data/wavemind-experience.sqlite3')
@@ -126,7 +127,17 @@ assert len(experiences)==1, experiences
 assert experiences[0][1]=='tenant:upgrade:compose'
 assert experiences[0][2]=='verified_operator'
 assert experiences[0][3]=='active'
-print(json.dumps({{'version':wavemind.__version__,'memories':len(memories),'experiences':len(experiences)}}))
+mind=WaveMind(db_path='/data/wavemind.sqlite3')
+try:
+    hits=mind.query('preserve Docker Compose memory',namespace='tenant:upgrade:compose',top_k=1)
+    assert hits and hits[0].id==memories[0][0]
+    assert mind.feedback(hits[0].id,namespace='tenant:upgrade:compose',useful=True)
+    probe=mind.remember('Docker runtime probe',namespace='tenant:upgrade:compose')
+    assert mind.query('Docker runtime probe',namespace='tenant:upgrade:compose',top_k=1)
+    assert mind.forget(probe,namespace='tenant:upgrade:compose')==1
+finally:
+    mind.close()
+print(json.dumps({{'version':wavemind.__version__,'memories':len(memories),'experiences':len(experiences),'remember_query_feedback':True}}))
 """
 
 
@@ -254,6 +265,7 @@ def run_docker_evidence(
             == f"WAVEMIND_IMAGE={old_image}"
             and rollback_state["memories"] == 1
             and rollback_state["experiences"] == 1
+            and rollback_state["remember_query_feedback"] is True
         )
         success = run_upgrade(
             UpgradeOptions(**{**options.__dict__, "failure_phase": None})
@@ -276,6 +288,12 @@ def run_docker_evidence(
             "compose_env_activated": (root / ".env").read_text(encoding="utf-8").strip()
             == f"WAVEMIND_IMAGE={target_image}",
             "upgrade_parity": success.parity,
+            "rollback_remember_query_feedback": rollback_state[
+                "remember_query_feedback"
+            ],
+            "target_remember_query_feedback": target_state[
+                "remember_query_feedback"
+            ],
         }
         report = {
             "schema": SCHEMA,

@@ -97,6 +97,7 @@ print(kept, removed, stored.id)
 def _postcheck_script(core: Path, experience: Path, target_version: str) -> str:
     return f"""
 import json, sqlite3, wavemind
+from wavemind import WaveMind
 assert wavemind.__version__ == {target_version!r}, wavemind.__version__
 a = sqlite3.connect({str(core)!r})
 b = sqlite3.connect({str(experience)!r})
@@ -123,13 +124,43 @@ assert experiences[0][1] == 'tenant:upgrade:cross-version'
 assert experiences[0][2] == 'verified_operator'
 assert experiences[0][3] == 'active'
 assert core_schema == 1 and experience_schema == 1
+mind = WaveMind(db_path={str(core)!r})
+try:
+    hits = mind.query('preserve cross-version memory', namespace='tenant:upgrade:cross-version', top_k=1)
+    assert hits and hits[0].id == rows[0][0]
+    assert mind.feedback(hits[0].id, namespace='tenant:upgrade:cross-version', useful=True)
+    probe = mind.remember('Post-upgrade runtime probe', namespace='tenant:upgrade:cross-version')
+    assert mind.query('runtime probe', namespace='tenant:upgrade:cross-version', top_k=1)
+    assert mind.forget(probe, namespace='tenant:upgrade:cross-version') == 1
+finally:
+    mind.close()
 print(json.dumps({{
     'installed_version': wavemind.__version__,
     'active_memories': len(rows),
     'active_experiences': len(experiences),
     'core_schema': core_schema,
     'experience_schema': experience_schema,
+    'remember_query_feedback': True,
 }}))
+"""
+
+
+def _runtime_probe_script(core: Path, expected_version: str, phase: str) -> str:
+    return f"""
+import json, wavemind
+from wavemind import WaveMind
+assert wavemind.__version__ == {expected_version!r}, wavemind.__version__
+mind = WaveMind(db_path={str(core)!r})
+try:
+    hits = mind.query('preserve cross-version memory', namespace='tenant:upgrade:cross-version', top_k=1)
+    assert hits
+    assert mind.feedback(hits[0].id, namespace='tenant:upgrade:cross-version', useful=True)
+    probe = mind.remember({('Runtime probe ' + phase)!r}, namespace='tenant:upgrade:cross-version')
+    assert mind.query({('Runtime probe ' + phase)!r}, namespace='tenant:upgrade:cross-version', top_k=1)
+    assert mind.forget(probe, namespace='tenant:upgrade:cross-version') == 1
+finally:
+    mind.close()
+print(json.dumps({{'version': wavemind.__version__, 'phase': {phase!r}, 'passed': True}}))
 """
 
 
@@ -197,6 +228,8 @@ def _run_fixture(
         str(fixture_root / "upgrade"),
         "--json",
     ]
+    clean_env = os.environ.copy()
+    clean_env.pop("PYTHONPATH", None)
     rollback: dict[str, object] | None = None
     if rollback_probe:
         failed = _run(
@@ -209,18 +242,30 @@ def _run_fixture(
             (fixture_root / "upgrade" / "journal.json").read_text(encoding="utf-8")
         )
         restored_version = _installed_version(python, cwd=fixture_root)
+        rollback_runtime = json.loads(
+            _run(
+                [
+                    str(python),
+                    "-I",
+                    "-c",
+                    _runtime_probe_script(core, source_version, "rollback"),
+                ],
+                cwd=fixture_root,
+                env=clean_env,
+            ).stdout
+        )
         rollback = {
             "returncode": failed.returncode,
             "status": journal.get("status"),
             "installed_version": restored_version,
+            "runtime": rollback_runtime,
             "passed": failed.returncode != 0
             and journal.get("status") == "rolled_back"
-            and restored_version == source_version,
+            and restored_version == source_version
+            and rollback_runtime.get("passed") is True,
         }
     completed = _run(base_command, cwd=fixture_root, env=env)
     report = json.loads(completed.stdout)
-    clean_env = os.environ.copy()
-    clean_env.pop("PYTHONPATH", None)
     postcheck = _run(
         [str(python), "-I", "-c", _postcheck_script(core, experience, target_version)],
         cwd=fixture_root,
@@ -241,6 +286,7 @@ def _run_fixture(
         and checked.get("installed_version") == target_version
         and checked.get("active_memories") == 1
         and checked.get("active_experiences") == 1
+        and checked.get("remember_query_feedback") is True
         and (rollback is None or rollback.get("passed") is True),
     }
 
