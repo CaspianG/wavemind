@@ -9,7 +9,7 @@ import pytest
 def main() -> int:
     """Return pytest's verdict without Windows interpreter-exit interference."""
     exit_code = int(pytest.main(sys.argv[1:]))
-    print(f"pytest-return-code={exit_code}", file=sys.stderr, flush=True)
+    print(f"pytest-return-code={exit_code}", flush=True)
     sys.stdout.flush()
     sys.stderr.flush()
     if os.name == "nt":
