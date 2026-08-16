@@ -39,10 +39,12 @@ jobs:
           python -m pip install -e ".[dev]"
 
       - name: Run bounded upgrade and admission tests
-        run: >-
-          python -m pytest -q
-          tests/test_upgrade.py
-          tests/test_upgrade_admission.py
+        # Keep the subprocess-heavy upgrade tests isolated from the admission
+        # manifest checks. On Windows, carrying the full process state into the
+        # second module can interrupt Git-for-Windows while it resolves HEAD.
+        run: |
+          python -m pytest -q tests/test_upgrade.py
+          python -m pytest -q tests/test_upgrade_admission.py
 
   exact-sha-upgrade-admission:
     needs: upgrade-platform-matrix
