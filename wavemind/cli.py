@@ -2054,6 +2054,29 @@ def _env_int(name: str, *, default: int = 0) -> int:
     return int(raw)
 
 
+def _compose_defines_service(path: Path, service: str) -> bool:
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return False
+    in_services = False
+    services_indent = 0
+    for line in lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        indent = len(line) - len(line.lstrip())
+        if stripped == "services:":
+            in_services = True
+            services_indent = indent
+            continue
+        if in_services and indent <= services_indent:
+            in_services = False
+        if in_services and stripped.rstrip() == f"{service}:":
+            return True
+    return False
+
+
 def _is_loopback_host(host: str) -> bool:
     selected = host.strip().strip("[]").lower()
     if selected == "localhost":
@@ -3212,7 +3235,13 @@ def main(argv: list[str] | None = None) -> int:
             return 4
         mode = args.mode
         if mode == "auto":
-            mode = "docker-compose" if args.compose_file else "python"
+            default_compose = Path.cwd() / "docker-compose.yml"
+            mode = (
+                "docker-compose"
+                if args.compose_file
+                or _compose_defines_service(default_compose, args.compose_service)
+                else "python"
+            )
         core_db = Path(args.db) if args.db else (
             Path.cwd() / "data" / "wavemind.sqlite3"
             if mode == "docker-compose"

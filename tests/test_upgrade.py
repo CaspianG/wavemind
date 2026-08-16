@@ -143,6 +143,55 @@ def _completed(command, stdout: str = "") -> subprocess.CompletedProcess[str]:
     return subprocess.CompletedProcess(command, 0, stdout=stdout, stderr="")
 
 
+def test_production_command_runner_applies_a_hard_timeout(monkeypatch):
+    captured: dict[str, object] = {}
+
+    def fake_run(command, **kwargs):
+        captured.update(kwargs)
+        return _completed(command)
+
+    monkeypatch.setattr(upgrade.subprocess, "run", fake_run)
+    upgrade._run_command(["example", "command"])
+
+    assert captured["timeout"] == upgrade.DEFAULT_COMMAND_TIMEOUT_SECONDS
+
+
+def test_process_preflight_never_queries_docker_command_line(tmp_path, monkeypatch):
+    protected = tmp_path / "core.sqlite3"
+    protected.write_bytes(b"state")
+    queried: list[str] = []
+
+    class Process:
+        def __init__(self, pid: int, name: str, command: list[str]):
+            self.pid = pid
+            self.info = {"pid": pid, "name": name}
+            self._command = command
+
+        def cmdline(self):
+            queried.append(str(self.info["name"]))
+            if "docker" in str(self.info["name"]).lower():
+                raise AssertionError("Docker command line must not be queried")
+            return self._command
+
+    class Psutil:
+        AccessDenied = OSError
+        NoSuchProcess = OSError
+
+        @staticmethod
+        def process_iter(attrs):
+            assert attrs == ["pid", "name"]
+            return [
+                Process(9001, "Docker Desktop.exe", ["docker"]),
+                Process(9002, "python.exe", ["python", "-m", "wavemind", str(protected)]),
+            ]
+
+    monkeypatch.setitem(sys.modules, "psutil", Psutil)
+    blockers = upgrade._open_processes([protected])
+
+    assert queried == ["python.exe"]
+    assert [row["pid"] for row in blockers] == [9002]
+
+
 def test_same_version_upgrade_adopts_legacy_ledgers_and_preserves_all_state(tmp_path):
     core, experience, memory_id, experience_id = _state(tmp_path)
     config = tmp_path / "policy.json"
@@ -315,6 +364,38 @@ def test_checksum_mismatch_is_fail_closed(tmp_path):
     assert not list((tmp_path / "backups").glob("*.zip"))
 
 
+def test_docker_local_wheel_checksum_is_verified_before_docker_mutation(tmp_path):
+    core, experience, _memory_id, _experience_id = _state(tmp_path)
+    wheel, _digest = _wheel(tmp_path / "wavemind-2.12.1-py3-none-any.whl", "2.12.1")
+    compose = tmp_path / "docker-compose.yml"
+    compose.write_text(
+        "services:\n  wavemind:\n    image: ${WAVEMIND_IMAGE:-old:image}\n",
+        encoding="utf-8",
+    )
+    commands: list[list[str]] = []
+
+    def runner(command, cwd=None):
+        commands.append(list(command))
+        return _completed(command)
+
+    with pytest.raises(UpgradeError, match="checksum mismatch"):
+        run_upgrade(
+            _options(
+                tmp_path,
+                core,
+                experience,
+                wheel,
+                "0" * 64,
+                mode="docker-compose",
+                compose_file=compose,
+                compose_env_file=tmp_path / ".env",
+            ),
+            runner=runner,
+        )
+
+    assert commands == []
+
+
 @pytest.mark.parametrize("failure", ["staged_migration", "data_activation", "health"])
 def test_failure_injection_restores_both_databases_and_config(tmp_path, failure):
     core, experience, _memory_id, _experience_id = _state(tmp_path)
@@ -385,6 +466,33 @@ def test_tampered_upgrade_backup_is_rejected(tmp_path):
 
     with pytest.raises(UpgradeArtifactError, match="size mismatch"):
         restore_upgrade_backup(tampered)
+
+
+def test_interrupted_recovery_rejects_backup_whose_outer_digest_changed(tmp_path):
+    core, experience, _memory_id, _experience_id = _state(tmp_path)
+    wheel, digest = _wheel(tmp_path / "wavemind-2.12.1-py3-none-any.whl", "2.12.1")
+    options = _options(tmp_path, core, experience, wheel, digest)
+    backup = create_upgrade_backup(
+        options,
+        tmp_path / "backup.zip",
+        source_version="2.12.1",
+        target_version="2.12.1",
+    )
+    journal = UpgradeJournal.create(
+        options.state_dir / "journal.json",
+        source_version="2.12.1",
+        target_version="2.12.1",
+        mode="python",
+        options=options,
+    )
+    journal.payload["backup_path"] = str(backup)
+    journal.payload["backup_sha256"] = hashlib.sha256(backup.read_bytes()).hexdigest()
+    journal.event("data_activated")
+    with backup.open("ab") as destination:
+        destination.write(b"tampered-after-journal")
+
+    with pytest.raises(UpgradeBlocked, match="checksum does not match the journal"):
+        upgrade._recover_interrupted(journal, options=options, runner=upgrade._run_command)
 
 
 def test_docker_compose_recreates_container_and_pins_target_image(tmp_path):
@@ -483,6 +591,14 @@ def test_docker_failure_restores_absent_env_and_restarts_old_image(tmp_path):
     assert not env.exists()
     up_commands = [command for command in commands if "up" in command]
     assert len(up_commands) == 2
+    health_commands = [
+        command
+        for command in commands
+        if "exec" in command and "python" in command and "-c" in command
+    ]
+    assert len(health_commands) == 2
+    assert all("WAVEMIND_DB" in command[-1] for command in health_commands)
+    assert all("WAVEMIND_EXPERIENCE_DB" in command[-1] for command in health_commands)
 
 
 def test_interrupted_docker_upgrade_restores_data_env_and_old_image_before_retry(
@@ -546,8 +662,12 @@ def test_interrupted_docker_upgrade_restores_data_env_and_old_image_before_retry
         if command[-2:] == ["config", "--images"]:
             image = env.read_text(encoding="utf-8").split("WAVEMIND_IMAGE=", 1)[1].splitlines()[0]
             return _completed(command, image + "\n")
+        if "exec" in command and command[-1] == "--version":
+            current = env.read_text(encoding="utf-8")
+            version = "2.11.0" if "old:image" in current else "2.12.1"
+            return _completed(command, f"wavemind {version}\n")
         if "exec" in command:
-            return _completed(command, "wavemind 2.12.1\n")
+            return _completed(command, "upgrade-health-ok\n")
         if "image" in command and "inspect" in command and "{{.Id}}" in command:
             return _completed(command, "sha256:" + "c" * 64 + "\n")
         if "image" in command and "inspect" in command:
@@ -601,6 +721,46 @@ def test_python_package_health_failure_reinstalls_verified_source_wheel(
         )
 
     assert installs == [str(target.resolve()), str(source.resolve())]
+
+
+def test_python_installation_failure_reinstalls_verified_source_wheel(
+    tmp_path,
+    monkeypatch,
+):
+    core, experience, _memory_id, _experience_id = _state(tmp_path)
+    target, target_digest = _wheel(
+        tmp_path / "wavemind-2.12.1-py3-none-any.whl", "2.12.1"
+    )
+    source, _source_digest = _wheel(
+        tmp_path / "wavemind-2.11.0-py3-none-any.whl", "2.11.0"
+    )
+    monkeypatch.setattr(upgrade, "_installed_version", lambda: "2.11.0")
+    installs: list[str] = []
+
+    def runner(command, cwd=None):
+        command = list(command)
+        if "pip" in command:
+            installs.append(command[-1])
+            if command[-1] == str(target.resolve()):
+                raise subprocess.CalledProcessError(1, command, stderr="install failed")
+        return _completed(command)
+
+    with pytest.raises(UpgradeError, match="rolled back"):
+        run_upgrade(
+            _options(
+                tmp_path,
+                core,
+                experience,
+                target,
+                target_digest,
+                current_artifact=source,
+            ),
+            runner=runner,
+        )
+
+    assert installs == [str(target.resolve()), str(source.resolve())]
+    journal = json.loads((tmp_path / "upgrade-state" / "journal.json").read_text())
+    assert journal["rollback_parity_verified"] is True
 
 
 def test_dry_run_does_not_create_or_change_databases(tmp_path):
@@ -666,6 +826,8 @@ def test_cli_upgrade_returns_machine_readable_complete_report(
             "--db",
             str(core),
             "upgrade",
+            "--mode",
+            "python",
             "--experience-db",
             str(experience),
             "--artifact",
@@ -683,6 +845,17 @@ def test_cli_upgrade_returns_machine_readable_complete_report(
     payload = json.loads(capsys.readouterr().out)
     assert payload["status"] == "complete"
     assert payload["parity"] is True
+
+
+def test_auto_mode_detects_default_wavemind_compose_file(tmp_path):
+    compose = tmp_path / "docker-compose.yml"
+    compose.write_text(
+        "services:\n  wavemind:\n    image: ${WAVEMIND_IMAGE:-old:image}\n",
+        encoding="utf-8",
+    )
+
+    assert cli._compose_defines_service(compose, "wavemind") is True
+    assert cli._compose_defines_service(compose, "other") is False
 
 
 def test_external_python_process_holding_database_is_reported(tmp_path):

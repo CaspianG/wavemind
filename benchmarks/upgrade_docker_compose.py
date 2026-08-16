@@ -328,18 +328,21 @@ def run_docker_evidence(
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             check=False,
+            timeout=120,
         )
         subprocess.run(
             ["docker", "rm", "-f", registry_name],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             check=False,
+            timeout=60,
         )
         subprocess.run(
             ["docker", "image", "rm", target_image],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             check=False,
+            timeout=60,
         )
         if owned is not None:
             owned.cleanup()

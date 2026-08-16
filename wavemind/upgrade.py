@@ -37,6 +37,7 @@ UPGRADE_RELEASE_SCHEMA = "wavemind.upgrade_release.v1"
 TERMINAL_STATUSES = frozenset({"complete", "rolled_back", "recovered"})
 DEFAULT_PYPI_URL = "https://pypi.org/pypi/wavemind"
 DEFAULT_IMAGE = "ghcr.io/caspiang/wavemind"
+DEFAULT_COMMAND_TIMEOUT_SECONDS = 600
 
 
 class UpgradeError(RuntimeError):
@@ -225,6 +226,7 @@ def _run_command(command: Sequence[str], cwd: Path | None = None) -> subprocess.
         errors="replace",
         capture_output=True,
         check=True,
+        timeout=DEFAULT_COMMAND_TIMEOUT_SECONDS,
     )
 
 
@@ -239,13 +241,22 @@ def _sha256(path: Path) -> str:
 def _atomic_write_json(path: Path, payload: Mapping[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
-    temporary.write_text(
-        json.dumps(payload, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
-        encoding="utf-8",
-    )
+    with temporary.open("w", encoding="utf-8") as destination:
+        destination.write(
+            json.dumps(payload, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
+        )
+        destination.flush()
+        os.fsync(destination.fileno())
     os.replace(temporary, path)
     with contextlib.suppress(OSError):
         path.chmod(0o600)
+    if os.name != "nt":
+        with contextlib.suppress(OSError):
+            descriptor = os.open(path.parent, os.O_RDONLY)
+            try:
+                os.fsync(descriptor)
+            finally:
+                os.close(descriptor)
 
 
 def _parse_version(value: str, *, label: str) -> Version:
@@ -424,7 +435,10 @@ def _open_processes(paths: Iterable[Path]) -> list[dict[str, Any]]:
         raise UpgradeBlocked("psutil is required for the active-process preflight") from exc
     wanted = {os.path.normcase(str(path.resolve())) for path in paths if path.exists()}
     blockers: list[dict[str, Any]] = []
-    for process in psutil.process_iter(["pid", "name", "cmdline"]):
+    # Only retrieve the cheap process name during enumeration. In particular,
+    # never ask Docker Desktop (or every other unrelated process) for handles or
+    # command lines: those calls have blocked indefinitely on Windows hosts.
+    for process in psutil.process_iter(["pid", "name"]):
         if process.pid == os.getpid():
             continue
         process_name = str(process.info.get("name") or "").lower()
@@ -438,7 +452,7 @@ def _open_processes(paths: Iterable[Path]) -> list[dict[str, Any]]:
         ):
             continue
         try:
-            command = [str(part) for part in (process.info.get("cmdline") or [])]
+            command = [str(part) for part in (process.cmdline() or [])]
         except (psutil.AccessDenied, psutil.NoSuchProcess, OSError):
             continue
         normalized_command = os.path.normcase(" ".join(command))
@@ -567,6 +581,15 @@ def database_inventory(path: Path) -> dict[str, Any]:
         connection.close()
 
 
+def _database_state(path: Path) -> dict[str, Any]:
+    resolved = path.resolve()
+    return {
+        "path": str(resolved),
+        "existed": resolved.exists(),
+        "inventory": database_inventory(resolved) if resolved.exists() else None,
+    }
+
+
 def _sqlite_snapshot(source: Path, destination: Path) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.unlink(missing_ok=True)
@@ -677,6 +700,8 @@ def create_upgrade_backup(
                 archive.write(manifest_path, "manifest.json")
                 for entry in entries:
                     archive.write(staging / entry["archive_path"], entry["archive_path"])
+            with temporary.open("rb+") as archive_file:
+                os.fsync(archive_file.fileno())
             os.replace(temporary, destination)
             with contextlib.suppress(OSError):
                 destination.chmod(0o600)
@@ -980,6 +1005,42 @@ def _compose_current_version(options: UpgradeOptions, runner: CommandRunner) -> 
     raise UpgradeBlocked("cannot determine the running WaveMind container version")
 
 
+def _verify_compose_health(
+    options: UpgradeOptions,
+    *,
+    expected_version: str,
+    runner: CommandRunner,
+) -> None:
+    base = _compose_base(options)
+    result = runner(
+        [*base, "exec", "-T", options.compose_service, "wavemind", "--version"],
+        options.compose_file.parent if options.compose_file else None,
+    )
+    if expected_version not in result.stdout:
+        raise UpgradeError(
+            "recreated container reports unexpected version: "
+            f"expected {expected_version}, got {result.stdout.strip()}"
+        )
+    health_script = (
+        "import json,os,sqlite3,wavemind; "
+        f"assert wavemind.__version__=={expected_version!r}; "
+        "a=sqlite3.connect(os.environ['WAVEMIND_DB']); "
+        "b=sqlite3.connect(os.environ['WAVEMIND_EXPERIENCE_DB']); "
+        "assert a.execute('PRAGMA integrity_check').fetchone()[0]=='ok'; "
+        "assert b.execute('PRAGMA integrity_check').fetchone()[0]=='ok'; "
+        "m=a.execute('SELECT id,text,tags,metadata,vector FROM memories ORDER BY id LIMIT 1').fetchone(); "
+        "e=b.execute('SELECT id,source_json,metadata_json FROM experience_records ORDER BY id LIMIT 1').fetchone(); "
+        "json.loads(m[2]) if m else None; json.loads(m[3]) if m else None; "
+        "assert (m is None or (m[0] is not None and m[1] is not None and len(m[4])>0)); "
+        "json.loads(e[1]) if e else None; json.loads(e[2]) if e else None; "
+        "a.close(); b.close(); print('upgrade-health-ok')"
+    )
+    runner(
+        [*base, "exec", "-T", options.compose_service, "python", "-c", health_script],
+        options.compose_file.parent if options.compose_file else None,
+    )
+
+
 def _start_compose(
     options: UpgradeOptions,
     *,
@@ -1010,31 +1071,10 @@ def _start_compose(
         ],
         options.compose_file.parent if options.compose_file else None,
     )
-    result = runner(
-        [*base, "exec", "-T", options.compose_service, "wavemind", "--version"],
-        options.compose_file.parent if options.compose_file else None,
-    )
-    if target_version not in result.stdout:
-        raise UpgradeError(
-            f"recreated container reports unexpected version: {result.stdout.strip()}"
-        )
-    health_script = (
-        "import json,os,sqlite3,wavemind; "
-        f"assert wavemind.__version__=={target_version!r}; "
-        "a=sqlite3.connect(os.environ['WAVEMIND_DB']); "
-        "b=sqlite3.connect(os.environ['WAVEMIND_EXPERIENCE_DB']); "
-        "assert a.execute('PRAGMA integrity_check').fetchone()[0]=='ok'; "
-        "assert b.execute('PRAGMA integrity_check').fetchone()[0]=='ok'; "
-        "m=a.execute('SELECT id,text,tags,metadata,vector FROM memories ORDER BY id LIMIT 1').fetchone(); "
-        "e=b.execute('SELECT id,source_json,metadata_json FROM experience_records ORDER BY id LIMIT 1').fetchone(); "
-        "json.loads(m[2]) if m else None; json.loads(m[3]) if m else None; "
-        "assert (m is None or (m[0] is not None and m[1] is not None and len(m[4])>0)); "
-        "json.loads(e[1]) if e else None; json.loads(e[2]) if e else None; "
-        "a.close(); b.close(); print('upgrade-health-ok')"
-    )
-    runner(
-        [*base, "exec", "-T", options.compose_service, "python", "-c", health_script],
-        options.compose_file.parent if options.compose_file else None,
+    _verify_compose_health(
+        options,
+        expected_version=target_version,
+        runner=runner,
     )
 
 
@@ -1042,6 +1082,7 @@ def _rollback_compose(
     options: UpgradeOptions,
     previous_image: str | None,
     rollback_image: str | None,
+    expected_version: str,
     runner: CommandRunner,
 ) -> None:
     if not previous_image or not rollback_image or options.compose_env_file is None:
@@ -1051,6 +1092,11 @@ def _rollback_compose(
     runner(
         [*base, "up", "-d", "--no-deps", "--force-recreate", "--wait", options.compose_service],
         options.compose_file.parent if options.compose_file else None,
+    )
+    _verify_compose_health(
+        options,
+        expected_version=expected_version,
+        runner=runner,
     )
 
 
@@ -1110,6 +1156,11 @@ def _recover_interrupted(
             raise UpgradeBlocked(
                 f"interrupted upgrade requires missing rollback archive: {backup}"
             )
+        expected_backup_sha256 = journal.payload.get("backup_sha256")
+        if expected_backup_sha256 and _sha256(backup) != expected_backup_sha256:
+            raise UpgradeBlocked(
+                "interrupted upgrade rollback archive checksum does not match the journal"
+            )
         restore_upgrade_backup(backup)
     source_artifact = journal.payload.get("source_artifact")
     if journal.payload.get("mode") == "python" and source_artifact:
@@ -1148,6 +1199,7 @@ def _recover_interrupted(
                 options,
                 str(previous_image) if previous_image else None,
                 str(rollback_image) if rollback_image else None,
+                str(journal.payload.get("source_version", "")),
                 runner,
             )
             if rollback_image:
@@ -1185,20 +1237,27 @@ def run_upgrade(
             previous = UpgradeJournal.load(journal_path)
             _recover_interrupted(previous, options=options, runner=runner)
 
-        source_version = (
-            _installed_version()
-            if options.mode == "python"
-            else _compose_current_version(options, runner)
-        )
+        preverified_target_artifact: ReleaseArtifact | None = None
         if options.target_artifact is not None:
             if not options.expected_sha256:
                 raise UpgradeArtifactError(
                     "--artifact requires --expected-sha256 to establish release identity"
                 )
             _name, target_version = _wheel_identity(options.target_artifact)
+            preverified_target_artifact = verify_release_artifact(
+                options.target_artifact,
+                expected_version=target_version,
+                expected_sha256=options.expected_sha256,
+                source_url="local",
+            )
             target_payload = None
         else:
             target_version, target_payload = resolve_target_version(options.target)
+        source_version = (
+            _installed_version()
+            if options.mode == "python"
+            else _compose_current_version(options, runner)
+        )
         source_key = _parse_version(source_version, label="installed")
         target_key = _parse_version(target_version, label="target")
         if target_key < source_key and not options.allow_downgrade:
@@ -1213,7 +1272,7 @@ def run_upgrade(
             mode=options.mode,
             options=options,
         )
-        target_artifact: ReleaseArtifact | None = None
+        target_artifact: ReleaseArtifact | None = preverified_target_artifact
         source_artifact: ReleaseArtifact | None = None
         image_digest: str | None = None
         previous_image: str | None = None
@@ -1223,6 +1282,9 @@ def run_upgrade(
         backup_path: Path | None = None
         schema_versions: dict[str, int] = {}
         activated = False
+        state_before: dict[str, Any] | None = None
+        config_before: list[dict[str, Any]] = []
+        object_manifests_before: list[dict[str, Any]] = []
         try:
             protected_assets = [*options.config_paths, *options.object_manifest_paths]
             if options.mode == "python":
@@ -1240,12 +1302,7 @@ def run_upgrade(
             cache_dir = options.state_dir / "artifacts"
             if options.mode == "python":
                 if options.target_artifact is not None:
-                    target_artifact = verify_release_artifact(
-                        options.target_artifact,
-                        expected_version=target_version,
-                        expected_sha256=options.expected_sha256,
-                        source_url="local",
-                    )
+                    assert target_artifact is not None
                 else:
                     target_artifact = download_release_artifact(
                         target_version,
@@ -1271,7 +1328,13 @@ def run_upgrade(
                     source_artifact.path.stat().st_size if source_artifact else 0
                 )
             else:
-                artifact_bytes = 0
+                if options.target_artifact is not None:
+                    assert target_artifact is not None
+                    journal.payload["target_artifact"] = target_artifact.as_dict()
+                    journal.write()
+                    artifact_bytes = target_artifact.path.stat().st_size
+                else:
+                    artifact_bytes = 0
                 image_digest, previous_image, target_image, rollback_image = _prepare_compose_image(
                     options,
                     target_version=target_version,
@@ -1310,11 +1373,14 @@ def run_upgrade(
 
             if options.mode == "docker-compose":
                 base = _compose_base(options)
+                # A timed-out stop can still have stopped the container. Mark
+                # the transition before invoking Docker so rollback always
+                # attempts to recreate the pinned source image.
+                compose_stopped = True
                 runner(
                     [*base, "stop", options.compose_service],
                     options.compose_file.parent if options.compose_file else None,
                 )
-                compose_stopped = True
                 journal.event("container_stopped")
                 blockers = _open_processes([options.core_db, options.experience_db])
                 if blockers:
@@ -1325,6 +1391,10 @@ def run_upgrade(
                 _assert_sqlite_writer_available(options.core_db)
                 _assert_sqlite_writer_available(options.experience_db)
 
+            state_before = {
+                "core": _database_state(options.core_db),
+                "experience": _database_state(options.experience_db),
+            }
             config_before = _file_inventory(options.config_paths)
             object_manifests_before = _file_inventory(options.object_manifest_paths)
             compose_env_without_image = (
@@ -1361,7 +1431,8 @@ def run_upgrade(
                 target_version=target_version,
             )
             journal.payload["backup_path"] = str(backup_path)
-            journal.event("backup_verified", sha256=_sha256(backup_path))
+            journal.payload["backup_sha256"] = _sha256(backup_path)
+            journal.event("backup_verified", sha256=journal.payload["backup_sha256"])
             _inject_failure(options, "backup")
 
             with tempfile.TemporaryDirectory(
@@ -1382,8 +1453,10 @@ def run_upgrade(
 
                 if options.mode == "python" and target_key != source_key:
                     assert target_artifact is not None
-                    _install_wheel(target_artifact, runner)
+                    # pip may uninstall the source distribution before failing.
+                    # Treat the package as mutated as soon as installation starts.
                     activated = True
+                    _install_wheel(target_artifact, runner)
                     journal.event("package_activated", artifact=target_artifact.as_dict())
                 elif options.mode == "docker-compose":
                     assert options.compose_env_file is not None
@@ -1482,7 +1555,13 @@ def run_upgrade(
                     rollback_errors.append(f"package: {rollback_exc}")
             if (activated or compose_stopped) and options.mode == "docker-compose":
                 try:
-                    _rollback_compose(options, previous_image, rollback_image, runner)
+                    _rollback_compose(
+                        options,
+                        previous_image,
+                        rollback_image,
+                        source_version,
+                        runner,
+                    )
                     if rollback_image:
                         with contextlib.suppress(Exception):
                             runner(["docker", "image", "rm", rollback_image], None)
@@ -1491,10 +1570,42 @@ def run_upgrade(
             elif options.mode == "docker-compose" and rollback_image:
                 with contextlib.suppress(Exception):
                     runner(["docker", "image", "rm", rollback_image], None)
+            if backup_path is not None and state_before is not None:
+                try:
+                    rollback_state = {
+                        "core": _database_state(options.core_db),
+                        "experience": _database_state(options.experience_db),
+                    }
+                    rollback_config = _file_inventory(options.config_paths)
+                    rollback_manifests = _file_inventory(options.object_manifest_paths)
+                    if rollback_state != state_before:
+                        raise UpgradeRollbackError(
+                            "database rollback parity does not match pre-upgrade state"
+                        )
+                    if rollback_config != config_before:
+                        raise UpgradeRollbackError(
+                            "configuration rollback parity does not match pre-upgrade state"
+                        )
+                    if rollback_manifests != object_manifests_before:
+                        raise UpgradeRollbackError(
+                            "object manifest rollback parity does not match pre-upgrade state"
+                        )
+                    journal.payload["rollback_parity"] = {
+                        "databases": True,
+                        "configuration": True,
+                        "object_manifests": True,
+                    }
+                    journal.write()
+                except Exception as rollback_exc:
+                    rollback_errors.append(f"parity: {rollback_exc}")
             if rollback_errors:
                 journal.set_status("rollback_failed", rollback_errors=rollback_errors)
                 raise UpgradeRollbackError(
                     f"upgrade failed ({exc}); rollback also failed: {'; '.join(rollback_errors)}"
                 ) from exc
-            journal.set_status("rolled_back", rolled_back_at=time.time())
+            journal.set_status(
+                "rolled_back",
+                rolled_back_at=time.time(),
+                rollback_parity_verified=backup_path is not None and state_before is not None,
+            )
             raise UpgradeError(f"upgrade rolled back: {exc}") from exc
