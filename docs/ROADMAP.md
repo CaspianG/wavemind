@@ -15,7 +15,7 @@ handle larger systems, attract contributors, and become credible in production.
 
 | Product truth | Status | Evidence |
 |---|---|---|
-| Public release | `v2.12.1`; runtime source `6d6fac04904b` | PyPI package `wavemind` and `ghcr.io/caspiang/wavemind:2.12.1` |
+| Public release | `v2.13.0`; runtime source `6e30491b8a47` | PyPI package `wavemind` and `ghcr.io/caspiang/wavemind:2.13.0` |
 | Safe Product snapshot | `historical`, 18/18 checks at `92c539d0a069` | [`benchmarks/safe_product_admission_results.json`](../benchmarks/safe_product_admission_results.json) |
 | Current-source admission | Required per exact source SHA | [`.github/workflows/safe-product.yml`](../.github/workflows/safe-product.yml) |
 | TypeScript SDK | `@wavemind/http`, repository-local; npm claim disabled | Repository package only |
