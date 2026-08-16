@@ -30,6 +30,7 @@ from benchmarks.long_memory_evidence_benchmark import (
 from benchmarks.public_memory_competitors import (
     MEM0_EMBEDDING_MODEL,
     run_hindsight_evidence,
+    run_langgraph_store_evidence,
     run_mem0_evidence,
 )
 
@@ -278,6 +279,8 @@ def run_benchmark(
         "chroma-static": run_chroma_static,
         "qdrant": run_qdrant_static,
         "qdrant-static": run_qdrant_static,
+        "langgraph": run_langgraph_store_evidence,
+        "langgraph-store": run_langgraph_store_evidence,
         "mem0": lambda dataset, encoder, top_k: run_mem0_evidence(
             dataset,
             encoder,
@@ -333,8 +336,9 @@ def run_benchmark(
             ),
             "note": (
                 "WaveMind, static vector, Chroma, and Qdrant receive the same "
-                "WaveMind encoder. Real memory systems use their pinned native "
-                "embedding stack; their result rows record that profile."
+                "WaveMind encoder. LangGraph BaseStore uses that same encoder. "
+                "Real memory systems with native embedding stacks record their "
+                "own profile in each result row."
             ),
         },
         "comparison_protocol": {
@@ -344,6 +348,7 @@ def run_benchmark(
             "evidence_mapping": "source provenance only; no text matching",
             "mem0_inference": False,
             "hindsight_extraction_mode": "chunks",
+            "langgraph_memory_formation": False,
             "reader": None,
             "claim_boundary": (
                 "This is retrieval evidence. Native embedding effects are not "
@@ -375,7 +380,7 @@ def main() -> int:
     parser.add_argument(
         "--engines",
         nargs="+",
-        choices=["wavemind", "memory-os", "wavemind-memory-os", "static", "static-vector", "chroma", "chroma-static", "qdrant", "qdrant-static", "mem0", "hindsight"],
+        choices=["wavemind", "memory-os", "wavemind-memory-os", "static", "static-vector", "chroma", "chroma-static", "qdrant", "qdrant-static", "langgraph", "langgraph-store", "mem0", "hindsight"],
         default=["wavemind", "static"],
     )
     parser.add_argument(
@@ -421,3 +426,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

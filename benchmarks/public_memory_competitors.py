@@ -88,6 +88,7 @@ def _external_metrics(
     system_version: str,
     embedding_profile: str,
     provenance_mode: str,
+    ingest_scope: str = "end_to_end_native_embedding_and_persistence",
 ) -> ExternalEvidenceMetrics:
     base = compute_evidence_metrics(
         dataset.queries,
@@ -102,12 +103,117 @@ def _external_metrics(
     values.update(
         ingest_total_ms=ingest_total_ms,
         ingest_avg_ms=ingest_total_ms / max(1, len(dataset.memories)),
-        ingest_scope="end_to_end_native_embedding_and_persistence",
+        ingest_scope=ingest_scope,
         system_version=system_version,
         embedding_profile=embedding_profile,
         provenance_mode=provenance_mode,
     )
     return ExternalEvidenceMetrics(**values)
+
+
+class _BenchmarkEmbeddings:
+    """Expose the shared benchmark encoder through LangGraph's embedding API."""
+
+    def __init__(self, encoder: Any) -> None:
+        self.encoder = encoder
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        return self.encoder.encode_vectors(texts).tolist()
+
+    def embed_query(self, text: str) -> list[float]:
+        return self.encoder.encode_vector(text).tolist()
+
+
+def _store_item_value(item: Any) -> dict[str, Any]:
+    value = getattr(item, "value", None)
+    if value is None and isinstance(item, dict):
+        value = item.get("value")
+    return dict(value or {})
+
+
+def run_langgraph_store_evidence(
+    dataset: EvidenceDataset,
+    encoder: Any,
+    top_k: int,
+    *,
+    store_factory: Callable[[dict[str, Any]], Any] | None = None,
+) -> ExternalEvidenceMetrics:
+    """Run LangGraph BaseStore semantic retrieval on the shared protocol.
+
+    This is deliberately labeled as a BaseStore baseline, not LangMem: it
+    measures framework-native storage, namespace isolation, semantic search,
+    and source provenance without claiming memory formation or optimization.
+    """
+
+    vector_dim = int(getattr(encoder, "vector_dim"))
+    index = {
+        "embed": _BenchmarkEmbeddings(encoder),
+        "dims": vector_dim,
+        "fields": ["text"],
+    }
+    if store_factory is None:
+        if importlib.util.find_spec("langgraph") is None:
+            raise RuntimeError(
+                "Install the real LangGraph benchmark dependency: "
+                'pip install "langgraph>=1.2,<2".'
+            )
+        from langgraph.store.memory import InMemoryStore
+
+        store = InMemoryStore(index=index)
+    else:
+        store = store_factory(index)
+
+    ingest_started = time.perf_counter()
+    try:
+        for item in dataset.memories:
+            store.put(
+                (item.namespace, "memories"),
+                item.id,
+                {
+                    "text": item.text,
+                    "evidence_id": item.id,
+                    "timestamp": item.timestamp or "",
+                },
+                index=["text"],
+            )
+        ingest_total_ms = (time.perf_counter() - ingest_started) * 1000.0
+
+        rankings: dict[str, list[str]] = {}
+        texts: dict[str, list[str]] = {}
+        latencies: list[float] = []
+        for query in dataset.queries:
+            started = time.perf_counter()
+            rows = store.search(
+                (query.namespace, "memories"),
+                query=query.text,
+                limit=top_k,
+            )
+            latencies.append((time.perf_counter() - started) * 1000.0)
+            values = [_store_item_value(row) for row in rows]
+            rankings[query.id] = [
+                str(value.get("evidence_id") or "") for value in values
+            ][:top_k]
+            texts[query.id] = [
+                str(value.get("text") or "") for value in values
+            ][:top_k]
+    finally:
+        close_store = getattr(store, "close", None)
+        if callable(close_store):
+            close_store()
+
+    return _external_metrics(
+        dataset,
+        rankings,
+        texts,
+        latencies,
+        top_k,
+        "LangGraph BaseStore",
+        ingest_total_ms=ingest_total_ms,
+        system_version=_package_version("langgraph"),
+        embedding_profile=f"shared:{type(encoder).__name__}",
+        provenance_mode="value.evidence_id",
+        ingest_scope="end_to_end_shared_embedding_and_in_memory_persistence",
+    )
 
 
 def _package_version(package: str) -> str:
@@ -486,3 +592,4 @@ def run_hindsight_evidence(
         ),
         provenance_mode="document_id",
     )
+
