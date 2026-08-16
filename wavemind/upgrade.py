@@ -396,10 +396,12 @@ def _process_alive(pid: int) -> bool:
     if pid <= 0:
         return False
     try:
-        os.kill(pid, 0)
-    except OSError:
-        return False
-    return True
+        import psutil
+    except ImportError as exc:  # pragma: no cover - dependency contract
+        raise UpgradeBlocked("psutil is required for the upgrade lock") from exc
+    # ``os.kill(pid, 0)`` is a safe existence probe on POSIX, but Python can
+    # route it through TerminateProcess on Windows and end the inspected PID.
+    return bool(psutil.pid_exists(pid))
 
 
 @contextlib.contextmanager

@@ -197,6 +197,23 @@ def test_process_preflight_never_queries_docker_command_line(tmp_path, monkeypat
     assert [row["pid"] for row in blockers] == [9002]
 
 
+def test_process_liveness_probe_never_signals_the_process(monkeypatch):
+    class Psutil:
+        @staticmethod
+        def pid_exists(pid):
+            return pid == 123
+
+    monkeypatch.setitem(sys.modules, "psutil", Psutil)
+
+    def fail_kill(*_args):
+        pytest.fail("process liveness probes must not signal the process")
+
+    monkeypatch.setattr(upgrade.os, "kill", fail_kill)
+
+    assert upgrade._process_alive(123) is True
+    assert upgrade._process_alive(456) is False
+
+
 def test_same_version_upgrade_adopts_legacy_ledgers_and_preserves_all_state(tmp_path):
     core, experience, memory_id, experience_id = _state(tmp_path)
     config = tmp_path / "policy.json"
