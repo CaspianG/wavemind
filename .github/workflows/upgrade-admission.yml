@@ -137,8 +137,8 @@ jobs:
           python benchmarks/upgrade_python_cross_version.py \
             --candidate-wheel "$WHEEL" \
             --candidate-sha256 "$WHEEL_SHA256" \
-            --source-version 2.10.0 \
             --source-version 2.11.0 \
+            --source-version 2.12.1 \
             --work-root "${RUNNER_TEMP}/cross-version" \
             --output "${RUNNER_TEMP}/upgrade-cross-version.json"
 
@@ -148,7 +148,7 @@ jobs:
             --candidate-image "wavemind:upgrade-${GITHUB_SHA}" \
             --candidate-wheel "$WHEEL" \
             --candidate-sha256 "$WHEEL_SHA256" \
-            --old-image ghcr.io/caspiang/wavemind:2.11.0 \
+            --old-image ghcr.io/caspiang/wavemind:2.12.1 \
             --expected-source-sha "$GITHUB_SHA" \
             --work-root "${RUNNER_TEMP}/compose-upgrade" \
             --output "${RUNNER_TEMP}/upgrade-docker-compose.json"

@@ -3,7 +3,7 @@ name: wavemind
 description: Local-first dynamic memory layer with scheduled cluster repair
 type: application
 version: 0.6.1
-appVersion: "2.12.1"
+appVersion: "2.13.0"
 keywords:
   - ai
   - memory

@@ -37,7 +37,7 @@
             "containers": [
               {
                 "name": "api",
-                "image": "ghcr.io/caspiang/wavemind:2.12.1",
+                "image": "ghcr.io/caspiang/wavemind:2.13.0",
                 "command": [
                   "wavemind"
                 ],
@@ -176,7 +176,7 @@
             "containers": [
               {
                 "name": "api",
-                "image": "ghcr.io/caspiang/wavemind:2.12.1",
+                "image": "ghcr.io/caspiang/wavemind:2.13.0",
                 "command": [
                   "wavemind"
                 ],
