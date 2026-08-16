@@ -72,7 +72,7 @@ redis = [
   "redis>=5.0",
 ]
 mcp = [
-  "mcp>=1.28,<2",
+  "mcp>=1.28,<3",
 ]
 s3 = [
   "boto3>=1.34",
@@ -114,7 +114,7 @@ dev = [
   "httpx>=0.27",
   "httpx2>=2",
   "langchain-classic>=1.0",
-  "mcp>=1.28,<2",
+  "mcp>=1.28,<3",
   "ruff==0.15.22",
   "tomli>=2.0.1; python_version < '3.11'",
 ]
