@@ -4,7 +4,7 @@ Notable user-facing and operational changes are recorded here. Git tags,
 GitHub Releases, checked evidence artifacts, and package versions remain the
 authoritative release sources.
 
-## 2.13.0 - Unreleased candidate (prepared 2026-08-16)
+## [2.13.0] - 2026-08-17
 
 - Added the `wavemind upgrade` command for verified one-command Python and
   Docker Compose upgrades, with dry-run and machine-readable output.
@@ -19,8 +19,8 @@ authoritative release sources.
   preflight requirements, rollback behavior, and recovery procedures.
 
 Candidate source: `a23283123eb37b187a755db7ab4c4776555198d8`.
-Publication remains blocked until tag `v2.13.0` triggers and verifies GitHub
-Release, PyPI, and GHCR.
+
+Release: [WaveMind v2.13.0](https://github.com/CaspianG/wavemind/releases/tag/v2.13.0)
 
 ## [2.12.1] - 2026-08-10
 
@@ -155,7 +155,7 @@ Release: [WaveMind v2.6.3](https://github.com/CaspianG/wavemind/releases/tag/v2.
 
 | Version | Published | Notes |
 |---|---|---|
-| `v2.13.0` candidate (unpublished) | prepared 2026-08-16 | Verified one-command Python and Docker Compose upgrades with rollback; tag required |
+| [v2.13.0](https://github.com/CaspianG/wavemind/releases/tag/v2.13.0) | 2026-08-17 | Verified one-command Python and Docker Compose upgrades with rollback |
 | [v2.12.1](https://github.com/CaspianG/wavemind/releases/tag/v2.12.1) | 2026-08-10 | Exact-current Workspace Experience admission and release evidence |
 | [v2.12.0](https://github.com/CaspianG/wavemind/releases/tag/v2.12.0) | 2026-08-10 | Verified Workspace Experience and secure workspace HTTP isolation |
 | [v2.11.0](https://github.com/CaspianG/wavemind/releases/tag/v2.11.0) | 2026-08-09 | Safe Trusted Product foundation and secure service runtimes |
@@ -172,6 +172,7 @@ Release: [WaveMind v2.6.3](https://github.com/CaspianG/wavemind/releases/tag/v2.
 See the complete [release archive](https://github.com/CaspianG/wavemind/releases)
 for earlier versions and attached evidence bundles.
 
+[2.13.0]: https://github.com/CaspianG/wavemind/compare/v2.12.1...v2.13.0
 [2.12.1]: https://github.com/CaspianG/wavemind/compare/v2.12.0...v2.12.1
 [2.12.0]: https://github.com/CaspianG/wavemind/compare/v2.11.0...v2.12.0
 [2.11.0]: https://github.com/CaspianG/wavemind/compare/v2.10.0...v2.11.0

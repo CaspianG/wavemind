@@ -40,6 +40,21 @@ def render_status(status: dict, *, docs_path: bool) -> str:
         if docs_path
         else safe["current_claim_source"]
     )
+    if candidate["publication_status"] == "published":
+        release_state = (
+            f"| Current release | `v{candidate['version']}` at "
+            f"`{candidate['source_sha'][:12]}`; `published` | Upgrade admission "
+            f"`{release_candidate['upgrade_admission']}`; GitHub Release, PyPI, "
+            "and GHCR verified |"
+        )
+    else:
+        release_state = (
+            f"| Release candidate | `v{candidate['version']}` at "
+            f"`{candidate['source_sha'][:12]}`; "
+            f"`{release_candidate['publication_status']}` until its tag exists | "
+            f"Upgrade admission `{release_candidate['upgrade_admission']}`; "
+            "tag-only release workflow |"
+        )
     return "\n".join(
         (
             START,
@@ -50,7 +65,7 @@ def render_status(status: dict, *, docs_path: bool) -> str:
             "| Product truth | Status | Evidence |",
             "|---|---|---|",
             f"| Public release | `v{release['version']}`; runtime source `{release['source_sha'][:12]}` | PyPI package `{release['python_package']}` and `{release['container']}` |",
-            f"| Release candidate | `v{candidate['version']}` at `{candidate['source_sha'][:12]}`; `{release_candidate['publication_status']}` until its tag exists | Upgrade admission `{release_candidate['upgrade_admission']}`; tag-only release workflow |",
+            release_state,
             f"| Safe Product snapshot | `{safe['checked_in_status']}`, {safe['checked_in_checks_passed']}/{safe['checked_in_checks_total']} checks at `{safe['checked_in_source_sha'][:12]}` | [`{safe['artifact']}`]({artifact}) |",
             f"| Current-source admission | Required per exact source SHA | [`{safe['current_claim_source']}`]({workflow}) |",
             f"| TypeScript SDK | `{status['typescript']['package_name']}`, {status['typescript']['distribution']}; npm claim disabled | Repository package only |",
@@ -108,9 +123,21 @@ def consistency_errors(status: dict) -> list[str]:
         errors.append("TypeScript package name differs from product status")
     if status["typescript"]["npm_published"] is not False:
         errors.append("npm publication claim must remain disabled until verified")
-    if status["stable_release"].get("publication_status") != "unpublished_candidate":
-        errors.append("source version must remain an unpublished candidate until verified")
-    if status["public_release"].get("version") == expected:
+    publication_status = status["stable_release"].get("publication_status")
+    if publication_status not in {"unpublished_candidate", "published"}:
+        errors.append("stable release publication status is invalid")
+    if publication_status == "published":
+        if status["public_release"].get("version") != expected:
+            errors.append("public release must equal the published stable release")
+        if status["public_release"].get("source_sha") != status["stable_release"].get(
+            "source_sha"
+        ):
+            errors.append("public and stable release source SHAs must match")
+        if status["release_candidate"].get("publication_status") != "published":
+            errors.append("release candidate status must record publication")
+        if status["release_candidate"].get("blocker") is not None:
+            errors.append("published release must not retain a blocker")
+    elif status["public_release"].get("version") == expected:
         errors.append("public release must not equal the unpublished source candidate")
     for target in TARGETS:
         expected_block = render_status(
