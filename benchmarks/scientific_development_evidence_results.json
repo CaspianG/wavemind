@@ -1,0 +1,133 @@
+{
+  "schema": "wavemind.scientific_development_evidence.v1",
+  "source_sha": "1f785db4500dedccbc53c7e6203e625c5ef00d2b",
+  "protocol_digest": "489d3ff6fca733340b65b26c52ccb5533b19ad14fef66b1d2d912691dac22d59",
+  "status": "failed_experiment",
+  "admission_eligible": false,
+  "candidates": {
+    "causal-utility-controller-v1": {
+      "memoryagentbench": {
+        "artifact_source_sha": "d023ed651c64cc306d66f6805c71022a17eef4da",
+        "case_ids": [
+          "Conflict_Resolution:0002:e2789821b46e6626:q0000",
+          "Conflict_Resolution:0002:e2789821b46e6626:q0001",
+          "Conflict_Resolution:0002:e2789821b46e6626:q0002",
+          "Conflict_Resolution:0006:e2789821b46e6626:q0000",
+          "Conflict_Resolution:0006:e2789821b46e6626:q0001",
+          "Conflict_Resolution:0006:e2789821b46e6626:q0002"
+        ],
+        "raw_path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\work\\wavemind-scientific-core\\benchmarks\\scientific_memoryagentbench_causal_multicluster_dev_raw.jsonl",
+        "raw_sha256": "1740889575d0d490df4023a01250347bd0843a47cc612f1d3835921533a84d4c",
+        "paired_cluster_bootstrap": {
+          "paired": true,
+          "cluster_key": "context",
+          "cluster_count": 2,
+          "row_count": 6,
+          "repeats": 2000,
+          "seed": 17,
+          "confidence_level": 0.95,
+          "mean_difference": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0
+        },
+        "positive_uplift_lcb": false,
+        "production_case_count": 0,
+        "promoted_memory_ids": [],
+        "false_verified_promotions": 0
+      },
+      "memops": {
+        "artifact_source_sha": "95d24e8a6eb1a05ae8636feba83c293af038d3e2",
+        "case_ids": [
+          "A04_forget_q2",
+          "A04_forget_q4",
+          "A04_forget_q6",
+          "A04_forget_q8",
+          "A04_forget_q10"
+        ],
+        "independent_subject_ids": [
+          "A04"
+        ],
+        "independent_cluster_count": 1,
+        "confidence_interval_status": "insufficient_independent_clusters",
+        "observed_mean_effect": -0.4,
+        "raw_path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-causal-dev-95d24e8\\raw_pairs.jsonl",
+        "raw_sha256": "55bba3273fafeeb5b472f79743dd8767885c3c600ed2c97d0a5b618cf110d634",
+        "production_case_count": 0,
+        "promoted_memory_ids": [],
+        "false_verified_promotions": 0
+      },
+      "advance_to_validation": false,
+      "decision": "No positive lower 95% confidence bound on multicluster MAB; MemOps mean is negative and has only one independent subject."
+    },
+    "evidence-constrained-associative-graph-v1": {
+      "memoryagentbench": {
+        "artifact_source_sha": "d023ed651c64cc306d66f6805c71022a17eef4da",
+        "case_ids": [
+          "Conflict_Resolution:0002:e2789821b46e6626:q0000",
+          "Conflict_Resolution:0002:e2789821b46e6626:q0001",
+          "Conflict_Resolution:0002:e2789821b46e6626:q0002",
+          "Conflict_Resolution:0006:e2789821b46e6626:q0000",
+          "Conflict_Resolution:0006:e2789821b46e6626:q0001",
+          "Conflict_Resolution:0006:e2789821b46e6626:q0002"
+        ],
+        "raw_path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\work\\wavemind-scientific-core\\benchmarks\\scientific_memoryagentbench_graph_multicluster_dev_raw.jsonl",
+        "raw_sha256": "4b4d0d71e74382d402bc7ef7b43c166855576ab0520b25fd5d3e7d52e00c318f",
+        "paired_cluster_bootstrap": {
+          "paired": true,
+          "cluster_key": "context",
+          "cluster_count": 2,
+          "row_count": 6,
+          "repeats": 2000,
+          "seed": 17,
+          "confidence_level": 0.95,
+          "mean_difference": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0
+        },
+        "positive_uplift_lcb": false,
+        "production_case_count": 0,
+        "promoted_memory_ids": [],
+        "false_verified_promotions": 0
+      },
+      "memops": {
+        "artifact_source_sha": "94fe6ab21025ec60f25a3127647581946d3905d4",
+        "case_ids": [
+          "A04_forget_q2",
+          "A04_forget_q4",
+          "A04_forget_q6",
+          "A04_forget_q8",
+          "A04_forget_q10"
+        ],
+        "independent_subject_ids": [
+          "A04"
+        ],
+        "independent_cluster_count": 1,
+        "confidence_interval_status": "insufficient_independent_clusters",
+        "observed_mean_effect": -0.4,
+        "raw_path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-graph-dev-94fe6ab\\raw_pairs.jsonl",
+        "raw_sha256": "e33018932d79996625029459f6de23a904d1d98da3bb8d16aedb08c19ee12a76",
+        "production_case_count": 0,
+        "promoted_memory_ids": [],
+        "false_verified_promotions": 0
+      },
+      "advance_to_validation": false,
+      "decision": "No positive lower 95% confidence bound on multicluster MAB; MemOps mean is negative and has only one independent subject."
+    }
+  },
+  "state_bench": {
+    "status": "prepared_waiting_for_credentials",
+    "source_sha": "0b3558043c3797183c8bb299553a238fb537acd3",
+    "official_execution_succeeded": false,
+    "validation_or_final_touched": false
+  },
+  "longmemeval_v2": {
+    "full_451_run_executed": false,
+    "reason": "no passed development gate artifact exists"
+  },
+  "claim_boundary": "Bounded development failed to establish positive causal utility. No admission, SOTA, WaveField replacement, validation, or held-out claim is permitted.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "702c2984c20a45cde7bfbe1f88ffef0c4cd5f4c5053496992ce1610410b74586"
+  }
+}
