@@ -25,6 +25,7 @@ class NativeOllamaCaller:
 
     endpoint: str
     timeout_seconds: float = 300.0
+    context_window: int = 32768
 
     def __call__(
         self,
@@ -41,6 +42,7 @@ class NativeOllamaCaller:
             "options": {
                 "temperature": float(temperature),
                 "num_predict": int(max_tokens),
+                "num_ctx": int(self.context_window),
             },
         }
         request = urllib.request.Request(
@@ -103,6 +105,7 @@ def build_bounded_dev_artifact(
     memops_sha: str,
     model: str,
     model_digest: str,
+    context_window: int,
     endpoint_kind: str,
     split_unit_ids: Sequence[str],
     output_files: Sequence[str | Path],
@@ -142,7 +145,11 @@ def build_bounded_dev_artifact(
             ],
             "upstream_modified": False,
         },
-        "model": {"id": model, "digest": model_digest},
+        "model": {
+            "id": model,
+            "digest": model_digest,
+            "context_window": int(context_window),
+        },
         "transport": endpoint_kind,
         "split_unit_ids": sorted(set(split_unit_ids)),
         "final_split_touched": False,

@@ -39,6 +39,7 @@ def main(argv: list[str] | None = None) -> int:
         help="Local development judge model; defaults to --model.",
     )
     parser.add_argument("--ollama-endpoint", default="http://localhost:11435")
+    parser.add_argument("--context-window", type=int, default=32768)
     parser.add_argument("--max-questions", type=int, default=6)
     parser.add_argument("--question-offset", type=int, default=0)
     parser.add_argument("--top-k", type=int, default=3)
@@ -55,7 +56,10 @@ def main(argv: list[str] | None = None) -> int:
     if not callable(run_pipeline):
         raise RuntimeError("official MemOps run_pipeline entrypoint is missing")
 
-    caller = NativeOllamaCaller(args.ollama_endpoint)
+    caller = NativeOllamaCaller(
+        args.ollama_endpoint,
+        context_window=args.context_window,
+    )
     summary = run_pipeline(
         adjacent_input_dir=args.adjacent_input_dir,
         longitudinal_input_dir=args.longitudinal_input_dir,
@@ -111,6 +115,7 @@ def main(argv: list[str] | None = None) -> int:
         memops_sha=args.upstream_sha,
         model=args.model,
         model_digest=args.model_digest,
+        context_window=args.context_window,
         endpoint_kind="ollama-native-api/local-development-only",
         split_unit_ids=split_ids,
         output_files=output_files,

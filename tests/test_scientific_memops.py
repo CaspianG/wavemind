@@ -59,6 +59,7 @@ def test_native_ollama_caller_returns_memops_compatible_usage(monkeypatch):
     assert captured["payload"]["options"] == {
         "temperature": 0.1,
         "num_predict": 32,
+        "num_ctx": 32768,
     }
 
 
@@ -73,6 +74,7 @@ def test_bounded_dev_artifact_retains_failures_and_forbids_admission(tmp_path):
         memops_sha="b" * 40,
         model="mistral:7b",
         model_digest="sha256:example",
+        context_window=32768,
         endpoint_kind="ollama-native-api/local-development-only",
         split_unit_ids=("A04_remember", "A04_remember"),
         output_files=(output,),
