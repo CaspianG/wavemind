@@ -108,8 +108,8 @@ class ScientificMemoryRuntime:
             tags=("scientific-memory", definition.kind.value),
             metadata={
                 "scientific_memory_id": definition.memory_id,
-                "verification_status": "verified",
-                "verified": True,
+                "verification_status": "candidate_unverified",
+                "verified": False,
                 "kind": definition.kind.value,
             },
         )

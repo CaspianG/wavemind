@@ -77,6 +77,15 @@ def test_runtime_abstains_before_proof_then_recalls_promoted_memory(tmp_path):
         bootstrap_repeats=200,
     ) as runtime:
         runtime.register_memory(_definition("procedure:deploy"))
+        substrate_result = runtime.retriever.query(
+            "deploy service rollback",
+            namespace="scientific",
+            top_k=1,
+        )[0]
+        assert substrate_result.metadata["verified"] is False
+        assert (
+            substrate_result.metadata["verification_status"] == "candidate_unverified"
+        )
         before = runtime.recall(
             "deploy service rollback",
             context={"domain": "operations"},
