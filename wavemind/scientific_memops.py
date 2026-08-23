@@ -23,6 +23,7 @@ from .scientific_runtime import (
 
 
 MEMOPS_BOUNDED_DEV_SCHEMA = "wavemind.memops_bounded_development.v1"
+MEMOPS_CANDIDATE_DEV_SCHEMA = "wavemind.memops_candidate_development.v1"
 
 
 class ScientificMemOpsRetriever:
@@ -269,5 +270,71 @@ def build_bounded_dev_artifact(
         "failed_attempts_retained": file_rows(failed_attempt_files),
         "outputs": file_rows(output_files),
         "official_summary": dict(summary),
+    }
+    return attach_artifact_integrity(payload)
+
+
+def build_candidate_dev_artifact(
+    *,
+    source_sha: str,
+    protocol_digest: str,
+    memops_sha: str,
+    candidate_id: str,
+    model: str,
+    model_digest: str,
+    context_window: int,
+    raw_output_file: str | Path,
+    case_ids: Sequence[str],
+    paired_effects: Sequence[float],
+    production_case_count: int,
+    promoted_memory_ids: Sequence[str],
+) -> dict[str, Any]:
+    raw_path = Path(raw_output_file).resolve()
+    if not raw_path.is_file():
+        raise FileNotFoundError(raw_path)
+    effects = [float(value) for value in paired_effects]
+    payload = {
+        "schema": MEMOPS_CANDIDATE_DEV_SCHEMA,
+        "phase": "bounded-development",
+        "admission_eligible": False,
+        "reason_not_admission_eligible": (
+            "single development split, local answer model and local judge; "
+            "held-out admission arms were not executed"
+        ),
+        "source_sha": source_sha,
+        "protocol_digest": protocol_digest,
+        "official_upstream": {
+            "repository": "MemTensor/MemOps",
+            "sha": memops_sha,
+            "runners": [
+                "5-test_operation_metrics.py:run_gpt_rag",
+                "5.5-evaluate_operation_metrics.py:evaluate_entry",
+            ],
+            "upstream_modified": False,
+        },
+        "candidate_id": candidate_id,
+        "control_id": "no-memory",
+        "model": {
+            "id": model,
+            "digest": model_digest,
+            "context_window": int(context_window),
+        },
+        "case_ids": list(case_ids),
+        "case_count": len(case_ids),
+        "final_split_touched": False,
+        "paired_effect": {
+            "values": effects,
+            "mean": sum(effects) / len(effects) if effects else 0.0,
+            "positive_count": sum(value > 0.0 for value in effects),
+            "zero_count": sum(value == 0.0 for value in effects),
+            "negative_count": sum(value < 0.0 for value in effects),
+        },
+        "production_case_count": int(production_case_count),
+        "promoted_memory_ids": sorted(set(promoted_memory_ids)),
+        "raw_output": {
+            "path": str(raw_path),
+            "bytes": raw_path.stat().st_size,
+            "sha256": file_sha256(raw_path),
+        },
     }
     return attach_artifact_integrity(payload)

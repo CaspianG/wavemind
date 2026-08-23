@@ -7,9 +7,11 @@ import pytest
 from wavemind.evidence import file_sha256, validate_artifact_integrity
 from wavemind.scientific_memops import (
     MEMOPS_BOUNDED_DEV_SCHEMA,
+    MEMOPS_CANDIDATE_DEV_SCHEMA,
     NativeOllamaCaller,
     ScientificMemOpsRetriever,
     build_bounded_dev_artifact,
+    build_candidate_dev_artifact,
     require_exact_upstream_sha,
 )
 from wavemind.scientific_runtime import ScientificCandidateMode
@@ -145,3 +147,28 @@ def test_memops_adapter_abstains_in_production_and_allows_shadow(tmp_path):
     assert shadow_recall.abstained is False
     assert "gold_secret" in shadow_items[0]
     assert "gold_secret" not in shadow_recall.contents[0]
+
+
+def test_candidate_dev_artifact_is_explicitly_non_admission(tmp_path):
+    raw = tmp_path / "raw_pairs.jsonl"
+    raw.write_text('{"paired_effect":1.0}\n', encoding="utf-8")
+    payload = build_candidate_dev_artifact(
+        source_sha="a" * 40,
+        protocol_digest="b" * 64,
+        memops_sha="c" * 40,
+        candidate_id="causal-utility-controller-v1",
+        model="mistral:7b",
+        model_digest="d" * 64,
+        context_window=32768,
+        raw_output_file=raw,
+        case_ids=("case-1", "case-2"),
+        paired_effects=(1.0, 0.0),
+        production_case_count=0,
+        promoted_memory_ids=(),
+    )
+
+    assert payload["schema"] == MEMOPS_CANDIDATE_DEV_SCHEMA
+    assert payload["admission_eligible"] is False
+    assert payload["paired_effect"]["mean"] == 0.5
+    assert payload["paired_effect"]["positive_count"] == 1
+    assert validate_artifact_integrity(payload) == []
