@@ -37,6 +37,18 @@ SOURCE_REVISION_ENV = {
     "mem0-oss": "WAVEMIND_MEM0_SOURCE_REVISION",
     "langgraph": "WAVEMIND_LANGGRAPH_SOURCE_REVISION",
 }
+CREDENTIAL_ENV = {
+    "official-judge-api-key": (
+        "WAVEMIND_OFFICIAL_JUDGE_API_KEY",
+        "OPENAI_API_KEY",
+    ),
+    "longmemeval-v2-reader-endpoint": (
+        "WAVEMIND_LONGMEMEVAL_READER_BASE_URL",
+    ),
+    "longmemeval-v2-embedding-endpoint": (
+        "WAVEMIND_LONGMEMEVAL_EMBEDDING_BASE_URL",
+    ),
+}
 
 
 def _repository_state(root: Path) -> dict[str, Any]:
@@ -166,6 +178,16 @@ def evaluate_scientific_memory_preflight(
             "issue": "" if path and path.is_file() else "official runner entrypoint missing",
         }
 
+    credential_checks: dict[str, Any] = {}
+    for credential_id, alternatives in CREDENTIAL_ENV.items():
+        present = [name for name in alternatives if bool(env.get(name, "").strip())]
+        credential_checks[credential_id] = {
+            "accepted_environment_variables": list(alternatives),
+            "present_environment_variables": present,
+            "ready": bool(present),
+            "issue": "" if present else "required credential or endpoint is missing",
+        }
+
     run_paths = sorted(Path(run_dir).glob("*.json")) if Path(run_dir).is_dir() else []
     full_longmem_runs = 0
     for path in run_paths:
@@ -197,6 +219,11 @@ def evaluate_scientific_memory_preflight(
         "official_runners": {
             "ready": all(row["ready"] for row in runner_checks.values()),
             "runners": runner_checks,
+        },
+        "official_credentials": {
+            "ready": all(row["ready"] for row in credential_checks.values()),
+            "credentials": credential_checks,
+            "secret_values_recorded": False,
         },
         "longmemeval_v2_one_shot_unconsumed": {
             "ready": full_longmem_runs == 0,

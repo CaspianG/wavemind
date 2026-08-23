@@ -29,6 +29,11 @@ def test_preflight_is_action_required_without_official_inputs(tmp_path):
     assert payload["checks"]["real_baseline_packages"]["ready"] is False
     assert payload["checks"]["official_datasets"]["ready"] is False
     assert payload["checks"]["official_runners"]["ready"] is False
+    assert payload["checks"]["official_credentials"]["ready"] is False
+    assert (
+        payload["checks"]["official_credentials"]["secret_values_recorded"]
+        is False
+    )
     assert payload["checks"]["longmemeval_v2_one_shot_unconsumed"]["ready"] is True
 
 
@@ -48,3 +53,27 @@ def test_preflight_blocks_dirty_worktree_even_with_exact_sha(tmp_path):
     check = payload["checks"]["clean_exact_sha"]
     assert check["ready"] is False
     assert check["issue"] == "worktree has uncommitted changes"
+
+
+def test_preflight_records_credential_presence_without_secret_values(tmp_path):
+    environment = {
+        "OPENAI_API_KEY": "top-secret",
+        "WAVEMIND_LONGMEMEVAL_READER_BASE_URL": "http://reader.invalid/v1",
+        "WAVEMIND_LONGMEMEVAL_EMBEDDING_BASE_URL": "http://embed.invalid/v1",
+    }
+    payload = evaluate_scientific_memory_preflight(
+        project_root=ROOT,
+        protocol_path=ROOT / "benchmarks" / "scientific_memory_protocol_v1.json",
+        dataset_manifest_path=(
+            ROOT / "benchmarks" / "evaluation_dataset_manifest_v1.json"
+        ),
+        run_dir=tmp_path,
+        environment=environment,
+        package_versions={},
+        repository_state={"sha": "a" * 40, "clean": True},
+    )
+
+    credentials = payload["checks"]["official_credentials"]
+    assert credentials["ready"] is True
+    assert credentials["secret_values_recorded"] is False
+    assert "top-secret" not in str(credentials)
