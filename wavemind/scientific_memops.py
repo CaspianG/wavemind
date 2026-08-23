@@ -136,7 +136,10 @@ def build_bounded_dev_artifact(
         "official_upstream": {
             "repository": "MemTensor/MemOps",
             "sha": memops_sha,
-            "runner": "5-test_operation_metrics.py:run_pipeline",
+            "runners": [
+                "5-test_operation_metrics.py:run_pipeline",
+                "5.5-evaluate_operation_metrics.py:run_pipeline",
+            ],
             "upstream_modified": False,
         },
         "model": {"id": model, "digest": model_digest},

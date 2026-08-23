@@ -33,6 +33,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--artifact", type=Path, required=True)
     parser.add_argument("--model", default="mistral:7b")
     parser.add_argument("--model-digest", required=True)
+    parser.add_argument(
+        "--judge-model",
+        default=None,
+        help="Local development judge model; defaults to --model.",
+    )
     parser.add_argument("--ollama-endpoint", default="http://localhost:11435")
     parser.add_argument("--max-questions", type=int, default=6)
     parser.add_argument("--question-offset", type=int, default=0)
@@ -72,10 +77,33 @@ def main(argv: list[str] | None = None) -> int:
         no_context_models=(),
         run_adjacent=False,
     )
+    evaluator_path = args.upstream_root / "5.5-evaluate_operation_metrics.py"
+    if not evaluator_path.is_file():
+        raise FileNotFoundError(evaluator_path)
+    evaluator_module = runpy.run_path(str(evaluator_path))
+    evaluate_pipeline = evaluator_module.get("run_pipeline")
+    if not callable(evaluate_pipeline):
+        raise RuntimeError("official MemOps evaluation entrypoint is missing")
+    evaluation_dir = args.output_dir / "evaluation"
+    evaluation_summary = evaluate_pipeline(
+        input_file=Path(summary["all_methods_output"]),
+        output_dir=evaluation_dir,
+        judge_model=args.judge_model or args.model,
+        call_llm=caller,
+        show_progress=True,
+        eval_workers=1,
+        evidence_dirs=(args.adjacent_input_dir,),
+    )
+    combined_summary = {
+        "generation": summary,
+        "evaluation": evaluation_summary,
+    }
     output_files = [
         Path(summary["all_methods_output"]),
         Path(args.output_dir) / "summary.json",
         *[Path(path) for path in summary["retrieval_outputs"].values()],
+        Path(evaluation_summary["output_file"]),
+        evaluation_dir / "summary.json",
     ]
     split_ids = sorted(path.stem for path in args.longitudinal_input_dir.glob("*.json"))
     artifact = build_bounded_dev_artifact(
@@ -87,7 +115,7 @@ def main(argv: list[str] | None = None) -> int:
         split_unit_ids=split_ids,
         output_files=output_files,
         failed_attempt_files=args.failed_attempt_file,
-        summary=summary,
+        summary=combined_summary,
     )
     args.artifact.parent.mkdir(parents=True, exist_ok=True)
     args.artifact.write_text(
