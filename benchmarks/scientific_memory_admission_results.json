@@ -3,7 +3,7 @@
   "protocol_id": "scientific-core-reset-2026-08-23-v1",
   "protocol_digest": "489d3ff6fca733340b65b26c52ccb5533b19ad14fef66b1d2d912691dac22d59",
   "baseline_source_sha": "c30205ed389057bc695488655a3f8650ba8e5277",
-  "source_sha": "2f8ab0129b24af21fe41af844328a93153df88b4",
+  "source_sha": "b1c446adf792b194a6880ec65fafd864d8f9198a",
   "status": "failed_experiment",
   "admitted": false,
   "admitted_candidates": [],
@@ -117,6 +117,6 @@
   "integrity": {
     "schema": "wavemind.artifact_integrity.v1",
     "algorithm": "sha256",
-    "payload_sha256": "09866b913cb22aa8a9b5188ec29d174bc8c6b24dede8e228d5b179618c954e84"
+    "payload_sha256": "a770b887466224005da3456aaaa8151780c19db3d5e44098b3a8e976cf7a29b0"
   }
 }

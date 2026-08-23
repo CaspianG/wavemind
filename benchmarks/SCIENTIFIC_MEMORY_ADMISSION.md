@@ -1,7 +1,7 @@
 # Scientific Memory Admission
 
 - Status: **failed_experiment**
-- Evaluated HEAD SHA: `2f8ab0129b24af21fe41af844328a93153df88b4`
+- Evaluated HEAD SHA: `b1c446adf792b194a6880ec65fafd864d8f9198a`
 - Frozen baseline SHA: `c30205ed389057bc695488655a3f8650ba8e5277`
 - Protocol digest: `489d3ff6fca733340b65b26c52ccb5533b19ad14fef66b1d2d912691dac22d59`
 
