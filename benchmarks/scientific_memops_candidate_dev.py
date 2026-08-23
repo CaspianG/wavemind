@@ -139,6 +139,10 @@ def main(argv: list[str] | None = None) -> int:
                             "ranked_items": ranked_items,
                             "retriever": candidate_id,
                             "top_k": len(ranked_items),
+                            "metrics": generation["retrieval_metrics"](
+                                ranked_items,
+                                set(entry["answer_session_ids"]),
+                            ),
                         }
                     )
                     treatment_entry["candidate_phase"] = candidate_phase
