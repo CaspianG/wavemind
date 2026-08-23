@@ -208,6 +208,14 @@ def test_baseline_artifact_is_development_only_and_records_confound(
             for arm_id in ("mem0-oss", "langgraph", "chroma", "qdrant-local")
         },
     )
+    monkeypatch.setattr(
+        "wavemind.scientific_memoryagentbench_baselines.preload_real_baseline_modules",
+        lambda: {"mem0-oss": "test/site-packages/mem0/__init__.py"},
+    )
+    monkeypatch.setattr(
+        "wavemind.scientific_memoryagentbench_baselines.runtime_dependency_metadata",
+        lambda: {"python_version": "test"},
+    )
     summary = summarize_raw_baseline_rows(raw_rows)
 
     payload = build_baseline_matrix_artifact(
