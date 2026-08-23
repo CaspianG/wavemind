@@ -1,0 +1,141 @@
+{
+  "schema": "wavemind.scientific_memory_preflight.v1",
+  "status": "action_required",
+  "ready": false,
+  "source_sha": "2f8ab0129b24af21fe41af844328a93153df88b4",
+  "protocol_digest": "489d3ff6fca733340b65b26c52ccb5533b19ad14fef66b1d2d912691dac22d59",
+  "checks": {
+    "protocol": {
+      "ready": true,
+      "issues": []
+    },
+    "dataset_manifest": {
+      "ready": true,
+      "issues": []
+    },
+    "clean_exact_sha": {
+      "ready": true,
+      "source_sha": "2f8ab0129b24af21fe41af844328a93153df88b4",
+      "clean": true,
+      "issue": ""
+    },
+    "real_baseline_packages": {
+      "ready": false,
+      "packages": {
+        "mem0-oss": {
+          "package": "mem0ai",
+          "version": null,
+          "source_revision_environment_variable": "WAVEMIND_MEM0_SOURCE_REVISION",
+          "source_revision": "",
+          "ready": false
+        },
+        "langgraph": {
+          "package": "langgraph",
+          "version": null,
+          "source_revision_environment_variable": "WAVEMIND_LANGGRAPH_SOURCE_REVISION",
+          "source_revision": "",
+          "ready": false
+        },
+        "chroma": {
+          "package": "chromadb",
+          "version": null,
+          "source_revision_environment_variable": null,
+          "source_revision": null,
+          "ready": false
+        },
+        "qdrant-local": {
+          "package": "qdrant-client",
+          "version": null,
+          "source_revision_environment_variable": null,
+          "source_revision": null,
+          "ready": false
+        }
+      }
+    },
+    "official_datasets": {
+      "ready": false,
+      "datasets": {
+        "memory-agent-bench": {
+          "ready": false,
+          "root": null,
+          "expected_revision": "7ea066982b140a19337e17e60d45d4076e042faf",
+          "observed_revision": null,
+          "issues": [
+            "pinned official dataset checkout is missing"
+          ],
+          "environment_variable": "WAVEMIND_MEMORYAGENTBENCH_ROOT"
+        },
+        "state-bench": {
+          "ready": false,
+          "root": null,
+          "expected_revision": "5644b1838d96bc4483da29642d058ecaa6f80f7f",
+          "observed_revision": null,
+          "issues": [
+            "pinned official dataset checkout is missing"
+          ],
+          "environment_variable": "WAVEMIND_STATE_BENCH_ROOT"
+        },
+        "memops": {
+          "ready": false,
+          "root": null,
+          "expected_revision": "312af65e2c7b6d1b70f062ffa8b4cde32aaf6f35",
+          "observed_revision": null,
+          "issues": [
+            "pinned official dataset checkout is missing"
+          ],
+          "environment_variable": "WAVEMIND_MEMOPS_ROOT"
+        },
+        "longmemeval-v2": {
+          "ready": false,
+          "root": null,
+          "expected_revision": "2cc8c540bdb87fe6761629b585e727e1c4704520",
+          "observed_revision": null,
+          "issues": [
+            "pinned official dataset checkout is missing"
+          ],
+          "environment_variable": "WAVEMIND_LONGMEMEVAL_V2_ROOT"
+        }
+      }
+    },
+    "official_runners": {
+      "ready": false,
+      "runners": {
+        "memoryagentbench": {
+          "environment_variable": "WAVEMIND_MEMORYAGENTBENCH_RUNNER",
+          "path": null,
+          "ready": false,
+          "issue": "official runner entrypoint missing"
+        },
+        "state-bench-agent-learning": {
+          "environment_variable": "WAVEMIND_STATE_BENCH_RUNNER",
+          "path": null,
+          "ready": false,
+          "issue": "official runner entrypoint missing"
+        },
+        "memops": {
+          "environment_variable": "WAVEMIND_MEMOPS_RUNNER",
+          "path": null,
+          "ready": false,
+          "issue": "official runner entrypoint missing"
+        },
+        "longmemeval-v2": {
+          "environment_variable": "WAVEMIND_LONGMEMEVAL_V2_RUNNER",
+          "path": null,
+          "ready": false,
+          "issue": "official runner entrypoint missing"
+        }
+      }
+    },
+    "longmemeval_v2_one_shot_unconsumed": {
+      "ready": true,
+      "observed_full_runs": 0,
+      "maximum_before_admission": 0
+    }
+  },
+  "claim_boundary": "Preflight only. It does not execute held-out cases and is not scientific admission evidence.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "489d663dbf9c4fc4f8344ccb39f9882d0b6af658922552a09167b0a659afdb0e"
+  }
+}
