@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.metadata
+import importlib
 import json
 import os
 import platform
@@ -158,6 +159,23 @@ def real_baseline_package_metadata() -> dict[str, dict[str, Any]]:
             ),
         }
     return rows
+
+
+def preload_real_baseline_modules() -> dict[str, str]:
+    """Pin top-level imports before an official runner adds vendored code to sys.path."""
+
+    distribution = importlib.metadata.distribution("mem0ai")
+    distribution_root = Path(distribution.locate_file("")).resolve()
+    module = importlib.import_module("mem0")
+    module_path = Path(str(module.__file__)).resolve()
+    try:
+        module_path.relative_to(distribution_root)
+    except ValueError as exc:
+        raise RuntimeError(
+            "mem0 import resolved outside the installed mem0ai distribution: "
+            f"{module_path}"
+        ) from exc
+    return {"mem0-oss": str(module_path)}
 
 
 def runtime_dependency_metadata() -> dict[str, Any]:

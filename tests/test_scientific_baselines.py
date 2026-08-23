@@ -14,6 +14,7 @@ from wavemind.scientific_baselines import (
     close_baseline_retrievers,
     deterministic_arm_order,
     frozen_baseline_configs,
+    preload_real_baseline_modules,
 )
 from wavemind.scientific_memoryagentbench import MemoryAgentBenchDevelopmentUnit
 from wavemind.scientific_memoryagentbench_baselines import (
@@ -96,6 +97,14 @@ def test_real_baseline_backends_execute_same_embedding_contract(tmp_path):
         assert results[arm_id].context_tokens <= 100
     assert results["mem0-oss"].backend["real_mem0_add_and_search_executed"]
     assert results["wavemind-memory-os"].backend["real_memory_os_worker_executed"]
+
+
+def test_real_mem0_import_is_pinned_to_installed_distribution():
+    pytest.importorskip("mem0")
+
+    paths = preload_real_baseline_modules()
+
+    assert "site-packages" in paths["mem0-oss"].replace("\\", "/")
 
 
 def _raw_rows() -> list[dict]:

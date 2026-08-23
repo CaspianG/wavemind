@@ -22,6 +22,7 @@ from .scientific_baselines import (
     fresh_scratch_directory,
     frozen_baseline_configs,
     hardware_inventory,
+    preload_real_baseline_modules,
     real_baseline_package_metadata,
     runtime_dependency_metadata,
 )
@@ -112,6 +113,7 @@ def run_baseline_matrix_development(
     require_official_memoryagentbench_sha(official_repository)
     frozen_baseline_configs(protocol)
     real_baseline_package_metadata()
+    preload_real_baseline_modules()
     if not units:
         raise ValueError("at least one development unit is required")
     if max_queries_per_context < 1 or token_budget < 1 or top_k < 1:
@@ -423,6 +425,7 @@ def build_baseline_matrix_artifact(
         "baselines_executed": sorted(REQUIRED_BASELINES),
         "frozen_baseline_configs": frozen_baseline_configs(protocol),
         "real_package_metadata": real_baseline_package_metadata(),
+        "preloaded_real_package_modules": preload_real_baseline_modules(),
         "runtime_dependency_lock": runtime_dependency_metadata(),
         "real_package_execution": {
             "mem0-oss": "mem0.Memory.add(infer=False)/search with real local Qdrant",
