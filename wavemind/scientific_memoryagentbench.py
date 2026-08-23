@@ -434,12 +434,25 @@ def build_bounded_development_artifact(
     case_ids: Sequence[str],
     raw_results_file: str | Path,
     metrics: Mapping[str, Sequence[float]],
+    failed_attempt_files: Sequence[str | Path] = (),
 ) -> dict[str, Any]:
     raw_path = Path(raw_results_file).resolve()
     if not raw_path.is_file():
         raise FileNotFoundError(raw_path)
     official = Path(official_repository).resolve()
     dataset = Path(dataset_root).resolve()
+    failed_attempts = []
+    for raw_failed_path in failed_attempt_files:
+        failed_path = Path(raw_failed_path).resolve()
+        if not failed_path.is_file():
+            raise FileNotFoundError(failed_path)
+        failed_attempts.append(
+            {
+                "path": str(failed_path),
+                "bytes": failed_path.stat().st_size,
+                "sha256": file_sha256(failed_path),
+            }
+        )
     metric_summary = {
         name: {
             "count": len(values),
@@ -495,6 +508,9 @@ def build_bounded_development_artifact(
         "case_count": len(case_ids),
         "validation_split_touched": False,
         "final_split_touched": False,
+        "failed_attempts_retained": sorted(
+            failed_attempts, key=lambda item: item["path"]
+        ),
         "official_native_metrics": metric_summary,
         "raw_results": {
             "path": str(raw_path),

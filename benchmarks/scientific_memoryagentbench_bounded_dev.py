@@ -41,6 +41,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--model-digest", required=True)
     parser.add_argument("--ollama-endpoint", default="http://localhost:11435")
     parser.add_argument("--context-window", type=int, default=32768)
+    parser.add_argument("--failed-attempt-file", type=Path, action="append", default=[])
     parser.add_argument(
         "--scratch-dir",
         type=Path,
@@ -90,6 +91,7 @@ def main(argv: list[str] | None = None) -> int:
         case_ids=case_ids,
         raw_results_file=raw_path,
         metrics=metrics,
+        failed_attempt_files=args.failed_attempt_file,
     )
     args.artifact.parent.mkdir(parents=True, exist_ok=True)
     args.artifact.write_text(

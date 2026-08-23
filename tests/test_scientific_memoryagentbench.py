@@ -182,6 +182,8 @@ def test_bounded_artifact_preserves_official_metric_names(tmp_path, monkeypatch)
     dataset.mkdir()
     raw = tmp_path / "raw.jsonl"
     raw.write_text('{"exact_match":1.0}\n', encoding="utf-8")
+    failed = tmp_path / "failed.jsonl"
+    failed.write_text('{"failure":"punkt_tab missing"}\n', encoding="utf-8")
     unit = MemoryAgentBenchDevelopmentUnit(
         unit_id="unit-1",
         family="Accurate_Retrieval",
@@ -205,6 +207,7 @@ def test_bounded_artifact_preserves_official_metric_names(tmp_path, monkeypatch)
         case_ids=("unit-1:q0000",),
         raw_results_file=raw,
         metrics={"substring_exact_match": [1.0], "rougeL_f1": [0.5]},
+        failed_attempt_files=(failed,),
     )
 
     assert payload["schema"] == MEMORYAGENTBENCH_BOUNDED_DEV_SCHEMA
@@ -212,6 +215,7 @@ def test_bounded_artifact_preserves_official_metric_names(tmp_path, monkeypatch)
     assert payload["gold_fields_exposed_to_answer_agent"] == []
     assert payload["validation_split_touched"] is False
     assert payload["final_split_touched"] is False
+    assert payload["failed_attempts_retained"][0]["sha256"]
     assert payload["official_native_metrics"]["substring_exact_match"]["mean"] == 1.0
     assert payload["official_native_metrics"]["rougeL_f1"]["mean"] == 0.5
     assert validate_artifact_integrity(payload) == []
