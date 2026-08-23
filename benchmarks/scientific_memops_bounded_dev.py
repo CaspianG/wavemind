@@ -98,6 +98,20 @@ def main(argv: list[str] | None = None) -> int:
         eval_workers=1,
         evidence_dirs=(args.adjacent_input_dir,),
     )
+    result_rows = [
+        json.loads(line)
+        for line in Path(summary["all_methods_output"])
+        .read_text(encoding="utf-8")
+        .splitlines()
+        if line.strip()
+    ]
+    case_ids = [str(row["question_id"]) for row in result_rows]
+    split_ids = sorted(
+        {
+            Path(str(row["source_file"])).stem
+            for row in result_rows
+        }
+    )
     combined_summary = {
         "generation": summary,
         "evaluation": evaluation_summary,
@@ -109,7 +123,6 @@ def main(argv: list[str] | None = None) -> int:
         Path(evaluation_summary["output_file"]),
         evaluation_dir / "summary.json",
     ]
-    split_ids = sorted(path.stem for path in args.longitudinal_input_dir.glob("*.json"))
     artifact = build_bounded_dev_artifact(
         source_sha=repository_commit(ROOT),
         memops_sha=args.upstream_sha,
@@ -118,6 +131,7 @@ def main(argv: list[str] | None = None) -> int:
         context_window=args.context_window,
         endpoint_kind="ollama-native-api/local-development-only",
         split_unit_ids=split_ids,
+        case_ids=case_ids,
         output_files=output_files,
         failed_attempt_files=args.failed_attempt_file,
         summary=combined_summary,

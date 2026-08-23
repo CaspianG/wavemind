@@ -77,6 +77,7 @@ def test_bounded_dev_artifact_retains_failures_and_forbids_admission(tmp_path):
         context_window=32768,
         endpoint_kind="ollama-native-api/local-development-only",
         split_unit_ids=("A04_remember", "A04_remember"),
+        case_ids=("A04_remember_q2",),
         output_files=(output,),
         failed_attempt_files=(failed,),
         summary={"rag_entries": 1},
@@ -87,6 +88,8 @@ def test_bounded_dev_artifact_retains_failures_and_forbids_admission(tmp_path):
     assert payload["admission_eligible"] is False
     assert payload["final_split_touched"] is False
     assert payload["split_unit_ids"] == ["A04_remember"]
+    assert payload["case_ids"] == ["A04_remember_q2"]
+    assert payload["case_count"] == 1
     assert payload["failed_attempts_retained"][0]["sha256"] == file_sha256(failed)
     assert validate_artifact_integrity(payload) == []
 
