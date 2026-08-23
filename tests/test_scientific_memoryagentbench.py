@@ -8,10 +8,12 @@ import pytest
 from wavemind.evidence import attach_artifact_integrity, validate_artifact_integrity
 from wavemind.scientific_memoryagentbench import (
     MEMORYAGENTBENCH_BOUNDED_DEV_SCHEMA,
+    MEMORYAGENTBENCH_CANDIDATE_DEV_SCHEMA,
     MemoryAgentBenchDevelopmentUnit,
     MemoryAgentBenchRuntimeCase,
     NativeOpenAICompatibleClient,
     build_bounded_development_artifact,
+    build_candidate_development_artifact,
     build_runtime_and_scoring_cases,
     install_official_compatibility_shims,
     load_development_units,
@@ -256,3 +258,59 @@ def test_langchain_compatibility_shim_routes_to_invoke(monkeypatch):
 
     assert instance.get_relevant_documents("query") == ["retrieved:query"]
     assert shims[0]["replacement"] == "BM25Retriever.invoke"
+
+
+def test_candidate_artifact_is_shadow_only_and_fail_closed(tmp_path, monkeypatch):
+    official = tmp_path / "official"
+    official.mkdir()
+    dataset = tmp_path / "dataset"
+    dataset.mkdir()
+    raw = tmp_path / "candidate.jsonl"
+    raw.write_text(
+        '{"case_id":"unit-1:q0000","paired_effect":0.0}\n',
+        encoding="utf-8",
+    )
+    unit = MemoryAgentBenchDevelopmentUnit(
+        unit_id="unit-1",
+        family="Conflict_Resolution",
+        source="factconsolidation_mh_64k",
+        row_index=0,
+        context="x" * 2100,
+        row={},
+    )
+    monkeypatch.setattr(
+        "wavemind.scientific_memoryagentbench._exact_git_sha",
+        lambda repository: "f" * 40,
+    )
+    payload = build_candidate_development_artifact(
+        source_sha="a" * 40,
+        protocol_digest="b" * 64,
+        official_repository=official,
+        dataset_root=dataset,
+        model="mistral:7b",
+        model_digest="c" * 64,
+        context_window=32768,
+        token_budget=8192,
+        units=(unit,),
+        raw_results_file=raw,
+        summary={
+            "candidate_id": "causal-utility-controller-v1",
+            "control_id": "no-memory",
+            "paired_metric": "substring_exact_match",
+            "paired_effects": [0.0],
+            "verified_receipt_count": 1,
+            "production_case_count": 0,
+            "selected_memory_ids": ["memory-1"],
+            "promoted_memory_ids": [],
+            "false_verified_promotions": 0,
+        },
+    )
+
+    assert payload["schema"] == MEMORYAGENTBENCH_CANDIDATE_DEV_SCHEMA
+    assert payload["admission_eligible"] is False
+    assert payload["gold_fields_exposed_to_answer_agent"] == []
+    assert payload["paired_effect"]["mean"] == 0.0
+    assert payload["production_case_count"] == 0
+    assert payload["promoted_memory_ids"] == []
+    assert payload["false_verified_promotions"] == 0
+    assert validate_artifact_integrity(payload) == []

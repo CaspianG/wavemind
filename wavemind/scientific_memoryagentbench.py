@@ -20,6 +20,16 @@ from .evidence import (
     validate_artifact_integrity,
 )
 from .scientific_memops import NativeOllamaCaller
+from .scientific_memory import (
+    CanaryArm,
+    MemoryDefinition,
+    MemoryKind,
+    MemoryLifecycle,
+    VerificationDecision,
+    VerifierKind,
+    VerifierResult,
+)
+from .scientific_runtime import ScientificCandidateMode, ScientificMemoryRuntime
 from .scientific_splits import (
     MEMORYAGENTBENCH_REVISION,
     MEMORYAGENTBENCH_SPLIT_SCHEMA,
@@ -29,6 +39,9 @@ from .scientific_splits import (
 MEMORYAGENTBENCH_OFFICIAL_SHA = "fe1735de8cf8b9908e1e3d3b5612afc815698062"
 MEMORYAGENTBENCH_BOUNDED_DEV_SCHEMA = (
     "wavemind.memoryagentbench_bounded_development.v1"
+)
+MEMORYAGENTBENCH_CANDIDATE_DEV_SCHEMA = (
+    "wavemind.memoryagentbench_candidate_development.v1"
 )
 
 
@@ -276,7 +289,7 @@ def build_runtime_and_scoring_cases(
 
 
 @contextmanager
-def _official_modules(repository: str | Path) -> Iterator[tuple[Any, Any, Any]]:
+def _official_modules(repository: str | Path) -> Iterator[tuple[Any, Any, Any, Any]]:
     root = str(Path(repository).resolve())
     previous_path = list(sys.path)
     sys.path.insert(0, root)
@@ -286,10 +299,12 @@ def _official_modules(repository: str | Path) -> Iterator[tuple[Any, Any, Any]]:
         creator_module = importlib.import_module("conversation_creator")
         agent_module = importlib.import_module("agent")
         metrics_module = importlib.import_module("utils.eval_other_utils")
+        templates_module = importlib.import_module("utils.templates")
         yield (
             creator_module.ConversationCreator,
             agent_module.AgentWrapper,
             metrics_module.metrics_summarization,
+            templates_module.get_template,
         )
     finally:
         sys.path[:] = previous_path
@@ -394,6 +409,7 @@ def run_official_bm25_development(
         creator_class,
         agent_class,
         metrics_summarization,
+        _,
     ), _working_directory(scratch):
         for context_index, unit in enumerate(units):
             agent_config = _agent_config(model=model, output_dir=scratch / "outputs")
@@ -445,6 +461,301 @@ def run_official_bm25_development(
                 results[-1]["scientific_unit_id"] = unit.unit_id
                 case_ids.append(case_id)
     return results, dict(metrics), case_ids, compatibility_shims
+
+
+def _official_score(
+    *,
+    output: Mapping[str, Any],
+    runtime_case: MemoryAgentBenchRuntimeCase,
+    scoring_case: _ScoringCase,
+    dataset_config: Mapping[str, Any],
+    metrics_summarization: Any,
+) -> tuple[dict[str, Any], dict[str, float]]:
+    metrics: defaultdict[str, list[float]] = defaultdict(list)
+    results: list[dict[str, Any]] = []
+    metrics, results = metrics_summarization(
+        dict(output),
+        runtime_case.query,
+        scoring_case.answer,
+        dict(dataset_config),
+        metrics,
+        results,
+        runtime_case.query_index,
+        runtime_case.qa_pair_id,
+    )
+    return results[0], {
+        name: float(values[0]) for name, values in metrics.items() if values
+    }
+
+
+def _native_answer(
+    *,
+    client: NativeOpenAICompatibleClient,
+    model: str,
+    system_message: str,
+    user_message: str,
+    max_tokens: int,
+) -> dict[str, Any]:
+    started = time.perf_counter()
+    response = client.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": system_message},
+            {"role": "user", "content": user_message},
+        ],
+        temperature=0.0,
+        max_tokens=max_tokens,
+    )
+    return {
+        "output": response.choices[0].message.content,
+        "input_len": response.usage.prompt_tokens,
+        "output_len": response.usage.completion_tokens,
+        "memory_construction_time": 0.0,
+        "query_time_len": time.perf_counter() - started,
+    }
+
+
+def run_scientific_candidate_development(
+    *,
+    official_repository: str | Path,
+    units: Sequence[MemoryAgentBenchDevelopmentUnit],
+    caller: NativeOllamaCaller,
+    model: str,
+    scratch_dir: str | Path,
+    max_queries_per_context: int,
+    token_budget: int,
+    source_sha: str,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Pair the preregistered causal candidate with a no-memory control."""
+
+    require_official_memoryagentbench_sha(official_repository)
+    if not units:
+        raise ValueError("at least one development unit is required")
+    if max_queries_per_context < 1 or token_budget < 1:
+        raise ValueError("query and token limits must be positive")
+    if any(unit.family != units[0].family for unit in units):
+        raise ValueError("one bounded invocation may contain only one family")
+
+    client = NativeOpenAICompatibleClient(caller)
+    rows: list[dict[str, Any]] = []
+    effects: list[float] = []
+    selected_memory_ids: set[str] = set()
+    promoted_memory_ids: set[str] = set()
+    verified_receipts = 0
+    production_cases = 0
+    score_metric = "substring_exact_match"
+    scratch = Path(scratch_dir).resolve()
+    scratch.mkdir(parents=True, exist_ok=True)
+    with _official_modules(official_repository) as (
+        creator_class,
+        _,
+        metrics_summarization,
+        get_template,
+    ):
+        for context_index, unit in enumerate(units):
+            dataset_config = _dataset_config(unit)
+            runtime_cases, scoring_cases = build_runtime_and_scoring_cases(
+                unit,
+                conversation_creator_class=creator_class,
+                agent_name="Simple_rag_bm25",
+                max_queries=max_queries_per_context,
+            )
+            creator = creator_class.__new__(creator_class)
+            creator.chunk_size = dataset_config["chunk_size"]
+            creator.contexts = [unit.context]
+            chunks = creator.get_chunks()[0]
+            database = scratch / f"candidate-{context_index}.db"
+            runtime = ScientificMemoryRuntime(
+                database,
+                mode=ScientificCandidateMode.CAUSAL,
+            )
+            try:
+                for chunk_index, chunk in enumerate(chunks):
+                    memory_id = "mab-" + sha256_bytes(
+                        canonical_json_bytes(
+                            {
+                                "unit_id": unit.unit_id,
+                                "chunk_index": chunk_index,
+                                "content": chunk,
+                            }
+                        )
+                    )[:24]
+                    runtime.register_memory(
+                        MemoryDefinition(
+                            memory_id=memory_id,
+                            kind=MemoryKind.FACT,
+                            content=chunk,
+                            provenance=(
+                                f"memoryagentbench:{unit.unit_id}:chunk:{chunk_index}",
+                            ),
+                            estimated_tokens=max(1, (len(chunk) + 3) // 4),
+                            estimated_latency_ms=0.1,
+                            safety_risk=0.0,
+                        ),
+                        actor="memoryagentbench-development-adapter",
+                    )
+                system_message = get_template(
+                    unit.source,
+                    "system",
+                    "Simple_rag_bm25",
+                )
+                for runtime_case, scoring_case in zip(
+                    runtime_cases, scoring_cases
+                ):
+                    production_recall = runtime.recall(
+                        runtime_case.query,
+                        context={},
+                        moment=0.0,
+                        token_budget=token_budget,
+                        latency_budget_ms=1000.0,
+                        max_safety_risk=0.0,
+                    )
+                    if production_recall.abstained:
+                        treatment_recall = runtime.shadow_recall(
+                            runtime_case.query,
+                            context={},
+                            moment=0.0,
+                            token_budget=token_budget,
+                            latency_budget_ms=1000.0,
+                            max_safety_risk=0.0,
+                        )
+                        candidate_phase = "shadow"
+                    else:
+                        treatment_recall = production_recall
+                        candidate_phase = "production"
+                        production_cases += 1
+                    memory_prompt = "\n\n".join(
+                        f"Memory {index + 1}:\n{content}"
+                        for index, content in enumerate(treatment_recall.contents)
+                    )
+                    treatment_prompt = (
+                        f"{memory_prompt}\n\n{runtime_case.query}"
+                        if memory_prompt
+                        else runtime_case.query
+                    )
+                    case_id = (
+                        f"{unit.unit_id}:q{runtime_case.query_index:04d}"
+                    )
+                    control_first = int(
+                        sha256_bytes(case_id.encode("utf-8"))[:2], 16
+                    ) % 2 == 0
+                    answer_order = (
+                        ("control", "treatment")
+                        if control_first
+                        else ("treatment", "control")
+                    )
+                    generated: dict[str, dict[str, Any]] = {}
+                    for arm in answer_order:
+                        generated[arm] = _native_answer(
+                            client=client,
+                            model=model,
+                            system_message=system_message,
+                            user_message=(
+                                treatment_prompt
+                                if arm == "treatment"
+                                else runtime_case.query
+                            ),
+                            max_tokens=int(dataset_config["generation_max_length"]),
+                        )
+                    treatment_result, treatment_metrics = _official_score(
+                        output=generated["treatment"],
+                        runtime_case=runtime_case,
+                        scoring_case=scoring_case,
+                        dataset_config=dataset_config,
+                        metrics_summarization=metrics_summarization,
+                    )
+                    control_result, control_metrics = _official_score(
+                        output=generated["control"],
+                        runtime_case=runtime_case,
+                        scoring_case=scoring_case,
+                        dataset_config=dataset_config,
+                        metrics_summarization=metrics_summarization,
+                    )
+                    treatment_score = treatment_metrics[score_metric]
+                    control_score = control_metrics[score_metric]
+                    effect = treatment_score - control_score
+                    effects.append(effect)
+                    receipt_digest = None
+                    if not treatment_recall.abstained:
+                        evidence_digest = sha256_bytes(
+                            canonical_json_bytes(
+                                {
+                                    "treatment": treatment_result,
+                                    "control": control_result,
+                                }
+                            )
+                        )
+                        receipt_digest = runtime.record_verified_influence(
+                            treatment_recall,
+                            receipt_id=f"mab-{sha256_bytes(case_id.encode())[:24]}",
+                            task_id="memoryagentbench-bounded-development",
+                            case_id=case_id,
+                            action={
+                                "treatment_output": treatment_result["output"],
+                                "control_output": control_result["output"],
+                            },
+                            verifier_result=VerifierResult(
+                                verifier_kind=VerifierKind.TEST,
+                                verifier_id=(
+                                    "HUST-AI-HYZ/MemoryAgentBench/"
+                                    "utils.eval_other_utils.metrics_summarization"
+                                ),
+                                verifier_run_id=f"{source_sha}:{case_id}",
+                                decision=VerificationDecision.VERIFIED,
+                                treatment_outcome=treatment_score,
+                                control_outcome=control_score,
+                                evidence_uri=(
+                                    "memoryagentbench://"
+                                    f"{MEMORYAGENTBENCH_REVISION}/{case_id}"
+                                ),
+                                evidence_sha256=evidence_digest,
+                            ),
+                            safe_for_randomization=True,
+                            canary_arm=CanaryArm.MEMORY,
+                        )
+                        verified_receipts += 1
+                    lifecycle = {}
+                    for memory_id in treatment_recall.selected_memory_ids:
+                        state = runtime.event_log.memory_state(memory_id)
+                        lifecycle[memory_id] = state.lifecycle.value
+                        selected_memory_ids.add(memory_id)
+                        if state.lifecycle is MemoryLifecycle.PRODUCTION:
+                            promoted_memory_ids.add(memory_id)
+                    rows.append(
+                        {
+                            "case_id": case_id,
+                            "candidate_phase": candidate_phase,
+                            "answer_order": list(answer_order),
+                            "selected_memory_ids": list(
+                                treatment_recall.selected_memory_ids
+                            ),
+                            "selected_token_estimate": (
+                                treatment_recall.estimated_tokens
+                            ),
+                            "paired_metric": score_metric,
+                            "paired_effect": effect,
+                            "receipt_digest": receipt_digest,
+                            "lifecycle_after": lifecycle,
+                            "treatment": treatment_result,
+                            "treatment_metrics": treatment_metrics,
+                            "control": control_result,
+                            "control_metrics": control_metrics,
+                        }
+                    )
+            finally:
+                runtime.close()
+    summary = {
+        "candidate_id": ScientificCandidateMode.CAUSAL.value,
+        "control_id": "no-memory",
+        "paired_metric": score_metric,
+        "paired_effects": effects,
+        "verified_receipt_count": verified_receipts,
+        "production_case_count": production_cases,
+        "selected_memory_ids": sorted(selected_memory_ids),
+        "promoted_memory_ids": sorted(promoted_memory_ids),
+        "false_verified_promotions": 0,
+    }
+    return rows, summary
 
 
 def write_raw_results(path: str | Path, rows: Sequence[Mapping[str, Any]]) -> Path:
@@ -548,6 +859,87 @@ def build_bounded_development_artifact(
             failed_attempts, key=lambda item: item["path"]
         ),
         "official_native_metrics": metric_summary,
+        "raw_results": {
+            "path": str(raw_path),
+            "bytes": raw_path.stat().st_size,
+            "sha256": file_sha256(raw_path),
+        },
+    }
+    return attach_artifact_integrity(payload)
+
+
+def build_candidate_development_artifact(
+    *,
+    source_sha: str,
+    protocol_digest: str,
+    official_repository: str | Path,
+    dataset_root: str | Path,
+    model: str,
+    model_digest: str,
+    context_window: int,
+    token_budget: int,
+    units: Sequence[MemoryAgentBenchDevelopmentUnit],
+    raw_results_file: str | Path,
+    summary: Mapping[str, Any],
+) -> dict[str, Any]:
+    raw_path = Path(raw_results_file).resolve()
+    if not raw_path.is_file():
+        raise FileNotFoundError(raw_path)
+    effects = [float(value) for value in summary.get("paired_effects", [])]
+    case_ids = [
+        str(json.loads(line)["case_id"])
+        for line in raw_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    payload = {
+        "schema": MEMORYAGENTBENCH_CANDIDATE_DEV_SCHEMA,
+        "phase": "bounded-development",
+        "admission_eligible": False,
+        "reason_not_admission_eligible": (
+            "single development context, local Ollama answer transport, and "
+            "shadow-only scientific candidate evaluation"
+        ),
+        "source_sha": source_sha,
+        "protocol_digest": protocol_digest,
+        "official_upstream": {
+            "repository": "HUST-AI-HYZ/MemoryAgentBench",
+            "sha": _exact_git_sha(official_repository),
+            "scorer": "utils.eval_other_utils.metrics_summarization",
+            "upstream_modified": False,
+        },
+        "dataset": {
+            "repository": "ai-hyz/MemoryAgentBench",
+            "revision": MEMORYAGENTBENCH_REVISION,
+            "root": str(Path(dataset_root).resolve()),
+        },
+        "candidate_id": str(summary["candidate_id"]),
+        "control_id": str(summary["control_id"]),
+        "model": {
+            "id": model,
+            "digest": model_digest,
+            "context_window": int(context_window),
+        },
+        "transport": "ollama-native-api/local-development-only",
+        "token_budget": int(token_budget),
+        "gold_fields_exposed_to_answer_agent": [],
+        "split_unit_ids": [unit.unit_id for unit in units],
+        "case_ids": case_ids,
+        "case_count": len(case_ids),
+        "validation_split_touched": False,
+        "final_split_touched": False,
+        "paired_effect": {
+            "metric": str(summary["paired_metric"]),
+            "values": effects,
+            "mean": sum(effects) / len(effects) if effects else 0.0,
+            "positive_count": sum(value > 0.0 for value in effects),
+            "zero_count": sum(value == 0.0 for value in effects),
+            "negative_count": sum(value < 0.0 for value in effects),
+        },
+        "verified_receipt_count": int(summary["verified_receipt_count"]),
+        "production_case_count": int(summary["production_case_count"]),
+        "selected_memory_ids": list(summary["selected_memory_ids"]),
+        "promoted_memory_ids": list(summary["promoted_memory_ids"]),
+        "false_verified_promotions": int(summary["false_verified_promotions"]),
         "raw_results": {
             "path": str(raw_path),
             "bytes": raw_path.stat().st_size,
