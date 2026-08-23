@@ -25,6 +25,7 @@ def test_preflight_is_action_required_without_official_inputs(tmp_path):
     assert payload["ready"] is False
     assert payload["checks"]["protocol"]["ready"] is True
     assert payload["checks"]["dataset_manifest"]["ready"] is True
+    assert payload["checks"]["official_runner_manifest"]["ready"] is True
     assert payload["checks"]["clean_exact_sha"]["ready"] is True
     assert payload["checks"]["real_baseline_packages"]["ready"] is False
     assert payload["checks"]["official_datasets"]["ready"] is False
@@ -77,3 +78,30 @@ def test_preflight_records_credential_presence_without_secret_values(tmp_path):
     assert credentials["ready"] is True
     assert credentials["secret_values_recorded"] is False
     assert "top-secret" not in str(credentials)
+
+
+def test_preflight_rejects_tampered_runner_manifest(tmp_path):
+    source = ROOT / "benchmarks" / "scientific_official_runner_manifest_v1.json"
+    payload = source.read_text(encoding="utf-8").replace(
+        "HUST-AI-HYZ/MemoryAgentBench",
+        "untrusted/MemoryAgentBench",
+    )
+    manifest = tmp_path / "runner-manifest.json"
+    manifest.write_text(payload, encoding="utf-8")
+
+    result = evaluate_scientific_memory_preflight(
+        project_root=ROOT,
+        protocol_path=ROOT / "benchmarks" / "scientific_memory_protocol_v1.json",
+        dataset_manifest_path=(
+            ROOT / "benchmarks" / "evaluation_dataset_manifest_v1.json"
+        ),
+        runner_manifest_path=manifest,
+        run_dir=tmp_path / "runs",
+        environment={},
+        package_versions={},
+        repository_state={"sha": "a" * 40, "clean": True},
+    )
+
+    check = result["checks"]["official_runner_manifest"]
+    assert check["ready"] is False
+    assert "digest mismatch" in " ".join(check["issues"])

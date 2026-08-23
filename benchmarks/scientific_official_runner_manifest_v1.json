@@ -1,0 +1,60 @@
+{
+  "schema": "wavemind.official_runner_manifest.v1",
+  "protocol_digest": "489d3ff6fca733340b65b26c52ccb5533b19ad14fef66b1d2d912691dac22d59",
+  "runners": [
+    {
+      "family_id": "memoryagentbench",
+      "repository": "https://github.com/HUST-AI-HYZ/MemoryAgentBench",
+      "revision": "fe1735de8cf8b9908e1e3d3b5612afc815698062",
+      "entrypoints": [
+        {
+          "path": "main.py",
+          "sha256": "809c44650730ad64cc93757f56980330c5db4de19c2abde5a2aef059210e7677"
+        }
+      ]
+    },
+    {
+      "family_id": "state-bench-agent-learning",
+      "repository": "https://github.com/microsoft/STATE-Bench",
+      "revision": "5644b1838d96bc4483da29642d058ecaa6f80f7f",
+      "entrypoints": [
+        {
+          "path": "state_bench/scripts/run_batch.py",
+          "sha256": "1836e7396107d4ef4b00a34f844f2297b9bb5a0932392bd086b98c3c74c4d14e"
+        }
+      ]
+    },
+    {
+      "family_id": "memops",
+      "repository": "https://github.com/MemTensor/MemOps",
+      "revision": "312af65e2c7b6d1b70f062ffa8b4cde32aaf6f35",
+      "entrypoints": [
+        {
+          "path": "5-test_operation_metrics.py",
+          "sha256": "1291341f9816998e8076188d3ed1ba85692eb3861a2e32cd2716ecb794852516"
+        },
+        {
+          "path": "5.5-evaluate_operation_metrics.py",
+          "sha256": "4026e580bbcdbe9a92f942b9e02c991e050138ebe45138595727e8c77b626ab5"
+        }
+      ]
+    },
+    {
+      "family_id": "longmemeval-v2",
+      "repository": "https://github.com/xiaowu0162/LongMemEval-V2",
+      "revision": "2cc8c540bdb87fe6761629b585e727e1c4704520",
+      "entrypoints": [
+        {
+          "path": "evaluation/run_eval.py",
+          "sha256": "1da698028d8a5d68f88e5449aacae89cab8b4b0a5bf77eb8e0724e738c744f4b"
+        }
+      ]
+    }
+  ],
+  "claim_boundary": "Pins official runner source only; does not establish execution, quality, or admission.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "914a8bb233ab57c1eb3afbe6778e9d715a95e25f320b31fb3ed606ff623a76df"
+  }
+}

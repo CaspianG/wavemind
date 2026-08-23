@@ -21,6 +21,7 @@ from .scientific_protocol import (
 
 
 SCIENTIFIC_PREFLIGHT_SCHEMA = "wavemind.scientific_memory_preflight.v1"
+OFFICIAL_RUNNER_MANIFEST_SCHEMA = "wavemind.official_runner_manifest.v1"
 DATASET_ENV = {
     "memory-agent-bench": "WAVEMIND_MEMORYAGENTBENCH_ROOT",
     "state-bench": "WAVEMIND_STATE_BENCH_ROOT",
@@ -84,6 +85,118 @@ def _git_revision(root: Path) -> str | None:
         return None
 
 
+def _git_root(path: Path) -> Path | None:
+    selected = path if path.is_dir() else path.parent
+    try:
+        value = subprocess.check_output(
+            ["git", "rev-parse", "--show-toplevel"],
+            cwd=selected,
+            text=True,
+            encoding="utf-8",
+            stderr=subprocess.DEVNULL,
+        ).strip()
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    root = Path(value).resolve()
+    return root if root.is_dir() else None
+
+
+def _load_runner_manifest(
+    path: Path,
+    *,
+    protocol_digest: str,
+) -> tuple[dict[str, Mapping[str, Any]], list[str]]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return {}, [f"official runner manifest cannot be loaded: {exc}"]
+    errors = validate_artifact_integrity(payload)
+    if payload.get("schema") != OFFICIAL_RUNNER_MANIFEST_SCHEMA:
+        errors.append("official runner manifest schema is invalid")
+    if payload.get("protocol_digest") != protocol_digest:
+        errors.append("official runner manifest protocol digest mismatch")
+    rows: dict[str, Mapping[str, Any]] = {}
+    for row in payload.get("runners") or []:
+        if not isinstance(row, Mapping):
+            errors.append("official runner manifest row is invalid")
+            continue
+        family_id = str(row.get("family_id") or "")
+        if not family_id or family_id in rows:
+            errors.append("official runner manifest family ids are missing or duplicated")
+            continue
+        revision = str(row.get("revision") or "")
+        if len(revision) != 40 or any(char not in "0123456789abcdef" for char in revision):
+            errors.append(f"official runner revision is invalid: {family_id}")
+        entrypoints = row.get("entrypoints")
+        if not isinstance(entrypoints, list) or not entrypoints:
+            errors.append(f"official runner entrypoints are missing: {family_id}")
+        rows[family_id] = row
+    expected_families = set(RUNNER_ENV)
+    if set(rows) != expected_families:
+        errors.append("official runner manifest family set is incomplete or changed")
+    return rows, errors
+
+
+def _check_runner(
+    path: Path | None,
+    manifest: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    issues: list[str] = []
+    if path is None or not path.is_file():
+        issues.append("official runner entrypoint missing")
+    if not isinstance(manifest, Mapping):
+        issues.append("official runner provenance is missing")
+    root = _git_root(path) if path and path.is_file() else None
+    expected_revision = str((manifest or {}).get("revision") or "")
+    observed_revision = _git_revision(root) if root else None
+    if path and path.is_file() and root is None:
+        issues.append("official runner is not inside a git checkout")
+    elif root and observed_revision != expected_revision:
+        issues.append("official runner git revision mismatch")
+
+    selected_relative = None
+    verified_entrypoints: list[dict[str, Any]] = []
+    if root and isinstance(manifest, Mapping):
+        try:
+            selected_relative = path.resolve().relative_to(root).as_posix() if path else None
+        except ValueError:
+            issues.append("official runner escapes its repository")
+        expected_paths: set[str] = set()
+        for entry in manifest.get("entrypoints") or []:
+            if not isinstance(entry, Mapping):
+                issues.append("official runner entrypoint provenance is invalid")
+                continue
+            relative = str(entry.get("path") or "")
+            expected_paths.add(relative)
+            candidate = (root / relative).resolve()
+            expected_hash = str(entry.get("sha256") or "")
+            hash_matches = bool(
+                candidate.is_file() and file_sha256(candidate) == expected_hash
+            )
+            verified_entrypoints.append(
+                {
+                    "path": relative,
+                    "sha256": expected_hash,
+                    "hash_matches": hash_matches,
+                }
+            )
+            if not hash_matches:
+                issues.append(f"official runner file hash mismatch: {relative}")
+        if selected_relative not in expected_paths:
+            issues.append("selected runner is not a pinned official entrypoint")
+    return {
+        "path": str(path) if path else None,
+        "repository_root": str(root) if root else None,
+        "expected_revision": expected_revision or None,
+        "observed_revision": observed_revision,
+        "selected_entrypoint": selected_relative,
+        "verified_entrypoints": verified_entrypoints,
+        "ready": not issues,
+        "issues": issues,
+        "issue": "; ".join(issues),
+    }
+
+
 def _check_dataset(root: Path | None, source: Mapping[str, Any]) -> dict[str, Any]:
     if root is None or not root.is_dir():
         return {
@@ -121,6 +234,7 @@ def evaluate_scientific_memory_preflight(
     protocol_path: str | Path,
     dataset_manifest_path: str | Path,
     run_dir: str | Path,
+    runner_manifest_path: str | Path | None = None,
     environment: Mapping[str, str] | None = None,
     package_versions: Mapping[str, str | None] | None = None,
     repository_state: Mapping[str, Any] | None = None,
@@ -130,6 +244,14 @@ def evaluate_scientific_memory_preflight(
     protocol = load_scientific_protocol(protocol_path)
     protocol_errors = validate_scientific_protocol(protocol, project_root=root)
     source_manifest = json.loads(Path(dataset_manifest_path).read_text(encoding="utf-8"))
+    selected_runner_manifest = Path(
+        runner_manifest_path
+        or root / "benchmarks" / "scientific_official_runner_manifest_v1.json"
+    )
+    runner_manifest, runner_manifest_errors = _load_runner_manifest(
+        selected_runner_manifest,
+        protocol_digest=str(protocol.get("protocol_digest") or ""),
+    )
     sources = {
         str(source["id"]): source for source in source_manifest.get("sources") or []
     }
@@ -173,9 +295,7 @@ def evaluate_scientific_memory_preflight(
         path = Path(raw_path).resolve() if raw_path else None
         runner_checks[family_id] = {
             "environment_variable": env_name,
-            "path": str(path) if path else None,
-            "ready": bool(path and path.is_file()),
-            "issue": "" if path and path.is_file() else "official runner entrypoint missing",
+            **_check_runner(path, runner_manifest.get(family_id)),
         }
 
     credential_checks: dict[str, Any] = {}
@@ -201,6 +321,11 @@ def evaluate_scientific_memory_preflight(
         "dataset_manifest": {
             "ready": not dataset_manifest_errors,
             "issues": dataset_manifest_errors,
+        },
+        "official_runner_manifest": {
+            "ready": not runner_manifest_errors,
+            "path": str(selected_runner_manifest.resolve()),
+            "issues": runner_manifest_errors,
         },
         "clean_exact_sha": {
             "ready": bool(state.get("clean")) and bool(state.get("sha")),

@@ -30,6 +30,11 @@ def main(argv: list[str] | None = None) -> int:
         default=ROOT / "benchmarks" / "evaluation_dataset_manifest_v1.json",
     )
     parser.add_argument(
+        "--runner-manifest",
+        type=Path,
+        default=ROOT / "benchmarks" / "scientific_official_runner_manifest_v1.json",
+    )
+    parser.add_argument(
         "--run-dir",
         type=Path,
         default=ROOT / "benchmarks" / "scientific_memory_runs",
@@ -50,6 +55,7 @@ def main(argv: list[str] | None = None) -> int:
         project_root=ROOT,
         protocol_path=args.protocol,
         dataset_manifest_path=args.dataset_manifest,
+        runner_manifest_path=args.runner_manifest,
         run_dir=args.run_dir,
     )
     args.output.write_text(
