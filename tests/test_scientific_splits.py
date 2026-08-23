@@ -46,6 +46,11 @@ def test_memoryagentbench_split_is_deterministic_and_context_isolated(tmp_path):
 
     assert first["units"] == second["units"]
     assert sum(first["counts"]["Accurate_Retrieval"].values()) == 10
+    assert all(
+        count > 0
+        for family_counts in first["counts"].values()
+        for count in family_counts.values()
+    )
     assert first["context_split_breaches"] == []
     assert validate_memoryagentbench_split_manifest(
         first,

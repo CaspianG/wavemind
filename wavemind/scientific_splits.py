@@ -54,6 +54,70 @@ def _stable_partition(
     return result
 
 
+def _ensure_family_coverage(
+    units: Sequence[Mapping[str, Any]],
+    context_partition: dict[str, str],
+) -> dict[str, str]:
+    contexts: dict[str, set[str]] = defaultdict(set)
+    for unit in units:
+        contexts[str(unit["context_sha256"])].add(str(unit["family"]))
+    families = sorted({str(unit["family"]) for unit in units})
+
+    def counts() -> Counter[tuple[str, str]]:
+        values: Counter[tuple[str, str]] = Counter()
+        for context_sha, context_families in contexts.items():
+            split = context_partition[context_sha]
+            for family in context_families:
+                values[(family, split)] += 1
+        return values
+
+    for _ in range(len(families) * len(SPLITS)):
+        current = counts()
+        missing = next(
+            (
+                (family, split)
+                for family in families
+                for split in SPLITS
+                if current[(family, split)] == 0
+            ),
+            None,
+        )
+        if missing is None:
+            return context_partition
+        family, target_split = missing
+        candidates = []
+        for context_sha, context_families in contexts.items():
+            source_split = context_partition[context_sha]
+            if family not in context_families or source_split == target_split:
+                continue
+            if any(current[(item, source_split)] <= 1 for item in context_families):
+                continue
+            imbalance = 0
+            for item in context_families:
+                total = sum(current[(item, split)] for split in SPLITS)
+                desired = {
+                    "development": 0.60 * total,
+                    "validation": 0.20 * total,
+                    "final": 0.20 * total,
+                }
+                for split in SPLITS:
+                    value = current[(item, split)]
+                    if split == source_split:
+                        value -= 1
+                    if split == target_split:
+                        value += 1
+                    imbalance += abs(value - desired[split])
+            candidates.append((imbalance, context_sha, source_split))
+        if not candidates:
+            raise ValueError(
+                f"cannot create non-empty {target_split} split for {family} "
+                "without breaking context isolation"
+            )
+        _, selected_context, _ = min(candidates)
+        context_partition[selected_context] = target_split
+    raise ValueError("MemoryAgentBench family split coverage did not converge")
+
+
 def build_memoryagentbench_split_manifest(
     *,
     project_root: str | Path,
@@ -94,6 +158,7 @@ def build_memoryagentbench_split_manifest(
         sorted({unit["context_sha256"] for unit in units}),
         salt=f"{MEMORYAGENTBENCH_REVISION}:unique-contexts",
     )
+    context_partition = _ensure_family_coverage(units, context_partition)
     for unit in units:
         unit["split"] = context_partition[unit["context_sha256"]]
     counts = Counter((unit["family"], unit["split"]) for unit in units)
