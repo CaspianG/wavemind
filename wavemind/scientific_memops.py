@@ -286,6 +286,8 @@ def build_candidate_dev_artifact(
     raw_output_file: str | Path,
     case_ids: Sequence[str],
     paired_effects: Sequence[float],
+    verified_receipt_count: int,
+    false_verified_promotions: int,
     production_case_count: int,
     promoted_memory_ids: Sequence[str],
 ) -> dict[str, Any]:
@@ -329,6 +331,8 @@ def build_candidate_dev_artifact(
             "zero_count": sum(value == 0.0 for value in effects),
             "negative_count": sum(value < 0.0 for value in effects),
         },
+        "verified_receipt_count": int(verified_receipt_count),
+        "false_verified_promotions": int(false_verified_promotions),
         "production_case_count": int(production_case_count),
         "promoted_memory_ids": sorted(set(promoted_memory_ids)),
         "raw_output": {

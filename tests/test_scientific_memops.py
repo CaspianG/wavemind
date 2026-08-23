@@ -163,6 +163,8 @@ def test_candidate_dev_artifact_is_explicitly_non_admission(tmp_path):
         raw_output_file=raw,
         case_ids=("case-1", "case-2"),
         paired_effects=(1.0, 0.0),
+        verified_receipt_count=2,
+        false_verified_promotions=0,
         production_case_count=0,
         promoted_memory_ids=(),
     )
@@ -171,4 +173,6 @@ def test_candidate_dev_artifact_is_explicitly_non_admission(tmp_path):
     assert payload["admission_eligible"] is False
     assert payload["paired_effect"]["mean"] == 0.5
     assert payload["paired_effect"]["positive_count"] == 1
+    assert payload["verified_receipt_count"] == 2
+    assert payload["false_verified_promotions"] == 0
     assert validate_artifact_integrity(payload) == []

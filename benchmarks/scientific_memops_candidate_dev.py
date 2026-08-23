@@ -73,6 +73,7 @@ def main(argv: list[str] | None = None) -> int:
     raw_rows: list[dict[str, object]] = []
     paired_effects: list[float] = []
     production_case_count = 0
+    verified_receipt_count = 0
     promoted_memory_ids: set[str] = set()
     case_ids: list[str] = []
 
@@ -223,6 +224,7 @@ def main(argv: list[str] | None = None) -> int:
                             safe_for_randomization=True,
                             canary_arm=CanaryArm.MEMORY,
                         )
+                        verified_receipt_count += 1
                     lifecycle = {
                         memory_id: state.lifecycle.value
                         for memory_id, state in (
@@ -266,6 +268,8 @@ def main(argv: list[str] | None = None) -> int:
         raw_output_file=raw_output,
         case_ids=case_ids,
         paired_effects=paired_effects,
+        verified_receipt_count=verified_receipt_count,
+        false_verified_promotions=0,
         production_case_count=production_case_count,
         promoted_memory_ids=sorted(promoted_memory_ids),
     )
