@@ -8,10 +8,120 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-from .evidence import attach_artifact_integrity, file_sha256
+from .evidence import (
+    attach_artifact_integrity,
+    canonical_json_bytes,
+    file_sha256,
+    sha256_bytes,
+)
+from .scientific_memory import MemoryDefinition, MemoryKind
+from .scientific_runtime import (
+    ScientificCandidateMode,
+    ScientificMemoryRuntime,
+    ScientificRecall,
+)
 
 
 MEMOPS_BOUNDED_DEV_SCHEMA = "wavemind.memops_bounded_development.v1"
+
+
+class ScientificMemOpsRetriever:
+    """Leakage-safe adapter from an official MemOps corpus to a candidate runtime."""
+
+    def __init__(
+        self,
+        db_path: str | Path,
+        *,
+        corpus: Sequence[Mapping[str, Any]],
+        mode: ScientificCandidateMode,
+    ) -> None:
+        self.runtime = ScientificMemoryRuntime(db_path, mode=mode)
+        self._corpus_by_memory_id: dict[str, dict[str, Any]] = {}
+        self._register_corpus(corpus)
+
+    def _register_corpus(self, corpus: Sequence[Mapping[str, Any]]) -> None:
+        seen_corpus_ids: set[str] = set()
+        for item in corpus:
+            corpus_id = str(item.get("corpus_id") or "").strip()
+            content = str(item.get("text") or "").strip()
+            if not corpus_id or not content:
+                raise ValueError("MemOps corpus items require corpus_id and text")
+            if corpus_id in seen_corpus_ids:
+                raise ValueError(f"duplicate MemOps corpus_id: {corpus_id}")
+            seen_corpus_ids.add(corpus_id)
+            memory_id = "memops-" + sha256_bytes(
+                canonical_json_bytes({"corpus_id": corpus_id, "text": content})
+            )[:24]
+            definition = MemoryDefinition(
+                memory_id=memory_id,
+                kind=MemoryKind.FACT,
+                content=content,
+                provenance=(corpus_id,),
+                estimated_tokens=max(1, (len(content) + 3) // 4),
+                estimated_latency_ms=0.1,
+                safety_risk=0.0,
+            )
+            self.runtime.register_memory(definition, actor="memops-development-adapter")
+            # The untouched official item is retained only for official prompt/scorer
+            # compatibility. Retrieval decisions above cannot inspect its gold flags.
+            self._corpus_by_memory_id[memory_id] = dict(item)
+
+    def close(self) -> None:
+        self.runtime.close()
+
+    def __enter__(self) -> "ScientificMemOpsRetriever":
+        return self
+
+    def __exit__(self, exc_type: object, exc: object, traceback: object) -> None:
+        self.close()
+
+    def retrieve(
+        self,
+        query: str,
+        *,
+        token_budget: int,
+        top_k_context: int,
+        evaluation_only: bool,
+    ) -> tuple[list[dict[str, Any]], ScientificRecall]:
+        if top_k_context < 1:
+            raise ValueError("top_k_context must be positive")
+        recall_method = (
+            self.runtime.shadow_recall if evaluation_only else self.runtime.recall
+        )
+        recall = recall_method(
+            query,
+            context={},
+            moment=0.0,
+            token_budget=token_budget,
+            latency_budget_ms=1000.0,
+            max_safety_risk=0.0,
+        )
+        visible_ids = recall.selected_memory_ids[:top_k_context]
+        ranked_items: list[dict[str, Any]] = []
+        for rank, memory_id in enumerate(visible_ids, start=1):
+            item = dict(self._corpus_by_memory_id[memory_id])
+            item["score"] = float(recall.relevance[memory_id])
+            item["rank"] = rank
+            ranked_items.append(item)
+        if visible_ids == recall.selected_memory_ids:
+            return ranked_items, recall
+        definitions = self.runtime.event_log.definitions()
+        visible_recall = ScientificRecall(
+            query=recall.query,
+            selected_memory_ids=tuple(visible_ids),
+            contents=tuple(definitions[memory_id].content for memory_id in visible_ids),
+            relevance={memory_id: recall.relevance[memory_id] for memory_id in visible_ids},
+            abstained=not bool(visible_ids),
+            reason=recall.reason,
+            estimated_tokens=sum(
+                definitions[memory_id].estimated_tokens for memory_id in visible_ids
+            ),
+            estimated_latency_ms=sum(
+                definitions[memory_id].estimated_latency_ms for memory_id in visible_ids
+            ),
+            evaluation_only=recall.evaluation_only,
+        )
+        return ranked_items, visible_recall
 
 
 @dataclass(frozen=True)

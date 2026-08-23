@@ -8,9 +8,11 @@ from wavemind.evidence import file_sha256, validate_artifact_integrity
 from wavemind.scientific_memops import (
     MEMOPS_BOUNDED_DEV_SCHEMA,
     NativeOllamaCaller,
+    ScientificMemOpsRetriever,
     build_bounded_dev_artifact,
     require_exact_upstream_sha,
 )
+from wavemind.scientific_runtime import ScientificCandidateMode
 
 
 class _Response:
@@ -102,3 +104,44 @@ def test_exact_upstream_sha_rejects_mismatch(monkeypatch, tmp_path):
 
     with pytest.raises(RuntimeError, match="upstream SHA mismatch"):
         require_exact_upstream_sha(tmp_path, "b" * 40)
+
+
+def test_memops_adapter_abstains_in_production_and_allows_shadow(tmp_path):
+    corpus = [
+        {
+            "corpus_id": "A04#session1",
+            "text": "user: I live in Portland on Division Street.",
+            "has_evidence": True,
+            "gold_secret": "must never affect retrieval",
+        },
+        {
+            "corpus_id": "A04#session2",
+            "text": "user: I enjoy a plain pour-over coffee.",
+            "has_evidence": False,
+        },
+    ]
+    with ScientificMemOpsRetriever(
+        tmp_path / "candidate.db",
+        corpus=corpus,
+        mode=ScientificCandidateMode.CAUSAL,
+    ) as retriever:
+        production_items, production_recall = retriever.retrieve(
+            "Where do I live?",
+            token_budget=100,
+            top_k_context=1,
+            evaluation_only=False,
+        )
+        shadow_items, shadow_recall = retriever.retrieve(
+            "Where do I live?",
+            token_budget=100,
+            top_k_context=1,
+            evaluation_only=True,
+        )
+
+    assert production_items == []
+    assert production_recall.abstained is True
+    assert len(shadow_items) == 1
+    assert shadow_recall.evaluation_only is True
+    assert shadow_recall.abstained is False
+    assert "gold_secret" in shadow_items[0]
+    assert "gold_secret" not in shadow_recall.contents[0]
