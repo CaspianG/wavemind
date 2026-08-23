@@ -270,6 +270,8 @@ def test_candidate_artifact_is_shadow_only_and_fail_closed(tmp_path, monkeypatch
         '{"case_id":"unit-1:q0000","paired_effect":0.0}\n',
         encoding="utf-8",
     )
+    failed = tmp_path / "candidate-failed.jsonl"
+    failed.write_text('{"failure":"packaging"}\n', encoding="utf-8")
     unit = MemoryAgentBenchDevelopmentUnit(
         unit_id="unit-1",
         family="Conflict_Resolution",
@@ -304,6 +306,7 @@ def test_candidate_artifact_is_shadow_only_and_fail_closed(tmp_path, monkeypatch
             "promoted_memory_ids": [],
             "false_verified_promotions": 0,
         },
+        failed_attempt_files=(failed,),
     )
 
     assert payload["schema"] == MEMORYAGENTBENCH_CANDIDATE_DEV_SCHEMA
@@ -313,4 +316,5 @@ def test_candidate_artifact_is_shadow_only_and_fail_closed(tmp_path, monkeypatch
     assert payload["production_case_count"] == 0
     assert payload["promoted_memory_ids"] == []
     assert payload["false_verified_promotions"] == 0
+    assert payload["failed_attempts_retained"][0]["sha256"]
     assert validate_artifact_integrity(payload) == []

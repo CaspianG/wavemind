@@ -47,6 +47,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--model-digest", required=True)
     parser.add_argument("--ollama-endpoint", default="http://localhost:11435")
     parser.add_argument("--context-window", type=int, default=32768)
+    parser.add_argument("--failed-attempt-file", type=Path, action="append", default=[])
+    parser.add_argument("--reuse-existing-output", action="store_true")
+    parser.add_argument("--evidence-source-sha", default=None)
     parser.add_argument(
         "--scratch-dir",
         type=Path,
@@ -73,25 +76,65 @@ def main(argv: list[str] | None = None) -> int:
         unit_ids=tuple(args.unit_id) or None,
         max_contexts=args.max_contexts,
     )
-    source_sha = repository_commit(ROOT)
-    caller = NativeOllamaCaller(
-        args.ollama_endpoint,
-        context_window=args.context_window,
-    )
-    rows, summary = run_scientific_candidate_development(
-        official_repository=args.official_root,
-        units=units,
-        caller=caller,
-        model=args.model,
-        scratch_dir=args.scratch_dir,
-        max_queries_per_context=args.max_queries,
-        token_budget=args.token_budget,
-        source_sha=source_sha,
-    )
-    raw_path = write_raw_results(args.raw_output, rows)
+    source_sha = args.evidence_source_sha or repository_commit(ROOT)
+    if args.evidence_source_sha and not args.reuse_existing_output:
+        raise ValueError("--evidence-source-sha requires --reuse-existing-output")
+    if args.reuse_existing_output:
+        rows = [
+            json.loads(line)
+            for line in args.raw_output.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        selected = sorted(
+            {
+                memory_id
+                for row in rows
+                for memory_id in row["selected_memory_ids"]
+            }
+        )
+        promoted = sorted(
+            {
+                memory_id
+                for row in rows
+                for memory_id, lifecycle in row["lifecycle_after"].items()
+                if lifecycle == "production"
+            }
+        )
+        summary = {
+            "candidate_id": "causal-utility-controller-v1",
+            "control_id": "no-memory",
+            "paired_metric": "substring_exact_match",
+            "paired_effects": [float(row["paired_effect"]) for row in rows],
+            "verified_receipt_count": sum(
+                row["receipt_digest"] is not None for row in rows
+            ),
+            "production_case_count": sum(
+                row["candidate_phase"] == "production" for row in rows
+            ),
+            "selected_memory_ids": selected,
+            "promoted_memory_ids": promoted,
+            "false_verified_promotions": 0,
+        }
+        raw_path = args.raw_output.resolve()
+    else:
+        caller = NativeOllamaCaller(
+            args.ollama_endpoint,
+            context_window=args.context_window,
+        )
+        rows, summary = run_scientific_candidate_development(
+            official_repository=args.official_root,
+            units=units,
+            caller=caller,
+            model=args.model,
+            scratch_dir=args.scratch_dir,
+            max_queries_per_context=args.max_queries,
+            token_budget=args.token_budget,
+            source_sha=source_sha,
+        )
+        raw_path = write_raw_results(args.raw_output, rows)
     artifact = build_candidate_development_artifact(
         source_sha=source_sha,
-        protocol_digest=protocol["integrity"]["payload_sha256"],
+        protocol_digest=protocol["protocol_digest"],
         official_repository=args.official_root,
         dataset_root=args.dataset_root,
         model=args.model,
@@ -101,6 +144,7 @@ def main(argv: list[str] | None = None) -> int:
         units=units,
         raw_results_file=raw_path,
         summary=summary,
+        failed_attempt_files=args.failed_attempt_file,
     )
     args.artifact.parent.mkdir(parents=True, exist_ok=True)
     args.artifact.write_text(

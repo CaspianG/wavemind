@@ -881,6 +881,7 @@ def build_candidate_development_artifact(
     units: Sequence[MemoryAgentBenchDevelopmentUnit],
     raw_results_file: str | Path,
     summary: Mapping[str, Any],
+    failed_attempt_files: Sequence[str | Path] = (),
 ) -> dict[str, Any]:
     raw_path = Path(raw_results_file).resolve()
     if not raw_path.is_file():
@@ -891,6 +892,18 @@ def build_candidate_development_artifact(
         for line in raw_path.read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
+    failed_attempts = []
+    for raw_failed_path in failed_attempt_files:
+        failed_path = Path(raw_failed_path).resolve()
+        if not failed_path.is_file():
+            raise FileNotFoundError(failed_path)
+        failed_attempts.append(
+            {
+                "path": str(failed_path),
+                "bytes": failed_path.stat().st_size,
+                "sha256": file_sha256(failed_path),
+            }
+        )
     payload = {
         "schema": MEMORYAGENTBENCH_CANDIDATE_DEV_SCHEMA,
         "phase": "bounded-development",
@@ -940,6 +953,9 @@ def build_candidate_development_artifact(
         "selected_memory_ids": list(summary["selected_memory_ids"]),
         "promoted_memory_ids": list(summary["promoted_memory_ids"]),
         "false_verified_promotions": int(summary["false_verified_promotions"]),
+        "failed_attempts_retained": sorted(
+            failed_attempts, key=lambda item: item["path"]
+        ),
         "raw_results": {
             "path": str(raw_path),
             "bytes": raw_path.stat().st_size,
