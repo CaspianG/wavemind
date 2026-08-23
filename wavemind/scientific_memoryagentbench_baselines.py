@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import copy
 import json
 import time
@@ -50,6 +51,26 @@ def _context_prompt(contents: Sequence[str], query: str) -> str:
     return f"{memories}\n\n{query}" if memories else query
 
 
+def _prompt_bytes(
+    *,
+    model: str,
+    system_message: str,
+    user_message: str,
+    max_tokens: int,
+) -> bytes:
+    return canonical_json_bytes(
+        {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": user_message},
+            ],
+            "temperature": 0.0,
+            "max_tokens": max_tokens,
+        }
+    )
+
+
 def _prompt_sha256(
     *,
     model: str,
@@ -58,16 +79,11 @@ def _prompt_sha256(
     max_tokens: int,
 ) -> str:
     return sha256_bytes(
-        canonical_json_bytes(
-            {
-                "model": model,
-                "messages": [
-                    {"role": "system", "content": system_message},
-                    {"role": "user", "content": user_message},
-                ],
-                "temperature": 0.0,
-                "max_tokens": max_tokens,
-            }
+        _prompt_bytes(
+            model=model,
+            system_message=system_message,
+            user_message=user_message,
+            max_tokens=max_tokens,
         )
     )
 
@@ -173,12 +189,13 @@ def run_baseline_matrix_development(
                             runtime_case.query,
                         )
                         max_tokens = int(dataset_config["generation_max_length"])
-                        prompt_digest = _prompt_sha256(
+                        prompt_bytes = _prompt_bytes(
                             model=model,
                             system_message=system_message,
                             user_message=user_message,
                             max_tokens=max_tokens,
                         )
+                        prompt_digest = sha256_bytes(prompt_bytes)
                         cache_hit = prompt_digest in answer_cache
                         if cache_hit:
                             generated = copy.deepcopy(answer_cache[prompt_digest])
@@ -219,17 +236,11 @@ def run_baseline_matrix_development(
                                 },
                                 "prompt_sha256": prompt_digest,
                                 "prompt": {
-                                    "encoding": "utf-8",
-                                    "system_message": system_message,
-                                    "user_message": user_message,
-                                    "system_message_sha256": sha256_bytes(
-                                        system_message.encode("utf-8")
-                                    ),
-                                    "user_message_sha256": sha256_bytes(
-                                        user_message.encode("utf-8")
-                                    ),
-                                    "bytes": len(system_message.encode("utf-8"))
-                                    + len(user_message.encode("utf-8")),
+                                    "encoding": "canonical-json-utf8-base64",
+                                    "canonical_json_base64": base64.b64encode(
+                                        prompt_bytes
+                                    ).decode("ascii"),
+                                    "bytes": len(prompt_bytes),
                                 },
                                 "answer_cache_hit": cache_hit,
                                 "answer_cache_policy": (
@@ -306,6 +317,9 @@ def _ablation_pairs(protocol: Mapping[str, Any]) -> list[dict[str, Any]]:
 def summarize_raw_baseline_rows(
     rows: Sequence[Mapping[str, Any]],
 ) -> dict[str, Any]:
+    errors = validate_raw_baseline_rows(rows)
+    if errors:
+        raise ValueError("raw baseline row validation failed: " + "; ".join(errors))
     expected_pairs = {(str(row["case_id"]), str(row["arm_id"])) for row in rows}
     case_ids = sorted({str(row["case_id"]) for row in rows})
     required_pairs = {
@@ -346,6 +360,56 @@ def summarize_raw_baseline_rows(
     }
 
 
+def validate_raw_baseline_rows(
+    rows: Sequence[Mapping[str, Any]],
+) -> list[str]:
+    errors: list[str] = []
+    seen_prompts: set[str] = set()
+    for index, row in enumerate(rows):
+        label = f"row {index}"
+        prompt_digest = str(row.get("prompt_sha256") or "")
+        prompt = row.get("prompt")
+        if not isinstance(prompt, Mapping):
+            errors.append(f"{label} prompt evidence is missing")
+            continue
+        if prompt.get("encoding") != "canonical-json-utf8-base64":
+            errors.append(f"{label} prompt encoding is invalid")
+            continue
+        try:
+            prompt_bytes = base64.b64decode(
+                str(prompt.get("canonical_json_base64") or ""),
+                validate=True,
+            )
+            prompt_payload = json.loads(prompt_bytes.decode("utf-8"))
+        except (ValueError, UnicodeDecodeError, json.JSONDecodeError):
+            errors.append(f"{label} prompt bytes are invalid")
+            continue
+        if sha256_bytes(prompt_bytes) != prompt_digest:
+            errors.append(f"{label} prompt digest mismatch")
+        if int(prompt.get("bytes") or -1) != len(prompt_bytes):
+            errors.append(f"{label} prompt byte count mismatch")
+        messages = prompt_payload.get("messages")
+        roles = (
+            [message.get("role") for message in messages]
+            if isinstance(messages, list)
+            and all(isinstance(message, Mapping) for message in messages)
+            else []
+        )
+        if roles != ["system", "user"]:
+            errors.append(f"{label} prompt message structure is invalid")
+        expected_cache_hit = prompt_digest in seen_prompts
+        if bool(row.get("answer_cache_hit")) != expected_cache_hit:
+            errors.append(f"{label} answer cache provenance mismatch")
+        seen_prompts.add(prompt_digest)
+        retrieval = row.get("retrieval")
+        if str(row.get("arm_id") or "") == "no-memory" and isinstance(
+            retrieval, Mapping
+        ):
+            if retrieval.get("memory_ids") or int(retrieval.get("context_tokens") or 0):
+                errors.append(f"{label} no-memory arm used memory")
+    return errors
+
+
 def build_baseline_matrix_artifact(
     *,
     project_root: str | Path,
@@ -367,6 +431,14 @@ def build_baseline_matrix_artifact(
     raw_path = Path(raw_results_file).resolve()
     if not raw_path.is_file():
         raise FileNotFoundError(raw_path)
+    raw_rows = [
+        json.loads(line)
+        for line in raw_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    observed_summary = summarize_raw_baseline_rows(raw_rows)
+    if canonical_json_bytes(observed_summary) != canonical_json_bytes(dict(summary)):
+        raise ValueError("raw baseline summary differs from packaged summary")
     official = Path(official_repository).resolve()
     dataset = Path(dataset_root).resolve()
     failed_attempts = []

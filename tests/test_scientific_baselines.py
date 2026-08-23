@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+import base64
 import json
 from pathlib import Path
 
 import pytest
 
-from wavemind.evidence import validate_artifact_integrity
+from wavemind.evidence import (
+    canonical_json_bytes,
+    sha256_bytes,
+    validate_artifact_integrity,
+)
 from wavemind.scientific_baselines import (
     SCIENTIFIC_BASELINE_MATRIX_SCHEMA,
     BaselineCorpusItem,
@@ -20,6 +25,7 @@ from wavemind.scientific_memoryagentbench import MemoryAgentBenchDevelopmentUnit
 from wavemind.scientific_memoryagentbench_baselines import (
     build_baseline_matrix_artifact,
     summarize_raw_baseline_rows,
+    validate_raw_baseline_rows,
 )
 from wavemind.scientific_protocol import REQUIRED_BASELINES
 
@@ -112,15 +118,33 @@ def _raw_rows() -> list[dict]:
     for case_id in ("case-1", "case-2"):
         order = deterministic_arm_order(seed=17, case_id=case_id)
         for index, arm_id in enumerate(order):
+            prompt_bytes = canonical_json_bytes(
+                {
+                    "model": "mistral:7b",
+                    "messages": [
+                        {"role": "system", "content": "system"},
+                        {"role": "user", "content": f"{case_id}:{index}"},
+                    ],
+                    "temperature": 0.0,
+                    "max_tokens": 256,
+                }
+            )
             rows.append(
                 {
                     "case_id": case_id,
                     "arm_id": arm_id,
                     "arm_index": index,
                     "arm_order": order,
-                    "answer_cache_hit": index > 0,
-                    "prompt_sha256": ("a" if index == 0 else "b") * 64,
-                    "retrieval": {"context_tokens": index},
+                    "answer_cache_hit": False,
+                    "prompt_sha256": sha256_bytes(prompt_bytes),
+                    "prompt": {
+                        "encoding": "canonical-json-utf8-base64",
+                        "canonical_json_base64": base64.b64encode(prompt_bytes).decode(
+                            "ascii"
+                        ),
+                        "bytes": len(prompt_bytes),
+                    },
+                    "retrieval": {"memory_ids": [], "context_tokens": 0},
                     "official_metrics": {"substring_exact_match": 1.0},
                 }
             )
@@ -136,6 +160,12 @@ def test_raw_baseline_summary_requires_every_case_arm_pair():
     with pytest.raises(ValueError, match="incomplete or duplicated"):
         summarize_raw_baseline_rows(rows[:-1])
 
+    changed = json.loads(json.dumps(rows))
+    changed[0]["prompt"]["canonical_json_base64"] = base64.b64encode(
+        b'{"tampered":true}'
+    ).decode("ascii")
+    assert "row 0 prompt digest mismatch" in validate_raw_baseline_rows(changed)
+
 
 def test_baseline_artifact_is_development_only_and_records_confound(
     tmp_path, monkeypatch
@@ -149,7 +179,10 @@ def test_baseline_artifact_is_development_only_and_records_confound(
     (project / "wavemind").mkdir(parents=True)
     (project / "wavemind" / "encoders.py").write_text("# encoder\n", encoding="utf-8")
     raw = tmp_path / "raw.jsonl"
-    raw.write_text("{}\n", encoding="utf-8")
+    raw_rows = _raw_rows()[: len(REQUIRED_BASELINES)]
+    raw.write_text(
+        "".join(json.dumps(row) + "\n" for row in raw_rows), encoding="utf-8"
+    )
     failed = tmp_path / "failed.jsonl"
     failed.write_text('{"error":"missing optional client"}\n', encoding="utf-8")
     unit = MemoryAgentBenchDevelopmentUnit(
@@ -175,13 +208,7 @@ def test_baseline_artifact_is_development_only_and_records_confound(
             for arm_id in ("mem0-oss", "langgraph", "chroma", "qdrant-local")
         },
     )
-    summary = {
-        "case_orders": {"unit-1:q0000": sorted(REQUIRED_BASELINES)},
-        "unique_prompt_count": 2,
-        "answer_invocation_count": 2,
-        "logical_arm_case_count": len(REQUIRED_BASELINES),
-        "per_arm": {arm_id: {"mean": 0.0} for arm_id in REQUIRED_BASELINES},
-    }
+    summary = summarize_raw_baseline_rows(raw_rows)
 
     payload = build_baseline_matrix_artifact(
         project_root=project,
