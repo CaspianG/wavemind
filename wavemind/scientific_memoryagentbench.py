@@ -37,9 +37,7 @@ from .scientific_splits import (
 
 
 MEMORYAGENTBENCH_OFFICIAL_SHA = "fe1735de8cf8b9908e1e3d3b5612afc815698062"
-MEMORYAGENTBENCH_BOUNDED_DEV_SCHEMA = (
-    "wavemind.memoryagentbench_bounded_development.v1"
-)
+MEMORYAGENTBENCH_BOUNDED_DEV_SCHEMA = "wavemind.memoryagentbench_bounded_development.v1"
 MEMORYAGENTBENCH_CANDIDATE_DEV_SCHEMA = (
     "wavemind.memoryagentbench_candidate_development.v1"
 )
@@ -103,9 +101,7 @@ class NativeOpenAICompatibleClient:
         usage = result["usage"]
         return SimpleNamespace(
             choices=[
-                SimpleNamespace(
-                    message=SimpleNamespace(content=result["content"])
-                )
+                SimpleNamespace(message=SimpleNamespace(content=result["content"]))
             ],
             usage=SimpleNamespace(
                 prompt_tokens=int(usage["prompt_tokens"]),
@@ -165,9 +161,10 @@ def load_development_units(
     if split_manifest.get("schema") != MEMORYAGENTBENCH_SPLIT_SCHEMA:
         raise ValueError("MemoryAgentBench split manifest schema mismatch")
     upstream = split_manifest.get("upstream")
-    if not isinstance(upstream, Mapping) or upstream.get(
-        "revision"
-    ) != MEMORYAGENTBENCH_REVISION:
+    if (
+        not isinstance(upstream, Mapping)
+        or upstream.get("revision") != MEMORYAGENTBENCH_REVISION
+    ):
         raise ValueError("MemoryAgentBench dataset revision mismatch")
     if max_contexts is not None and max_contexts < 1:
         raise ValueError("max_contexts must be positive")
@@ -196,13 +193,11 @@ def load_development_units(
         forbidden = [
             str(unit.get("unit_id"))
             for unit in selected
-            if unit.get("split") != "development"
-            or unit.get("family") != family
+            if unit.get("split") != "development" or unit.get("family") != family
         ]
         if forbidden:
             raise ValueError(
-                "non-development or wrong-family units requested: "
-                f"{sorted(forbidden)}"
+                f"non-development or wrong-family units requested: {sorted(forbidden)}"
             )
     selected = sorted(selected, key=lambda unit: str(unit.get("unit_id")))
     if max_contexts is not None:
@@ -405,12 +400,15 @@ def run_official_bm25_development(
     native_client = NativeOpenAICompatibleClient(caller)
     compatibility_shims = install_official_compatibility_shims()
     scratch = Path(scratch_dir).resolve()
-    with _official_modules(official_repository) as (
-        creator_class,
-        agent_class,
-        metrics_summarization,
-        _,
-    ), _working_directory(scratch):
+    with (
+        _official_modules(official_repository) as (
+            creator_class,
+            agent_class,
+            metrics_summarization,
+            _,
+        ),
+        _working_directory(scratch),
+    ):
         for context_index, unit in enumerate(units):
             agent_config = _agent_config(model=model, output_dir=scratch / "outputs")
             dataset_config = _dataset_config(unit)
@@ -525,8 +523,9 @@ def run_scientific_candidate_development(
     max_queries_per_context: int,
     token_budget: int,
     source_sha: str,
+    candidate_mode: ScientificCandidateMode = ScientificCandidateMode.CAUSAL,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    """Pair the preregistered causal candidate with a no-memory control."""
+    """Pair one preregistered scientific candidate with no-memory control."""
 
     require_official_memoryagentbench_sha(official_repository)
     if not units:
@@ -536,6 +535,9 @@ def run_scientific_candidate_development(
     if any(unit.family != units[0].family for unit in units):
         raise ValueError("one bounded invocation may contain only one family")
 
+    mode = ScientificCandidateMode(candidate_mode)
+    if mode is ScientificCandidateMode.HYBRID:
+        raise ValueError("hybrid candidate is not enabled for bounded development")
     client = NativeOpenAICompatibleClient(caller)
     rows: list[dict[str, Any]] = []
     effects: list[float] = []
@@ -567,19 +569,22 @@ def run_scientific_candidate_development(
             database = scratch / f"candidate-{context_index}.db"
             runtime = ScientificMemoryRuntime(
                 database,
-                mode=ScientificCandidateMode.CAUSAL,
+                mode=mode,
             )
             try:
                 for chunk_index, chunk in enumerate(chunks):
-                    memory_id = "mab-" + sha256_bytes(
-                        canonical_json_bytes(
-                            {
-                                "unit_id": unit.unit_id,
-                                "chunk_index": chunk_index,
-                                "content": chunk,
-                            }
-                        )
-                    )[:24]
+                    memory_id = (
+                        "mab-"
+                        + sha256_bytes(
+                            canonical_json_bytes(
+                                {
+                                    "unit_id": unit.unit_id,
+                                    "chunk_index": chunk_index,
+                                    "content": chunk,
+                                }
+                            )
+                        )[:24]
+                    )
                     runtime.register_memory(
                         MemoryDefinition(
                             memory_id=memory_id,
@@ -599,9 +604,7 @@ def run_scientific_candidate_development(
                     "system",
                     "Simple_rag_bm25",
                 )
-                for runtime_case, scoring_case in zip(
-                    runtime_cases, scoring_cases
-                ):
+                for runtime_case, scoring_case in zip(runtime_cases, scoring_cases):
                     production_recall = runtime.recall(
                         runtime_case.query,
                         context={},
@@ -633,12 +636,10 @@ def run_scientific_candidate_development(
                         if memory_prompt
                         else runtime_case.query
                     )
-                    case_id = (
-                        f"{unit.unit_id}:q{runtime_case.query_index:04d}"
+                    case_id = f"{unit.unit_id}:q{runtime_case.query_index:04d}"
+                    control_first = (
+                        int(sha256_bytes(case_id.encode("utf-8"))[:2], 16) % 2 == 0
                     )
-                    control_first = int(
-                        sha256_bytes(case_id.encode("utf-8"))[:2], 16
-                    ) % 2 == 0
                     answer_order = (
                         ("control", "treatment")
                         if control_first
@@ -745,7 +746,7 @@ def run_scientific_candidate_development(
             finally:
                 runtime.close()
     summary = {
-        "candidate_id": ScientificCandidateMode.CAUSAL.value,
+        "candidate_id": mode.value,
         "control_id": "no-memory",
         "paired_metric": score_metric,
         "paired_effects": effects,

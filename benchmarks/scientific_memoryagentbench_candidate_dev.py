@@ -17,6 +17,7 @@ from wavemind.scientific_memoryagentbench import (
     run_scientific_candidate_development,
     write_raw_results,
 )
+from wavemind.scientific_runtime import ScientificCandidateMode
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -47,6 +48,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--model-digest", required=True)
     parser.add_argument("--ollama-endpoint", default="http://localhost:11435")
     parser.add_argument("--context-window", type=int, default=32768)
+    parser.add_argument(
+        "--candidate-mode",
+        choices=(
+            ScientificCandidateMode.CAUSAL.value,
+            ScientificCandidateMode.GRAPH.value,
+        ),
+        default=ScientificCandidateMode.CAUSAL.value,
+    )
     parser.add_argument("--failed-attempt-file", type=Path, action="append", default=[])
     parser.add_argument("--reuse-existing-output", action="store_true")
     parser.add_argument("--evidence-source-sha", default=None)
@@ -58,12 +67,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--raw-output",
         type=Path,
-        default=ROOT / "benchmarks" / "scientific_memoryagentbench_candidate_dev_raw.jsonl",
+        default=ROOT
+        / "benchmarks"
+        / "scientific_memoryagentbench_candidate_dev_raw.jsonl",
     )
     parser.add_argument(
         "--artifact",
         type=Path,
-        default=ROOT / "benchmarks" / "scientific_memoryagentbench_candidate_dev_results.json",
+        default=ROOT
+        / "benchmarks"
+        / "scientific_memoryagentbench_candidate_dev_results.json",
     )
     args = parser.parse_args(argv)
 
@@ -86,11 +99,7 @@ def main(argv: list[str] | None = None) -> int:
             if line.strip()
         ]
         selected = sorted(
-            {
-                memory_id
-                for row in rows
-                for memory_id in row["selected_memory_ids"]
-            }
+            {memory_id for row in rows for memory_id in row["selected_memory_ids"]}
         )
         promoted = sorted(
             {
@@ -101,7 +110,7 @@ def main(argv: list[str] | None = None) -> int:
             }
         )
         summary = {
-            "candidate_id": "causal-utility-controller-v1",
+            "candidate_id": args.candidate_mode,
             "control_id": "no-memory",
             "paired_metric": "substring_exact_match",
             "paired_effects": [float(row["paired_effect"]) for row in rows],
@@ -130,6 +139,7 @@ def main(argv: list[str] | None = None) -> int:
             max_queries_per_context=args.max_queries,
             token_budget=args.token_budget,
             source_sha=source_sha,
+            candidate_mode=ScientificCandidateMode(args.candidate_mode),
         )
         raw_path = write_raw_results(args.raw_output, rows)
     artifact = build_candidate_development_artifact(

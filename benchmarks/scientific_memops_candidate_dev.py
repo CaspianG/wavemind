@@ -53,15 +53,25 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--ollama-endpoint", default="http://localhost:11435")
     parser.add_argument("--context-window", type=int, default=32768)
     parser.add_argument("--max-cases", type=int, default=5)
+    parser.add_argument("--max-subjects", type=int, default=0)
+    parser.add_argument("--max-cases-per-subject", type=int, default=0)
+    parser.add_argument(
+        "--candidate-mode",
+        choices=(
+            ScientificCandidateMode.CAUSAL.value,
+            ScientificCandidateMode.GRAPH.value,
+        ),
+        default=ScientificCandidateMode.CAUSAL.value,
+    )
     parser.add_argument("--token-budget", type=int, default=2048)
     parser.add_argument("--top-k-context", type=int, default=1)
     args = parser.parse_args(argv)
+    if args.max_cases < 0 or args.max_subjects < 0 or args.max_cases_per_subject < 0:
+        parser.error("case and subject limits must be non-negative")
 
     require_exact_upstream_sha(args.upstream_root, args.upstream_sha)
     source_sha = repository_commit(ROOT)
-    generation = runpy.run_path(
-        str(args.upstream_root / "5-test_operation_metrics.py")
-    )
+    generation = runpy.run_path(str(args.upstream_root / "5-test_operation_metrics.py"))
     evaluation = runpy.run_path(
         str(args.upstream_root / "5.5-evaluate_operation_metrics.py")
     )
@@ -69,7 +79,8 @@ def main(argv: list[str] | None = None) -> int:
         args.ollama_endpoint,
         context_window=args.context_window,
     )
-    candidate_id = ScientificCandidateMode.CAUSAL.value
+    mode = ScientificCandidateMode(args.candidate_mode)
+    candidate_id = mode.value
     raw_rows: list[dict[str, object]] = []
     paired_effects: list[float] = []
     production_case_count = 0
@@ -83,7 +94,11 @@ def main(argv: list[str] | None = None) -> int:
     }
     with tempfile.TemporaryDirectory(prefix="wavemind-memops-candidate-") as temp_dir:
         stop = False
-        for path in sorted(args.longitudinal_input_dir.glob("*.json")):
+        for subject_index, path in enumerate(
+            sorted(args.longitudinal_input_dir.glob("*.json"))
+        ):
+            if args.max_subjects and subject_index >= args.max_subjects:
+                break
             payload = generation["enrich_payload_with_gold_fields"](
                 json.loads(path.read_text(encoding="utf-8")),
                 evidence_payloads.get(path.name),
@@ -99,7 +114,7 @@ def main(argv: list[str] | None = None) -> int:
                 evaluation_setting="longitudinal_operation",
                 corpus=corpus,
                 evaluation_method=candidate_id,
-                retrieval_mode="scientific-causal",
+                retrieval_mode=f"scientific-{mode.value}",
                 retriever_name=candidate_id,
                 answer_model=args.model,
                 retrieval_unit="session",
@@ -108,11 +123,17 @@ def main(argv: list[str] | None = None) -> int:
             with ScientificMemOpsRetriever(
                 db_path,
                 corpus=corpus,
-                mode=ScientificCandidateMode.CAUSAL,
+                mode=mode,
             ) as retriever:
+                subject_case_count = 0
                 for entry in entries:
                     if args.max_cases and len(case_ids) >= args.max_cases:
                         stop = True
+                        break
+                    if (
+                        args.max_cases_per_subject
+                        and subject_case_count >= args.max_cases_per_subject
+                    ):
                         break
                     case_id = str(entry["question_id"])
                     production_items, production_recall = retriever.retrieve(
@@ -211,8 +232,7 @@ def main(argv: list[str] | None = None) -> int:
                             verifier_result=VerifierResult(
                                 verifier_kind=VerifierKind.TEST,
                                 verifier_id=(
-                                    "MemTensor/MemOps/"
-                                    "5.5-evaluate_operation_metrics.py"
+                                    "MemTensor/MemOps/5.5-evaluate_operation_metrics.py"
                                 ),
                                 verifier_run_id=f"{source_sha}:{case_id}",
                                 decision=VerificationDecision.VERIFIED,
@@ -228,7 +248,10 @@ def main(argv: list[str] | None = None) -> int:
                     lifecycle = {
                         memory_id: state.lifecycle.value
                         for memory_id, state in (
-                            (memory_id, retriever.runtime.event_log.memory_state(memory_id))
+                            (
+                                memory_id,
+                                retriever.runtime.event_log.memory_state(memory_id),
+                            )
                             for memory_id in treatment_recall.selected_memory_ids
                         )
                     }
@@ -238,6 +261,7 @@ def main(argv: list[str] | None = None) -> int:
                         if value == MemoryLifecycle.PRODUCTION.value
                     )
                     case_ids.append(case_id)
+                    subject_case_count += 1
                     raw_rows.append(
                         {
                             "case_id": case_id,
