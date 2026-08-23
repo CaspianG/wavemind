@@ -2,7 +2,7 @@
   "schema": "wavemind.scientific_memory_preflight.v1",
   "status": "action_required",
   "ready": false,
-  "source_sha": "4c19ee8f34025b559b82d2063321763b36550e61",
+  "source_sha": "d49617f38331ef2776ac257251da4acfe6f13067",
   "protocol_digest": "489d3ff6fca733340b65b26c52ccb5533b19ad14fef66b1d2d912691dac22d59",
   "checks": {
     "protocol": {
@@ -15,7 +15,7 @@
     },
     "clean_exact_sha": {
       "ready": true,
-      "source_sha": "4c19ee8f34025b559b82d2063321763b36550e61",
+      "source_sha": "d49617f38331ef2776ac257251da4acfe6f13067",
       "clean": true,
       "issue": ""
     },
@@ -90,13 +90,13 @@
       }
     },
     "official_runners": {
-      "ready": false,
+      "ready": true,
       "runners": {
         "memoryagentbench": {
           "environment_variable": "WAVEMIND_MEMORYAGENTBENCH_RUNNER",
-          "path": null,
-          "ready": false,
-          "issue": "official runner entrypoint missing"
+          "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\upstreams\\memory-agent-bench-code\\main.py",
+          "ready": true,
+          "issue": ""
         },
         "state-bench-agent-learning": {
           "environment_variable": "WAVEMIND_STATE_BENCH_RUNNER",
@@ -118,6 +118,37 @@
         }
       }
     },
+    "official_credentials": {
+      "ready": false,
+      "credentials": {
+        "official-judge-api-key": {
+          "accepted_environment_variables": [
+            "WAVEMIND_OFFICIAL_JUDGE_API_KEY",
+            "OPENAI_API_KEY"
+          ],
+          "present_environment_variables": [],
+          "ready": false,
+          "issue": "required credential or endpoint is missing"
+        },
+        "longmemeval-v2-reader-endpoint": {
+          "accepted_environment_variables": [
+            "WAVEMIND_LONGMEMEVAL_READER_BASE_URL"
+          ],
+          "present_environment_variables": [],
+          "ready": false,
+          "issue": "required credential or endpoint is missing"
+        },
+        "longmemeval-v2-embedding-endpoint": {
+          "accepted_environment_variables": [
+            "WAVEMIND_LONGMEMEVAL_EMBEDDING_BASE_URL"
+          ],
+          "present_environment_variables": [],
+          "ready": false,
+          "issue": "required credential or endpoint is missing"
+        }
+      },
+      "secret_values_recorded": false
+    },
     "longmemeval_v2_one_shot_unconsumed": {
       "ready": true,
       "observed_full_runs": 0,
@@ -128,6 +159,6 @@
   "integrity": {
     "schema": "wavemind.artifact_integrity.v1",
     "algorithm": "sha256",
-    "payload_sha256": "a9214a7b562f0b1ff30cbb0ca661cb7a409e7dec6e8b7cb1e857141b328e97a1"
+    "payload_sha256": "05e2166014d8c85f451a3b162fc000794114c52e894926e029fddc61ceb57f88"
   }
 }
