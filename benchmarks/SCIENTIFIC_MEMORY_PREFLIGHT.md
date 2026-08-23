@@ -1,12 +1,13 @@
 # Scientific Memory Preflight
 
 - Status: **action_required**
-- Source SHA: `d49617f38331ef2776ac257251da4acfe6f13067`
+- Source SHA: `3dd0870a226b521868bf4250f10b568bf5f7776b`
 
 | Check | Status |
 |---|---:|
 | `protocol` | ready |
 | `dataset_manifest` | ready |
+| `official_runner_manifest` | ready |
 | `clean_exact_sha` | ready |
 | `real_baseline_packages` | ready |
 | `official_datasets` | ready |
