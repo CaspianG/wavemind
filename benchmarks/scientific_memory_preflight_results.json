@@ -2,7 +2,7 @@
   "schema": "wavemind.scientific_memory_preflight.v1",
   "status": "action_required",
   "ready": false,
-  "source_sha": "2f8ab0129b24af21fe41af844328a93153df88b4",
+  "source_sha": "4c19ee8f34025b559b82d2063321763b36550e61",
   "protocol_digest": "489d3ff6fca733340b65b26c52ccb5533b19ad14fef66b1d2d912691dac22d59",
   "checks": {
     "protocol": {
@@ -15,84 +15,76 @@
     },
     "clean_exact_sha": {
       "ready": true,
-      "source_sha": "2f8ab0129b24af21fe41af844328a93153df88b4",
+      "source_sha": "4c19ee8f34025b559b82d2063321763b36550e61",
       "clean": true,
       "issue": ""
     },
     "real_baseline_packages": {
-      "ready": false,
+      "ready": true,
       "packages": {
         "mem0-oss": {
           "package": "mem0ai",
-          "version": null,
+          "version": "2.0.18",
           "source_revision_environment_variable": "WAVEMIND_MEM0_SOURCE_REVISION",
-          "source_revision": "",
-          "ready": false
+          "source_revision": "c427a453a89c5a3fee73cdb2e4c4df6a651e1692",
+          "ready": true
         },
         "langgraph": {
           "package": "langgraph",
-          "version": null,
+          "version": "1.2.11",
           "source_revision_environment_variable": "WAVEMIND_LANGGRAPH_SOURCE_REVISION",
-          "source_revision": "",
-          "ready": false
+          "source_revision": "644815f9e5bc52ad8f7a5227a456227e9c3e639b",
+          "ready": true
         },
         "chroma": {
           "package": "chromadb",
-          "version": null,
+          "version": "1.5.9",
           "source_revision_environment_variable": null,
           "source_revision": null,
-          "ready": false
+          "ready": true
         },
         "qdrant-local": {
           "package": "qdrant-client",
-          "version": null,
+          "version": "1.19.0",
           "source_revision_environment_variable": null,
           "source_revision": null,
-          "ready": false
+          "ready": true
         }
       }
     },
     "official_datasets": {
-      "ready": false,
+      "ready": true,
       "datasets": {
         "memory-agent-bench": {
-          "ready": false,
-          "root": null,
+          "ready": true,
+          "root": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\upstreams\\memory-agent-bench",
           "expected_revision": "7ea066982b140a19337e17e60d45d4076e042faf",
-          "observed_revision": null,
-          "issues": [
-            "pinned official dataset checkout is missing"
-          ],
+          "observed_revision": "7ea066982b140a19337e17e60d45d4076e042faf",
+          "issues": [],
           "environment_variable": "WAVEMIND_MEMORYAGENTBENCH_ROOT"
         },
         "state-bench": {
-          "ready": false,
-          "root": null,
+          "ready": true,
+          "root": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\upstreams\\state-bench",
           "expected_revision": "5644b1838d96bc4483da29642d058ecaa6f80f7f",
-          "observed_revision": null,
-          "issues": [
-            "pinned official dataset checkout is missing"
-          ],
+          "observed_revision": "5644b1838d96bc4483da29642d058ecaa6f80f7f",
+          "issues": [],
           "environment_variable": "WAVEMIND_STATE_BENCH_ROOT"
         },
         "memops": {
-          "ready": false,
-          "root": null,
+          "ready": true,
+          "root": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\upstreams\\memops",
           "expected_revision": "312af65e2c7b6d1b70f062ffa8b4cde32aaf6f35",
-          "observed_revision": null,
-          "issues": [
-            "pinned official dataset checkout is missing"
-          ],
+          "observed_revision": "312af65e2c7b6d1b70f062ffa8b4cde32aaf6f35",
+          "issues": [],
           "environment_variable": "WAVEMIND_MEMOPS_ROOT"
         },
         "longmemeval-v2": {
-          "ready": false,
-          "root": null,
+          "ready": true,
+          "root": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\upstreams\\longmemeval-v2",
           "expected_revision": "2cc8c540bdb87fe6761629b585e727e1c4704520",
-          "observed_revision": null,
-          "issues": [
-            "pinned official dataset checkout is missing"
-          ],
+          "observed_revision": "2cc8c540bdb87fe6761629b585e727e1c4704520",
+          "issues": [],
           "environment_variable": "WAVEMIND_LONGMEMEVAL_V2_ROOT"
         }
       }
@@ -108,21 +100,21 @@
         },
         "state-bench-agent-learning": {
           "environment_variable": "WAVEMIND_STATE_BENCH_RUNNER",
-          "path": null,
-          "ready": false,
-          "issue": "official runner entrypoint missing"
+          "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\upstreams\\state-bench\\state_bench\\scripts\\run_batch.py",
+          "ready": true,
+          "issue": ""
         },
         "memops": {
           "environment_variable": "WAVEMIND_MEMOPS_RUNNER",
-          "path": null,
-          "ready": false,
-          "issue": "official runner entrypoint missing"
+          "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\upstreams\\memops\\5-test_operation_metrics.py",
+          "ready": true,
+          "issue": ""
         },
         "longmemeval-v2": {
           "environment_variable": "WAVEMIND_LONGMEMEVAL_V2_RUNNER",
-          "path": null,
-          "ready": false,
-          "issue": "official runner entrypoint missing"
+          "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\upstreams\\longmemeval-v2\\evaluation\\run_eval.py",
+          "ready": true,
+          "issue": ""
         }
       }
     },
@@ -136,6 +128,6 @@
   "integrity": {
     "schema": "wavemind.artifact_integrity.v1",
     "algorithm": "sha256",
-    "payload_sha256": "489d663dbf9c4fc4f8344ccb39f9882d0b6af658922552a09167b0a659afdb0e"
+    "payload_sha256": "a9214a7b562f0b1ff30cbb0ca661cb7a409e7dec6e8b7cb1e857141b328e97a1"
   }
 }
