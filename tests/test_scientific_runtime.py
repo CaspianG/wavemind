@@ -168,3 +168,34 @@ def test_runtime_rejects_receipt_for_abstention(tmp_path):
                 verifier_result=_verifier(1, 1.0, 0.0),
                 safe_for_randomization=False,
             )
+
+
+def test_runtime_reopen_retains_proof_and_production_lifecycle(tmp_path):
+    path = tmp_path / "persistent-runtime.sqlite3"
+    with ScientificMemoryRuntime(
+        path,
+        mode=ScientificCandidateMode.CAUSAL,
+        bootstrap_repeats=200,
+    ) as runtime:
+        runtime.register_memory(_definition("procedure:deploy"))
+        _promote(runtime, "procedure:deploy")
+        assert runtime.event_log.memory_state("procedure:deploy").production_eligible
+
+    with ScientificMemoryRuntime(
+        path,
+        mode=ScientificCandidateMode.CAUSAL,
+        bootstrap_repeats=200,
+    ) as reopened:
+        recalled = reopened.recall(
+            "deploy service rollback",
+            context={"domain": "operations"},
+            moment=10.0,
+            token_budget=20,
+            latency_budget_ms=5.0,
+            max_safety_risk=0.1,
+        )
+
+        assert recalled.abstained is False
+        assert recalled.selected_memory_ids == ("procedure:deploy",)
+        assert len(reopened.event_log.receipts()) == 4
+        assert reopened.event_log.validate_chain() == []

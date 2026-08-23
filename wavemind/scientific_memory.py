@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import itertools
+import json
 import math
 import re
+import sqlite3
+import threading
 from dataclasses import asdict, dataclass, field, replace
 from enum import Enum
+from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
 from .evaluation_statistics import paired_cluster_bootstrap
@@ -131,7 +135,9 @@ class VerifierResult:
         if not 0.0 <= treatment <= 1.0 or not 0.0 <= control <= 1.0:
             raise ValueError("paired outcomes must be between zero and one")
         effect = treatment - control
-        return effect if self.decision is VerificationDecision.VERIFIED else -abs(effect)
+        return (
+            effect if self.decision is VerificationDecision.VERIFIED else -abs(effect)
+        )
 
 
 @dataclass(frozen=True)
@@ -286,14 +292,213 @@ def _verifier_from_payload(payload: Mapping[str, Any]) -> VerifierResult:
 class ScientificEventLog:
     """Append-only, hash-chained source of truth for causal memory state."""
 
-    def __init__(self) -> None:
+    def __init__(self, path: str | Path | None = None) -> None:
         self._events: list[ScientificEvent] = []
+        self._lock = threading.RLock()
+        self._path = Path(path).resolve() if path is not None else None
+        self._connection: sqlite3.Connection | None = None
+        self._closed = False
+        if self._path is not None:
+            self._path.parent.mkdir(parents=True, exist_ok=True)
+            self._connection = sqlite3.connect(
+                self._path,
+                timeout=30.0,
+                isolation_level=None,
+                check_same_thread=False,
+            )
+            self._connection.execute("PRAGMA journal_mode=WAL")
+            self._connection.execute("PRAGMA synchronous=FULL")
+            self._connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS scientific_memory_events (
+                    sequence INTEGER PRIMARY KEY,
+                    event_sha256 TEXT NOT NULL UNIQUE,
+                    event_json TEXT NOT NULL
+                )
+                """
+            )
+            self._reload_from_storage()
+            errors = self.validate_chain()
+            if errors:
+                self.close()
+                raise ValueError(
+                    "persisted scientific event chain is invalid: " + "; ".join(errors)
+                )
+
+    @property
+    def path(self) -> Path | None:
+        return self._path
+
+    def close(self) -> None:
+        if self._connection is not None:
+            self._connection.close()
+            self._connection = None
+        self._closed = True
+
+    def __enter__(self) -> "ScientificEventLog":
+        return self
+
+    def __exit__(self, exc_type: object, exc: object, tb: object) -> None:
+        self.close()
+
+    @staticmethod
+    def _stored_event_payload(event: ScientificEvent) -> dict[str, Any]:
+        return {
+            "schema": event.schema,
+            "sequence": event.sequence,
+            "event_id": event.event_id,
+            "event_type": event.event_type.value,
+            "memory_id": event.memory_id,
+            "occurred_at": event.occurred_at,
+            "actor": event.actor,
+            "payload": dict(event.payload),
+            "previous_sha256": event.previous_sha256,
+            "event_sha256": event.event_sha256,
+        }
+
+    @staticmethod
+    def _event_from_stored_payload(payload: Mapping[str, Any]) -> ScientificEvent:
+        return ScientificEvent(
+            schema=str(payload["schema"]),
+            sequence=int(payload["sequence"]),
+            event_id=str(payload["event_id"]),
+            event_type=ScientificEventType(str(payload["event_type"])),
+            memory_id=(
+                str(payload["memory_id"])
+                if payload.get("memory_id") is not None
+                else None
+            ),
+            occurred_at=str(payload["occurred_at"]),
+            actor=str(payload["actor"]),
+            payload=dict(payload.get("payload") or {}),
+            previous_sha256=(
+                str(payload["previous_sha256"])
+                if payload.get("previous_sha256") is not None
+                else None
+            ),
+            event_sha256=str(payload["event_sha256"]),
+        )
+
+    def _reload_from_storage(self) -> None:
+        if self._connection is None:
+            return
+        rows = self._connection.execute(
+            "SELECT sequence, event_sha256, event_json "
+            "FROM scientific_memory_events ORDER BY sequence"
+        ).fetchall()
+        events: list[ScientificEvent] = []
+        for sequence, digest, raw_payload in rows:
+            try:
+                payload = json.loads(str(raw_payload))
+                event = self._event_from_stored_payload(payload)
+            except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+                raise ValueError(
+                    f"persisted scientific event {sequence} cannot be decoded"
+                ) from exc
+            if event.sequence != int(sequence) or event.event_sha256 != str(digest):
+                raise ValueError(
+                    f"persisted scientific event index mismatch at {sequence}"
+                )
+            events.append(event)
+        self._events = events
 
     @property
     def events(self) -> tuple[ScientificEvent, ...]:
+        self._sync_for_read()
         return tuple(self._events)
 
+    def _sync_for_read(self) -> None:
+        if self._connection is None or self._closed:
+            return
+        with self._lock:
+            self._reload_from_storage()
+
     def _append(
+        self,
+        event_type: ScientificEventType,
+        *,
+        memory_id: str | None,
+        actor: str,
+        payload: Mapping[str, Any],
+    ) -> ScientificEvent:
+        with self._lock:
+            if self._closed:
+                raise RuntimeError("scientific event log is closed")
+            if self._connection is not None:
+                self._connection.execute("BEGIN IMMEDIATE")
+                try:
+                    self._reload_from_storage()
+                    chain_errors = self.validate_chain()
+                    if chain_errors:
+                        raise ValueError(
+                            "scientific event chain changed before append: "
+                            + "; ".join(chain_errors)
+                        )
+                    self._validate_append_preconditions(
+                        event_type,
+                        memory_id=memory_id,
+                        payload=payload,
+                    )
+                    event = self._build_event(
+                        event_type,
+                        memory_id=memory_id,
+                        actor=actor,
+                        payload=payload,
+                    )
+                    stored = canonical_json_bytes(
+                        self._stored_event_payload(event)
+                    ).decode("utf-8")
+                    self._connection.execute(
+                        "INSERT INTO scientific_memory_events "
+                        "(sequence, event_sha256, event_json) VALUES (?, ?, ?)",
+                        (event.sequence, event.event_sha256, stored),
+                    )
+                    self._connection.execute("COMMIT")
+                except Exception:
+                    self._connection.execute("ROLLBACK")
+                    raise
+            else:
+                self._validate_append_preconditions(
+                    event_type,
+                    memory_id=memory_id,
+                    payload=payload,
+                )
+                event = self._build_event(
+                    event_type,
+                    memory_id=memory_id,
+                    actor=actor,
+                    payload=payload,
+                )
+            self._events.append(event)
+            return event
+
+    def _validate_append_preconditions(
+        self,
+        event_type: ScientificEventType,
+        *,
+        memory_id: str | None,
+        payload: Mapping[str, Any],
+    ) -> None:
+        definitions = self.definitions()
+        if event_type is ScientificEventType.MEMORY_REGISTERED:
+            if memory_id in definitions:
+                raise ValueError(f"memory already exists: {memory_id}")
+            return
+        if memory_id is not None and memory_id not in definitions:
+            raise KeyError(f"unknown memory: {memory_id}")
+        if event_type is ScientificEventType.INFLUENCE_USED:
+            receipt_id = str((payload.get("receipt") or {}).get("receipt_id") or "")
+            if receipt_id in self.receipts():
+                raise ValueError(f"receipt already exists: {receipt_id}")
+        elif event_type is ScientificEventType.VERIFICATION_ACCEPTED:
+            receipt_id = str(payload.get("receipt_id") or "")
+            receipt = self.receipts().get(receipt_id)
+            if receipt is None:
+                raise KeyError(f"unknown receipt: {receipt_id}")
+            if receipt.verifier_result is not None:
+                raise ValueError(f"receipt already verified: {receipt_id}")
+
+    def _build_event(
         self,
         event_type: ScientificEventType,
         *,
@@ -314,7 +519,7 @@ class ScientificEventLog:
             "previous_sha256": previous,
         }
         event_sha = sha256_bytes(canonical_json_bytes(body))
-        event = ScientificEvent(
+        return ScientificEvent(
             schema=SCIENTIFIC_EVENT_SCHEMA,
             sequence=sequence,
             event_id=f"scientific-event-{sequence:08d}-{event_sha[:12]}",
@@ -326,15 +531,21 @@ class ScientificEventLog:
             previous_sha256=previous,
             event_sha256=event_sha,
         )
-        self._events.append(event)
-        return event
 
     def validate_chain(self) -> list[str]:
+        self._sync_for_read()
         errors: list[str] = []
         previous: str | None = None
         for expected_sequence, event in enumerate(self._events, start=1):
             if event.sequence != expected_sequence:
                 errors.append(f"event sequence mismatch at {expected_sequence}")
+            expected_event_id = (
+                f"scientific-event-{event.sequence:08d}-{event.event_sha256[:12]}"
+            )
+            if event.event_id != expected_event_id:
+                errors.append(f"event id mismatch at {expected_sequence}")
+            if event.schema != SCIENTIFIC_EVENT_SCHEMA:
+                errors.append(f"event schema mismatch at {expected_sequence}")
             if event.previous_sha256 != previous:
                 errors.append(f"event parent mismatch at {expected_sequence}")
             body = {
@@ -353,6 +564,7 @@ class ScientificEventLog:
         return errors
 
     def definitions(self) -> dict[str, MemoryDefinition]:
+        self._sync_for_read()
         result: dict[str, MemoryDefinition] = {}
         for event in self._events:
             if event.event_type is ScientificEventType.MEMORY_REGISTERED:
@@ -433,7 +645,9 @@ class ScientificEventLog:
                     "memory_attribution": dict(receipt.memory_attribution),
                     "context_sha256": receipt.context_sha256,
                     "action_sha256": receipt.action_sha256,
-                    "canary_arm": receipt.canary_arm.value if receipt.canary_arm else None,
+                    "canary_arm": receipt.canary_arm.value
+                    if receipt.canary_arm
+                    else None,
                     "safe_for_randomization": receipt.safe_for_randomization,
                     "created_at": receipt.created_at,
                 },
@@ -466,7 +680,9 @@ class ScientificEventLog:
             payload={
                 "receipt_id": receipt_id,
                 "verifier_result": _verifier_payload(result),
-                "reason": None if accepted else "verifier is not independent or evidence is incomplete",
+                "reason": None
+                if accepted
+                else "verifier is not independent or evidence is incomplete",
             },
         )
         if not accepted:
@@ -474,6 +690,7 @@ class ScientificEventLog:
         return replace(receipt, verifier_result=result)
 
     def receipts(self) -> dict[str, InfluenceReceipt]:
+        self._sync_for_read()
         receipts: dict[str, InfluenceReceipt] = {}
         for event in self._events:
             if event.event_type is ScientificEventType.INFLUENCE_USED:
@@ -553,7 +770,9 @@ class ScientificEventLog:
             MemoryLifecycle.REVOKED: ScientificEventType.MEMORY_REVOKED,
         }.get(lifecycle)
         if event_type is None:
-            raise ValueError("candidate lifecycle can only be restored through rollback")
+            raise ValueError(
+                "candidate lifecycle can only be restored through rollback"
+            )
         return self._append(
             event_type,
             memory_id=memory_id,
@@ -646,7 +865,10 @@ class CausalUtilityController:
         rows: list[dict[str, Any]] = []
         false_promotions = 0
         for receipt in self.event_log.receipts().values():
-            if memory_id not in receipt.memory_attribution or not receipt.carries_production_influence:
+            if (
+                memory_id not in receipt.memory_attribution
+                or not receipt.carries_production_influence
+            ):
                 continue
             result = receipt.verifier_result
             assert result is not None
@@ -769,7 +991,9 @@ class CausalUtilityController:
                 or estimate.ci_lower <= self.promotion_effect_floor
             ):
                 continue
-            risk_adjusted = estimate.ci_lower - risk_aversion * estimate.uncertainty_width
+            risk_adjusted = (
+                estimate.ci_lower - risk_aversion * estimate.uncertainty_width
+            )
             if risk_adjusted <= 0.0:
                 continue
             score = risk_adjusted / max(1, definition.estimated_tokens)
@@ -879,7 +1103,9 @@ class EvidenceConstrainedAssociativeGraph:
             and node.counterevidence_count == 0
         ]
         if len(eligible) > 20:
-            raise ValueError("exact preregistered graph selection is limited to 20 nodes")
+            raise ValueError(
+                "exact preregistered graph selection is limited to 20 nodes"
+            )
         best: tuple[float, int, tuple[str, ...]] | None = None
         for size in range(1, len(eligible) + 1):
             for subset in itertools.combinations(eligible, size):

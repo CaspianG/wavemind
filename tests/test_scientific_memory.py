@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import sqlite3
 
 import pytest
 
@@ -106,6 +107,59 @@ def test_event_log_is_typed_hash_chained_and_rollback_is_auditable():
     assert log.memory_state("procedure:1").lifecycle is MemoryLifecycle.CANDIDATE
     assert rollback.payload["target_sequence"] == registered.sequence
     assert log.validate_chain() == []
+
+
+def test_event_log_persists_receipts_lifecycle_and_rollback(tmp_path):
+    path = tmp_path / "scientific-events.sqlite3"
+    with ScientificEventLog(path) as log:
+        registered = log.register_memory(_memory())
+        _verified_pairs(log, "procedure:1", [(1.0, 0.0)] * 4)
+        controller = CausalUtilityController(log, bootstrap_repeats=200)
+        assert (
+            controller.update_lifecycle("procedure:1").lifecycle
+            is MemoryLifecycle.PRODUCTION
+        )
+        log.rollback_memory(
+            "procedure:1",
+            target_sequence=registered.sequence,
+            reason="persistent rollback",
+        )
+        event_count = len(log.events)
+
+    with ScientificEventLog(path) as reopened:
+        assert len(reopened.events) == event_count
+        assert reopened.validate_chain() == []
+        assert len(reopened.receipts()) == 4
+        assert (
+            reopened.memory_state("procedure:1").lifecycle is MemoryLifecycle.CANDIDATE
+        )
+
+
+def test_event_log_fails_closed_on_persisted_tampering(tmp_path):
+    path = tmp_path / "scientific-events.sqlite3"
+    with ScientificEventLog(path) as log:
+        log.register_memory(_memory())
+
+    with sqlite3.connect(path) as connection:
+        connection.execute(
+            "UPDATE scientific_memory_events SET event_json = ? WHERE sequence = 1",
+            ('{"tampered":true}',),
+        )
+
+    with pytest.raises(ValueError, match="cannot be decoded"):
+        ScientificEventLog(path)
+
+
+def test_persistent_event_log_handles_interleaved_writers(tmp_path):
+    path = tmp_path / "scientific-events.sqlite3"
+    with ScientificEventLog(path) as first, ScientificEventLog(path) as second:
+        first.register_memory(_memory("procedure:first"))
+        second.register_memory(_memory("procedure:second"))
+
+        assert set(first.definitions()) == {"procedure:first", "procedure:second"}
+        assert set(second.definitions()) == {"procedure:first", "procedure:second"}
+        assert first.validate_chain() == []
+        assert second.validate_chain() == []
 
 
 def test_agent_self_assessment_never_carries_production_influence():

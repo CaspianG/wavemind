@@ -58,7 +58,13 @@ class ScientificMemoryRuntime:
         bootstrap_seed: int = 17,
     ) -> None:
         self.mode = ScientificCandidateMode(mode)
-        self.event_log = event_log or ScientificEventLog()
+        selected_db_path = Path(db_path).resolve()
+        self._owns_event_log = event_log is None
+        self.event_log = event_log or ScientificEventLog(
+            selected_db_path.with_name(
+                selected_db_path.name + ".scientific-events.sqlite3"
+            )
+        )
         self.controller = CausalUtilityController(
             self.event_log,
             bootstrap_repeats=bootstrap_repeats,
@@ -66,7 +72,7 @@ class ScientificMemoryRuntime:
         )
         self.graph = EvidenceConstrainedAssociativeGraph()
         self.retriever = WaveMind(
-            db_path=db_path,
+            db_path=selected_db_path,
             vector_weight=1.0,
             field_weight=0.0,
             priority_weight=0.0,
@@ -79,6 +85,8 @@ class ScientificMemoryRuntime:
 
     def close(self) -> None:
         self.retriever.close()
+        if self._owns_event_log:
+            self.event_log.close()
 
     def __enter__(self) -> "ScientificMemoryRuntime":
         return self
@@ -127,12 +135,14 @@ class ScientificMemoryRuntime:
     def _counterevidence_count(self, memory_id: str) -> int:
         count = 0
         for receipt in self.event_log.receipts().values():
-            if memory_id not in receipt.memory_attribution or not receipt.verifier_result:
+            if (
+                memory_id not in receipt.memory_attribution
+                or not receipt.verifier_result
+            ):
                 continue
             result = receipt.verifier_result
-            if (
-                result.decision is VerificationDecision.FALSIFIED
-                or (result.paired_effect() is not None and result.paired_effect() <= 0.0)
+            if result.decision is VerificationDecision.FALSIFIED or (
+                result.paired_effect() is not None and result.paired_effect() <= 0.0
             ):
                 count += 1
         return count
@@ -151,7 +161,10 @@ class ScientificMemoryRuntime:
         for memory_id in memory_ids:
             state = self.event_log.memory_state(memory_id)
             estimate = self.controller.estimate(memory_id)
-            if require_causal_promotion and state.lifecycle is not MemoryLifecycle.PRODUCTION:
+            if (
+                require_causal_promotion
+                and state.lifecycle is not MemoryLifecycle.PRODUCTION
+            ):
                 continue
             nodes.append(
                 GraphEvidenceNode(
