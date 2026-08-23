@@ -45,9 +45,26 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--top-k", type=int, default=3)
     parser.add_argument("--top-k-context", type=int, default=1)
     parser.add_argument("--failed-attempt-file", type=Path, action="append", default=[])
+    parser.add_argument(
+        "--reuse-existing-output",
+        action="store_true",
+        help="Rebuild only the integrity artifact from already completed outputs.",
+    )
+    parser.add_argument(
+        "--evidence-source-sha",
+        default=None,
+        help="Exact run-start SHA; allowed only with --reuse-existing-output.",
+    )
     args = parser.parse_args(argv)
 
     require_exact_upstream_sha(args.upstream_root, args.upstream_sha)
+    source_sha = repository_commit(ROOT)
+    if args.evidence_source_sha and not args.reuse_existing_output:
+        raise ValueError("--evidence-source-sha requires --reuse-existing-output")
+    if args.evidence_source_sha:
+        source_sha = args.evidence_source_sha
+    if len(source_sha) != 40 or any(char not in "0123456789abcdef" for char in source_sha):
+        raise ValueError("evidence source SHA must be an exact git SHA")
     runner_path = args.upstream_root / "5-test_operation_metrics.py"
     if not runner_path.is_file():
         raise FileNotFoundError(runner_path)
@@ -56,48 +73,58 @@ def main(argv: list[str] | None = None) -> int:
     if not callable(run_pipeline):
         raise RuntimeError("official MemOps run_pipeline entrypoint is missing")
 
-    caller = NativeOllamaCaller(
-        args.ollama_endpoint,
-        context_window=args.context_window,
-    )
-    summary = run_pipeline(
-        adjacent_input_dir=args.adjacent_input_dir,
-        longitudinal_input_dir=args.longitudinal_input_dir,
-        output_dir=args.output_dir,
-        top_k=args.top_k,
-        top_k_context=args.top_k_context,
-        model=args.model,
-        call_llm=caller,
-        parser_call_llm=caller,
-        mutation_call_llm=caller,
-        show_progress=True,
-        rag_workers=1,
-        max_questions=args.max_questions,
-        question_offset=args.question_offset,
-        rag_methods=("rag_vanilla",),
-        rag_retrieval_units=("turn",),
-        adjacent_models=(),
-        long_context_models=(),
-        no_context_models=(),
-        run_adjacent=False,
-    )
+    if args.reuse_existing_output:
+        summary = json.loads(
+            (args.output_dir / "summary.json").read_text(encoding="utf-8")
+        )
+    else:
+        caller = NativeOllamaCaller(
+            args.ollama_endpoint,
+            context_window=args.context_window,
+        )
+        summary = run_pipeline(
+            adjacent_input_dir=args.adjacent_input_dir,
+            longitudinal_input_dir=args.longitudinal_input_dir,
+            output_dir=args.output_dir,
+            top_k=args.top_k,
+            top_k_context=args.top_k_context,
+            model=args.model,
+            call_llm=caller,
+            parser_call_llm=caller,
+            mutation_call_llm=caller,
+            show_progress=True,
+            rag_workers=1,
+            max_questions=args.max_questions,
+            question_offset=args.question_offset,
+            rag_methods=("rag_vanilla",),
+            rag_retrieval_units=("turn",),
+            adjacent_models=(),
+            long_context_models=(),
+            no_context_models=(),
+            run_adjacent=False,
+        )
     evaluator_path = args.upstream_root / "5.5-evaluate_operation_metrics.py"
     if not evaluator_path.is_file():
         raise FileNotFoundError(evaluator_path)
-    evaluator_module = runpy.run_path(str(evaluator_path))
-    evaluate_pipeline = evaluator_module.get("run_pipeline")
-    if not callable(evaluate_pipeline):
-        raise RuntimeError("official MemOps evaluation entrypoint is missing")
     evaluation_dir = args.output_dir / "evaluation"
-    evaluation_summary = evaluate_pipeline(
-        input_file=Path(summary["all_methods_output"]),
-        output_dir=evaluation_dir,
-        judge_model=args.judge_model or args.model,
-        call_llm=caller,
-        show_progress=True,
-        eval_workers=1,
-        evidence_dirs=(args.adjacent_input_dir,),
-    )
+    if args.reuse_existing_output:
+        evaluation_summary = json.loads(
+            (evaluation_dir / "summary.json").read_text(encoding="utf-8")
+        )
+    else:
+        evaluator_module = runpy.run_path(str(evaluator_path))
+        evaluate_pipeline = evaluator_module.get("run_pipeline")
+        if not callable(evaluate_pipeline):
+            raise RuntimeError("official MemOps evaluation entrypoint is missing")
+        evaluation_summary = evaluate_pipeline(
+            input_file=Path(summary["all_methods_output"]),
+            output_dir=evaluation_dir,
+            judge_model=args.judge_model or args.model,
+            call_llm=caller,
+            show_progress=True,
+            eval_workers=1,
+            evidence_dirs=(args.adjacent_input_dir,),
+        )
     result_rows = [
         json.loads(line)
         for line in Path(summary["all_methods_output"])
@@ -124,7 +151,7 @@ def main(argv: list[str] | None = None) -> int:
         evaluation_dir / "summary.json",
     ]
     artifact = build_bounded_dev_artifact(
-        source_sha=repository_commit(ROOT),
+        source_sha=source_sha,
         memops_sha=args.upstream_sha,
         model=args.model,
         model_digest=args.model_digest,

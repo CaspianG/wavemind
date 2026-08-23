@@ -58,6 +58,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     require_exact_upstream_sha(args.upstream_root, args.upstream_sha)
+    source_sha = repository_commit(ROOT)
     generation = runpy.run_path(
         str(args.upstream_root / "5-test_operation_metrics.py")
     )
@@ -212,7 +213,7 @@ def main(argv: list[str] | None = None) -> int:
                                     "MemTensor/MemOps/"
                                     "5.5-evaluate_operation_metrics.py"
                                 ),
-                                verifier_run_id=f"{repository_commit(ROOT)}:{case_id}",
+                                verifier_run_id=f"{source_sha}:{case_id}",
                                 decision=VerificationDecision.VERIFIED,
                                 treatment_outcome=treatment_score,
                                 control_outcome=control_score,
@@ -255,7 +256,7 @@ def main(argv: list[str] | None = None) -> int:
 
     raw_output = args.output_dir / "raw_pairs.jsonl"
     artifact = build_candidate_dev_artifact(
-        source_sha=repository_commit(ROOT),
+        source_sha=source_sha,
         protocol_digest=args.protocol_digest,
         memops_sha=args.upstream_sha,
         candidate_id=candidate_id,
