@@ -1,0 +1,239 @@
+{
+  "schema": "wavemind.scientific_memory_protocol.v1",
+  "protocol_id": "scientific-core-reset-2026-08-23-v1",
+  "status": "preregistered",
+  "preregistered_at": "2026-08-23",
+  "claim_boundary": "No product-superiority, SOTA, revolutionary, or replacement claim is permitted unless an exact-SHA scientific-memory-admission artifact passes every frozen gate.",
+  "baseline_source_sha": "c30205ed389057bc695488655a3f8650ba8e5277",
+  "baseline_source_manifest": {
+    "schema": "wavemind.source_manifest.v1",
+    "algorithm": "sha256",
+    "text_normalization": "utf8-crlf-to-lf-v1",
+    "files": [
+      {
+        "path": "wavemind/core.py",
+        "sha256": "cce1e8bc78790c2939bba3cc383658747e7a1c3e1f9eb8bc647e5d8d0298afcd"
+      },
+      {
+        "path": "wavemind/field_graph.py",
+        "sha256": "5b9734903ef2a96b7951cc14cca1472990abb626dfb6bbea1483fbde1373e555"
+      },
+      {
+        "path": "wavemind/indexes.py",
+        "sha256": "87f92822876a3de53e7d5667e3863c9b9e5759a96f8f3c85af8899b487c6b006"
+      },
+      {
+        "path": "wavemind/jobs.py",
+        "sha256": "0383f4ae1a620ffa0b5d4545399906baa42e55cb9008e9efb3a159306bded4a7"
+      },
+      {
+        "path": "wavemind/memory_os_canary.py",
+        "sha256": "42d391007516b8eabda34ad0ca1ee751a0f88c9372e64089d030573421379f53"
+      },
+      {
+        "path": "wavemind/memory_os_evolution.py",
+        "sha256": "6b12af0cb679ffbefc405b55dd1f29b2b2dd225ee6b5d0f07874762dcaf65548"
+      },
+      {
+        "path": "wavemind/storage.py",
+        "sha256": "92ffa2c74c312c296385d533dc2d8a4722a8ebb99f1232b01bc200fab3c43866"
+      }
+    ],
+    "digest": "b74744dbcfdc90d95fcabac548bac5fb23eaabfdc90ef549ab29f85c3a9a08cf"
+  },
+  "baselines": [
+    {
+      "id": "no-memory",
+      "implementation": "official task runner with memory writes and reads disabled"
+    },
+    {
+      "id": "static-vector-retrieval",
+      "implementation": "WaveMind vector index only",
+      "config": {
+        "vector_weight": 1.0,
+        "field_weight": 0.0,
+        "priority_weight": 0.0,
+        "lexical_weight": 0.0,
+        "graph_weight": 0.0,
+        "memory_os": false
+      }
+    },
+    {
+      "id": "wavemind-no-field",
+      "implementation": "frozen WaveMind core with field and graph disabled",
+      "config": {
+        "vector_weight": 0.94,
+        "field_weight": 0.0,
+        "priority_weight": 0.02,
+        "lexical_weight": 0.2,
+        "graph_weight": 0.0,
+        "memory_os": false
+      }
+    },
+    {
+      "id": "wavemind-wavefield",
+      "implementation": "frozen WaveMind default WaveField reranker",
+      "config": {
+        "vector_weight": 0.94,
+        "field_weight": 0.04,
+        "priority_weight": 0.02,
+        "lexical_weight": 0.2,
+        "graph_weight": 0.0,
+        "memory_os": false
+      }
+    },
+    {
+      "id": "wavemind-graph",
+      "implementation": "frozen associative graph with WaveField disabled",
+      "config": {
+        "vector_weight": 0.88,
+        "field_weight": 0.0,
+        "priority_weight": 0.02,
+        "lexical_weight": 0.2,
+        "graph_weight": 0.1,
+        "memory_os": false
+      }
+    },
+    {
+      "id": "wavemind-memory-os",
+      "implementation": "frozen WaveMind defaults plus frozen Memory OS worker and scheduler",
+      "config": {
+        "vector_weight": 0.94,
+        "field_weight": 0.04,
+        "priority_weight": 0.02,
+        "lexical_weight": 0.2,
+        "graph_weight": 0.0,
+        "memory_os": true
+      }
+    },
+    {
+      "id": "wavemind-full-frozen-pipeline",
+      "implementation": "frozen WaveField, associative graph, and Memory OS together",
+      "config": {
+        "vector_weight": 0.84,
+        "field_weight": 0.04,
+        "priority_weight": 0.02,
+        "lexical_weight": 0.2,
+        "graph_weight": 0.1,
+        "memory_os": true
+      }
+    },
+    {
+      "id": "mem0-oss",
+      "implementation": "real locally executed Mem0 OSS package; exact package version and source revision are mandatory run metadata; local imitation forbidden"
+    },
+    {
+      "id": "langgraph",
+      "implementation": "real locally executed LangGraph BaseStore package; exact package version and source revision are mandatory run metadata; renamed local imitation forbidden"
+    },
+    {
+      "id": "chroma",
+      "implementation": "real locally executed Chroma package; exact installed version is mandatory run metadata"
+    },
+    {
+      "id": "qdrant-local",
+      "implementation": "real locally executed Qdrant local-mode package; exact installed version is mandatory run metadata"
+    }
+  ],
+  "preregistered_candidates": [
+    {
+      "id": "evidence-constrained-associative-graph-v1",
+      "frozen": true,
+      "implementation": "wavemind.scientific_memory.EvidenceConstrainedAssociativeGraph",
+      "energy": "sum_i x_i[-relevance_i-0.20*log(1+evidence_i)+0.50*counterevidence_i-1.00*utility_lcb_i+0.25*uncertainty_width_i]-0.10*sum_ij association_ij*x_i*x_j+0.50*sum_ij conflict_ij*x_i*x_j",
+      "eligibility": "evidence_count > 0 and utility_lcb > 0 and counterevidence_count = 0",
+      "selection": "exact minimum-energy subset under frozen token budget; abstain when best energy is non-negative"
+    },
+    {
+      "id": "causal-utility-controller-v1",
+      "frozen": true,
+      "implementation": "wavemind.scientific_memory.CausalUtilityController",
+      "estimator": "paired cluster bootstrap over independently verified treatment-control outcomes",
+      "promotion": "95% CI lower bound > 0, at least three verified pairs, and false verified promotions = 0",
+      "forgetting": "95% CI upper bound < 0 for marginal utility",
+      "selection": "positive risk-adjusted lower bound under token, latency, applicability, validity, and safety constraints; otherwise abstain"
+    },
+    {
+      "id": "hybrid-graph-causal-v1",
+      "frozen": true,
+      "optional": true,
+      "implementation": "graph candidate restricted to memories promoted by causal-utility-controller-v1; no additional tuning parameters"
+    }
+  ],
+  "evaluation": {
+    "required_reproducible_runs": 3,
+    "bootstrap_repeats": 2000,
+    "bootstrap_seed": 17,
+    "confidence_level": 0.95,
+    "phases": [
+      "bounded-development",
+      "bounded-validation",
+      "held-out-admission"
+    ],
+    "official_benchmark_families": [
+      {
+        "id": "memops",
+        "source": "MemTensor/MemOps",
+        "official_only": true
+      },
+      {
+        "id": "memoryagentbench",
+        "source": "official MemoryAgentBench repository and scorer",
+        "official_only": true
+      },
+      {
+        "id": "state-bench-agent-learning",
+        "source": "microsoft/STATE-Bench Agent Learning",
+        "official_only": true
+      },
+      {
+        "id": "longmemeval-v2",
+        "source": "official LongMemEval-V2 451-question protocol",
+        "official_only": true,
+        "full_run_allowed_after_development_gate": true,
+        "maximum_full_runs": 1
+      }
+    ],
+    "common_controls": [
+      "model identifier and immutable revision",
+      "prompt bytes and sha256",
+      "embedding model identifier and immutable revision",
+      "seed list",
+      "token budget",
+      "hardware inventory",
+      "runtime and dependency lock",
+      "case order",
+      "latency budget"
+    ],
+    "required_ablations": [
+      "field-on-vs-field-off",
+      "graph-on-vs-graph-off",
+      "memory-os-on-vs-memory-os-off",
+      "proof-receipts-on-vs-off",
+      "causal-controller-on-vs-off",
+      "scientific-core-vs-full-frozen-pipeline"
+    ]
+  },
+  "admission_gates": {
+    "independent_benchmark_families_with_positive_uplift_lcb": 2,
+    "task_success_uplift_ci_lower_strictly_greater_than": 0.0,
+    "longmemeval_v2_uplift_minimum": 0.01,
+    "longmemeval_v2_improved_categories_minimum": 4,
+    "repeated_error_reduction_minimum": 0.5,
+    "stale_or_contradiction_error_rate_maximum": 0.02,
+    "false_verified_promotions_maximum": 0,
+    "context_reduction_vs_full_context_minimum": 0.3,
+    "runtime_p95_must_be_within_frozen_budget": true,
+    "raw_per_case_evidence_required": true,
+    "ablation_required_for_every_improvement": true
+  },
+  "held_out_policy": {
+    "opened_at_preregistration": false,
+    "post_hoc_candidate_changes_forbidden": true,
+    "threshold_relaxation_forbidden": true,
+    "failed_cases_must_be_retained": true,
+    "full_longmemeval_v2_run_count_at_preregistration": 0
+  },
+  "terminal_rule": "If no preregistered candidate passes every frozen gate, scientific-memory-admission must report failed_experiment. Public WaveField descriptions and WaveMind Connect remain unchanged until admitted exact-SHA evidence exists.",
+  "protocol_digest": "489d3ff6fca733340b65b26c52ccb5533b19ad14fef66b1d2d912691dac22d59"
+}
