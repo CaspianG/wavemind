@@ -173,6 +173,22 @@ def test_prepared_store_is_persistent_shadow_only_and_integrity_bound(
         "wavemind.scientific_state_bench._validate_source_checkout",
         lambda *unused: None,
     )
+    monkeypatch.setattr(
+        "wavemind.scientific_state_bench._run_official_adapter_preflight",
+        lambda **unused: {
+            "argv": ["uv"],
+            "returncode": 0,
+            "result": {
+                "shadow_count": 3,
+                "control_count": 0,
+                "production_count": 0,
+                "common_retrieval_tool": True,
+                "llm_or_official_task_executed": False,
+            },
+            "stderr": "",
+            "passed": True,
+        },
+    )
     database = tmp_path / "prepared" / "scientific.sqlite3"
     learning_manifest = tmp_path / "prepared" / "learnings.json"
 

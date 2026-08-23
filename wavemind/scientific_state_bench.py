@@ -153,6 +153,7 @@ def _validate_source_checkout(project_root: Path, source_sha: str) -> None:
         )
     for relative in (
         "agents/scientific_state_bench_agent.py",
+        "benchmarks/scientific_state_bench_adapter_preflight.py",
         "wavemind/scientific_state_bench.py",
     ):
         completed = subprocess.run(
@@ -165,6 +166,68 @@ def _validate_source_checkout(project_root: Path, source_sha: str) -> None:
             raise RuntimeError(
                 f"STATE-Bench source is absent from exact SHA: {relative}"
             )
+
+
+def _run_official_adapter_preflight(
+    *,
+    loader_preflight: Mapping[str, Any],
+    project_root: Path,
+    state_bench_root: Path,
+    database: Path,
+    domain: str,
+) -> dict[str, Any]:
+    argv = [
+        str(loader_preflight["argv"][0]),
+        "run",
+        "--project",
+        str(state_bench_root),
+        "--with-editable",
+        str(project_root),
+        "python",
+        str(
+            project_root / "benchmarks" / "scientific_state_bench_adapter_preflight.py"
+        ),
+        "--project-root",
+        str(project_root),
+        "--database",
+        str(database),
+        "--domain",
+        domain,
+    ]
+    completed = subprocess.run(
+        argv,
+        cwd=project_root,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        timeout=180,
+        check=False,
+    )
+    if completed.returncode:
+        raise RuntimeError(
+            "official STATE-Bench adapter preflight failed: "
+            + (completed.stderr.strip() or completed.stdout.strip())
+        )
+    try:
+        result = json.loads(completed.stdout)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError("STATE-Bench adapter preflight output is invalid") from exc
+    expected = {
+        "shadow_count": 3,
+        "control_count": 0,
+        "production_count": 0,
+        "common_retrieval_tool": True,
+        "llm_or_official_task_executed": False,
+    }
+    if result != expected:
+        raise RuntimeError(f"STATE-Bench adapter preflight mismatch: {result}")
+    return {
+        "argv": argv,
+        "returncode": completed.returncode,
+        "result": result,
+        "stderr": completed.stderr.strip(),
+        "passed": True,
+    }
 
 
 def build_state_bench_development_plan(
@@ -353,6 +416,7 @@ def prepare_state_bench_development_store(
     preparation_path = project / "wavemind" / "scientific_state_bench.py"
     required_sources = (
         agent_path,
+        project / "benchmarks" / "scientific_state_bench_adapter_preflight.py",
         preparation_path,
         root / "uv.lock",
         root / "pyproject.toml",
@@ -410,6 +474,13 @@ def prepare_state_bench_development_store(
                 for memory_id in runtime.event_log.definitions()
             )
         )
+    adapter_preflight = _run_official_adapter_preflight(
+        loader_preflight=loader_preflight,
+        project_root=project,
+        state_bench_root=root,
+        database=database,
+        domain=domain,
+    )
     learning_payload = attach_artifact_integrity(
         {
             "schema": STATE_BENCH_LEARNING_MANIFEST_SCHEMA,
@@ -501,6 +572,7 @@ def prepare_state_bench_development_store(
             "preparation_path": str(preparation_path),
             "preparation_sha256": file_sha256(preparation_path),
             "official_loader_preflight": loader_preflight,
+            "official_adapter_preflight": adapter_preflight,
             "dependency_lock": {
                 "state_bench_uv_lock_sha256": file_sha256(root / "uv.lock"),
                 "state_bench_pyproject_sha256": file_sha256(root / "pyproject.toml"),
@@ -611,6 +683,8 @@ def validate_prepared_state_bench_artifact(
         "official_loader_preflight", {}
     ).get("both_agent_classes_loaded"):
         errors.append("official STATE-Bench agent loader preflight did not pass")
+    elif not implementation.get("official_adapter_preflight", {}).get("passed"):
+        errors.append("official STATE-Bench adapter preflight did not pass")
     plan = payload.get("development_plan")
     if not isinstance(plan, Mapping):
         errors.append("prepared STATE-Bench development plan is missing")
