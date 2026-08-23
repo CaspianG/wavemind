@@ -332,6 +332,34 @@ def _dataset_config(unit: MemoryAgentBenchDevelopmentUnit) -> dict[str, Any]:
     }
 
 
+def install_official_compatibility_shims() -> list[dict[str, str]]:
+    """Bridge dependency API removals without changing benchmark semantics."""
+
+    from langchain_community.retrievers import BM25Retriever
+
+    shims: list[dict[str, str]] = []
+    if not hasattr(BM25Retriever, "get_relevant_documents"):
+
+        def get_relevant_documents(self: Any, query: str) -> Any:
+            return self.invoke(query)
+
+        BM25Retriever.get_relevant_documents = get_relevant_documents
+        shims.append(
+            {
+                "target": (
+                    "langchain_community.retrievers.BM25Retriever."
+                    "get_relevant_documents"
+                ),
+                "replacement": "BM25Retriever.invoke",
+                "reason": (
+                    "official runner calls a removed public alias; invoke routes "
+                    "to the same BM25 _get_relevant_documents implementation"
+                ),
+            }
+        )
+    return shims
+
+
 def run_official_bm25_development(
     *,
     official_repository: str | Path,
@@ -340,7 +368,12 @@ def run_official_bm25_development(
     model: str,
     scratch_dir: str | Path,
     max_queries_per_context: int,
-) -> tuple[list[dict[str, Any]], dict[str, list[float]], list[str]]:
+) -> tuple[
+    list[dict[str, Any]],
+    dict[str, list[float]],
+    list[str],
+    list[dict[str, str]],
+]:
     """Run official formatter, BM25 agent logic, and native official metrics."""
 
     require_official_memoryagentbench_sha(official_repository)
@@ -355,6 +388,7 @@ def run_official_bm25_development(
     results: list[dict[str, Any]] = []
     case_ids: list[str] = []
     native_client = NativeOpenAICompatibleClient(caller)
+    compatibility_shims = install_official_compatibility_shims()
     scratch = Path(scratch_dir).resolve()
     with _official_modules(official_repository) as (
         creator_class,
@@ -410,7 +444,7 @@ def run_official_bm25_development(
                 results[-1]["scientific_case_id"] = case_id
                 results[-1]["scientific_unit_id"] = unit.unit_id
                 case_ids.append(case_id)
-    return results, dict(metrics), case_ids
+    return results, dict(metrics), case_ids, compatibility_shims
 
 
 def write_raw_results(path: str | Path, rows: Sequence[Mapping[str, Any]]) -> Path:
@@ -435,6 +469,7 @@ def build_bounded_development_artifact(
     raw_results_file: str | Path,
     metrics: Mapping[str, Sequence[float]],
     failed_attempt_files: Sequence[str | Path] = (),
+    compatibility_shims: Sequence[Mapping[str, str]] = (),
 ) -> dict[str, Any]:
     raw_path = Path(raw_results_file).resolve()
     if not raw_path.is_file():
@@ -494,6 +529,7 @@ def build_bounded_development_artifact(
             "context_window": int(context_window),
         },
         "transport": "ollama-native-api/local-development-only",
+        "compatibility_shims": [dict(item) for item in compatibility_shims],
         "runtime_case_fields": [
             "unit_id",
             "family",

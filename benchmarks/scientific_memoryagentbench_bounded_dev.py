@@ -71,7 +71,7 @@ def main(argv: list[str] | None = None) -> int:
         args.ollama_endpoint,
         context_window=args.context_window,
     )
-    rows, metrics, case_ids = run_official_bm25_development(
+    rows, metrics, case_ids, compatibility_shims = run_official_bm25_development(
         official_repository=args.official_root,
         units=units,
         caller=caller,
@@ -92,6 +92,7 @@ def main(argv: list[str] | None = None) -> int:
         raw_results_file=raw_path,
         metrics=metrics,
         failed_attempt_files=args.failed_attempt_file,
+        compatibility_shims=compatibility_shims,
     )
     args.artifact.parent.mkdir(parents=True, exist_ok=True)
     args.artifact.write_text(

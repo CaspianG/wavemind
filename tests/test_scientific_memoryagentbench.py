@@ -13,6 +13,7 @@ from wavemind.scientific_memoryagentbench import (
     NativeOpenAICompatibleClient,
     build_bounded_development_artifact,
     build_runtime_and_scoring_cases,
+    install_official_compatibility_shims,
     load_development_units,
     require_official_memoryagentbench_sha,
 )
@@ -208,6 +209,13 @@ def test_bounded_artifact_preserves_official_metric_names(tmp_path, monkeypatch)
         raw_results_file=raw,
         metrics={"substring_exact_match": [1.0], "rougeL_f1": [0.5]},
         failed_attempt_files=(failed,),
+        compatibility_shims=(
+            {
+                "target": "BM25Retriever.get_relevant_documents",
+                "replacement": "BM25Retriever.invoke",
+                "reason": "removed alias",
+            },
+        ),
     )
 
     assert payload["schema"] == MEMORYAGENTBENCH_BOUNDED_DEV_SCHEMA
@@ -216,6 +224,9 @@ def test_bounded_artifact_preserves_official_metric_names(tmp_path, monkeypatch)
     assert payload["validation_split_touched"] is False
     assert payload["final_split_touched"] is False
     assert payload["failed_attempts_retained"][0]["sha256"]
+    assert payload["compatibility_shims"][0]["replacement"] == (
+        "BM25Retriever.invoke"
+    )
     assert payload["official_native_metrics"]["substring_exact_match"]["mean"] == 1.0
     assert payload["official_native_metrics"]["rougeL_f1"]["mean"] == 0.5
     assert validate_artifact_integrity(payload) == []
@@ -228,3 +239,20 @@ def test_official_sha_check_fails_closed(monkeypatch, tmp_path):
     )
     with pytest.raises(RuntimeError, match="upstream SHA mismatch"):
         require_official_memoryagentbench_sha(tmp_path)
+
+
+def test_langchain_compatibility_shim_routes_to_invoke(monkeypatch):
+    from langchain_community.retrievers import BM25Retriever
+
+    monkeypatch.delattr(BM25Retriever, "get_relevant_documents", raising=False)
+    monkeypatch.setattr(
+        BM25Retriever,
+        "invoke",
+        lambda self, query: [f"retrieved:{query}"],
+    )
+
+    shims = install_official_compatibility_shims()
+    instance = object.__new__(BM25Retriever)
+
+    assert instance.get_relevant_documents("query") == ["retrieved:query"]
+    assert shims[0]["replacement"] == "BM25Retriever.invoke"
