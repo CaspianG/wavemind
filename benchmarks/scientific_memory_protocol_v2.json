@@ -1,0 +1,101 @@
+{
+  "schema": "wavemind.scientific_memory_protocol.v2",
+  "protocol_id": "scientific-core-iteration-2026-08-25-v2",
+  "status": "preregistered",
+  "preregistered_at": "2026-08-25",
+  "baseline_source_sha": "5449e38ac28a70269a3fe1e0075b9cbbe2b5449e",
+  "supersedes_protocol_digest": "489d3ff6fca733340b65b26c52ccb5533b19ad14fef66b1d2d912691dac22d59",
+  "immutable_negative_evidence": {
+    "status": "failed_experiment",
+    "development_evidence_sha256": "6f703e5fa82263854cee161844bcc64b3764c46eb1e5046d21a6f07d7dd4c7a9",
+    "admission_manifest_sha256": "b6d9bc98008aefbe07e987355e064ff5624b7024cd9332fb3792905eb653a8e1",
+    "may_be_overwritten": false
+  },
+  "claim_boundary": "No product-superiority, SOTA, revolutionary, replacement, validation, or held-out claim is permitted unless an exact-SHA v2 admission artifact passes every frozen gate.",
+  "candidate": {
+    "id": "proof-carrying-state-reconciler-v2",
+    "frozen_before_first_v2_outcome": true,
+    "implementation_boundary": [
+      "wavemind.scientific_reconciliation",
+      "wavemind.scientific_runtime.ScientificMemoryRuntime.evaluation_recall"
+    ],
+    "ingestion": "Compile source-ordered memory into typed immutable fact, state-transition, constraint, and tombstone events. Preserve provenance and source order. Never inspect answers, gold labels, scorer fields, or split metadata during compilation.",
+    "reconciliation": "Normalize subject and relation keys; a later explicit update supersedes an earlier value, an explicit deletion creates a tombstone, and a query may expose only active non-tombstoned claims plus the existence/category of a tombstone when the query asks what was removed.",
+    "retrieval": "Hybrid deterministic lexical and hashing-vector retrieval over active claims, followed by at most two entity-linked graph expansion hops. Rank by query overlap, graph distance, source recency, and contradiction penalty under a fixed token budget.",
+    "abstention": "Abstain when no active claim crosses the frozen retrieval floor, every candidate is tombstoned, constraints fail, or the token/latency budget cannot be met.",
+    "evaluation_only": "Development shadow selection executes the same reconciler and selector without granting production eligibility. Candidate identity may change selection; promotion state may not be bypassed in production.",
+    "production_promotion": "Unchanged causal rule: 95% paired cluster-bootstrap CI lower bound strictly greater than zero, at least five independent clusters, and zero false verified promotions."
+  },
+  "frozen_parameters": {
+    "hashing_embedding_dimensions": 384,
+    "seed": 17,
+    "bootstrap_repeats": 2000,
+    "confidence_level": 0.95,
+    "maximum_graph_hops": 2,
+    "maximum_retrieval_candidates": 20,
+    "token_budget": 8192,
+    "latency_budget_ms": 1000.0,
+    "maximum_safety_risk": 0.0,
+    "retrieval_floor": 0.0,
+    "top_k_context": 10
+  },
+  "development_scope": {
+    "allowed": [
+      "MemoryAgentBench units labeled development in the frozen split manifest",
+      "MemOps subjects labeled development in the frozen evaluation split manifest",
+      "STATE-Bench development learning trajectories already prepared without validation/final execution"
+    ],
+    "forbidden": [
+      "MemoryAgentBench validation or final units",
+      "MemOps validation or final subjects",
+      "STATE-Bench validation or final tasks",
+      "LongMemEval-V2 full 451-question run"
+    ],
+    "candidate_changes_after_development_outcomes": "A changed mechanism requires a new protocol version and digest; thresholds and the v2 admission gates may never be weakened."
+  },
+  "development_gate": {
+    "required_reproducible_runs": 3,
+    "independent_benchmark_families_with_positive_uplift_lcb": 2,
+    "minimum_independent_clusters_per_family": 5,
+    "cluster_identity": "content or subject fingerprint; repeated rows with the same fingerprint are one cluster",
+    "task_success_uplift_ci_lower_strictly_greater_than": 0.0,
+    "minimum_candidate_intervention_coverage": 0.8,
+    "absent_intervention_policy": "A treatment row with zero selected memories or byte-identical treatment/control prompts is invalid for uplift estimation and must be reported, not coerced to zero effect.",
+    "all_observed_family_means_must_be_non_negative": true,
+    "false_verified_promotions_maximum": 0,
+    "raw_per_case_evidence_required": true,
+    "failed_attempts_must_be_retained": true
+  },
+  "admission_gates": {
+    "independent_benchmark_families_with_positive_uplift_lcb": 2,
+    "task_success_uplift_ci_lower_strictly_greater_than": 0.0,
+    "longmemeval_v2_uplift_minimum": 0.01,
+    "longmemeval_v2_improved_categories_minimum": 4,
+    "repeated_error_reduction_minimum": 0.5,
+    "stale_or_contradiction_error_rate_maximum": 0.02,
+    "false_verified_promotions_maximum": 0,
+    "context_reduction_vs_full_context_minimum": 0.3,
+    "runtime_p95_must_be_within_frozen_budget": true,
+    "raw_per_case_evidence_required": true,
+    "ablation_required_for_every_improvement": true
+  },
+  "validity_controls": {
+    "official_scorers_only": true,
+    "gold_fields_exposed_to_candidate": [],
+    "answer_model_and_prompt_bytes_equal_between_paired_arms": true,
+    "randomized_or_hash-balanced_arm_order": true,
+    "duplicate_cluster_detection_required": true,
+    "intervention_audit_required": true,
+    "confidence_interval_unit_must_match_independent_cluster": true
+  },
+  "held_out_policy": {
+    "opened_at_preregistration": false,
+    "post_hoc_candidate_changes_forbidden": true,
+    "threshold_relaxation_forbidden": true,
+    "failed_cases_must_be_retained": true,
+    "full_longmemeval_v2_run_count_at_preregistration": 0,
+    "maximum_full_longmemeval_v2_runs": 1
+  },
+  "terminal_rule": "If the frozen v2 candidate does not pass the development gate, report failed_experiment_v2 and create no validation, held-out, admission, SOTA, or revolutionary claim. Public WaveField descriptions and WaveMind Connect remain unchanged.",
+  "protocol_digest": "b9f6417c95046711c5adbdfdc1f7553b2f44674051b96eb8a43dd21d7c292518"
+}
