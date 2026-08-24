@@ -57,7 +57,10 @@ class ScientificMemOpsRetriever:
                 memory_id=memory_id,
                 kind=MemoryKind.FACT,
                 content=content,
-                provenance=(corpus_id,),
+                provenance=(
+                    corpus_id,
+                    f"source-order:{int(item.get('session_index') or 0)}",
+                ),
                 estimated_tokens=max(1, (len(content) + 3) // 4),
                 estimated_latency_ms=0.1,
                 safety_risk=0.0,
@@ -87,7 +90,7 @@ class ScientificMemOpsRetriever:
         if top_k_context < 1:
             raise ValueError("top_k_context must be positive")
         recall_method = (
-            self.runtime.shadow_recall if evaluation_only else self.runtime.recall
+            self.runtime.evaluation_recall if evaluation_only else self.runtime.recall
         )
         recall = recall_method(
             query,

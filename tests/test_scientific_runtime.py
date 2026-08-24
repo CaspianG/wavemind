@@ -208,3 +208,45 @@ def test_runtime_reopen_retains_proof_and_production_lifecycle(tmp_path):
         assert recalled.selected_memory_ids == ("procedure:deploy",)
         assert len(reopened.event_log.receipts()) == 4
         assert reopened.event_log.validate_chain() == []
+
+
+def test_v2_runtime_has_real_evaluation_intervention_but_abstains_in_production(
+    tmp_path,
+):
+    with ScientificMemoryRuntime(
+        tmp_path / "v2.sqlite3",
+        mode=ScientificCandidateMode.STATE_RECONCILER,
+    ) as runtime:
+        runtime.register_memory(
+            MemoryDefinition(
+                memory_id="state:portland",
+                kind=MemoryKind.STATE_TRANSITION,
+                content="The user currently lives in Portland.",
+                provenance=("source-order:7",),
+                estimated_tokens=8,
+                estimated_latency_ms=0.1,
+                safety_risk=0.0,
+            )
+        )
+
+        production = runtime.recall(
+            "Where does the user currently live?",
+            context={},
+            moment=0.0,
+            token_budget=20,
+            latency_budget_ms=10.0,
+            max_safety_risk=0.0,
+        )
+        evaluation = runtime.evaluation_recall(
+            "Where does the user currently live?",
+            context={},
+            moment=0.0,
+            token_budget=20,
+            latency_budget_ms=10.0,
+            max_safety_risk=0.0,
+        )
+
+        assert production.abstained is True
+        assert evaluation.selected_memory_ids == ("state:portland",)
+        assert evaluation.evaluation_only is True
+        assert runtime.event_log.memory_state("state:portland").production_eligible is False

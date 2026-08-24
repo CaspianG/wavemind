@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import os
 import subprocess
 import sys
@@ -566,13 +567,25 @@ def run_scientific_candidate_development(
             creator.chunk_size = dataset_config["chunk_size"]
             creator.contexts = [unit.context]
             chunks = creator.get_chunks()[0]
+            if mode is ScientificCandidateMode.STATE_RECONCILER and unit.source.startswith(
+                "factconsolidation"
+            ):
+                candidate_chunks = [
+                    line.strip()
+                    for line in unit.context.splitlines()
+                    if re.match(r"^\s*\d+\.\s+", line)
+                ]
+            else:
+                candidate_chunks = list(chunks)
             database = scratch / f"candidate-{context_index}.db"
             runtime = ScientificMemoryRuntime(
                 database,
                 mode=mode,
             )
             try:
-                for chunk_index, chunk in enumerate(chunks):
+                for chunk_index, chunk in enumerate(candidate_chunks):
+                    numbered = re.match(r"^\s*(\d+)\.\s+", chunk)
+                    source_order = int(numbered.group(1)) if numbered else chunk_index
                     memory_id = (
                         "mab-"
                         + sha256_bytes(
@@ -592,6 +605,7 @@ def run_scientific_candidate_development(
                             content=chunk,
                             provenance=(
                                 f"memoryagentbench:{unit.unit_id}:chunk:{chunk_index}",
+                                f"source-order:{source_order}",
                             ),
                             estimated_tokens=max(1, (len(chunk) + 3) // 4),
                             estimated_latency_ms=0.1,
@@ -614,7 +628,7 @@ def run_scientific_candidate_development(
                         max_safety_risk=0.0,
                     )
                     if production_recall.abstained:
-                        treatment_recall = runtime.shadow_recall(
+                        treatment_recall = runtime.evaluation_recall(
                             runtime_case.query,
                             context={},
                             moment=0.0,
@@ -635,6 +649,11 @@ def run_scientific_candidate_development(
                         f"{memory_prompt}\n\n{runtime_case.query}"
                         if memory_prompt
                         else runtime_case.query
+                    )
+                    intervention_present = bool(
+                        treatment_recall.selected_memory_ids
+                        and treatment_prompt.encode("utf-8")
+                        != runtime_case.query.encode("utf-8")
                     )
                     case_id = f"{unit.unit_id}:q{runtime_case.query_index:04d}"
                     control_first = (
@@ -674,8 +693,13 @@ def run_scientific_candidate_development(
                     )
                     treatment_score = treatment_metrics[score_metric]
                     control_score = control_metrics[score_metric]
-                    effect = treatment_score - control_score
-                    effects.append(effect)
+                    effect = (
+                        treatment_score - control_score
+                        if intervention_present
+                        else None
+                    )
+                    if effect is not None:
+                        effects.append(effect)
                     receipt_digest = None
                     if not treatment_recall.abstained:
                         evidence_digest = sha256_bytes(
@@ -735,6 +759,13 @@ def run_scientific_candidate_development(
                             ),
                             "paired_metric": score_metric,
                             "paired_effect": effect,
+                            "intervention_present": intervention_present,
+                            "treatment_prompt_sha256": sha256_bytes(
+                                treatment_prompt.encode("utf-8")
+                            ),
+                            "control_prompt_sha256": sha256_bytes(
+                                runtime_case.query.encode("utf-8")
+                            ),
                             "receipt_digest": receipt_digest,
                             "lifecycle_after": lifecycle,
                             "treatment": treatment_result,
@@ -750,6 +781,15 @@ def run_scientific_candidate_development(
         "control_id": "no-memory",
         "paired_metric": score_metric,
         "paired_effects": effects,
+        "row_count": len(rows),
+        "valid_intervention_count": sum(
+            bool(row["intervention_present"]) for row in rows
+        ),
+        "intervention_coverage": (
+            sum(bool(row["intervention_present"]) for row in rows) / len(rows)
+            if rows
+            else 0.0
+        ),
         "verified_receipt_count": verified_receipts,
         "production_case_count": production_cases,
         "selected_memory_ids": sorted(selected_memory_ids),
@@ -948,6 +988,14 @@ def build_candidate_development_artifact(
             "positive_count": sum(value > 0.0 for value in effects),
             "zero_count": sum(value == 0.0 for value in effects),
             "negative_count": sum(value < 0.0 for value in effects),
+        },
+        "intervention_audit": {
+            "row_count": int(summary.get("row_count", len(effects))),
+            "valid_intervention_count": int(
+                summary.get("valid_intervention_count", len(effects))
+            ),
+            "coverage": float(summary.get("intervention_coverage", 1.0)),
+            "absent_interventions_excluded_from_uplift": True,
         },
         "verified_receipt_count": int(summary["verified_receipt_count"]),
         "production_case_count": int(summary["production_case_count"]),

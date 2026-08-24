@@ -19,12 +19,14 @@ from .scientific_memory import (
     VerificationDecision,
     VerifierResult,
 )
+from .scientific_reconciliation import ProofCarryingStateReconciler
 
 
 class ScientificCandidateMode(str, Enum):
     GRAPH = "evidence-constrained-associative-graph-v1"
     CAUSAL = "causal-utility-controller-v1"
     HYBRID = "hybrid-graph-causal-v1"
+    STATE_RECONCILER = "proof-carrying-state-reconciler-v2"
 
 
 @dataclass(frozen=True)
@@ -71,6 +73,10 @@ class ScientificMemoryRuntime:
             bootstrap_seed=bootstrap_seed,
         )
         self.graph = EvidenceConstrainedAssociativeGraph()
+        self.state_reconciler = ProofCarryingStateReconciler(
+            maximum_graph_hops=4,
+            maximum_candidates=20,
+        )
         self.retriever = WaveMind(
             db_path=selected_db_path,
             vector_weight=1.0,
@@ -320,6 +326,56 @@ class ScientificMemoryRuntime:
                 if selected
                 else "shadow replay abstained because applicability or constraints failed"
             ),
+            estimated_tokens=tokens,
+            estimated_latency_ms=latency,
+            evaluation_only=True,
+        )
+
+    def evaluation_recall(
+        self,
+        query: str,
+        *,
+        context: Mapping[str, str],
+        moment: float,
+        token_budget: int,
+        latency_budget_ms: float,
+        max_safety_risk: float,
+        namespace: str = "scientific",
+    ) -> ScientificRecall:
+        """Run the frozen v2 selector without granting production eligibility."""
+
+        if self.mode is not ScientificCandidateMode.STATE_RECONCILER:
+            return self.shadow_recall(
+                query,
+                context=context,
+                moment=moment,
+                token_budget=token_budget,
+                latency_budget_ms=latency_budget_ms,
+                max_safety_risk=max_safety_risk,
+                namespace=namespace,
+            )
+        definitions = self.event_log.definitions()
+        selection = self.state_reconciler.select(
+            query,
+            definitions,
+            token_budget=token_budget,
+            latency_budget_ms=latency_budget_ms,
+            max_safety_risk=max_safety_risk,
+            context=context,
+            moment=moment,
+        )
+        selected = selection.memory_ids
+        tokens = sum(definitions[memory_id].estimated_tokens for memory_id in selected)
+        latency = sum(
+            definitions[memory_id].estimated_latency_ms for memory_id in selected
+        )
+        return ScientificRecall(
+            query=query,
+            selected_memory_ids=selected,
+            contents=tuple(definitions[memory_id].content for memory_id in selected),
+            relevance=selection.relevance,
+            abstained=not bool(selected),
+            reason=selection.reason,
             estimated_tokens=tokens,
             estimated_latency_ms=latency,
             evaluation_only=True,

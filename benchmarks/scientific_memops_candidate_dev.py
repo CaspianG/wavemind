@@ -60,6 +60,7 @@ def main(argv: list[str] | None = None) -> int:
         choices=(
             ScientificCandidateMode.CAUSAL.value,
             ScientificCandidateMode.GRAPH.value,
+            ScientificCandidateMode.STATE_RECONCILER.value,
         ),
         default=ScientificCandidateMode.CAUSAL.value,
     )
