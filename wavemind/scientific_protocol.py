@@ -316,6 +316,8 @@ def validate_scientific_protocol_v3(
         errors.append("scientific v3 candidate must be frozen before outcomes")
     if "^Document [0-9]+:" not in str(candidate.get("document_segmentation") or ""):
         errors.append("scientific v3 structural segmentation changed")
+    if "blank-line boundaries" not in str(candidate.get("paragraph_segmentation") or ""):
+        errors.append("scientific v3 paragraph segmentation changed")
     parameters = payload.get("frozen_parameters") or {}
     expected_parameters = {
         "seed": 17,
@@ -327,6 +329,7 @@ def validate_scientific_protocol_v3(
         "latency_budget_ms": 1000.0,
         "maximum_safety_risk": 0.0,
         "top_k_context": 10,
+        "minimum_structural_unit_characters": 1,
         "answer_model": "mistral:7b",
         "answer_model_digest": (
             "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091"

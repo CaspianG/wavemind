@@ -21,8 +21,9 @@
       "wavemind.scientific_runtime.ScientificMemoryRuntime.evaluation_recall",
       "wavemind.scientific_memoryagentbench.compile_candidate_units"
     ],
-    "ingestion": "Compile source-ordered input into the smallest explicitly marked structural unit without inspecting answers or gold: one numbered fact per unit for factconsolidation sources; one complete Document N section per unit for document sources; one upstream session per unit for MemOps.",
-    "document_segmentation": "For text containing explicit Document N markers, split only at a line-start marker matching ^Document [0-9]+:. Preserve marker, source order, full document bytes, and provenance. If no marker exists, retain the official chunk unchanged.",
+    "ingestion": "Compile source-ordered input into the smallest explicitly marked structural unit without inspecting answers or gold: one numbered fact per unit for factconsolidation sources; one complete Document N section per unit for document sources; one non-empty blank-line-delimited paragraph per unit for unmarked prose; one upstream session per unit for MemOps.",
+    "document_segmentation": "For text containing explicit Document N markers, split only at a line-start marker matching ^Document [0-9]+:. Preserve marker, source order, full document bytes, and provenance.",
+    "paragraph_segmentation": "When no Document N marker exists, split on existing blank-line boundaries matching a newline, optional horizontal whitespace, then another newline. Trim boundary whitespace only. If this yields one unit, retain the official chunks unchanged.",
     "reconciliation": "For parsed claims, keep only the highest source-order value for each normalized subject-relation key. Explicit deletions create tombstones. Raw source remains in the audit log but tombstoned claims are retrieval-ineligible.",
     "retrieval": "Use deterministic query-token IDF ranking over eligible structural units. For parsed claims, seed exact query entities and traverse at most four active entity links. Rank ties by source recency then memory ID; fit at most twenty units under the frozen token and latency budgets.",
     "abstention": "Abstain when no active unit shares a non-stopword query token, every candidate is tombstoned, constraints fail, or no unit fits the frozen budgets.",
@@ -41,6 +42,7 @@
     "maximum_safety_risk": 0.0,
     "retrieval_floor": 0.0,
     "top_k_context": 10,
+    "minimum_structural_unit_characters": 1,
     "answer_model": "mistral:7b",
     "answer_model_digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
     "context_window": 32768
@@ -104,5 +106,5 @@
     "maximum_full_longmemeval_v2_runs": 1
   },
   "terminal_rule": "If the frozen v3 candidate does not pass the development gate, report failed_experiment_v3 and create no validation, held-out, admission, SOTA, or revolutionary claim. Public WaveField descriptions and WaveMind Connect remain unchanged.",
-  "protocol_digest": "2510d3b5b737b5f85894fe691aa55f35644b967673c86560e49cb22a5c32f69f"
+  "protocol_digest": "ddfc7c435ff04e7b8d60852abea6e1515ac9bcfbb5d57263619bec7088444ddf"
 }
