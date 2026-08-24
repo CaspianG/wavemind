@@ -67,6 +67,7 @@
     "cluster_identity": "content or subject fingerprint; repeated rows with the same fingerprint are one cluster",
     "task_success_uplift_ci_lower_strictly_greater_than": 0.0,
     "minimum_candidate_intervention_coverage": 0.8,
+    "absent_intervention_policy": "A row with zero selected memories or byte-identical treatment/control prompts is invalid for uplift estimation and must be reported, not coerced to zero effect.",
     "all_observed_family_means_must_be_non_negative": true,
     "false_verified_promotions_maximum": 0,
     "raw_per_case_evidence_required": true,
@@ -106,5 +107,5 @@
     "maximum_full_longmemeval_v2_runs": 1
   },
   "terminal_rule": "If the frozen v4 candidate does not pass the development gate, report failed_experiment_v4 and create no validation, held-out, admission, SOTA, or revolutionary claim. Public WaveField descriptions and WaveMind Connect remain unchanged.",
-  "protocol_digest": "922add583f983a651c003bf7372c3fed19c64aa47500bf8713b3cef98babaf3b"
+  "protocol_digest": "9f01d962ce3e3e23f63f4b0abdbbe4bebc9db4bbab586572750ad61a233d090b"
 }
