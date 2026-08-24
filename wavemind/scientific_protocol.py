@@ -199,7 +199,7 @@ def validate_scientific_protocol_v2(
         "seed": 17,
         "bootstrap_repeats": 2000,
         "confidence_level": 0.95,
-        "maximum_graph_hops": 2,
+        "maximum_graph_hops": 4,
         "maximum_retrieval_candidates": 20,
         "token_budget": 8192,
         "latency_budget_ms": 1000.0,

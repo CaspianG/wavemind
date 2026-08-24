@@ -21,7 +21,7 @@
     ],
     "ingestion": "Compile source-ordered memory into typed immutable fact, state-transition, constraint, and tombstone events. Preserve provenance and source order. Never inspect answers, gold labels, scorer fields, or split metadata during compilation.",
     "reconciliation": "Normalize subject and relation keys; a later explicit update supersedes an earlier value, an explicit deletion creates a tombstone, and a query may expose only active non-tombstoned claims plus the existence/category of a tombstone when the query asks what was removed.",
-    "retrieval": "Hybrid deterministic lexical and hashing-vector retrieval over active claims, followed by at most two entity-linked graph expansion hops. Rank by query overlap, graph distance, source recency, and contradiction penalty under a fixed token budget.",
+    "retrieval": "Hybrid deterministic lexical and hashing-vector retrieval over active claims, followed by at most four entity-linked graph expansion hops. Rank by query overlap, graph distance, source recency, and contradiction penalty under a fixed token budget.",
     "abstention": "Abstain when no active claim crosses the frozen retrieval floor, every candidate is tombstoned, constraints fail, or the token/latency budget cannot be met.",
     "evaluation_only": "Development shadow selection executes the same reconciler and selector without granting production eligibility. Candidate identity may change selection; promotion state may not be bypassed in production.",
     "production_promotion": "Unchanged causal rule: 95% paired cluster-bootstrap CI lower bound strictly greater than zero, at least five independent clusters, and zero false verified promotions."
@@ -31,7 +31,7 @@
     "seed": 17,
     "bootstrap_repeats": 2000,
     "confidence_level": 0.95,
-    "maximum_graph_hops": 2,
+    "maximum_graph_hops": 4,
     "maximum_retrieval_candidates": 20,
     "token_budget": 8192,
     "latency_budget_ms": 1000.0,
@@ -97,5 +97,5 @@
     "maximum_full_longmemeval_v2_runs": 1
   },
   "terminal_rule": "If the frozen v2 candidate does not pass the development gate, report failed_experiment_v2 and create no validation, held-out, admission, SOTA, or revolutionary claim. Public WaveField descriptions and WaveMind Connect remain unchanged.",
-  "protocol_digest": "b9f6417c95046711c5adbdfdc1f7553b2f44674051b96eb8a43dd21d7c292518"
+  "protocol_digest": "0fc49d8ab11ef215a309483f595f3a488d304df3f877dd668ba2e2f8d33fd159"
 }
