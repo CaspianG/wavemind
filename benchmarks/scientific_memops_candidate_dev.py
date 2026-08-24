@@ -61,6 +61,7 @@ def main(argv: list[str] | None = None) -> int:
             ScientificCandidateMode.CAUSAL.value,
             ScientificCandidateMode.GRAPH.value,
             ScientificCandidateMode.STATE_RECONCILER.value,
+            ScientificCandidateMode.HIERARCHICAL_RECONCILER.value,
         ),
         default=ScientificCandidateMode.CAUSAL.value,
     )

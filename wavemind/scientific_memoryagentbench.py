@@ -72,6 +72,77 @@ class MemoryAgentBenchDevelopmentUnit:
     row: Mapping[str, Any]
 
 
+@dataclass(frozen=True)
+class CandidateMemoryUnit:
+    content: str
+    source_order: int
+    structural_kind: str
+
+
+_DOCUMENT_MARKER_RE = re.compile(r"(?m)^Document ([0-9]+):")
+_BLANK_LINE_RE = re.compile(r"\n[\t ]*\n+")
+
+
+def compile_candidate_units(
+    *,
+    context: str,
+    source: str,
+    official_chunks: Sequence[str],
+    mode: ScientificCandidateMode,
+) -> tuple[CandidateMemoryUnit, ...]:
+    """Blindly compile frozen v2/v3 structural units without answer fields."""
+
+    selected_mode = ScientificCandidateMode(mode)
+    if selected_mode not in {
+        ScientificCandidateMode.STATE_RECONCILER,
+        ScientificCandidateMode.HIERARCHICAL_RECONCILER,
+    }:
+        return tuple(
+            CandidateMemoryUnit(str(chunk), index, "official-chunk")
+            for index, chunk in enumerate(official_chunks)
+            if str(chunk).strip()
+        )
+    if source.startswith("factconsolidation"):
+        facts = []
+        for line in context.splitlines():
+            match = re.match(r"^\s*(\d+)\.\s+", line)
+            if match:
+                facts.append(
+                    CandidateMemoryUnit(
+                        line.strip(), int(match.group(1)), "numbered-fact"
+                    )
+                )
+        return tuple(facts)
+    if selected_mode is ScientificCandidateMode.HIERARCHICAL_RECONCILER:
+        markers = list(_DOCUMENT_MARKER_RE.finditer(context))
+        if markers:
+            documents = []
+            for index, marker in enumerate(markers):
+                end = markers[index + 1].start() if index + 1 < len(markers) else len(context)
+                content = context[marker.start() : end].strip()
+                if content:
+                    documents.append(
+                        CandidateMemoryUnit(
+                            content,
+                            int(marker.group(1)),
+                            "document-section",
+                        )
+                    )
+            return tuple(documents)
+        paragraphs = [item.strip() for item in _BLANK_LINE_RE.split(context)]
+        paragraphs = [item for item in paragraphs if item]
+        if len(paragraphs) > 1:
+            return tuple(
+                CandidateMemoryUnit(content, index, "prose-paragraph")
+                for index, content in enumerate(paragraphs)
+            )
+    return tuple(
+        CandidateMemoryUnit(str(chunk), index, "official-chunk")
+        for index, chunk in enumerate(official_chunks)
+        if str(chunk).strip()
+    )
+
+
 class NativeOpenAICompatibleClient:
     """Small OpenAI-shape facade over the native Ollama development transport."""
 
@@ -546,6 +617,7 @@ def run_scientific_candidate_development(
     promoted_memory_ids: set[str] = set()
     verified_receipts = 0
     production_cases = 0
+    compiled_units_total = 0
     score_metric = "substring_exact_match"
     scratch = Path(scratch_dir).resolve()
     scratch.mkdir(parents=True, exist_ok=True)
@@ -567,25 +639,22 @@ def run_scientific_candidate_development(
             creator.chunk_size = dataset_config["chunk_size"]
             creator.contexts = [unit.context]
             chunks = creator.get_chunks()[0]
-            if mode is ScientificCandidateMode.STATE_RECONCILER and unit.source.startswith(
-                "factconsolidation"
-            ):
-                candidate_chunks = [
-                    line.strip()
-                    for line in unit.context.splitlines()
-                    if re.match(r"^\s*\d+\.\s+", line)
-                ]
-            else:
-                candidate_chunks = list(chunks)
+            candidate_units = compile_candidate_units(
+                context=unit.context,
+                source=unit.source,
+                official_chunks=chunks,
+                mode=mode,
+            )
+            compiled_units_total += len(candidate_units)
             database = scratch / f"candidate-{context_index}.db"
             runtime = ScientificMemoryRuntime(
                 database,
                 mode=mode,
             )
             try:
-                for chunk_index, chunk in enumerate(candidate_chunks):
-                    numbered = re.match(r"^\s*(\d+)\.\s+", chunk)
-                    source_order = int(numbered.group(1)) if numbered else chunk_index
+                for chunk_index, candidate_unit in enumerate(candidate_units):
+                    chunk = candidate_unit.content
+                    source_order = candidate_unit.source_order
                     memory_id = (
                         "mab-"
                         + sha256_bytes(
@@ -606,6 +675,7 @@ def run_scientific_candidate_development(
                             provenance=(
                                 f"memoryagentbench:{unit.unit_id}:chunk:{chunk_index}",
                                 f"source-order:{source_order}",
+                                f"structural-kind:{candidate_unit.structural_kind}",
                             ),
                             estimated_tokens=max(1, (len(chunk) + 3) // 4),
                             estimated_latency_ms=0.1,
@@ -781,6 +851,7 @@ def run_scientific_candidate_development(
         "control_id": "no-memory",
         "paired_metric": score_metric,
         "paired_effects": effects,
+        "compiled_unit_count": compiled_units_total,
         "row_count": len(rows),
         "valid_intervention_count": sum(
             bool(row["intervention_present"]) for row in rows
@@ -996,6 +1067,10 @@ def build_candidate_development_artifact(
             ),
             "coverage": float(summary.get("intervention_coverage", 1.0)),
             "absent_interventions_excluded_from_uplift": True,
+        },
+        "structural_segmentation_audit": {
+            "compiled_unit_count": int(summary.get("compiled_unit_count", 0)),
+            "blind_to_gold_fields": True,
         },
         "verified_receipt_count": int(summary["verified_receipt_count"]),
         "production_case_count": int(summary["production_case_count"]),

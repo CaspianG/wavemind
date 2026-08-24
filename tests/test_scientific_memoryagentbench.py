@@ -15,10 +15,12 @@ from wavemind.scientific_memoryagentbench import (
     build_bounded_development_artifact,
     build_candidate_development_artifact,
     build_runtime_and_scoring_cases,
+    compile_candidate_units,
     install_official_compatibility_shims,
     load_development_units,
     require_official_memoryagentbench_sha,
 )
+from wavemind.scientific_runtime import ScientificCandidateMode
 from wavemind.scientific_splits import (
     MEMORYAGENTBENCH_REVISION,
     MEMORYAGENTBENCH_SPLIT_SCHEMA,
@@ -77,6 +79,41 @@ def _dataset(tmp_path: Path) -> tuple[Path, dict]:
     )
     parquet.write_table(table, path)
     return tmp_path, _manifest(path)
+
+
+def test_v3_compiler_uses_document_markers_without_gold():
+    units = compile_candidate_units(
+        context=(
+            "Document 1:\nNormandy is in France.\n\n"
+            "Document 2:\nUnrelated evidence."
+        ),
+        source="ruler_qa1_197K",
+        official_chunks=("oversized mixed chunk",),
+        mode=ScientificCandidateMode.HIERARCHICAL_RECONCILER,
+    )
+
+    assert [unit.source_order for unit in units] == [1, 2]
+    assert [unit.structural_kind for unit in units] == [
+        "document-section",
+        "document-section",
+    ]
+    assert units[0].content == "Document 1:\nNormandy is in France."
+
+
+def test_v3_compiler_uses_blank_line_paragraphs_for_unmarked_prose():
+    units = compile_candidate_units(
+        context="First event.\n\nSecond event.\n\nThird event.",
+        source="eventqa_full",
+        official_chunks=("oversized mixed chunk",),
+        mode=ScientificCandidateMode.HIERARCHICAL_RECONCILER,
+    )
+
+    assert [unit.content for unit in units] == [
+        "First event.",
+        "Second event.",
+        "Third event.",
+    ]
+    assert all(unit.structural_kind == "prose-paragraph" for unit in units)
 
 
 def test_loader_accepts_only_frozen_development_units(tmp_path):

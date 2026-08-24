@@ -27,6 +27,7 @@ class ScientificCandidateMode(str, Enum):
     CAUSAL = "causal-utility-controller-v1"
     HYBRID = "hybrid-graph-causal-v1"
     STATE_RECONCILER = "proof-carrying-state-reconciler-v2"
+    HIERARCHICAL_RECONCILER = "hierarchical-proof-state-reconciler-v3"
 
 
 @dataclass(frozen=True)
@@ -344,7 +345,10 @@ class ScientificMemoryRuntime:
     ) -> ScientificRecall:
         """Run the frozen v2 selector without granting production eligibility."""
 
-        if self.mode is not ScientificCandidateMode.STATE_RECONCILER:
+        if self.mode not in {
+            ScientificCandidateMode.STATE_RECONCILER,
+            ScientificCandidateMode.HIERARCHICAL_RECONCILER,
+        }:
             return self.shadow_recall(
                 query,
                 context=context,
