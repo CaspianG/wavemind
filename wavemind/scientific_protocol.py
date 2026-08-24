@@ -16,6 +16,7 @@ from .evidence import (
 SCIENTIFIC_PROTOCOL_SCHEMA = "wavemind.scientific_memory_protocol.v1"
 SCIENTIFIC_PROTOCOL_V2_SCHEMA = "wavemind.scientific_memory_protocol.v2"
 SCIENTIFIC_PROTOCOL_V3_SCHEMA = "wavemind.scientific_memory_protocol.v3"
+SCIENTIFIC_PROTOCOL_V4_SCHEMA = "wavemind.scientific_memory_protocol.v4"
 GIT_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 REQUIRED_BASELINES = {
@@ -381,4 +382,91 @@ def validate_scientific_protocol_v3(
     terminal = str(payload.get("terminal_rule") or "")
     if "failed_experiment_v3" not in terminal or "remain unchanged" not in terminal:
         errors.append("scientific v3 fail-closed terminal rule is missing")
+    return errors
+
+
+def validate_scientific_protocol_v4(
+    payload: Mapping[str, Any], *, project_root: str | Path
+) -> list[str]:
+    """Validate efficient v4 while preserving every earlier negative outcome."""
+
+    errors: list[str] = []
+    project = Path(project_root).resolve()
+    if payload.get("schema") != SCIENTIFIC_PROTOCOL_V4_SCHEMA:
+        errors.append("scientific v4 protocol schema is invalid")
+    if payload.get("status") != "preregistered":
+        errors.append("scientific v4 protocol must remain preregistered")
+    if payload.get("protocol_digest") != protocol_digest(payload):
+        errors.append("scientific v4 protocol digest mismatch")
+    negative = payload.get("immutable_negative_evidence") or {}
+    if negative.get("v1_status") != "failed_experiment":
+        errors.append("v4 did not preserve v1 failure")
+    if negative.get("v2_status") != "failed_experiment_v2":
+        errors.append("v4 did not preserve v2 failure")
+    if negative.get("v3_status") != "failed_experiment_v3_runtime_budget":
+        errors.append("v4 did not preserve v3 runtime failure")
+    v3_path = project / "benchmarks" / "SCIENTIFIC_MEMORY_V3_OUTCOME.md"
+    if not v3_path.is_file() or negative.get("v3_outcome_sha256") != file_sha256(
+        v3_path
+    ):
+        errors.append("v3 immutable outcome hash mismatch")
+    if negative.get("may_be_overwritten") is not False:
+        errors.append("v4 negative evidence must be immutable")
+    candidate = payload.get("candidate") or {}
+    if candidate.get("id") != "efficient-hierarchical-proof-state-reconciler-v4":
+        errors.append("scientific v4 candidate identity changed")
+    if candidate.get("frozen_before_first_v4_outcome") is not True:
+        errors.append("scientific v4 candidate must be frozen before outcomes")
+    if "Do not duplicate" not in str(candidate.get("evaluation_storage") or ""):
+        errors.append("scientific v4 storage isolation changed")
+    parameters = payload.get("frozen_parameters") or {}
+    expected = {
+        "seed": 17,
+        "bootstrap_repeats": 2000,
+        "confidence_level": 0.95,
+        "maximum_graph_hops": 4,
+        "maximum_retrieval_candidates": 20,
+        "token_budget": 8192,
+        "latency_budget_ms": 1000.0,
+        "maximum_safety_risk": 0.0,
+        "top_k_context": 10,
+        "evaluation_legacy_vector_indexing": False,
+        "answer_model": "mistral:7b",
+        "answer_model_digest": (
+            "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091"
+        ),
+        "context_window": 32768,
+    }
+    for key, value in expected.items():
+        if parameters.get(key) != value:
+            errors.append(f"frozen v4 parameter changed: {key}")
+    v3 = load_scientific_protocol(
+        project / "benchmarks" / "scientific_memory_protocol_v3.json"
+    )
+    if payload.get("development_gate") != v3.get("development_gate"):
+        errors.append("v4 development gates differ from frozen v3 gates")
+    if payload.get("admission_gates") != v3.get("admission_gates"):
+        errors.append("v4 admission gates differ from frozen v3 gates")
+    validity = payload.get("validity_controls") or {}
+    for key in (
+        "official_scorers_only",
+        "duplicate_cluster_detection_required",
+        "intervention_audit_required",
+        "event_chain_validation_required",
+        "production_index_absence_required_during_shadow",
+    ):
+        if validity.get(key) is not True:
+            errors.append(f"v4 validity control is missing: {key}")
+    if validity.get("gold_fields_exposed_to_candidate") != []:
+        errors.append("v4 candidate may not inspect gold fields")
+    held_out = payload.get("held_out_policy") or {}
+    if held_out.get("opened_at_preregistration") is not False:
+        errors.append("v4 held-out data was opened before preregistration")
+    if held_out.get("threshold_relaxation_forbidden") is not True:
+        errors.append("v4 threshold relaxation must be forbidden")
+    if held_out.get("maximum_full_longmemeval_v2_runs") != 1:
+        errors.append("v4 LongMemEval must remain one-shot")
+    terminal = str(payload.get("terminal_rule") or "")
+    if "failed_experiment_v4" not in terminal or "remain unchanged" not in terminal:
+        errors.append("scientific v4 fail-closed terminal rule is missing")
     return errors
