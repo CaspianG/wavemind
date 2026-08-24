@@ -15,6 +15,7 @@ from .evidence import (
 
 SCIENTIFIC_PROTOCOL_SCHEMA = "wavemind.scientific_memory_protocol.v1"
 SCIENTIFIC_PROTOCOL_V2_SCHEMA = "wavemind.scientific_memory_protocol.v2"
+SCIENTIFIC_PROTOCOL_V3_SCHEMA = "wavemind.scientific_memory_protocol.v3"
 GIT_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 REQUIRED_BASELINES = {
@@ -276,4 +277,105 @@ def validate_scientific_protocol_v2(
     terminal = str(payload.get("terminal_rule") or "")
     if "failed_experiment_v2" not in terminal or "remain unchanged" not in terminal:
         errors.append("scientific v2 fail-closed terminal rule is missing")
+    return errors
+
+
+def validate_scientific_protocol_v3(
+    payload: Mapping[str, Any], *, project_root: str | Path
+) -> list[str]:
+    """Validate the hierarchical v3 preregistration and immutable v2 outcome."""
+
+    errors: list[str] = []
+    project = Path(project_root).resolve()
+    if payload.get("schema") != SCIENTIFIC_PROTOCOL_V3_SCHEMA:
+        errors.append("scientific v3 protocol schema is invalid")
+    if payload.get("status") != "preregistered":
+        errors.append("scientific v3 protocol must remain preregistered")
+    if payload.get("protocol_digest") != protocol_digest(payload):
+        errors.append("scientific v3 protocol digest mismatch")
+    negative = payload.get("immutable_negative_evidence") or {}
+    expected_hashes = {
+        "v2_outcome_sha256": project / "benchmarks" / "SCIENTIFIC_MEMORY_V2_OUTCOME.md",
+        "v2_result_sha256": project
+        / "benchmarks"
+        / "scientific_memoryagentbench_v2_accurate_pilot_results.json",
+    }
+    if negative.get("v1_status") != "failed_experiment":
+        errors.append("v3 did not preserve the v1 failed experiment")
+    if negative.get("v2_status") != "failed_experiment_v2":
+        errors.append("v3 did not preserve the v2 failed experiment")
+    if negative.get("may_be_overwritten") is not False:
+        errors.append("v3 negative evidence must be immutable")
+    for key, path in expected_hashes.items():
+        if not path.is_file() or negative.get(key) != file_sha256(path):
+            errors.append(f"v2 immutable evidence hash mismatch: {key}")
+    candidate = payload.get("candidate") or {}
+    if candidate.get("id") != "hierarchical-proof-state-reconciler-v3":
+        errors.append("scientific v3 candidate identity changed")
+    if candidate.get("frozen_before_first_v3_outcome") is not True:
+        errors.append("scientific v3 candidate must be frozen before outcomes")
+    if "^Document [0-9]+:" not in str(candidate.get("document_segmentation") or ""):
+        errors.append("scientific v3 structural segmentation changed")
+    parameters = payload.get("frozen_parameters") or {}
+    expected_parameters = {
+        "seed": 17,
+        "bootstrap_repeats": 2000,
+        "confidence_level": 0.95,
+        "maximum_graph_hops": 4,
+        "maximum_retrieval_candidates": 20,
+        "token_budget": 8192,
+        "latency_budget_ms": 1000.0,
+        "maximum_safety_risk": 0.0,
+        "top_k_context": 10,
+        "answer_model": "mistral:7b",
+        "answer_model_digest": (
+            "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091"
+        ),
+        "context_window": 32768,
+    }
+    for key, expected in expected_parameters.items():
+        if parameters.get(key) != expected:
+            errors.append(f"frozen v3 parameter changed: {key}")
+    gate = payload.get("development_gate") or {}
+    expected_gate = {
+        "required_reproducible_runs": 3,
+        "independent_benchmark_families_with_positive_uplift_lcb": 2,
+        "minimum_independent_clusters_per_family": 5,
+        "task_success_uplift_ci_lower_strictly_greater_than": 0.0,
+        "minimum_candidate_intervention_coverage": 0.8,
+        "all_observed_family_means_must_be_non_negative": True,
+        "false_verified_promotions_maximum": 0,
+        "raw_per_case_evidence_required": True,
+        "failed_attempts_must_be_retained": True,
+    }
+    for key, expected in expected_gate.items():
+        if gate.get(key) != expected:
+            errors.append(f"frozen v3 development gate changed: {key}")
+    v2 = load_scientific_protocol(
+        project / "benchmarks" / "scientific_memory_protocol_v2.json"
+    )
+    if payload.get("admission_gates") != v2.get("admission_gates"):
+        errors.append("v3 admission gates differ from frozen v2 gates")
+    validity = payload.get("validity_controls") or {}
+    for key in (
+        "official_scorers_only",
+        "duplicate_cluster_detection_required",
+        "intervention_audit_required",
+        "confidence_interval_unit_must_match_independent_cluster",
+        "structural_segmentation_audit_required",
+    ):
+        if validity.get(key) is not True:
+            errors.append(f"v3 validity control is missing: {key}")
+    if validity.get("gold_fields_exposed_to_candidate") != []:
+        errors.append("v3 candidate may not inspect gold fields")
+    held_out = payload.get("held_out_policy") or {}
+    if held_out.get("opened_at_preregistration") is not False:
+        errors.append("v3 held-out data was opened before preregistration")
+    if held_out.get("threshold_relaxation_forbidden") is not True:
+        errors.append("v3 threshold relaxation must be forbidden")
+    if held_out.get("maximum_full_longmemeval_v2_runs") != 1:
+        errors.append("v3 LongMemEval must remain one-shot")
+    terminal = str(payload.get("terminal_rule") or "")
+    if "failed_experiment_v3" not in terminal or "remain unchanged" not in terminal:
+        errors.append("scientific v3 fail-closed terminal rule is missing")
     return errors
