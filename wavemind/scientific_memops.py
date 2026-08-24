@@ -65,7 +65,18 @@ class ScientificMemOpsRetriever:
                 estimated_latency_ms=0.1,
                 safety_risk=0.0,
             )
-            self.runtime.register_memory(definition, actor="memops-development-adapter")
+            if (
+                self.runtime.mode
+                is ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER
+            ):
+                self.runtime.register_evaluation_memory(
+                    definition,
+                    actor="memops-development-adapter-v4",
+                )
+            else:
+                self.runtime.register_memory(
+                    definition, actor="memops-development-adapter"
+                )
             # The untouched official item is retained only for official prompt/scorer
             # compatibility. Retrieval decisions above cannot inspect its gold flags.
             self._corpus_by_memory_id[memory_id] = dict(item)

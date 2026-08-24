@@ -28,6 +28,9 @@ class ScientificCandidateMode(str, Enum):
     HYBRID = "hybrid-graph-causal-v1"
     STATE_RECONCILER = "proof-carrying-state-reconciler-v2"
     HIERARCHICAL_RECONCILER = "hierarchical-proof-state-reconciler-v3"
+    EFFICIENT_HIERARCHICAL_RECONCILER = (
+        "efficient-hierarchical-proof-state-reconciler-v4"
+    )
 
 
 @dataclass(frozen=True)
@@ -120,6 +123,18 @@ class ScientificMemoryRuntime:
                 "kind": definition.kind.value,
             },
         )
+
+    def register_evaluation_memory(
+        self,
+        definition: MemoryDefinition,
+        *,
+        actor: str = "evaluation-compiler",
+    ) -> None:
+        """Persist shadow evidence without duplicating it into production retrieval."""
+
+        if self.mode is not ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER:
+            raise ValueError("evaluation-only storage is frozen to the v4 candidate")
+        self.event_log.register_memory(definition, actor=actor)
 
     def _retrieval_candidates(
         self,
@@ -348,6 +363,7 @@ class ScientificMemoryRuntime:
         if self.mode not in {
             ScientificCandidateMode.STATE_RECONCILER,
             ScientificCandidateMode.HIERARCHICAL_RECONCILER,
+            ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER,
         }:
             return self.shadow_recall(
                 query,

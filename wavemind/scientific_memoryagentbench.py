@@ -96,6 +96,7 @@ def compile_candidate_units(
     if selected_mode not in {
         ScientificCandidateMode.STATE_RECONCILER,
         ScientificCandidateMode.HIERARCHICAL_RECONCILER,
+        ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER,
     }:
         return tuple(
             CandidateMemoryUnit(str(chunk), index, "official-chunk")
@@ -113,7 +114,10 @@ def compile_candidate_units(
                     )
                 )
         return tuple(facts)
-    if selected_mode is ScientificCandidateMode.HIERARCHICAL_RECONCILER:
+    if selected_mode in {
+        ScientificCandidateMode.HIERARCHICAL_RECONCILER,
+        ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER,
+    }:
         markers = list(_DOCUMENT_MARKER_RE.finditer(context))
         if markers:
             documents = []
@@ -618,6 +622,7 @@ def run_scientific_candidate_development(
     verified_receipts = 0
     production_cases = 0
     compiled_units_total = 0
+    production_index_records = 0
     score_metric = "substring_exact_match"
     scratch = Path(scratch_dir).resolve()
     scratch.mkdir(parents=True, exist_ok=True)
@@ -667,22 +672,29 @@ def run_scientific_candidate_development(
                             )
                         )[:24]
                     )
-                    runtime.register_memory(
-                        MemoryDefinition(
-                            memory_id=memory_id,
-                            kind=MemoryKind.FACT,
-                            content=chunk,
-                            provenance=(
-                                f"memoryagentbench:{unit.unit_id}:chunk:{chunk_index}",
-                                f"source-order:{source_order}",
-                                f"structural-kind:{candidate_unit.structural_kind}",
-                            ),
-                            estimated_tokens=max(1, (len(chunk) + 3) // 4),
-                            estimated_latency_ms=0.1,
-                            safety_risk=0.0,
+                    definition = MemoryDefinition(
+                        memory_id=memory_id,
+                        kind=MemoryKind.FACT,
+                        content=chunk,
+                        provenance=(
+                            f"memoryagentbench:{unit.unit_id}:chunk:{chunk_index}",
+                            f"source-order:{source_order}",
+                            f"structural-kind:{candidate_unit.structural_kind}",
                         ),
-                        actor="memoryagentbench-development-adapter",
+                        estimated_tokens=max(1, (len(chunk) + 3) // 4),
+                        estimated_latency_ms=0.1,
+                        safety_risk=0.0,
                     )
+                    if mode is ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER:
+                        runtime.register_evaluation_memory(
+                            definition,
+                            actor="memoryagentbench-development-adapter-v4",
+                        )
+                    else:
+                        runtime.register_memory(
+                            definition,
+                            actor="memoryagentbench-development-adapter",
+                        )
                 system_message = get_template(
                     unit.source,
                     "system",
@@ -845,6 +857,9 @@ def run_scientific_candidate_development(
                         }
                     )
             finally:
+                production_index_records += runtime.retriever.store.count(
+                    namespace="scientific"
+                )
                 runtime.close()
     summary = {
         "candidate_id": mode.value,
@@ -852,6 +867,7 @@ def run_scientific_candidate_development(
         "paired_metric": score_metric,
         "paired_effects": effects,
         "compiled_unit_count": compiled_units_total,
+        "production_index_record_count": production_index_records,
         "row_count": len(rows),
         "valid_intervention_count": sum(
             bool(row["intervention_present"]) for row in rows
@@ -1071,6 +1087,13 @@ def build_candidate_development_artifact(
         "structural_segmentation_audit": {
             "compiled_unit_count": int(summary.get("compiled_unit_count", 0)),
             "blind_to_gold_fields": True,
+            "production_index_record_count": int(
+                summary.get("production_index_record_count", -1)
+            ),
+            "event_log_only_shadow_storage": (
+                summary.get("candidate_id")
+                == ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER.value
+            ),
         },
         "verified_receipt_count": int(summary["verified_receipt_count"]),
         "production_case_count": int(summary["production_case_count"]),

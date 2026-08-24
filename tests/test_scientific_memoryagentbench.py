@@ -99,6 +99,17 @@ def test_v3_compiler_uses_document_markers_without_gold():
     ]
     assert units[0].content == "Document 1:\nNormandy is in France."
 
+    v4_units = compile_candidate_units(
+        context=(
+            "Document 1:\nNormandy is in France.\n\n"
+            "Document 2:\nUnrelated evidence."
+        ),
+        source="ruler_qa1_197K",
+        official_chunks=("oversized mixed chunk",),
+        mode=ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER,
+    )
+    assert v4_units == units
+
 
 def test_v3_compiler_uses_blank_line_paragraphs_for_unmarked_prose():
     units = compile_candidate_units(

@@ -250,3 +250,40 @@ def test_v2_runtime_has_real_evaluation_intervention_but_abstains_in_production(
         assert evaluation.selected_memory_ids == ("state:portland",)
         assert evaluation.evaluation_only is True
         assert runtime.event_log.memory_state("state:portland").production_eligible is False
+
+
+def test_v4_shadow_storage_never_populates_production_index(tmp_path):
+    with ScientificMemoryRuntime(
+        tmp_path / "v4.sqlite3",
+        mode=ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER,
+    ) as runtime:
+        definition = MemoryDefinition(
+            memory_id="state:clean",
+            kind=MemoryKind.STATE_TRANSITION,
+            content="The active state says the user lives in Portland.",
+            provenance=("source-order:9",),
+            estimated_tokens=10,
+            estimated_latency_ms=0.1,
+            safety_risk=0.0,
+        )
+        runtime.register_evaluation_memory(definition)
+
+        assert runtime.retriever.store.count(namespace="scientific") == 0
+        assert runtime.recall(
+            "Where does the user live?",
+            context={},
+            moment=0.0,
+            token_budget=20,
+            latency_budget_ms=10.0,
+            max_safety_risk=0.0,
+        ).abstained
+        evaluation = runtime.evaluation_recall(
+            "Where does the user live?",
+            context={},
+            moment=0.0,
+            token_budget=20,
+            latency_budget_ms=10.0,
+            max_safety_risk=0.0,
+        )
+        assert evaluation.selected_memory_ids == ("state:clean",)
+        assert runtime.event_log.validate_chain() == []
