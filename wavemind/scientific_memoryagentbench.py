@@ -465,6 +465,19 @@ def _dataset_config(unit: MemoryAgentBenchDevelopmentUnit) -> dict[str, Any]:
     }
 
 
+def official_primary_metric(source: str) -> str:
+    """Select the pinned official primary metric from source metadata only."""
+
+    normalized = str(source).casefold()
+    if normalized == "detective_qa":
+        return "exact_match"
+    if "recsys" in normalized:
+        return "recsys_recall@10"
+    if normalized.startswith("ruler_"):
+        return "ruler_recall"
+    return "substring_exact_match"
+
+
 def install_official_compatibility_shims() -> list[dict[str, str]]:
     """Bridge dependency API removals without changing benchmark semantics."""
 
@@ -671,12 +684,9 @@ def run_scientific_candidate_development(
     compiled_units_total = 0
     production_index_records = 0
     candidate_recall_times_ms: list[float] = []
-    score_metric = (
-        "exact_match" if units[0].source == "detective_qa" else "substring_exact_match"
-    )
+    score_metric = official_primary_metric(units[0].source)
     if any(
-        ("exact_match" if unit.source == "detective_qa" else "substring_exact_match")
-        != score_metric
+        official_primary_metric(unit.source) != score_metric
         for unit in units
     ):
         raise ValueError("one bounded invocation may contain only one primary metric")

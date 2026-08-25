@@ -29,6 +29,7 @@ PROTOCOL_PATH = ROOT / "benchmarks" / "scientific_memory_protocol_v11.json"
 MODEL = "mistral:7b"
 MODEL_DIGEST = "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091"
 CANDIDATE_MODE = ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT
+ARTIFACT_SCHEMA = "wavemind.memoryagentbench_development.v11"
 
 
 def _require_clean_exact_source(expected_sha: str) -> str:
@@ -163,12 +164,12 @@ def main(argv: list[str] | None = None) -> int:
     raw_path = args.raw_output.resolve()
     artifact = attach_artifact_integrity(
         {
-            "schema": "wavemind.memoryagentbench_development.v11",
+            "schema": ARTIFACT_SCHEMA,
             "phase": "bounded-development",
             "admission_eligible": False,
             "status": "pass" if all(gate_checks.values()) else "failed_development_gate",
             "run_number": args.run_number,
-            "candidate_id": CANDIDATE_MODE.value,
+            "candidate_id": protocol["candidate"]["id"],
             "candidate_source_sha": source_sha,
             "protocol_digest": protocol["protocol_digest"],
             "model": {"id": MODEL, "digest": MODEL_DIGEST, "context_window": 32768},
