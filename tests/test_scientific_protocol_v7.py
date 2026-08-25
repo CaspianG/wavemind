@@ -54,4 +54,3 @@ def test_v7_protocol_is_frozen_and_firewalled_from_opened_validation():
     assert len(admission["memops_final_subjects"]) == 5
     assert admission["longmemeval_v2_question_count"] == 451
     assert admission["maximum_longmemeval_v2_logical_full_runs"] == 1
-
