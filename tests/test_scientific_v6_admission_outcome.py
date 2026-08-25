@@ -40,4 +40,3 @@ def test_v6_failed_admission_is_retained_and_does_not_open_more_held_out_data():
             "evidence cannot rescue v6 and would only spend independent evidence."
         ),
     }
-
