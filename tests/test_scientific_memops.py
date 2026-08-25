@@ -179,6 +179,38 @@ def test_candidate_dev_artifact_is_explicitly_non_admission(tmp_path):
     assert validate_artifact_integrity(payload) == []
 
 
+def test_target_scoped_agent_retains_plain_dialogue_for_sequence_completion(tmp_path):
+    corpus = [
+        {
+            "corpus_id": "case#session1",
+            "session_index": 1,
+            "text": "user: Please remember that the departure was June 15.",
+        },
+        {
+            "corpus_id": "case#session2",
+            "session_index": 2,
+            "text": "user: The final confirmed departure is July 1.",
+        },
+    ]
+    with ScientificMemOpsRetriever(
+        tmp_path / "target-scoped.db",
+        corpus=corpus,
+        mode=ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT,
+    ) as retriever:
+        ranked, _ = retriever.retrieve(
+            "When is the final departure?",
+            token_budget=200,
+            top_k_context=10,
+            evaluation_only=True,
+            sequence_coverage=True,
+        )
+
+    assert {item["corpus_id"] for item in ranked} == {
+        "case#session1",
+        "case#session2",
+    }
+
+
 def test_v6_filters_distractors_and_ranks_tombstone_before_memory(tmp_path):
     corpus = [
         {

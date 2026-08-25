@@ -98,7 +98,6 @@ class ScientificMemOpsRetriever:
                 ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
                 ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
                 ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
-                ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT,
             } and not operation:
                 continue
             content_slices = (

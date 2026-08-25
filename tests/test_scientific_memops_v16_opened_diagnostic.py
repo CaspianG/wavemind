@@ -29,3 +29,4 @@ def test_state_verification_v4_selects_earliest_concrete_state_gold_free():
     changed_gold = [dict(entry, gold="changed") for entry in entries]
     assert diagnostic.runner._select_entries(changed_gold)[0]["question_id"] == "q6"
     assert diagnostic.runner.TRAJECTORY_SEQUENCE_COVERAGE is True
+    assert diagnostic.runner.UPDATE_SEQUENCE_COVERAGE is True

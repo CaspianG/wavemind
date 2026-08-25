@@ -41,6 +41,7 @@ CANDIDATE_ID_OVERRIDE: str | None = None
 ARTIFACT_PHASE = "bounded-development"
 DIAGNOSTIC_ONLY = False
 TRAJECTORY_SEQUENCE_COVERAGE = False
+UPDATE_SEQUENCE_COVERAGE = False
 
 
 def _select_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -275,8 +276,11 @@ def main(argv: list[str] | None = None) -> int:
                 continue
             entry = entries[0]
             case_id = str(entry["question_id"])
-            sequence_coverage = TRAJECTORY_SEQUENCE_COVERAGE and (
-                path.stem.endswith("_trajectory_ops")
+            sequence_coverage = (
+                TRAJECTORY_SEQUENCE_COVERAGE
+                and path.stem.endswith("_trajectory_ops")
+            ) or (
+                UPDATE_SEQUENCE_COVERAGE and path.stem.endswith("_update")
             )
             db_path = Path(temp_dir) / f"{path.stem}.db"
             with ScientificMemOpsRetriever(
@@ -480,6 +484,7 @@ def main(argv: list[str] | None = None) -> int:
             "case_ids": [row["case_id"] for row in rows],
             "question_selection": QUESTION_SELECTION,
             "trajectory_sequence_coverage": TRAJECTORY_SEQUENCE_COVERAGE,
+            "update_sequence_coverage": UPDATE_SEQUENCE_COVERAGE,
             "case_count": len(rows),
             "intervention_coverage": coverage,
             "statistics": statistics,

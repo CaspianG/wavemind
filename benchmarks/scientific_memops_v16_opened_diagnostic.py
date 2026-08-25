@@ -21,16 +21,17 @@ runner = importlib.util.module_from_spec(_SPEC)
 sys.modules[_SPEC.name] = runner
 _SPEC.loader.exec_module(runner)
 
-runner.PROTOCOL_PATH = ROOT / "benchmarks" / "scientific_memory_protocol_v16.json"
+runner.PROTOCOL_PATH = ROOT / "benchmarks" / "scientific_memory_protocol_v17.json"
 runner.CANDIDATE_MODE = ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT
-runner.CANDIDATE_ID_OVERRIDE = "safe-trajectory-state-agent-v17-prototype"
-runner.ARTIFACT_SCHEMA = "wavemind.scientific_memops_v17_opened_diagnostic.v1"
+runner.CANDIDATE_ID_OVERRIDE = "complete-dialogue-state-agent-v18-prototype"
+runner.ARTIFACT_SCHEMA = "wavemind.scientific_memops_v18_opened_diagnostic.v1"
 runner.ARTIFACT_PHASE = "opened-development-diagnostic"
 runner.DIAGNOSTIC_ONLY = True
 runner.CLUSTER_GATE_KEY = "minimum_independent_clusters_per_family"
 runner.CI_GATE_KEY = "paired_cluster_bootstrap_ci_lower_strictly_greater_than"
 runner.QUESTION_SELECTION = "state-verification-v4"
 runner.TRAJECTORY_SEQUENCE_COVERAGE = True
+runner.UPDATE_SEQUENCE_COVERAGE = True
 
 
 def main(argv: list[str] | None = None) -> int:
