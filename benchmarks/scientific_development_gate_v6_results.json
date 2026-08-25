@@ -1,0 +1,246 @@
+{
+  "schema": "wavemind.scientific_development_gate.v6",
+  "status": "pass",
+  "development_gate_passed": true,
+  "advance_to_validation": true,
+  "admission_eligible": false,
+  "candidate_id": "operation-aware-tombstone-reconciler-v6",
+  "candidate_source_sha": "a8240fe6bd9a79aec3d524b1cbbbdb4b907f8d97",
+  "protocol_digest": "d140bd10012dc698656b211621be1fb851ae511294114a4b3d5cd73cbdfd2ebc",
+  "positive_uplift_lcb_families": 2,
+  "families": {
+    "memoryagentbench": {
+      "passed": true,
+      "reproducible_runs": 3,
+      "runs": [
+        {
+          "artifact": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\work\\wavemind-scientific-core\\benchmarks\\scientific_memoryagentbench_v6_accurate_run1_results.json",
+          "raw": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\work\\wavemind-scientific-core\\benchmarks\\scientific_memoryagentbench_v6_accurate_run1_raw.jsonl",
+          "case_count": 5,
+          "cluster_count": 5,
+          "intervention_coverage": 1.0,
+          "negative_effect_count": 0,
+          "paired_cluster_bootstrap": {
+            "paired": true,
+            "cluster_key": "cluster",
+            "cluster_count": 5,
+            "row_count": 5,
+            "repeats": 2000,
+            "seed": 17,
+            "confidence_level": 0.95,
+            "mean_difference": 0.6,
+            "ci_lower": 0.2,
+            "ci_upper": 1.0
+          },
+          "positive_uplift_lcb": true,
+          "source_sha": "a8240fe6bd9a79aec3d524b1cbbbdb4b907f8d97"
+        },
+        {
+          "artifact": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\work\\wavemind-scientific-core\\benchmarks\\scientific_memoryagentbench_v6_accurate_run2_results.json",
+          "raw": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\work\\wavemind-scientific-core\\benchmarks\\scientific_memoryagentbench_v6_accurate_run2_raw.jsonl",
+          "case_count": 5,
+          "cluster_count": 5,
+          "intervention_coverage": 1.0,
+          "negative_effect_count": 0,
+          "paired_cluster_bootstrap": {
+            "paired": true,
+            "cluster_key": "cluster",
+            "cluster_count": 5,
+            "row_count": 5,
+            "repeats": 2000,
+            "seed": 17,
+            "confidence_level": 0.95,
+            "mean_difference": 0.6,
+            "ci_lower": 0.2,
+            "ci_upper": 1.0
+          },
+          "positive_uplift_lcb": true,
+          "source_sha": "a8240fe6bd9a79aec3d524b1cbbbdb4b907f8d97"
+        },
+        {
+          "artifact": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\work\\wavemind-scientific-core\\benchmarks\\scientific_memoryagentbench_v6_accurate_run3_results.json",
+          "raw": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\work\\wavemind-scientific-core\\benchmarks\\scientific_memoryagentbench_v6_accurate_run3_raw.jsonl",
+          "case_count": 5,
+          "cluster_count": 5,
+          "intervention_coverage": 1.0,
+          "negative_effect_count": 0,
+          "paired_cluster_bootstrap": {
+            "paired": true,
+            "cluster_key": "cluster",
+            "cluster_count": 5,
+            "row_count": 5,
+            "repeats": 2000,
+            "seed": 17,
+            "confidence_level": 0.95,
+            "mean_difference": 0.6,
+            "ci_lower": 0.2,
+            "ci_upper": 1.0
+          },
+          "positive_uplift_lcb": true,
+          "source_sha": "a8240fe6bd9a79aec3d524b1cbbbdb4b907f8d97"
+        }
+      ]
+    },
+    "memops": {
+      "passed": true,
+      "reproducible_runs": 3,
+      "runs": [
+        {
+          "artifact": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\work\\wavemind-scientific-core\\benchmarks\\scientific_memops_v6_allops_run1_results.json",
+          "raw": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\work\\wavemind-scientific-core\\benchmarks\\scientific_memops_v6_allops_run1_raw.jsonl",
+          "case_count": 20,
+          "cluster_count": 5,
+          "intervention_coverage": 1.0,
+          "negative_effect_count": 0,
+          "paired_cluster_bootstrap": {
+            "paired": true,
+            "cluster_key": "cluster",
+            "cluster_count": 5,
+            "row_count": 20,
+            "repeats": 2000,
+            "seed": 17,
+            "confidence_level": 0.95,
+            "mean_difference": 0.38666666666666666,
+            "ci_lower": 0.16666666666666666,
+            "ci_upper": 0.6066666666666667
+          },
+          "positive_uplift_lcb": true,
+          "source_sha": "a8240fe6bd9a79aec3d524b1cbbbdb4b907f8d97"
+        },
+        {
+          "artifact": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\work\\wavemind-scientific-core\\benchmarks\\scientific_memops_v6_allops_run2_results.json",
+          "raw": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\work\\wavemind-scientific-core\\benchmarks\\scientific_memops_v6_allops_run2_raw.jsonl",
+          "case_count": 20,
+          "cluster_count": 5,
+          "intervention_coverage": 1.0,
+          "negative_effect_count": 0,
+          "paired_cluster_bootstrap": {
+            "paired": true,
+            "cluster_key": "cluster",
+            "cluster_count": 5,
+            "row_count": 20,
+            "repeats": 2000,
+            "seed": 17,
+            "confidence_level": 0.95,
+            "mean_difference": 0.38666666666666666,
+            "ci_lower": 0.16666666666666666,
+            "ci_upper": 0.6066666666666667
+          },
+          "positive_uplift_lcb": true,
+          "source_sha": "a8240fe6bd9a79aec3d524b1cbbbdb4b907f8d97"
+        },
+        {
+          "artifact": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\work\\wavemind-scientific-core\\benchmarks\\scientific_memops_v6_allops_run3_results.json",
+          "raw": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\work\\wavemind-scientific-core\\benchmarks\\scientific_memops_v6_allops_run3_raw.jsonl",
+          "case_count": 20,
+          "cluster_count": 5,
+          "intervention_coverage": 1.0,
+          "negative_effect_count": 0,
+          "paired_cluster_bootstrap": {
+            "paired": true,
+            "cluster_key": "cluster",
+            "cluster_count": 5,
+            "row_count": 20,
+            "repeats": 2000,
+            "seed": 17,
+            "confidence_level": 0.95,
+            "mean_difference": 0.38666666666666666,
+            "ci_lower": 0.16666666666666666,
+            "ci_upper": 0.6066666666666667
+          },
+          "positive_uplift_lcb": true,
+          "source_sha": "a8240fe6bd9a79aec3d524b1cbbbdb4b907f8d97"
+        }
+      ]
+    }
+  },
+  "false_verified_promotions": 0,
+  "validation_split_touched": false,
+  "final_split_touched": false,
+  "longmemeval_v2_full_run_executed": false,
+  "evidence_files": [
+    {
+      "path": "benchmarks/scientific_memory_protocol_v6.json",
+      "bytes": 7602,
+      "sha256": "70296eb7544749bd558ec72b5420f08e89d20a932d6a12a190a9eb9b253e9e9e"
+    },
+    {
+      "path": "benchmarks/scientific_memoryagentbench_v6_accurate_run1_results.json",
+      "bytes": 6112,
+      "sha256": "f4812d0c5eda81f07a0ab63743beeb1153bb7ef15bbefde4f7fa1494170882f9"
+    },
+    {
+      "path": "benchmarks/scientific_memoryagentbench_v6_accurate_run1_raw.jsonl",
+      "bytes": 22841,
+      "sha256": "b8fbb18b6f115d45e66dcaedc04a3b299f1e1f33959e025c97bd626b7cb8428d"
+    },
+    {
+      "path": "benchmarks/scientific_memoryagentbench_v6_accurate_run2_results.json",
+      "bytes": 6113,
+      "sha256": "31f67ccc6e21e54b6bc5113534abafad66d1b2e35fd94a2d4e17d32bd0cd9588"
+    },
+    {
+      "path": "benchmarks/scientific_memoryagentbench_v6_accurate_run2_raw.jsonl",
+      "bytes": 22850,
+      "sha256": "84009ded0590a754265a2234c03cfd6fb2d3541327798f3771de76b86b3f2ce8"
+    },
+    {
+      "path": "benchmarks/scientific_memoryagentbench_v6_accurate_run3_results.json",
+      "bytes": 6116,
+      "sha256": "611a74bf3cfed71512abf1eda2104a41fd6504def1283b485be32aa420371097"
+    },
+    {
+      "path": "benchmarks/scientific_memoryagentbench_v6_accurate_run3_raw.jsonl",
+      "bytes": 22851,
+      "sha256": "9bf4bd9639a4df66ae907c1d0e2b469da2bebac450ecd5cd2276e5ec4667f409"
+    },
+    {
+      "path": "benchmarks/scientific_memops_v6_allops_run1_results.json",
+      "bytes": 2510,
+      "sha256": "97b0d9fa7551b1e1cc2cb9c2811b38505ede7c85d03a99fcbd349d73baa67ddc"
+    },
+    {
+      "path": "benchmarks/scientific_memops_v6_allops_run1_raw.jsonl",
+      "bytes": 440728,
+      "sha256": "14c8e30f276e4196680e787b1e9dfcc2549100a9087766a3a5e23a16b18755a1"
+    },
+    {
+      "path": "benchmarks/scientific_memops_v6_allops_run2_results.json",
+      "bytes": 2510,
+      "sha256": "d6a4366031183a1b178b8a5550922cebbf34f8df2c18846033fc307c463dca4a"
+    },
+    {
+      "path": "benchmarks/scientific_memops_v6_allops_run2_raw.jsonl",
+      "bytes": 440205,
+      "sha256": "2f9028e368d703649da84b7e14aec68e1237ccb8027858da670ba8b4301fd78d"
+    },
+    {
+      "path": "benchmarks/scientific_memops_v6_allops_run3_results.json",
+      "bytes": 2510,
+      "sha256": "9395fb44f0a5987cf50b2efe6391311910208cfa43d86d84eed39ee5865d58d4"
+    },
+    {
+      "path": "benchmarks/scientific_memops_v6_allops_run3_raw.jsonl",
+      "bytes": 440205,
+      "sha256": "2747e1887041f3af54f958c5628e09e2da5583610e2aa0efc50ec82362587557"
+    }
+  ],
+  "retained_failed_attempts": [
+    {
+      "path": "benchmarks/SCIENTIFIC_MEMORY_V5_OUTCOME.md",
+      "bytes": 2974,
+      "sha256": "1043c817fb1526072d25431b125b81859ff97cf1fd2376ff2cf3c1266c0bf895"
+    },
+    {
+      "path": "benchmarks/scientific_memops_v6_invalid_max20_raw.jsonl",
+      "bytes": 35185,
+      "sha256": "ca4e43ee8c964e4d3288c9a5a1aac1408e0c89da2f56a92bc8a22ba69e5bd0d6"
+    }
+  ],
+  "claim_boundary": "Passing bounded development authorizes exact-SHA validation only. It is not held-out admission, SOTA, or a revolutionary claim.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "682b9aef61982ab3e727a5c308ba2d652693f863eb662133f1496b4801a1a788"
+  }
+}
