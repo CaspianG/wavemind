@@ -1,0 +1,64 @@
+{
+  "schema": "wavemind.scientific_development_outcome.v9",
+  "status": "failed_development_gate_v9",
+  "candidate_id": "evidence-grounded-answer-transducer-v9",
+  "candidate_source_sha": "84315a585f5b482ce39cb0d2bfd884ede4f28581",
+  "protocol_digest": "adced0fd1642ca4639e2902792197ebec947a562ad4746d3fe1256eff5d0e180",
+  "failed_gate": "memoryagentbench_development_positive_uplift_lcb_run_1",
+  "memoryagentbench_development": {
+    "status": "failed_development_gate",
+    "run_number": 1,
+    "planned_run_count": 3,
+    "case_count": 5,
+    "independent_cluster_count": 5,
+    "metric_family": "Long_Range_Understanding/detective_qa",
+    "primary_metric": "exact_match",
+    "intervention_coverage": 1.0,
+    "paired_effect_values": [0.0, 0.0, -1.0, 0.0, 0.0],
+    "positive_count": 0,
+    "zero_count": 4,
+    "negative_count": 1,
+    "mean_difference": -0.2,
+    "ci95_lower": -0.6,
+    "ci95_upper": 0.0,
+    "required_ci95_lower_strictly_greater_than": 0.0,
+    "production_case_count": 0,
+    "false_verified_promotions": 0,
+    "promoted_memory_ids": [],
+    "artifact": {
+      "path": "benchmarks/scientific_mab_v9_development_run1_results.json",
+      "bytes": 2629,
+      "sha256": "f2647d20ac738e27a647cf1a2f4bad742dd54cb1a6ab3bbca89cafd611429fe2"
+    },
+    "raw": {
+      "path": "benchmarks/scientific_mab_v9_development_run1_raw.jsonl",
+      "bytes": 38529,
+      "sha256": "c92f3794427c0e3d8dff8eaf1f4168353a434c42e0c433e53df691f9c2392285"
+    }
+  },
+  "unopened_evidence": {
+    "memoryagentbench_development_runs_2_and_3_executed": false,
+    "memops_development_gate_executed": false,
+    "memoryagentbench_validation_executed": false,
+    "memops_validation_executed": false,
+    "memoryagentbench_final_executed": false,
+    "memops_final_executed": false,
+    "longmemeval_v2_examples_downloaded": false,
+    "longmemeval_v2_full_run_executed": false,
+    "reason": "The first mandatory development run failed with no positive effects and one negative effect. Later gates cannot rescue v9 and remain independent."
+  },
+  "post_outcome_policy": {
+    "v9_candidate_changes_forbidden": true,
+    "opened_v9_cases_may_be_used_only_as_development_evidence": true,
+    "opened_v9_cases_may_be_reused_for_future_gate": false,
+    "thresholds_may_be_relaxed": false,
+    "next_protocol_must_be_registered_before_candidate_implementation": true,
+    "validation_and_final_splits_remain_untouched": true
+  },
+  "claim_boundary": "v9 failed its first frozen development run and exhibited one negative paired effect. No validation, admission, superiority, SOTA, production-promotion, 100%-pass, or revolutionary claim is permitted.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "726d39b08d84147016129ddfe621ca728c602ba719b96873108113d679d3dfa8"
+  }
+}
