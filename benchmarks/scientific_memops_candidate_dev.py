@@ -64,6 +64,7 @@ def main(argv: list[str] | None = None) -> int:
             ScientificCandidateMode.HIERARCHICAL_RECONCILER.value,
             ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER.value,
             ScientificCandidateMode.ATOMIC_BATCH_RECONCILER.value,
+            ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER.value,
         ),
         default=ScientificCandidateMode.CAUSAL.value,
     )

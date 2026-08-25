@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import urllib.error
 import urllib.request
@@ -24,6 +25,42 @@ from .scientific_runtime import (
 
 MEMOPS_BOUNDED_DEV_SCHEMA = "wavemind.memops_bounded_development.v1"
 MEMOPS_CANDIDATE_DEV_SCHEMA = "wavemind.memops_candidate_development.v1"
+
+_USER_MEMORY_INTENT_RE = re.compile(
+    r"(?im)^user:.*(?:"
+    r"please\s+(?:remember|store|note|track)\b|"
+    r"(?:can|could|would)\s+you\s+(?:please\s+)?"
+    r"(?:remember|keep|store|note|track)\b|"
+    r"i\s+want\s+you\s+to\s+(?:remember|keep|store|note|track)\b|"
+    r"keep\s+(?:that|this|it|the\s+\w+)\s+(?:on\s+file|on\s+record)|"
+    r"make\s+sure\s+you\s+(?:have|keep|remember)\b"
+    r")"
+)
+_ASSISTANT_MEMORY_ACK_RE = re.compile(
+    r"(?im)^assistant:.*(?:\bnoted\b|\bon\s+file\b|\bon\s+record\b|"
+    r"\bremembered\b|\bremoved\b|\bforgotten\b)"
+)
+_USER_TOMBSTONE_RE = re.compile(
+    r"(?im)^user:.*(?:"
+    r"please\s+(?:forget|remove|delete|discard)\b|"
+    r"(?:can|could|would)\s+you\s+(?:please\s+)?"
+    r"(?:forget|remove|delete|discard)\b|"
+    r"you\s+can\s+(?:forget|remove|delete|discard)\b|"
+    r"(?:do\s+not|don't)\s+(?:track|store|reference|remember)\b|"
+    r"don't\s+want.*stored"
+    r")"
+)
+
+
+def classify_memory_operation_dialogue(content: str) -> tuple[bool, bool]:
+    """Classify raw dialogue without consulting MemOps gold annotations."""
+
+    tombstone = bool(_USER_TOMBSTONE_RE.search(content))
+    operation = tombstone or bool(
+        _USER_MEMORY_INTENT_RE.search(content)
+        or _ASSISTANT_MEMORY_ACK_RE.search(content)
+    )
+    return operation, tombstone
 
 
 class ScientificMemOpsRetriever:
@@ -51,6 +88,13 @@ class ScientificMemOpsRetriever:
             if corpus_id in seen_corpus_ids:
                 raise ValueError(f"duplicate MemOps corpus_id: {corpus_id}")
             seen_corpus_ids.add(corpus_id)
+            operation, tombstone = classify_memory_operation_dialogue(content)
+            if (
+                self.runtime.mode
+                is ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER
+                and not operation
+            ):
+                continue
             memory_id = "memops-" + sha256_bytes(
                 canonical_json_bytes({"corpus_id": corpus_id, "text": content})
             )[:24]
@@ -58,15 +102,24 @@ class ScientificMemOpsRetriever:
                 memory_id=memory_id,
                 kind=MemoryKind.FACT,
                 content=content,
-                provenance=(
+                provenance=tuple(
+                    value
+                    for value in (
                     corpus_id,
                     f"source-order:{int(item.get('session_index') or 0)}",
+                    "memory-operation:1" if operation else "",
+                    "memory-tombstone:1" if tombstone else "",
+                    )
+                    if value
                 ),
                 estimated_tokens=max(1, (len(content) + 3) // 4),
                 estimated_latency_ms=0.1,
                 safety_risk=0.0,
             )
-            if self.runtime.mode is ScientificCandidateMode.ATOMIC_BATCH_RECONCILER:
+            if self.runtime.mode in {
+                ScientificCandidateMode.ATOMIC_BATCH_RECONCILER,
+                ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
+            }:
                 batch_definitions.append(definition)
             elif (
                 self.runtime.mode
@@ -83,10 +136,18 @@ class ScientificMemOpsRetriever:
             # The untouched official item is retained only for official prompt/scorer
             # compatibility. Retrieval decisions above cannot inspect its gold flags.
             self._corpus_by_memory_id[memory_id] = dict(item)
-        if self.runtime.mode is ScientificCandidateMode.ATOMIC_BATCH_RECONCILER:
+        if self.runtime.mode in {
+            ScientificCandidateMode.ATOMIC_BATCH_RECONCILER,
+            ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
+        }:
             self.runtime.register_evaluation_memories(
                 batch_definitions,
-                actor="memops-development-adapter-v5",
+                actor=(
+                    "memops-development-adapter-v6"
+                    if self.runtime.mode
+                    is ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER
+                    else "memops-development-adapter-v5"
+                ),
             )
 
     def close(self) -> None:

@@ -98,6 +98,7 @@ def compile_candidate_units(
         ScientificCandidateMode.HIERARCHICAL_RECONCILER,
         ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER,
         ScientificCandidateMode.ATOMIC_BATCH_RECONCILER,
+        ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
     }:
         return tuple(
             CandidateMemoryUnit(str(chunk), index, "official-chunk")
@@ -119,6 +120,7 @@ def compile_candidate_units(
         ScientificCandidateMode.HIERARCHICAL_RECONCILER,
         ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER,
         ScientificCandidateMode.ATOMIC_BATCH_RECONCILER,
+        ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
     }:
         markers = list(_DOCUMENT_MARKER_RE.finditer(context))
         if markers:
@@ -689,7 +691,10 @@ def run_scientific_candidate_development(
                         estimated_latency_ms=0.1,
                         safety_risk=0.0,
                     )
-                    if mode is ScientificCandidateMode.ATOMIC_BATCH_RECONCILER:
+                    if mode in {
+                        ScientificCandidateMode.ATOMIC_BATCH_RECONCILER,
+                        ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
+                    }:
                         batch_definitions.append(definition)
                     elif mode is ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER:
                         runtime.register_evaluation_memory(
@@ -701,7 +706,10 @@ def run_scientific_candidate_development(
                             definition,
                             actor="memoryagentbench-development-adapter",
                         )
-                if mode is ScientificCandidateMode.ATOMIC_BATCH_RECONCILER:
+                if mode in {
+                    ScientificCandidateMode.ATOMIC_BATCH_RECONCILER,
+                    ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
+                }:
                     runtime.register_evaluation_memories(
                         batch_definitions,
                         actor="memoryagentbench-development-adapter-v5",
@@ -1112,6 +1120,7 @@ def build_candidate_development_artifact(
                 in {
                     ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER.value,
                     ScientificCandidateMode.ATOMIC_BATCH_RECONCILER.value,
+                    ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER.value,
                 }
             ),
         },

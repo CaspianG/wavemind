@@ -12,6 +12,7 @@ from wavemind.scientific_memops import (
     ScientificMemOpsRetriever,
     build_bounded_dev_artifact,
     build_candidate_dev_artifact,
+    classify_memory_operation_dialogue,
     require_exact_upstream_sha,
 )
 from wavemind.scientific_runtime import ScientificCandidateMode
@@ -176,3 +177,56 @@ def test_candidate_dev_artifact_is_explicitly_non_admission(tmp_path):
     assert payload["verified_receipt_count"] == 2
     assert payload["false_verified_promotions"] == 0
     assert validate_artifact_integrity(payload) == []
+
+
+def test_v6_filters_distractors_and_ranks_tombstone_before_memory(tmp_path):
+    corpus = [
+        {
+            "corpus_id": "A04#session46",
+            "session_index": 46,
+            "text": "user: How can I practice mindfulness?\nassistant: Try breathing.",
+            "gold_secret": "must not make a distractor eligible",
+        },
+        {
+            "corpus_id": "A04#session4",
+            "session_index": 4,
+            "text": (
+                "user: I live in Portland on Division Street. Can you keep that "
+                "on file?\nassistant: Noted — Portland is your current city."
+            ),
+        },
+        {
+            "corpus_id": "A04#session15",
+            "session_index": 15,
+            "text": (
+                "user: Please forget the Tucson detail; do not reference it.\n"
+                "assistant: Done — I removed the previous city."
+            ),
+        },
+    ]
+
+    assert classify_memory_operation_dialogue(corpus[0]["text"]) == (False, False)
+    assert classify_memory_operation_dialogue(corpus[1]["text"]) == (True, False)
+    assert classify_memory_operation_dialogue(corpus[2]["text"]) == (True, True)
+
+    with ScientificMemOpsRetriever(
+        tmp_path / "v6.db",
+        corpus=corpus,
+        mode=ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
+    ) as retriever:
+        ranked, recall = retriever.retrieve(
+            "Where do I live now?",
+            token_budget=200,
+            top_k_context=10,
+            evaluation_only=True,
+        )
+
+        assert [item["corpus_id"] for item in ranked] == [
+            "A04#session15",
+            "A04#session4",
+        ]
+        assert recall.reason == (
+            "evaluation-only operation evidence with mandatory tombstones"
+        )
+        assert retriever.runtime.retriever.store.count(namespace="scientific") == 0
+        assert retriever.runtime.event_log.validate_chain() == []

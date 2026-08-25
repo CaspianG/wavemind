@@ -13,6 +13,8 @@ STATE_RECONCILER_ID = "proof-carrying-state-reconciler-v2"
 _TOKEN_RE = re.compile(r"[\w]+", re.UNICODE)
 _NUMBERED_FACT_RE = re.compile(r"^\s*(\d+)\.\s+(.+?)\s*$")
 _SOURCE_ORDER_RE = re.compile(r"(?:source-order|fact-order):(\d+)$")
+_MEMORY_OPERATION_MARKER = "memory-operation:1"
+_MEMORY_TOMBSTONE_MARKER = "memory-tombstone:1"
 _STOPWORDS = {
     "a",
     "an",
@@ -156,11 +158,18 @@ def active_claims(
 class ProofCarryingStateReconciler:
     """Frozen v2 selector over source-ordered, provenance-carrying memory."""
 
-    def __init__(self, *, maximum_graph_hops: int = 4, maximum_candidates: int = 20):
+    def __init__(
+        self,
+        *,
+        maximum_graph_hops: int = 4,
+        maximum_candidates: int = 20,
+        operation_aware: bool = False,
+    ):
         if maximum_graph_hops < 1 or maximum_candidates < 1:
             raise ValueError("reconciliation bounds must be positive")
         self.maximum_graph_hops = int(maximum_graph_hops)
         self.maximum_candidates = int(maximum_candidates)
+        self.operation_aware = bool(operation_aware)
 
     def select(
         self,
@@ -183,6 +192,16 @@ class ProofCarryingStateReconciler:
                 for key, value in definition.applicability.items()
             )
         }
+        if self.operation_aware and any(
+            _MEMORY_OPERATION_MARKER in definition.provenance
+            for definition in eligible.values()
+        ):
+            return self._select_operation_memories(
+                query,
+                eligible,
+                token_budget=token_budget,
+                latency_budget_ms=latency_budget_ms,
+            )
         claims = active_claims(eligible)
         if claims:
             return self._select_claim_graph(
@@ -197,6 +216,61 @@ class ProofCarryingStateReconciler:
             eligible,
             token_budget=token_budget,
             latency_budget_ms=latency_budget_ms,
+        )
+
+    def _select_operation_memories(
+        self,
+        query: str,
+        definitions: Mapping[str, MemoryDefinition],
+        *,
+        token_budget: int,
+        latency_budget_ms: float,
+    ) -> ReconciliationSelection:
+        """Put explicit deletion obligations before operation-bearing evidence."""
+
+        query_tokens = _tokens(query)
+        tokenized = {
+            memory_id: _tokens(definition.content)
+            for memory_id, definition in definitions.items()
+        }
+        document_frequency = Counter(
+            token
+            for tokens in tokenized.values()
+            for token in query_tokens.intersection(tokens)
+        )
+        total = max(1, len(definitions))
+        weights = {
+            token: math.log((total + 1) / (document_frequency[token] + 1)) + 1.0
+            for token in query_tokens
+        }
+        denominator = sum(weights.values()) or 1.0
+        ranked: list[tuple[int, float, int, str]] = []
+        scores: dict[str, float] = {}
+        for memory_id, definition in definitions.items():
+            overlap = query_tokens.intersection(tokenized[memory_id])
+            lexical = sum(weights[token] for token in overlap) / denominator
+            tombstone = _MEMORY_TOMBSTONE_MARKER in definition.provenance
+            scores[memory_id] = 1.0 if tombstone else lexical
+            ranked.append(
+                (
+                    0 if tombstone else 1,
+                    -lexical,
+                    -_source_order(definition),
+                    memory_id,
+                )
+            )
+        ranked.sort()
+        candidate_ids = [item[3] for item in ranked[: self.maximum_candidates]]
+        memory_ids = self._fit_budget(
+            candidate_ids,
+            definitions,
+            token_budget=token_budget,
+            latency_budget_ms=latency_budget_ms,
+        )
+        return ReconciliationSelection(
+            memory_ids=memory_ids,
+            relevance={memory_id: scores[memory_id] for memory_id in memory_ids},
+            reason="evaluation-only operation evidence with mandatory tombstones",
         )
 
     def _select_claim_graph(
