@@ -488,6 +488,7 @@ def build_task_aware_treatment_prompt(
     source: str,
     contents: Sequence[str],
     query: str,
+    plot_plan: str | None = None,
 ) -> str:
     """Keep target evidence distinct from few-shot demonstrations in a task query."""
 
@@ -503,13 +504,54 @@ def build_task_aware_treatment_prompt(
     )
     if not excerpts:
         return query
+    plan_section = (
+        f"\n\nChronological plot plan derived only from those excerpts:\n{plot_plan}"
+        if plot_plan
+        else ""
+    )
     return (
-        f"{excerpts}\n\n{query}\n\n"
+        f"{excerpts}{plan_section}\n\n{query}\n\n"
         "Important: the target-book excerpts above are the only evidence about "
         "the book to summarize. Any named books, plots, or characters inside "
         "the task examples are unrelated formatting demonstrations. Summarize "
         "the target book represented by the chronological excerpts, not a "
-        "demonstration book."
+        "demonstration book. Follow the requested 1000-to-1200-word length, "
+        "cover the full plot in chronological order, and do not stop early."
+    )
+
+
+def build_task_aware_plot_plan_prompt(contents: Sequence[str]) -> str:
+    """Request a gold-free intermediate representation for global summarization."""
+
+    excerpts = "\n\n".join(
+        f"Target-book excerpt {index + 1} (chronological):\n{content}"
+        for index, content in enumerate(contents)
+    )
+    return (
+        f"{excerpts}\n\n"
+        "Using only the target-book excerpts, build a chronological plot plan. "
+        "List the principal characters, their relationships, and the concrete "
+        "events from opening through resolution. Preserve names and causal order. "
+        "Do not mention themes, literary background, or any unrelated book. "
+        "Return detailed planning notes, not a polished summary."
+    )
+
+
+def build_task_aware_expansion_prompt(
+    *,
+    treatment_prompt: str,
+    draft: str,
+) -> str:
+    """Request one bounded rewrite when a draft violates the explicit length task."""
+
+    return (
+        f"{treatment_prompt}\n\n"
+        "The draft below is materially shorter than the requested 1000 to 1200 "
+        "words. Rewrite it as a detailed long-form plot summary. Expand concrete "
+        "events and character actions from the excerpts and plot plan; do not add "
+        "analysis, themes, background, or facts unsupported by the target evidence. "
+        "Use the available output allowance and do not stop early.\n\n"
+        f"Short draft:\n{draft}"
     )
 
 
@@ -890,17 +932,78 @@ def run_scientific_candidate_development(
                     )
                     generated: dict[str, dict[str, Any]] = {}
                     for arm in answer_order:
-                        generated[arm] = _native_answer(
-                            client=client,
-                            model=model,
-                            system_message=system_message,
-                            user_message=(
-                                treatment_prompt
-                                if arm == "treatment"
-                                else runtime_case.query
-                            ),
-                            max_tokens=int(dataset_config["generation_max_length"]),
+                        task_aware_summarization = (
+                            arm == "treatment"
+                            and mode
+                            is ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT
+                            and unit.source == "infbench_sum_eng_shots2"
                         )
+                        if task_aware_summarization:
+                            plan_result = _native_answer(
+                                client=client,
+                                model=model,
+                                system_message=system_message,
+                                user_message=build_task_aware_plot_plan_prompt(
+                                    treatment_recall.contents
+                                ),
+                                max_tokens=min(
+                                    800,
+                                    int(dataset_config["generation_max_length"]),
+                                ),
+                            )
+                            treatment_prompt = build_task_aware_treatment_prompt(
+                                source=unit.source,
+                                contents=treatment_recall.contents,
+                                query=runtime_case.query,
+                                plot_plan=str(plan_result["output"]),
+                            )
+                            draft_result = _native_answer(
+                                client=client,
+                                model=model,
+                                system_message=system_message,
+                                user_message=treatment_prompt,
+                                max_tokens=int(dataset_config["generation_max_length"]),
+                            )
+                            draft_word_count = len(
+                                re.findall(r"\b\w+\b", str(draft_result["output"]))
+                            )
+                            if draft_word_count < 700:
+                                final_result = _native_answer(
+                                    client=client,
+                                    model=model,
+                                    system_message=system_message,
+                                    user_message=build_task_aware_expansion_prompt(
+                                        treatment_prompt=treatment_prompt,
+                                        draft=str(draft_result["output"]),
+                                    ),
+                                    max_tokens=int(
+                                        dataset_config["generation_max_length"]
+                                    ),
+                                )
+                                final_result["initial_draft"] = draft_result
+                                final_result["length_rewrite_applied"] = True
+                            else:
+                                final_result = draft_result
+                                final_result["length_rewrite_applied"] = False
+                            final_result["plot_plan"] = plan_result
+                            final_result["initial_draft_word_count"] = (
+                                draft_word_count
+                            )
+                            generated[arm] = final_result
+                        else:
+                            generated[arm] = _native_answer(
+                                client=client,
+                                model=model,
+                                system_message=system_message,
+                                user_message=(
+                                    treatment_prompt
+                                    if arm == "treatment"
+                                    else runtime_case.query
+                                ),
+                                max_tokens=int(
+                                    dataset_config["generation_max_length"]
+                                ),
+                            )
                     if mode in {
                         ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
                         ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,

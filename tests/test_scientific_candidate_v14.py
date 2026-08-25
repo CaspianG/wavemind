@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from wavemind.scientific_memory import MemoryDefinition, MemoryKind
 from wavemind.scientific_memoryagentbench import (
+    build_task_aware_expansion_prompt,
+    build_task_aware_plot_plan_prompt,
     build_task_aware_treatment_prompt,
     compile_candidate_units,
 )
@@ -73,6 +75,28 @@ def test_v14_summarization_prompt_separates_target_from_demonstration_books():
     assert "Aeneas reaches Italy." in prompt
     assert "unrelated formatting demonstrations" in prompt
     assert prompt.rfind("not a demonstration book") > prompt.rfind("Robinson")
+
+
+def test_v14_plot_plan_and_length_rewrite_are_target_only_contracts():
+    plan_prompt = build_task_aware_plot_plan_prompt(
+        ("Aeneas leaves Troy.", "Aeneas reaches Italy.")
+    )
+    treatment_prompt = build_task_aware_treatment_prompt(
+        source="infbench_sum_eng_shots2",
+        contents=("Aeneas leaves Troy.", "Aeneas reaches Italy."),
+        query="Example: Robinson is shipwrecked. Now summarize the book.",
+        plot_plan="1. Aeneas leaves Troy. 2. Aeneas reaches Italy.",
+    )
+    expansion_prompt = build_task_aware_expansion_prompt(
+        treatment_prompt=treatment_prompt,
+        draft="Aeneas travels from Troy to Italy.",
+    )
+
+    assert "detailed planning notes" in plan_prompt
+    assert "Chronological plot plan" in treatment_prompt
+    assert "1000-to-1200-word length" in treatment_prompt
+    assert "materially shorter" in expansion_prompt
+    assert "facts unsupported by the target evidence" in expansion_prompt
 
 
 def test_v14_retains_the_blind_v11_structural_slicing_contract():
