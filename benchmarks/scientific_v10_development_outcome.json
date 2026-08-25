@@ -1,0 +1,203 @@
+{
+  "schema": "wavemind.scientific_v10_development_outcome.v1",
+  "status": "passed_development_gate_v10",
+  "candidate_source_sha": "47b68e366aab9ce07b659c61a51c81d634b3fff2",
+  "protocol_digest": "d522705fdc9d49ed97874b6ce09c6372d7189673945b894856805be625d21b50",
+  "required_independent_families": 2,
+  "passing_independent_families": 2,
+  "required_reproducible_runs_per_family": 3,
+  "all_required_runs_pass": true,
+  "families": {
+    "memops_adjacent_operation": {
+      "required_runs": 3,
+      "passing_runs": 3,
+      "all_runs_pass": true,
+      "runs": [
+        {
+          "run_number": 1,
+          "artifact": {
+            "path": "benchmarks/scientific_memops_v10_adjacent_run1_results.json",
+            "bytes": 2870,
+            "sha256": "5c32f8ad1063857f0e0c13c2ff310b66c30ef7bfd2fd979cb8a4c48d22142bf1"
+          },
+          "raw": {
+            "path": "benchmarks/scientific_memops_v10_adjacent_run1/raw_pairs.jsonl",
+            "bytes": 513474,
+            "sha256": "e6715f40b7f85e8eb31e23d22ec69baa131d97a0b35a47ef532fa09750d84544"
+          },
+          "case_count": 22,
+          "intervention_coverage": 0.8636363636363636,
+          "statistics": {
+            "paired": true,
+            "cluster_key": "subject_id",
+            "cluster_count": 5,
+            "row_count": 22,
+            "repeats": 2000,
+            "seed": 17,
+            "confidence_level": 0.95,
+            "mean_difference": 0.27666666666666667,
+            "ci_lower": 0.13,
+            "ci_upper": 0.3866666666666666
+          },
+          "gate_pass": true
+        },
+        {
+          "run_number": 2,
+          "artifact": {
+            "path": "benchmarks/scientific_memops_v10_adjacent_run2_results.json",
+            "bytes": 2870,
+            "sha256": "6ef385b0605cbdc3dde9f805970aed00948dfb97bade80c6395095d65800f4d6"
+          },
+          "raw": {
+            "path": "benchmarks/scientific_memops_v10_adjacent_run2/raw_pairs.jsonl",
+            "bytes": 513623,
+            "sha256": "bb178c03c0eb6d6cdcaa13a6d75a25613ae264d8435cbf092829422572ed7b1c"
+          },
+          "case_count": 22,
+          "intervention_coverage": 0.8636363636363636,
+          "statistics": {
+            "paired": true,
+            "cluster_key": "subject_id",
+            "cluster_count": 5,
+            "row_count": 22,
+            "repeats": 2000,
+            "seed": 17,
+            "confidence_level": 0.95,
+            "mean_difference": 0.27666666666666667,
+            "ci_lower": 0.13,
+            "ci_upper": 0.3866666666666666
+          },
+          "gate_pass": true
+        },
+        {
+          "run_number": 3,
+          "artifact": {
+            "path": "benchmarks/scientific_memops_v10_adjacent_run3_results.json",
+            "bytes": 2870,
+            "sha256": "9fbf0631a3e13d911c67f2b614f09fdab9f70f9aecbce72f2a18c69524bfc50d"
+          },
+          "raw": {
+            "path": "benchmarks/scientific_memops_v10_adjacent_run3/raw_pairs.jsonl",
+            "bytes": 513623,
+            "sha256": "4cb9aa09d6361ad99929d4df98463ca1b684bafd8c77e5fed1fa9b198cef6ab6"
+          },
+          "case_count": 22,
+          "intervention_coverage": 0.8636363636363636,
+          "statistics": {
+            "paired": true,
+            "cluster_key": "subject_id",
+            "cluster_count": 5,
+            "row_count": 22,
+            "repeats": 2000,
+            "seed": 17,
+            "confidence_level": 0.95,
+            "mean_difference": 0.27666666666666667,
+            "ci_lower": 0.13,
+            "ci_upper": 0.3866666666666666
+          },
+          "gate_pass": true
+        }
+      ]
+    },
+    "memops_longitudinal_operation": {
+      "required_runs": 3,
+      "passing_runs": 3,
+      "all_runs_pass": true,
+      "runs": [
+        {
+          "run_number": 1,
+          "artifact": {
+            "path": "benchmarks/scientific_memops_v10_longitudinal_run1_results.json",
+            "bytes": 2755,
+            "sha256": "67c1d3fac1204e43f473b22b6db37c0354eba6028ad3f537962d1c6f89aaf7d9"
+          },
+          "raw": {
+            "path": "benchmarks/scientific_memops_v10_longitudinal_run1/raw_pairs.jsonl",
+            "bytes": 397619,
+            "sha256": "9d524355128df196a5a714c802d6470e4778d958da0b1d0e726a2b9fb54dea8c"
+          },
+          "case_count": 17,
+          "intervention_coverage": 0.9411764705882353,
+          "statistics": {
+            "paired": true,
+            "cluster_key": "subject_id",
+            "cluster_count": 5,
+            "row_count": 17,
+            "repeats": 2000,
+            "seed": 17,
+            "confidence_level": 0.95,
+            "mean_difference": 0.3633333333333333,
+            "ci_lower": 0.15,
+            "ci_upper": 0.5499999999999999
+          },
+          "gate_pass": true
+        },
+        {
+          "run_number": 2,
+          "artifact": {
+            "path": "benchmarks/scientific_memops_v10_longitudinal_run2_results.json",
+            "bytes": 2755,
+            "sha256": "6cb36a2811f807e11f69c6678afd75f1d97a08ae3c15ece5f21b749abdade4c1"
+          },
+          "raw": {
+            "path": "benchmarks/scientific_memops_v10_longitudinal_run2/raw_pairs.jsonl",
+            "bytes": 397619,
+            "sha256": "c588207d88668307b62876f65ae2300061d09a55f16ba6824b60035d105b5203"
+          },
+          "case_count": 17,
+          "intervention_coverage": 0.9411764705882353,
+          "statistics": {
+            "paired": true,
+            "cluster_key": "subject_id",
+            "cluster_count": 5,
+            "row_count": 17,
+            "repeats": 2000,
+            "seed": 17,
+            "confidence_level": 0.95,
+            "mean_difference": 0.3633333333333333,
+            "ci_lower": 0.15,
+            "ci_upper": 0.5499999999999999
+          },
+          "gate_pass": true
+        },
+        {
+          "run_number": 3,
+          "artifact": {
+            "path": "benchmarks/scientific_memops_v10_longitudinal_run3_results.json",
+            "bytes": 2755,
+            "sha256": "2c7369048859a1d99f21561dac7b486ce6f6c04c3dcc8d9ee50f9691ea256862"
+          },
+          "raw": {
+            "path": "benchmarks/scientific_memops_v10_longitudinal_run3/raw_pairs.jsonl",
+            "bytes": 397619,
+            "sha256": "e4ec0c7cda9c61f949c839a84324f7e0853c7d3e1de82c459aa5eb50f5f6d934"
+          },
+          "case_count": 17,
+          "intervention_coverage": 0.9411764705882353,
+          "statistics": {
+            "paired": true,
+            "cluster_key": "subject_id",
+            "cluster_count": 5,
+            "row_count": 17,
+            "repeats": 2000,
+            "seed": 17,
+            "confidence_level": 0.95,
+            "mean_difference": 0.3633333333333333,
+            "ci_lower": 0.15,
+            "ci_upper": 0.5499999999999999
+          },
+          "gate_pass": true
+        }
+      ]
+    }
+  },
+  "final_split_touched": false,
+  "admission_arms_executed": [],
+  "admission_permitted_next": true,
+  "claim_boundary": "Development-only evidence passed. No held-out, SOTA, universal, production, 100%-pass, or revolutionary claim is permitted until the exact candidate SHA passes every frozen admission arm.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "1c3e4fc507f096eeabd7c94b574542663b63df535b40819d92dc70bbdd7db17f"
+  }
+}
