@@ -1,0 +1,91 @@
+{
+  "schema": "wavemind.memoryagentbench_development.v12",
+  "phase": "bounded-development",
+  "admission_eligible": false,
+  "status": "failed_development_gate",
+  "run_number": 1,
+  "candidate_id": "source-aware-evidence-contracted-query-agent-v12",
+  "candidate_source_sha": "7e502192ee26e0ee994372f9168ac1fa00bb9a1a",
+  "protocol_digest": "09c02d0b7900a001fadb0337fcf57b9b9468624b115449375d49664def8b49d1",
+  "model": {
+    "id": "mistral:7b",
+    "digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768
+  },
+  "source_split": "development",
+  "metric_family": "memoryagentbench_cross_family",
+  "unit_ids": [
+    "Accurate_Retrieval:0021:6659dbc1344a6c1f",
+    "Long_Range_Understanding:0020:c13d4b94bc727d14",
+    "Long_Range_Understanding:0021:24d1bd748741e969",
+    "Long_Range_Understanding:0023:7bea24d048e657d8",
+    "Long_Range_Understanding:0026:25db4d9581c8c74a",
+    "Long_Range_Understanding:0027:5e7d5ec274620da5",
+    "Long_Range_Understanding:0029:1ae329374a16eea2",
+    "Test_Time_Learning:0001:a4c204d5682e17c8",
+    "Test_Time_Learning:0004:39146950180e7cff",
+    "Long_Range_Understanding:0030:a27672d659d4031b"
+  ],
+  "context_sha256": [
+    "1ae329374a16eea23a72cacf14d7a18f6434652a3c9211808d0cd635e7a97f81",
+    "24d1bd748741e96943a569a31fd38f499b25f07392cbdf5cca8229509a49ee13",
+    "25db4d9581c8c74ab5a780262c3ca188a8e4b584cfd7c0e56f9ec185d4827a51",
+    "39146950180e7cff4cfd8a259e1b74c2c850440b5fff3116fcb935be11c7dd48",
+    "5e7d5ec274620da5941eead528443c13387396d05af34343bb01fe8a6bfe8f4c",
+    "6659dbc1344a6c1f31d4d20e6ad08fb37d96f00423b3e80a7601672936e9b295",
+    "7bea24d048e657d8bd6a553f8de6f10aec1994e8365dc516a5094e2a4095e047",
+    "a27672d659d4031b80e72dd7c5f6ddbaa7185b3451e1c6e4363987923652043c",
+    "a4c204d5682e17c80b2c2744b7c15c2b59b7ba5d4f059e9cac8ac487c5af1cf1",
+    "c13d4b94bc727d142a319060179115918ed534beb20782db3106bd584b8eeb17"
+  ],
+  "case_count": 10,
+  "paired_effect_values": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0,
+    1.0,
+    0.0
+  ],
+  "statistics": {
+    "paired": true,
+    "cluster_key": "cluster",
+    "cluster_count": 10,
+    "row_count": 10,
+    "repeats": 2000,
+    "seed": 17,
+    "confidence_level": 0.95,
+    "mean_difference": 0.2,
+    "ci_lower": 0.0,
+    "ci_upper": 0.5
+  },
+  "intervention_coverage": 1.0,
+  "production_case_count": 0,
+  "promoted_memory_ids": [],
+  "false_verified_promotions": 0,
+  "gate_checks": {
+    "minimum_independent_clusters": true,
+    "paired_cluster_bootstrap_ci_lower_strictly_positive": false,
+    "mean_non_negative": true,
+    "minimum_intervention_coverage": true,
+    "no_production_cases": true,
+    "no_promoted_memories": true
+  },
+  "gate_pass": false,
+  "raw_output": {
+    "path": "C:/Users/LEO/Documents/Codex/2026-08-16/ct/work/wavemind-scientific-core/benchmarks/scientific_mab_v12_run1_raw.jsonl",
+    "bytes": 288999,
+    "sha256": "73f1fbb7157f2d79f0de2550f47ba7cd9e3ca8529b11a2d29e976f6e9ccaca3c"
+  },
+  "final_split_touched": false,
+  "claim_boundary": "Fresh development evidence only; not admission.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "8b3edebdc728b7d04515928c0e622635baf97d0c4e6ffe7a9165f24f13ef7965"
+  }
+}
