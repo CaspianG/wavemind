@@ -12,7 +12,7 @@ def test_v16_opened_diagnostic_is_never_an_official_gate():
     )
 
 
-def test_causal_discrimination_selection_is_deterministic_and_gold_free():
+def test_causal_application_selection_is_deterministic_and_gold_free():
     entries = [
         {"question_id": "q2", "evaluation_type": "OperationTrace", "gold": 1},
         {"question_id": "q10", "evaluation_type": "StateTrajectory", "gold": 2},
@@ -21,7 +21,8 @@ def test_causal_discrimination_selection_is_deterministic_and_gold_free():
             "evaluation_type": "CandidateDisambiguation",
             "gold": 3,
         },
+        {"question_id": "q10", "evaluation_type": "OperationApplication", "gold": 4},
     ]
-    assert diagnostic.runner._select_entries(entries) == [entries[2]]
+    assert diagnostic.runner._select_entries(entries) == [entries[3]]
     changed_gold = [dict(entry, gold="changed") for entry in entries]
-    assert diagnostic.runner._select_entries(changed_gold)[0]["question_id"] == "q8"
+    assert diagnostic.runner._select_entries(changed_gold)[0]["question_id"] == "q10"

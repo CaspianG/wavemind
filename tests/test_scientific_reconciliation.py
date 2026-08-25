@@ -82,6 +82,51 @@ def test_reconciler_lexical_retrieval_prefers_rare_query_term():
     assert selection.memory_ids == ("answer",)
 
 
+def test_target_scoped_operation_mode_does_not_let_unrelated_tombstone_dominate():
+    definitions = {
+        "relevant": MemoryDefinition(
+            memory_id="relevant",
+            kind=MemoryKind.FACT,
+            content="Kevin currently follows a vegan diet for the birthday dinner.",
+            provenance=("source-order:10", "memory-operation:1"),
+            estimated_tokens=10,
+            estimated_latency_ms=0.1,
+            safety_risk=0.0,
+        ),
+        "unrelated-tombstone": MemoryDefinition(
+            memory_id="unrelated-tombstone",
+            kind=MemoryKind.FACT,
+            content="Please forget the old Tecumseh history note.",
+            provenance=(
+                "source-order:20",
+                "memory-operation:1",
+                "memory-tombstone:1",
+            ),
+            estimated_tokens=10,
+            estimated_latency_ms=0.1,
+            safety_risk=0.0,
+        ),
+    }
+    kwargs = {
+        "token_budget": 10,
+        "latency_budget_ms": 10.0,
+        "max_safety_risk": 0.0,
+        "context": {},
+        "moment": 0.0,
+    }
+    legacy = ProofCarryingStateReconciler(operation_aware=True).select(
+        "What is Kevin's current diet?", definitions, **kwargs
+    )
+    targeted = ProofCarryingStateReconciler(
+        operation_aware=True,
+        query_phrase_aware=True,
+        target_scoped_tombstones=True,
+    ).select("What is Kevin's current diet?", definitions, **kwargs)
+
+    assert legacy.memory_ids == ("unrelated-tombstone",)
+    assert targeted.memory_ids == ("relevant",)
+
+
 def test_reconciler_recency_breaks_equal_state_relevance_toward_clean_checkpoint():
     definitions = {
         "stale": _memory(

@@ -65,6 +65,24 @@ def _select_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 ),
             )
         ]
+    if QUESTION_SELECTION == "causal-application-v2":
+        priority = {
+            "OperationApplication": 0,
+            "StateTrajectory": 1,
+            "StateTransition": 2,
+            "TargetBinding": 3,
+            "CandidateDisambiguation": 4,
+            "OperationTrace": 5,
+        }
+        return [
+            min(
+                entries,
+                key=lambda entry: (
+                    priority.get(str(entry.get("evaluation_type")), 99),
+                    str(entry.get("question_id", "")),
+                ),
+            )
+        ]
     raise RuntimeError(f"unknown MemOps question selection: {QUESTION_SELECTION}")
 
 

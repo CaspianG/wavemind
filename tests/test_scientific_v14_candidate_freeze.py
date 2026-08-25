@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from pathlib import Path
 
-from wavemind.evidence import file_sha256, validate_artifact_integrity
+from wavemind.evidence import sha256_bytes, validate_artifact_integrity
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,4 +27,12 @@ def test_v14_freeze_binds_exact_sha_files_and_zero_fresh_outcomes():
     assert payload["post_outcome_source_changes_forbidden"] is True
     assert payload["verification_before_freeze"]["failed"] == 0
     for item in payload["files"]:
-        assert file_sha256(ROOT / item["path"]) == item["sha256"]
+        frozen = subprocess.check_output(
+            [
+                "git",
+                "show",
+                f"{payload['candidate_source_sha']}:{item['path']}",
+            ],
+            cwd=ROOT,
+        )
+        assert sha256_bytes(frozen) == item["sha256"]

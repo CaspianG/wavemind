@@ -41,6 +41,7 @@ class ScientificCandidateMode(str, Enum):
     OPERATION_TRACE_STRICT_OUTPUT_AGENT = "operation-trace-strict-output-agent-v10"
     EVIDENCE_CONTRACTED_QUERY_AGENT = "evidence-contracted-query-agent-v11"
     TASK_AWARE_SEQUENCE_COVERAGE_AGENT = "task-aware-sequence-coverage-agent-v14"
+    TARGET_SCOPED_OPERATION_AGENT = "target-scoped-operation-agent-v16"
 
 
 @dataclass(frozen=True)
@@ -105,6 +106,7 @@ class ScientificMemoryRuntime:
                     ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
                     ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
                     ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
+                    ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT,
                 }
             ),
             source_recency_weight=(
@@ -117,6 +119,7 @@ class ScientificMemoryRuntime:
                     ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
                     ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
                     ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
+                    ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT,
                 }
                 else 0.25
             ),
@@ -128,7 +131,11 @@ class ScientificMemoryRuntime:
                     ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
                     ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
                     ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
+                    ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT,
                 }
+            ),
+            target_scoped_tombstones=(
+                self.mode is ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT
             ),
         )
         self.retriever = WaveMind(
@@ -203,6 +210,7 @@ class ScientificMemoryRuntime:
             ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
             ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
             ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
+            ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT,
         }:
             raise ValueError("atomic evaluation storage is frozen to v5/v6 candidates")
         events = self.event_log.register_memories(definitions, actor=actor)
@@ -444,6 +452,7 @@ class ScientificMemoryRuntime:
             ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
             ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
             ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
+            ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT,
         }:
             return self.shadow_recall(
                 query,
