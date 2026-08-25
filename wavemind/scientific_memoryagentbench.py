@@ -20,6 +20,7 @@ from .evidence import (
     sha256_bytes,
     validate_artifact_integrity,
 )
+from .scientific_answer_transducer import canonicalize_query_constrained_answer
 from .scientific_memops import NativeOllamaCaller
 from .scientific_memory import (
     CanaryArm,
@@ -95,6 +96,7 @@ def compile_candidate_units(
     query_sliced = selected_mode in {
         ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
         ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
+        ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
     }
 
     def finalize(
@@ -122,6 +124,7 @@ def compile_candidate_units(
         ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
         ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
         ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
+        ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
     }:
         return tuple(
             CandidateMemoryUnit(str(chunk), index, "official-chunk")
@@ -146,6 +149,7 @@ def compile_candidate_units(
         ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
         ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
         ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
+        ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
     }:
         markers = list(_DOCUMENT_MARKER_RE.finditer(context))
         if markers:
@@ -435,6 +439,10 @@ def _agent_config(*, model: str, output_dir: Path) -> dict[str, Any]:
 
 
 def _dataset_config(unit: MemoryAgentBenchDevelopmentUnit) -> dict[str, Any]:
+    generation_max_length = {
+        "detective_qa": 2000,
+        "infbench_sum_eng_shots2": 1200,
+    }.get(unit.source, 256)
     return {
         "dataset": unit.family,
         "chunk_size": 4096,
@@ -442,7 +450,7 @@ def _dataset_config(unit: MemoryAgentBenchDevelopmentUnit) -> dict[str, Any]:
         "seed": 42,
         "context_max_length": 10_000_000,
         "sub_dataset": unit.source,
-        "generation_max_length": 256,
+        "generation_max_length": generation_max_length,
         "max_test_samples": 1,
     }
 
@@ -653,7 +661,15 @@ def run_scientific_candidate_development(
     compiled_units_total = 0
     production_index_records = 0
     candidate_recall_times_ms: list[float] = []
-    score_metric = "substring_exact_match"
+    score_metric = (
+        "exact_match" if units[0].source == "detective_qa" else "substring_exact_match"
+    )
+    if any(
+        ("exact_match" if unit.source == "detective_qa" else "substring_exact_match")
+        != score_metric
+        for unit in units
+    ):
+        raise ValueError("one bounded invocation may contain only one primary metric")
     scratch = Path(scratch_dir).resolve()
     scratch.mkdir(parents=True, exist_ok=True)
     with _official_modules(official_repository) as (
@@ -721,6 +737,7 @@ def run_scientific_candidate_development(
                         ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
                         ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
                         ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
+                        ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
                     }:
                         batch_definitions.append(definition)
                     elif mode is ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER:
@@ -738,6 +755,7 @@ def run_scientific_candidate_development(
                     ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
                     ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
                     ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
+                    ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
                 }:
                     runtime.register_evaluation_memories(
                         batch_definitions,
@@ -811,6 +829,25 @@ def run_scientific_candidate_development(
                             ),
                             max_tokens=int(dataset_config["generation_max_length"]),
                         )
+                    if (
+                        mode
+                        is ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER
+                    ):
+                        raw_treatment_output = str(generated["treatment"]["output"])
+                        transduction = canonicalize_query_constrained_answer(
+                            runtime_case.query,
+                            raw_treatment_output,
+                        )
+                        generated["treatment"]["raw_pretransduction_output"] = (
+                            raw_treatment_output
+                        )
+                        generated["treatment"]["answer_transduction"] = {
+                            "applied": transduction.applied,
+                            "similarity": transduction.similarity,
+                            "winner_margin": transduction.winner_margin,
+                            "candidate_count": transduction.candidate_count,
+                        }
+                        generated["treatment"]["output"] = transduction.output
                     treatment_result, treatment_metrics = _official_score(
                         output=generated["treatment"],
                         runtime_case=runtime_case,
@@ -1152,6 +1189,7 @@ def build_candidate_development_artifact(
                     ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER.value,
                     ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER.value,
                     ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER.value,
+                    ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER.value,
                 }
             ),
         },

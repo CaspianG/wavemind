@@ -67,6 +67,7 @@ def main(argv: list[str] | None = None) -> int:
             ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER.value,
             ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER.value,
             ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER.value,
+            ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER.value,
         ),
         default=ScientificCandidateMode.CAUSAL.value,
     )

@@ -50,10 +50,10 @@ def _literal_candidates(query: str):
                     break
 
 
-def extract_query_candidate_phrases(query: str) -> tuple[str, ...]:
-    """Extract only bounded string-option literals already visible in a query."""
+def extract_query_candidate_options(query: str) -> tuple[str, ...]:
+    """Extract bounded raw string options already visible in a query."""
 
-    phrases: list[str] = []
+    options: list[str] = []
     seen: set[str] = set()
     for candidate_index, candidate in enumerate(_literal_candidates(str(query))):
         if candidate_index >= MAX_QUERY_LITERAL_CANDIDATES:
@@ -69,14 +69,23 @@ def extract_query_candidate_phrases(query: str) -> tuple[str, ...]:
         normalized = [normalize_query_phrase(item) for item in parsed]
         if any(len(item.split()) < 2 for item in normalized):
             continue
-        for item in normalized:
-            if item and item not in seen:
-                seen.add(item)
-                phrases.append(item)
-                if len(phrases) >= MAX_DISTINCT_PHRASES:
+        for raw_item, normalized_item in zip(parsed, normalized):
+            if normalized_item and normalized_item not in seen:
+                seen.add(normalized_item)
+                options.append(raw_item.strip())
+                if len(options) >= MAX_DISTINCT_PHRASES:
                     break
-        if len(phrases) >= MAX_DISTINCT_PHRASES:
+        if len(options) >= MAX_DISTINCT_PHRASES:
             break
-    if len(phrases) < MIN_DISTINCT_PHRASES:
+    if len(options) < MIN_DISTINCT_PHRASES:
         return ()
-    return tuple(phrases)
+    return tuple(options)
+
+
+def extract_query_candidate_phrases(query: str) -> tuple[str, ...]:
+    """Return normalized forms of accepted query-provided string options."""
+
+    return tuple(
+        normalize_query_phrase(option)
+        for option in extract_query_candidate_options(query)
+    )

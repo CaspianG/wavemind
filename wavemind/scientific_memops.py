@@ -94,6 +94,7 @@ class ScientificMemOpsRetriever:
                 ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
                 ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
                 ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
+                ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
             } and not operation:
                 continue
             content_slices = (
@@ -102,6 +103,7 @@ class ScientificMemOpsRetriever:
                 in {
                     ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
                     ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
+                    ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
                 }
                 else ((content, 0),)
             )
@@ -142,6 +144,7 @@ class ScientificMemOpsRetriever:
                     ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
                     ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
                     ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
+                    ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
                 }:
                     batch_definitions.append(definition)
                 elif (
@@ -167,13 +170,17 @@ class ScientificMemOpsRetriever:
             ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
             ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
             ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
+            ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
         }:
             self.runtime.register_evaluation_memories(
                 batch_definitions,
                 actor=(
                     "memops-development-adapter-v8"
                     if self.runtime.mode
-                    is ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER
+                    in {
+                        ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
+                        ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
+                    }
                     else (
                         "memops-development-adapter-v7"
                         if self.runtime.mode

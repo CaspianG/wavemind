@@ -37,6 +37,7 @@ class ScientificCandidateMode(str, Enum):
     PHRASE_ALIGNED_QUERY_SLICED_RECONCILER = (
         "phrase-aligned-query-sliced-reconciler-v8"
     )
+    EVIDENCE_GROUNDED_ANSWER_TRANSDUCER = "evidence-grounded-answer-transducer-v9"
 
 
 @dataclass(frozen=True)
@@ -92,6 +93,7 @@ class ScientificMemoryRuntime:
                     ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
                     ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
                     ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
+                    ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
                 }
             ),
             source_recency_weight=(
@@ -100,12 +102,16 @@ class ScientificMemoryRuntime:
                 in {
                     ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
                     ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
+                    ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
                 }
                 else 0.25
             ),
             query_phrase_aware=(
                 self.mode
-                is ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER
+                in {
+                    ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
+                    ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
+                }
             ),
         )
         self.retriever = WaveMind(
@@ -176,6 +182,7 @@ class ScientificMemoryRuntime:
             ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
             ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
             ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
+            ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
         }:
             raise ValueError("atomic evaluation storage is frozen to v5/v6 candidates")
         events = self.event_log.register_memories(definitions, actor=actor)
@@ -413,6 +420,7 @@ class ScientificMemoryRuntime:
             ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
             ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
             ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
+            ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
         }:
             return self.shadow_recall(
                 query,
