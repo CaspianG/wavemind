@@ -211,6 +211,36 @@ def test_target_scoped_agent_retains_plain_dialogue_for_sequence_completion(tmp_
     }
 
 
+def test_target_scoped_agent_can_limit_sequence_coverage_to_operations(tmp_path):
+    corpus = [
+        {
+            "corpus_id": "case#session1",
+            "session_index": 1,
+            "text": "user: Please remember that the departure was June 15.",
+        },
+        {
+            "corpus_id": "case#session2",
+            "session_index": 2,
+            "text": "user: The final confirmed departure is July 1.",
+        },
+    ]
+    with ScientificMemOpsRetriever(
+        tmp_path / "operation-sequence.db",
+        corpus=corpus,
+        mode=ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT,
+    ) as retriever:
+        ranked, _ = retriever.retrieve(
+            "When is the final departure?",
+            token_budget=200,
+            top_k_context=10,
+            evaluation_only=True,
+            sequence_coverage=True,
+            sequence_operation_only=True,
+        )
+
+    assert [item["corpus_id"] for item in ranked] == ["case#session1"]
+
+
 def test_v6_filters_distractors_and_ranks_tombstone_before_memory(tmp_path):
     corpus = [
         {

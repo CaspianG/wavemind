@@ -498,6 +498,7 @@ class ScientificMemoryRuntime:
         token_budget: int,
         latency_budget_ms: float,
         max_safety_risk: float,
+        operation_only: bool = False,
     ) -> ScientificRecall:
         """Recall chronological evidence for a preregistered global coverage task."""
 
@@ -511,6 +512,10 @@ class ScientificMemoryRuntime:
             for memory_id, definition in self.event_log.definitions().items()
             if definition.safety_risk <= max_safety_risk
             and definition.validity.contains(moment)
+            and (
+                not operation_only
+                or "memory-operation:1" in definition.provenance
+            )
             and all(
                 str(context.get(key)) == value
                 for key, value in definition.applicability.items()

@@ -231,6 +231,7 @@ class ScientificMemOpsRetriever:
         top_k_context: int,
         evaluation_only: bool,
         sequence_coverage: bool = False,
+        sequence_operation_only: bool = False,
     ) -> tuple[list[dict[str, Any]], ScientificRecall]:
         if top_k_context < 1:
             raise ValueError("top_k_context must be positive")
@@ -241,6 +242,7 @@ class ScientificMemOpsRetriever:
                 token_budget=token_budget,
                 latency_budget_ms=1000.0,
                 max_safety_risk=0.0,
+                operation_only=sequence_operation_only,
             )
         else:
             recall_method = (

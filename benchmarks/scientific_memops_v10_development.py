@@ -42,6 +42,7 @@ ARTIFACT_PHASE = "bounded-development"
 DIAGNOSTIC_ONLY = False
 TRAJECTORY_SEQUENCE_COVERAGE = False
 UPDATE_SEQUENCE_COVERAGE = False
+TRAJECTORY_OPERATION_ONLY_SEQUENCE_COVERAGE = False
 
 
 def _select_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -282,6 +283,10 @@ def main(argv: list[str] | None = None) -> int:
             ) or (
                 UPDATE_SEQUENCE_COVERAGE and path.stem.endswith("_update")
             )
+            sequence_operation_only = (
+                TRAJECTORY_OPERATION_ONLY_SEQUENCE_COVERAGE
+                and path.stem.endswith("_trajectory_ops")
+            )
             db_path = Path(temp_dir) / f"{path.stem}.db"
             with ScientificMemOpsRetriever(
                 db_path,
@@ -294,6 +299,7 @@ def main(argv: list[str] | None = None) -> int:
                     top_k_context=int(parameters["top_k_context"]),
                     evaluation_only=False,
                     sequence_coverage=sequence_coverage,
+                    sequence_operation_only=sequence_operation_only,
                 )
                 if production_recall.abstained:
                     ranked_items, treatment_recall = retriever.retrieve(
@@ -302,6 +308,7 @@ def main(argv: list[str] | None = None) -> int:
                         top_k_context=int(parameters["top_k_context"]),
                         evaluation_only=True,
                         sequence_coverage=sequence_coverage,
+                        sequence_operation_only=sequence_operation_only,
                     )
                     candidate_phase = "shadow"
                 else:
@@ -484,6 +491,9 @@ def main(argv: list[str] | None = None) -> int:
             "case_ids": [row["case_id"] for row in rows],
             "question_selection": QUESTION_SELECTION,
             "trajectory_sequence_coverage": TRAJECTORY_SEQUENCE_COVERAGE,
+            "trajectory_operation_only_sequence_coverage": (
+                TRAJECTORY_OPERATION_ONLY_SEQUENCE_COVERAGE
+            ),
             "update_sequence_coverage": UPDATE_SEQUENCE_COVERAGE,
             "case_count": len(rows),
             "intervention_coverage": coverage,
