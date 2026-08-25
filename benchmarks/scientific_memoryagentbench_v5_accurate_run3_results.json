@@ -1,0 +1,163 @@
+{
+  "schema": "wavemind.memoryagentbench_candidate_development.v1",
+  "phase": "bounded-development",
+  "admission_eligible": false,
+  "reason_not_admission_eligible": "single development context, local Ollama answer transport, and shadow-only scientific candidate evaluation",
+  "source_sha": "0a6e6183b4bb46c2c8b2e7e5ca246d3dea3d1950",
+  "protocol_digest": "2b0af0171226eee0d1cc1acd134c196982fb095454b885a136662fb51e8e0331",
+  "official_upstream": {
+    "repository": "HUST-AI-HYZ/MemoryAgentBench",
+    "sha": "fe1735de8cf8b9908e1e3d3b5612afc815698062",
+    "scorer": "utils.eval_other_utils.metrics_summarization",
+    "upstream_modified": false
+  },
+  "dataset": {
+    "repository": "ai-hyz/MemoryAgentBench",
+    "revision": "7ea066982b140a19337e17e60d45d4076e042faf",
+    "root": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\upstreams\\memory-agent-bench"
+  },
+  "candidate_id": "atomic-batch-hierarchical-proof-state-reconciler-v5",
+  "control_id": "no-memory",
+  "model": {
+    "id": "mistral:7b",
+    "digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768
+  },
+  "transport": "ollama-native-api/local-development-only",
+  "token_budget": 8192,
+  "gold_fields_exposed_to_answer_agent": [],
+  "split_unit_ids": [
+    "Accurate_Retrieval:0000:d6d85ecc896724ed",
+    "Accurate_Retrieval:0001:0ee60a212be86fb2",
+    "Accurate_Retrieval:0002:dd607ab7b24b686d",
+    "Accurate_Retrieval:0003:b783c42e93add9bc",
+    "Accurate_Retrieval:0005:74109788618f5270"
+  ],
+  "case_ids": [
+    "Accurate_Retrieval:0000:d6d85ecc896724ed:q0000",
+    "Accurate_Retrieval:0001:0ee60a212be86fb2:q0000",
+    "Accurate_Retrieval:0002:dd607ab7b24b686d:q0000",
+    "Accurate_Retrieval:0003:b783c42e93add9bc:q0000",
+    "Accurate_Retrieval:0005:74109788618f5270:q0000"
+  ],
+  "case_count": 5,
+  "validation_split_touched": false,
+  "final_split_touched": false,
+  "paired_effect": {
+    "metric": "substring_exact_match",
+    "values": [
+      0.0,
+      1.0,
+      0.0,
+      1.0,
+      1.0
+    ],
+    "mean": 0.6,
+    "positive_count": 3,
+    "zero_count": 2,
+    "negative_count": 0
+  },
+  "intervention_audit": {
+    "row_count": 5,
+    "valid_intervention_count": 5,
+    "coverage": 1.0,
+    "absent_interventions_excluded_from_uplift": true
+  },
+  "structural_segmentation_audit": {
+    "compiled_unit_count": 11162,
+    "blind_to_gold_fields": true,
+    "production_index_record_count": 0,
+    "event_log_only_shadow_storage": true
+  },
+  "runtime_audit": {
+    "candidate_recall_times_ms": [
+      253.3047000033548,
+      412.82899999350775,
+      197.1598000091035,
+      241.666100002476,
+      418.6573000042699
+    ],
+    "latency_budget_ms": 1000.0,
+    "budget_exceeded_count": 0
+  },
+  "verified_receipt_count": 5,
+  "production_case_count": 0,
+  "selected_memory_ids": [
+    "mab-08cc7f03d67292d10924fcdf",
+    "mab-0c9c949312485f1579fe0a61",
+    "mab-0e59b567c90eaa2279d3f513",
+    "mab-0e5e76dc47426a0ecb2deb6d",
+    "mab-10822dcf32b3901b0f3b0137",
+    "mab-1202e5b15f23757751d4cef9",
+    "mab-150450316fc66965109def01",
+    "mab-1797367e9d376f468ddd9e98",
+    "mab-1c6fbc32078fa3b40cfb2624",
+    "mab-21d980b7e9221f49a51106f5",
+    "mab-228c7c98c1245d3291b268d1",
+    "mab-2580a86bf085f98236b9ecc1",
+    "mab-2cde903cd67e8e584fee9634",
+    "mab-2f62f4d6934b8c170e64aa90",
+    "mab-318bd23fd944b4ac0c55aca3",
+    "mab-326d23099b93dec2ac57dfc7",
+    "mab-43875044b1c82c5ee8d1b779",
+    "mab-506bc32c17deb0d7e410d111",
+    "mab-68ab4c5812b211825a425e4e",
+    "mab-6b662576e5c145a54798fe19",
+    "mab-6d02144b0a6b556d239311b3",
+    "mab-6eb9b7b18435718a6cd3b387",
+    "mab-6f589624ed1570b957c9d8a5",
+    "mab-7c5e86bf308bb74cfe17264d",
+    "mab-92141636c0540b7b6ad827ef",
+    "mab-945d856d4da11049b2ca30c7",
+    "mab-96add28e2bcea4749c75188f",
+    "mab-98d78b63f0e6fc1a88012ccd",
+    "mab-993d4d2a361e33c71a3f6c57",
+    "mab-9cefd288daadfc57893f12b5",
+    "mab-9cfeead2e4fe1c4b2ea82784",
+    "mab-9f3c1a7c0ba8f3fed9ba261b",
+    "mab-9f750c0099000c22c6d0aaee",
+    "mab-9f85fdb3518f52672b6a9563",
+    "mab-a90970819a7c27407e8991f8",
+    "mab-ab8e3eaa69ca9474c23d361a",
+    "mab-aff16df0576e29a9c2f2be12",
+    "mab-b2308dbabb33172e3dcc8164",
+    "mab-b71cd57db4335a7b4f28a8fe",
+    "mab-b962f2a75b28a6a342cbe6e5",
+    "mab-c09d8d0f7f269e68c4f9b393",
+    "mab-c1619a18941ee6a03ca67fac",
+    "mab-c176fa060b63190cfcf8d13e",
+    "mab-c8a7aa2252a0f7c0e8b45c14",
+    "mab-cfd6a4075538e5c5b4d17f8a",
+    "mab-cff4ec8c69f2e44df3a9ee1e",
+    "mab-d238391a12d3b714e7398079",
+    "mab-d3201f1ad285249456218538",
+    "mab-d3b24e3f77efbd620ed28f26",
+    "mab-d65ae5d40e2d706ef48ba801",
+    "mab-d6861497f98d761c3e2fdad2",
+    "mab-d855950f0c756dd85888407b",
+    "mab-d906a692c5f7dd2d1baaa96d",
+    "mab-da6bd7dde10cc68fb9a33f3b",
+    "mab-e2e9f774f948c46a7b35b429",
+    "mab-e52bf7fdb06ba72cb6896cdb",
+    "mab-e57bd2787161c9abe26ec1aa",
+    "mab-f0f4ab53a0cd886e9982d733",
+    "mab-f17329b7976cba98daa14aeb",
+    "mab-f721759ab7ba9857acaa413f",
+    "mab-f986a0318f88eeaca064592a",
+    "mab-fae1f313fdc0a5a194cbf085",
+    "mab-fdc59cf217cacc912e24c9bc"
+  ],
+  "promoted_memory_ids": [],
+  "false_verified_promotions": 0,
+  "failed_attempts_retained": [],
+  "raw_results": {
+    "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\work\\wavemind-scientific-core\\benchmarks\\scientific_memoryagentbench_v5_accurate_run3_raw.jsonl",
+    "bytes": 22846,
+    "sha256": "ca6ff56eeb59f25c2d7835d563fbf9e076e66cbdaf7c26c855e2ad53979c6dc4"
+  },
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "db766a50733417edd85774526d6aa1d2b3df5000850261cbf644fc7683dace19"
+  }
+}

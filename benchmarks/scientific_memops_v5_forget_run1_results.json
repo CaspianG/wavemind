@@ -1,0 +1,60 @@
+{
+  "schema": "wavemind.memops_candidate_development.v1",
+  "phase": "bounded-development",
+  "admission_eligible": false,
+  "reason_not_admission_eligible": "single development split, local answer model and local judge; held-out admission arms were not executed",
+  "source_sha": "0a6e6183b4bb46c2c8b2e7e5ca246d3dea3d1950",
+  "protocol_digest": "2b0af0171226eee0d1cc1acd134c196982fb095454b885a136662fb51e8e0331",
+  "official_upstream": {
+    "repository": "MemTensor/MemOps",
+    "sha": "312af65e2c7b6d1b70f062ffa8b4cde32aaf6f35",
+    "runners": [
+      "5-test_operation_metrics.py:run_gpt_rag",
+      "5.5-evaluate_operation_metrics.py:evaluate_entry"
+    ],
+    "upstream_modified": false
+  },
+  "candidate_id": "atomic-batch-hierarchical-proof-state-reconciler-v5",
+  "control_id": "no-memory",
+  "model": {
+    "id": "mistral:7b",
+    "digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768
+  },
+  "case_ids": [
+    "A04_forget_q2",
+    "A06_forget_q2",
+    "A07_forget_q2",
+    "A13_forget_q2",
+    "A14_forget_q2"
+  ],
+  "case_count": 5,
+  "final_split_touched": false,
+  "paired_effect": {
+    "values": [
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0
+    ],
+    "mean": 0.2,
+    "positive_count": 1,
+    "zero_count": 4,
+    "negative_count": 0
+  },
+  "verified_receipt_count": 5,
+  "false_verified_promotions": 0,
+  "production_case_count": 0,
+  "promoted_memory_ids": [],
+  "raw_output": {
+    "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-v5-dev-five\\run1-output\\raw_pairs.jsonl",
+    "bytes": 99476,
+    "sha256": "942af7abb7800c214a22373c5a1087335f336c363e245a062fae11a4a6714841"
+  },
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "acebb5bc6aa7d5341c78945c79f9c748f3610543f79837a2aa5079e5c195d2f6"
+  }
+}
