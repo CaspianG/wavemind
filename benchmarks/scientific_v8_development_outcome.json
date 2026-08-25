@@ -1,0 +1,70 @@
+{
+  "schema": "wavemind.scientific_development_outcome.v8",
+  "status": "failed_development_gate_v8",
+  "candidate_id": "phrase-aligned-query-sliced-reconciler-v8",
+  "candidate_source_sha": "7fb57b96b0d213c24fb9d3262df2ca575c82944d",
+  "protocol_digest": "19c5cd37874863b9a0b4db4003f699e5c5d0979fbdf8e32b44c9c17b7d1d4144",
+  "failed_gate": "memoryagentbench_development_positive_uplift_lcb_run_1",
+  "memoryagentbench_development": {
+    "status": "failed_development_gate",
+    "run_number": 1,
+    "planned_run_count": 3,
+    "case_count": 5,
+    "independent_cluster_count": 5,
+    "metric_family": "Accurate_Retrieval",
+    "primary_metric": "substring_exact_match",
+    "intervention_coverage": 1.0,
+    "paired_effect_values": [
+      0.0,
+      1.0,
+      -1.0,
+      0.0,
+      0.0
+    ],
+    "positive_count": 1,
+    "zero_count": 3,
+    "negative_count": 1,
+    "mean_difference": 0.0,
+    "ci95_lower": -0.6,
+    "ci95_upper": 0.6,
+    "required_ci95_lower_strictly_greater_than": 0.0,
+    "production_case_count": 0,
+    "false_verified_promotions": 0,
+    "promoted_memory_ids": [],
+    "artifact": {
+      "path": "benchmarks/scientific_mab_v8_development_run1_results.json",
+      "bytes": 2558,
+      "sha256": "b4e64bd85a8b1777595ac7abc0ec93c65ff104dfe4371e95d99d51ba566eb26d"
+    },
+    "raw": {
+      "path": "benchmarks/scientific_mab_v8_development_run1_raw.jsonl",
+      "bytes": 25657,
+      "sha256": "12cb179d467b9841575b1883874df9fb7b8ebc9d15f61f5ea736a11f1aae3c38"
+    }
+  },
+  "unopened_evidence": {
+    "memoryagentbench_development_runs_2_and_3_executed": false,
+    "memops_development_gate_executed": false,
+    "memoryagentbench_validation_executed": false,
+    "memops_validation_executed": false,
+    "memoryagentbench_final_executed": false,
+    "memops_final_executed": false,
+    "longmemeval_v2_examples_downloaded": false,
+    "longmemeval_v2_full_run_executed": false,
+    "reason": "The first mandatory development run failed its frozen confidence-bound rule and included a negative paired effect. Later gates cannot rescue v8 and remain independent for a preregistered successor."
+  },
+  "post_outcome_policy": {
+    "v8_candidate_changes_forbidden": true,
+    "opened_v8_cases_may_be_used_only_as_development_evidence": true,
+    "opened_v8_cases_may_be_reused_for_future_gate": false,
+    "thresholds_may_be_relaxed": false,
+    "next_protocol_must_be_registered_before_candidate_implementation": true,
+    "validation_and_final_splits_remain_untouched": true
+  },
+  "claim_boundary": "v8 failed its first frozen development run and exhibited one negative paired effect. No validation, admission, superiority, SOTA, production-promotion, 100%-pass, or revolutionary claim is permitted.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "0bf0621c4517cee5e93a6801336e0c620b625fe5fd03f02539cb8ee53f769dad"
+  }
+}
