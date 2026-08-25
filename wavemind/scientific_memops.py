@@ -42,6 +42,7 @@ class ScientificMemOpsRetriever:
 
     def _register_corpus(self, corpus: Sequence[Mapping[str, Any]]) -> None:
         seen_corpus_ids: set[str] = set()
+        batch_definitions: list[MemoryDefinition] = []
         for item in corpus:
             corpus_id = str(item.get("corpus_id") or "").strip()
             content = str(item.get("text") or "").strip()
@@ -65,7 +66,9 @@ class ScientificMemOpsRetriever:
                 estimated_latency_ms=0.1,
                 safety_risk=0.0,
             )
-            if (
+            if self.runtime.mode is ScientificCandidateMode.ATOMIC_BATCH_RECONCILER:
+                batch_definitions.append(definition)
+            elif (
                 self.runtime.mode
                 is ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER
             ):
@@ -80,6 +83,11 @@ class ScientificMemOpsRetriever:
             # The untouched official item is retained only for official prompt/scorer
             # compatibility. Retrieval decisions above cannot inspect its gold flags.
             self._corpus_by_memory_id[memory_id] = dict(item)
+        if self.runtime.mode is ScientificCandidateMode.ATOMIC_BATCH_RECONCILER:
+            self.runtime.register_evaluation_memories(
+                batch_definitions,
+                actor="memops-development-adapter-v5",
+            )
 
     def close(self) -> None:
         self.runtime.close()

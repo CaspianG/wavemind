@@ -287,3 +287,37 @@ def test_v4_shadow_storage_never_populates_production_index(tmp_path):
         )
         assert evaluation.selected_memory_ids == ("state:clean",)
         assert runtime.event_log.validate_chain() == []
+
+
+def test_v5_atomic_shadow_batch_is_visible_only_to_evaluation(tmp_path):
+    with ScientificMemoryRuntime(
+        tmp_path / "v5.sqlite3",
+        mode=ScientificCandidateMode.ATOMIC_BATCH_RECONCILER,
+    ) as runtime:
+        definitions = tuple(
+            MemoryDefinition(
+                memory_id=f"state:{index}",
+                kind=MemoryKind.STATE_TRANSITION,
+                content=f"The active state value is Portland version {index}.",
+                provenance=(f"source-order:{index}",),
+                estimated_tokens=10,
+                estimated_latency_ms=0.1,
+                safety_risk=0.0,
+            )
+            for index in range(20)
+        )
+        digests = runtime.register_evaluation_memories(definitions)
+
+        assert len(digests) == 20
+        assert runtime.retriever.store.count(namespace="scientific") == 0
+        evaluation = runtime.evaluation_recall(
+            "What is the active state value?",
+            context={},
+            moment=0.0,
+            token_budget=40,
+            latency_budget_ms=10.0,
+            max_safety_risk=0.0,
+        )
+        assert evaluation.evaluation_only
+        assert evaluation.selected_memory_ids
+        assert runtime.event_log.validate_chain() == []

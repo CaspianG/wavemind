@@ -97,6 +97,7 @@ def compile_candidate_units(
         ScientificCandidateMode.STATE_RECONCILER,
         ScientificCandidateMode.HIERARCHICAL_RECONCILER,
         ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER,
+        ScientificCandidateMode.ATOMIC_BATCH_RECONCILER,
     }:
         return tuple(
             CandidateMemoryUnit(str(chunk), index, "official-chunk")
@@ -117,6 +118,7 @@ def compile_candidate_units(
     if selected_mode in {
         ScientificCandidateMode.HIERARCHICAL_RECONCILER,
         ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER,
+        ScientificCandidateMode.ATOMIC_BATCH_RECONCILER,
     }:
         markers = list(_DOCUMENT_MARKER_RE.finditer(context))
         if markers:
@@ -657,6 +659,7 @@ def run_scientific_candidate_development(
                 mode=mode,
             )
             try:
+                batch_definitions: list[MemoryDefinition] = []
                 for chunk_index, candidate_unit in enumerate(candidate_units):
                     chunk = candidate_unit.content
                     source_order = candidate_unit.source_order
@@ -685,7 +688,9 @@ def run_scientific_candidate_development(
                         estimated_latency_ms=0.1,
                         safety_risk=0.0,
                     )
-                    if mode is ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER:
+                    if mode is ScientificCandidateMode.ATOMIC_BATCH_RECONCILER:
+                        batch_definitions.append(definition)
+                    elif mode is ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER:
                         runtime.register_evaluation_memory(
                             definition,
                             actor="memoryagentbench-development-adapter-v4",
@@ -695,6 +700,11 @@ def run_scientific_candidate_development(
                             definition,
                             actor="memoryagentbench-development-adapter",
                         )
+                if mode is ScientificCandidateMode.ATOMIC_BATCH_RECONCILER:
+                    runtime.register_evaluation_memories(
+                        batch_definitions,
+                        actor="memoryagentbench-development-adapter-v5",
+                    )
                 system_message = get_template(
                     unit.source,
                     "system",
@@ -1092,7 +1102,10 @@ def build_candidate_development_artifact(
             ),
             "event_log_only_shadow_storage": (
                 summary.get("candidate_id")
-                == ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER.value
+                in {
+                    ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER.value,
+                    ScientificCandidateMode.ATOMIC_BATCH_RECONCILER.value,
+                }
             ),
         },
         "verified_receipt_count": int(summary["verified_receipt_count"]),

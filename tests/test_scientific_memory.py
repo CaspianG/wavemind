@@ -162,6 +162,57 @@ def test_persistent_event_log_handles_interleaved_writers(tmp_path):
         assert second.validate_chain() == []
 
 
+def test_atomic_memory_batch_persists_one_valid_ordered_chain(tmp_path):
+    path = tmp_path / "scientific-events.sqlite3"
+    with ScientificEventLog(path) as log:
+        events = log.register_memories(
+            [_memory(f"procedure:{index}") for index in range(100)]
+        )
+
+        assert len(events) == 100
+        assert [event.sequence for event in events] == list(range(1, 101))
+        assert len(log.definitions()) == 100
+        assert log.validate_chain() == []
+
+    with ScientificEventLog(path) as reopened:
+        assert len(reopened.definitions()) == 100
+        assert reopened.validate_chain() == []
+
+
+def test_atomic_memory_batch_rolls_back_memory_and_disk_on_serialization_error(
+    tmp_path,
+):
+    path = tmp_path / "scientific-events.sqlite3"
+    invalid = _memory("procedure:invalid", provenance=(object(),))
+    with ScientificEventLog(path) as log:
+        log.register_memory(_memory("procedure:existing"))
+        before = tuple(log.events)
+
+        with pytest.raises(TypeError):
+            log.register_memories([_memory("procedure:new"), invalid])
+
+        assert log.events == before
+        assert set(log.definitions()) == {"procedure:existing"}
+        assert log.validate_chain() == []
+
+    with ScientificEventLog(path) as reopened:
+        assert set(reopened.definitions()) == {"procedure:existing"}
+        assert reopened.validate_chain() == []
+
+
+def test_atomic_batches_handle_interleaved_persistent_writers(tmp_path):
+    path = tmp_path / "scientific-events.sqlite3"
+    with ScientificEventLog(path) as first, ScientificEventLog(path) as second:
+        first.register_memories([_memory("procedure:a"), _memory("procedure:b")])
+        second.register_memories([_memory("procedure:c"), _memory("procedure:d")])
+
+        expected = {"procedure:a", "procedure:b", "procedure:c", "procedure:d"}
+        assert set(first.definitions()) == expected
+        assert set(second.definitions()) == expected
+        assert first.validate_chain() == []
+        assert second.validate_chain() == []
+
+
 def test_agent_self_assessment_never_carries_production_influence():
     log = ScientificEventLog()
     log.register_memory(_memory())

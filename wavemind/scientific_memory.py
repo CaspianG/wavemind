@@ -584,6 +584,92 @@ class ScientificEventLog:
             payload={"definition": _memory_definition_payload(definition)},
         )
 
+    def register_memories(
+        self,
+        definitions: Sequence[MemoryDefinition],
+        *,
+        actor: str = "system-batch",
+    ) -> tuple[ScientificEvent, ...]:
+        """Atomically append an ordered memory batch with one durable transaction."""
+
+        batch = tuple(definitions)
+        if not batch:
+            return ()
+        batch_ids = [definition.memory_id for definition in batch]
+        if len(set(batch_ids)) != len(batch_ids):
+            raise ValueError("memory batch contains duplicate IDs")
+        with self._lock:
+            if self._closed:
+                raise RuntimeError("scientific event log is closed")
+            if self._connection is None:
+                existing = set(self.definitions())
+                duplicates = sorted(existing.intersection(batch_ids))
+                if duplicates:
+                    raise ValueError(f"memory already exists: {duplicates[0]}")
+                events = []
+                for definition in batch:
+                    event = self._build_event(
+                        ScientificEventType.MEMORY_REGISTERED,
+                        memory_id=definition.memory_id,
+                        actor=actor,
+                        payload={"definition": _memory_definition_payload(definition)},
+                    )
+                    self._events.append(event)
+                    events.append(event)
+                return tuple(events)
+
+            self._connection.execute("BEGIN IMMEDIATE")
+            base_events: list[ScientificEvent] | None = None
+            try:
+                self._reload_from_storage()
+                base_events = list(self._events)
+                chain_errors = self.validate_chain()
+                if chain_errors:
+                    raise ValueError(
+                        "scientific event chain changed before batch append: "
+                        + "; ".join(chain_errors)
+                    )
+                existing = {
+                    event.memory_id
+                    for event in self._events
+                    if event.event_type is ScientificEventType.MEMORY_REGISTERED
+                }
+                duplicates = sorted(existing.intersection(batch_ids))
+                if duplicates:
+                    raise ValueError(f"memory already exists: {duplicates[0]}")
+                events = []
+                rows = []
+                for definition in batch:
+                    event = self._build_event(
+                        ScientificEventType.MEMORY_REGISTERED,
+                        memory_id=definition.memory_id,
+                        actor=actor,
+                        payload={"definition": _memory_definition_payload(definition)},
+                    )
+                    self._events.append(event)
+                    events.append(event)
+                    rows.append(
+                        (
+                            event.sequence,
+                            event.event_sha256,
+                            canonical_json_bytes(
+                                self._stored_event_payload(event)
+                            ).decode("utf-8"),
+                        )
+                    )
+                self._connection.executemany(
+                    "INSERT INTO scientific_memory_events "
+                    "(sequence, event_sha256, event_json) VALUES (?, ?, ?)",
+                    rows,
+                )
+                self._connection.execute("COMMIT")
+                return tuple(events)
+            except Exception:
+                self._connection.execute("ROLLBACK")
+                if base_events is not None:
+                    self._events = base_events
+                raise
+
     def _require_memory(self, memory_id: str) -> MemoryDefinition:
         try:
             return self.definitions()[memory_id]

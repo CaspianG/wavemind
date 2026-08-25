@@ -31,6 +31,7 @@ class ScientificCandidateMode(str, Enum):
     EFFICIENT_HIERARCHICAL_RECONCILER = (
         "efficient-hierarchical-proof-state-reconciler-v4"
     )
+    ATOMIC_BATCH_RECONCILER = "atomic-batch-hierarchical-proof-state-reconciler-v5"
 
 
 @dataclass(frozen=True)
@@ -135,6 +136,19 @@ class ScientificMemoryRuntime:
         if self.mode is not ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER:
             raise ValueError("evaluation-only storage is frozen to the v4 candidate")
         self.event_log.register_memory(definition, actor=actor)
+
+    def register_evaluation_memories(
+        self,
+        definitions: Sequence[MemoryDefinition],
+        *,
+        actor: str = "evaluation-batch-compiler",
+    ) -> tuple[str, ...]:
+        """Atomically persist the frozen v5 shadow batch outside production index."""
+
+        if self.mode is not ScientificCandidateMode.ATOMIC_BATCH_RECONCILER:
+            raise ValueError("atomic evaluation storage is frozen to the v5 candidate")
+        events = self.event_log.register_memories(definitions, actor=actor)
+        return tuple(event.event_sha256 for event in events)
 
     def _retrieval_candidates(
         self,
@@ -364,6 +378,7 @@ class ScientificMemoryRuntime:
             ScientificCandidateMode.STATE_RECONCILER,
             ScientificCandidateMode.HIERARCHICAL_RECONCILER,
             ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER,
+            ScientificCandidateMode.ATOMIC_BATCH_RECONCILER,
         }:
             return self.shadow_recall(
                 query,
