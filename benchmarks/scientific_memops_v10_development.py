@@ -40,6 +40,7 @@ QUESTION_SELECTION = "first"
 CANDIDATE_ID_OVERRIDE: str | None = None
 ARTIFACT_PHASE = "bounded-development"
 DIAGNOSTIC_ONLY = False
+TRAJECTORY_SEQUENCE_COVERAGE = False
 
 
 def _select_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -100,6 +101,27 @@ def _select_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
             return (
                 priority.get(str(entry.get("evaluation_type")), 99),
                 -question_number,
+                question_id,
+            )
+
+        return [min(entries, key=key)]
+    if QUESTION_SELECTION == "state-verification-v4":
+        priority = {
+            "StateTransition": 0,
+            "CandidateDisambiguation": 1,
+            "StateTrajectory": 2,
+            "TargetBinding": 3,
+            "OperationApplication": 4,
+            "OperationTrace": 5,
+        }
+
+        def key(entry: Mapping[str, Any]) -> tuple[int, int, str]:
+            question_id = str(entry.get("question_id", ""))
+            digits = "".join(character for character in question_id if character.isdigit())
+            question_number = int(digits) if digits else 999
+            return (
+                priority.get(str(entry.get("evaluation_type")), 99),
+                question_number,
                 question_id,
             )
 
@@ -253,6 +275,9 @@ def main(argv: list[str] | None = None) -> int:
                 continue
             entry = entries[0]
             case_id = str(entry["question_id"])
+            sequence_coverage = TRAJECTORY_SEQUENCE_COVERAGE and (
+                path.stem.endswith("_trajectory_ops")
+            )
             db_path = Path(temp_dir) / f"{path.stem}.db"
             with ScientificMemOpsRetriever(
                 db_path,
@@ -264,6 +289,7 @@ def main(argv: list[str] | None = None) -> int:
                     token_budget=int(parameters["token_budget"]),
                     top_k_context=int(parameters["top_k_context"]),
                     evaluation_only=False,
+                    sequence_coverage=sequence_coverage,
                 )
                 if production_recall.abstained:
                     ranked_items, treatment_recall = retriever.retrieve(
@@ -271,6 +297,7 @@ def main(argv: list[str] | None = None) -> int:
                         token_budget=int(parameters["token_budget"]),
                         top_k_context=int(parameters["top_k_context"]),
                         evaluation_only=True,
+                        sequence_coverage=sequence_coverage,
                     )
                     candidate_phase = "shadow"
                 else:
@@ -301,24 +328,48 @@ def main(argv: list[str] | None = None) -> int:
                     else ("treatment", "control")
                 )
                 answers: dict[str, dict[str, Any]] = {}
-                for arm in answer_order:
-                    answers[arm] = generation["run_gpt_rag"](
-                        [arms[arm]],
+                if not ranked_items:
+                    fallback = generation["run_gpt_rag"](
+                        [arms["control"]],
                         model=str(parameters["answer_model"]),
                         top_k_context=int(parameters["top_k_context"]),
                         call_llm=caller,
                         show_progress=False,
                         rag_workers=1,
                     )[0]
-                scored = {
-                    arm: evaluation["evaluate_entry"](
-                        answers[arm],
+                    answers = {
+                        "treatment": copy.deepcopy(fallback),
+                        "control": fallback,
+                    }
+                    fallback_score = evaluation["evaluate_entry"](
+                        fallback,
                         judge_model=str(parameters["judge_model"]),
                         call_llm=caller,
                         evidence_dirs=(args.adjacent_input_dir,),
                     )
-                    for arm in ("treatment", "control")
-                }
+                    scored = {
+                        "treatment": copy.deepcopy(fallback_score),
+                        "control": fallback_score,
+                    }
+                else:
+                    for arm in answer_order:
+                        answers[arm] = generation["run_gpt_rag"](
+                            [arms[arm]],
+                            model=str(parameters["answer_model"]),
+                            top_k_context=int(parameters["top_k_context"]),
+                            call_llm=caller,
+                            show_progress=False,
+                            rag_workers=1,
+                        )[0]
+                    scored = {
+                        arm: evaluation["evaluate_entry"](
+                            answers[arm],
+                            judge_model=str(parameters["judge_model"]),
+                            call_llm=caller,
+                            evidence_dirs=(args.adjacent_input_dir,),
+                        )
+                        for arm in ("treatment", "control")
+                    }
                 treatment_score = float(scored["treatment"]["answer_score"])
                 control_score = float(scored["control"]["answer_score"])
                 lifecycle = {
@@ -428,6 +479,7 @@ def main(argv: list[str] | None = None) -> int:
             "subjects": represented_subjects,
             "case_ids": [row["case_id"] for row in rows],
             "question_selection": QUESTION_SELECTION,
+            "trajectory_sequence_coverage": TRAJECTORY_SEQUENCE_COVERAGE,
             "case_count": len(rows),
             "intervention_coverage": coverage,
             "statistics": statistics,

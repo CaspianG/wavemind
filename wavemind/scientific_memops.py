@@ -231,21 +231,45 @@ class ScientificMemOpsRetriever:
         token_budget: int,
         top_k_context: int,
         evaluation_only: bool,
+        sequence_coverage: bool = False,
     ) -> tuple[list[dict[str, Any]], ScientificRecall]:
         if top_k_context < 1:
             raise ValueError("top_k_context must be positive")
-        recall_method = (
-            self.runtime.evaluation_recall if evaluation_only else self.runtime.recall
-        )
-        recall = recall_method(
-            query,
-            context={},
-            moment=0.0,
-            token_budget=token_budget,
-            latency_budget_ms=1000.0,
-            max_safety_risk=0.0,
-        )
-        visible_ids = recall.selected_memory_ids[:top_k_context]
+        if evaluation_only and sequence_coverage:
+            recall = self.runtime.evaluation_sequence_coverage_recall(
+                context={},
+                moment=0.0,
+                token_budget=token_budget,
+                latency_budget_ms=1000.0,
+                max_safety_risk=0.0,
+            )
+        else:
+            recall_method = (
+                self.runtime.evaluation_recall if evaluation_only else self.runtime.recall
+            )
+            recall = recall_method(
+                query,
+                context={},
+                moment=0.0,
+                token_budget=token_budget,
+                latency_budget_ms=1000.0,
+                max_safety_risk=0.0,
+            )
+        if sequence_coverage and len(recall.selected_memory_ids) > top_k_context:
+            last = len(recall.selected_memory_ids) - 1
+            positions = (
+                [last]
+                if top_k_context == 1
+                else sorted(
+                    {
+                        round(index * last / (top_k_context - 1))
+                        for index in range(top_k_context)
+                    }
+                )
+            )
+            visible_ids = tuple(recall.selected_memory_ids[index] for index in positions)
+        else:
+            visible_ids = recall.selected_memory_ids[:top_k_context]
         ranked_items: list[dict[str, Any]] = []
         for rank, memory_id in enumerate(visible_ids, start=1):
             item = dict(self._corpus_by_memory_id[memory_id])

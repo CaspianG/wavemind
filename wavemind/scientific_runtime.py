@@ -501,8 +501,11 @@ class ScientificMemoryRuntime:
     ) -> ScientificRecall:
         """Recall chronological evidence for a preregistered global coverage task."""
 
-        if self.mode is not ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT:
-            raise ValueError("sequence coverage recall is frozen to the v14 candidate")
+        if self.mode not in {
+            ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
+            ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT,
+        }:
+            raise ValueError("sequence coverage recall is not enabled for this candidate")
         definitions = {
             memory_id: definition
             for memory_id, definition in self.event_log.definitions().items()
