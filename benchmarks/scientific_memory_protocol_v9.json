@@ -1,0 +1,132 @@
+{
+  "schema": "wavemind.scientific_memory_protocol.v9",
+  "protocol_id": "scientific-core-evidence-answer-transducer-2026-08-25-v9",
+  "status": "preregistered",
+  "preregistered_at": "2026-08-25",
+  "baseline_source_sha": "ef9e75822780dc9ff588fa79d0a969f7dee9ecca",
+  "supersedes_protocol_digest": "19c5cd37874863b9a0b4db4003f699e5c5d0979fbdf8e32b44c9c17b7d1d4144",
+  "immutable_negative_evidence": {
+    "v7_status": "failed_development_gate_v7",
+    "v8_status": "failed_development_gate_v8",
+    "v8_outcome_sha256": "e32f880e527589acc96e8249e2f4b7a3cbd783c3b8d029a47c5e8d0576f073e8",
+    "v8_opened_development_may_inform_v9": true,
+    "v8_opened_context_fingerprints_may_be_reused_for_v9_gate": false,
+    "all_validation_and_final_evidence_preserved": true,
+    "may_be_overwritten": false
+  },
+  "candidate": {
+    "id": "evidence-grounded-answer-transducer-v9",
+    "frozen_before_first_v9_outcome": true,
+    "hypothesis": "The v8 development failure shows that evidence retrieval alone is insufficient when a small answer model paraphrases a correct option or violates a task's explicit output contract. Preserving v8 retrieval while applying a deterministic query-constrained answer transducer will convert sufficiently similar model outputs to an exact query-provided option and otherwise leave the answer unchanged, improving exact task success without inspecting gold labels.",
+    "implementation_boundary": [
+      "wavemind.scientific_answer_transducer.canonicalize_query_constrained_answer",
+      "wavemind.scientific_memoryagentbench.run_scientific_candidate_development",
+      "wavemind.scientific_memoryagentbench._dataset_config",
+      "wavemind.scientific_runtime.ScientificCandidateMode"
+    ],
+    "retrieval": "Exactly the frozen v8 phrase-aligned, query-sliced, operation-aware shadow retrieval with zero source-recency weight and at most twenty selected units.",
+    "answer_transducer": {
+      "input": "query text and treatment model output only",
+      "candidate_options": "the frozen v8 bounded literal extractor over query-provided string options",
+      "similarity": "maximum token multiset F1 after frozen Unicode normalization",
+      "minimum_similarity": 0.5,
+      "minimum_winner_margin": 0.1,
+      "action": "replace the treatment output with the unique highest-scoring complete query option only when both thresholds pass; otherwise retain the original output byte-for-byte",
+      "control_output_transformed": false,
+      "retrieved_evidence_gold_expected_answer_or_scorer_fields_permitted": false,
+      "raw_pretransduction_output_retained": true
+    },
+    "storage": "One atomic scientific-event batch per benchmark context; evaluation-only shadow storage; production index count remains zero.",
+    "production_promotion": "No promotion is permitted during development or admission."
+  },
+  "frozen_parameters": {
+    "seed": 17,
+    "bootstrap_repeats": 2000,
+    "confidence_level": 0.95,
+    "maximum_graph_hops": 4,
+    "maximum_retrieval_candidates": 20,
+    "token_budget": 8192,
+    "latency_budget_ms": 1000.0,
+    "maximum_safety_risk": 0.0,
+    "top_k_context": 10,
+    "source_recency_weight": 0.0,
+    "answer_model": "mistral:7b",
+    "answer_model_digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768
+  },
+  "development_firewall": {
+    "allowed": "Opened v7/v8 development evidence and units whose frozen manifests label them development.",
+    "forbidden": [
+      "all MemoryAgentBench validation and final units",
+      "all MemOps validation and final subjects",
+      "all LongMemEval-V2 examples",
+      "all v6 validation per-case evidence",
+      "reuse of any v7 or v8 context fingerprint in the v9 development gate"
+    ]
+  },
+  "metric_governance": {
+    "memoryagentbench_gate_source": "detective_qa",
+    "primary_metric": "exact_match",
+    "generation_max_length": 2000,
+    "official_mapping_source": "MemoryAgentBench README and Detective_QA.yaml at pinned code revision fe1735de8cf8b9908e1e3d3b5612afc815698062",
+    "local_metric_or_generation_override_after_preregistration_permitted": false
+  },
+  "frozen_development_gate": {
+    "memoryagentbench_unit_ids": [
+      "Long_Range_Understanding:0100:cd66eabd2f070a38",
+      "Long_Range_Understanding:0102:951f75cd34e22188",
+      "Long_Range_Understanding:0103:0f57134e5ed36d75",
+      "Long_Range_Understanding:0104:720f3ad635ebebf1",
+      "Long_Range_Understanding:0106:9132aca9b3be661d"
+    ],
+    "memops_subjects": [
+      "A16",
+      "A19",
+      "A22",
+      "A26",
+      "A27"
+    ],
+    "queries_per_memoryagentbench_context": 1,
+    "memops_questions_per_operation_file": 1,
+    "required_reproducible_runs": 3,
+    "required_independent_families": 2,
+    "minimum_independent_clusters_per_family": 5,
+    "paired_cluster_bootstrap_ci_lower_strictly_greater_than": 0.0,
+    "minimum_intervention_coverage": 0.8,
+    "all_family_means_non_negative": true,
+    "false_verified_promotions_maximum": 0,
+    "raw_per_case_evidence_required": true,
+    "stop_on_first_failed_required_run": true
+  },
+  "frozen_admission": {
+    "memoryagentbench_final_unit_ids": [
+      "Accurate_Retrieval:0007:aea0f2d603e1c8a3",
+      "Accurate_Retrieval:0009:153a2cce98f93cb3",
+      "Conflict_Resolution:0001:2a44d6ad3264a775",
+      "Long_Range_Understanding:0002:4fb345e28ef3ce1a",
+      "Test_Time_Learning:0002:36d1c3fde8d8fb21"
+    ],
+    "memops_final_subjects": [
+      "A05",
+      "A11",
+      "A20",
+      "B03",
+      "B04"
+    ],
+    "longmemeval_v2_dataset_revision": "f152293e235517d504809563c833d7190b8c713b",
+    "longmemeval_v2_tier": "small",
+    "longmemeval_v2_question_count": 451,
+    "maximum_longmemeval_v2_logical_full_runs": 1,
+    "independent_families_with_positive_uplift_lcb": 2,
+    "longmemeval_v2_uplift_minimum": 0.01,
+    "longmemeval_v2_improved_categories_minimum": 4,
+    "repeated_error_reduction_minimum": 0.5,
+    "stale_or_contradiction_error_rate_maximum": 0.02,
+    "context_reduction_vs_full_context_minimum": 0.3,
+    "runtime_p95_must_be_within_frozen_budget": true,
+    "ablation_required_for_every_improvement": true
+  },
+  "terminal_rule": "Any failed development or admission gate is retained as failed_experiment_v9 or failed_admission_v9. Thresholds may not be relaxed and opened held-out evidence may never become tuning data.",
+  "claim_boundary": "Only a full exact-SHA admission pass permits a bounded benchmark claim. SOTA, universal superiority, production promotion, replacement, 100%-pass, and revolutionary claims remain forbidden without separate external evidence.",
+  "protocol_digest": "adced0fd1642ca4639e2902792197ebec947a562ad4746d3fe1256eff5d0e180"
+}
