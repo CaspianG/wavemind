@@ -35,6 +35,37 @@ PROTOCOL_PATH = ROOT / "benchmarks" / "scientific_memory_protocol_v10.json"
 CANDIDATE_MODE = ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT
 ARTIFACT_SCHEMA = "wavemind.scientific_memops_v10_development.v1"
 CLUSTER_GATE_KEY = "minimum_independent_subject_clusters_per_family"
+CI_GATE_KEY = "paired_subject_cluster_bootstrap_ci_lower_strictly_greater_than"
+QUESTION_SELECTION = "first"
+CANDIDATE_ID_OVERRIDE: str | None = None
+ARTIFACT_PHASE = "bounded-development"
+DIAGNOSTIC_ONLY = False
+
+
+def _select_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    if not entries:
+        return []
+    if QUESTION_SELECTION == "first":
+        return entries[:1]
+    if QUESTION_SELECTION == "causal-discrimination-v1":
+        priority = {
+            "CandidateDisambiguation": 0,
+            "StateTrajectory": 1,
+            "OperationApplication": 2,
+            "StateTransition": 3,
+            "TargetBinding": 4,
+            "OperationTrace": 5,
+        }
+        return [
+            min(
+                entries,
+                key=lambda entry: (
+                    priority.get(str(entry.get("evaluation_type")), 99),
+                    str(entry.get("question_id", "")),
+                ),
+            )
+        ]
+    raise RuntimeError(f"unknown MemOps question selection: {QUESTION_SELECTION}")
 
 
 def _write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
@@ -84,7 +115,7 @@ def _build_entries(
             evidence_source_path=str(adjacent_path.resolve()),
             answer_model="mistral:7b",
         )
-        return corpus, entries[:1]
+        return corpus, _select_entries(entries)
     payload = generation["enrich_payload_with_gold_fields"](
         json.loads(path.read_text(encoding="utf-8")),
         adjacent_payload,
@@ -103,7 +134,7 @@ def _build_entries(
         answer_model="mistral:7b",
         retrieval_unit="session",
     )
-    return corpus, entries[:1]
+    return corpus, _select_entries(entries)
 
 
 def _no_memory_entry(entry: Mapping[str, Any]) -> dict[str, Any]:
@@ -313,7 +344,7 @@ def main(argv: list[str] | None = None) -> int:
         ),
         "paired_subject_cluster_bootstrap_ci_lower_strictly_positive": (
             statistics["ci_lower"]
-            > gate["paired_subject_cluster_bootstrap_ci_lower_strictly_greater_than"]
+            > gate[CI_GATE_KEY]
         ),
         "mean_non_negative": statistics["mean_difference"] >= 0.0,
         "minimum_intervention_coverage": (
@@ -325,11 +356,18 @@ def main(argv: list[str] | None = None) -> int:
     artifact = attach_artifact_integrity(
         {
             "schema": ARTIFACT_SCHEMA,
-            "phase": "bounded-development",
+            "phase": ARTIFACT_PHASE,
             "admission_eligible": False,
+            "status": (
+                "diagnostic_only"
+                if DIAGNOSTIC_ONLY
+                else "pass"
+                if all(gate_checks.values())
+                else "failed_development_gate"
+            ),
             "source_sha": source_sha,
             "protocol_digest": protocol["protocol_digest"],
-            "candidate_id": CANDIDATE_MODE.value,
+            "candidate_id": CANDIDATE_ID_OVERRIDE or CANDIDATE_MODE.value,
             "family": args.family,
             "evaluation_setting": family_specs[args.family]["evaluation_setting"],
             "run_number": args.run_number,
@@ -350,6 +388,7 @@ def main(argv: list[str] | None = None) -> int:
             },
             "subjects": represented_subjects,
             "case_ids": [row["case_id"] for row in rows],
+            "question_selection": QUESTION_SELECTION,
             "case_count": len(rows),
             "intervention_coverage": coverage,
             "statistics": statistics,
@@ -357,13 +396,21 @@ def main(argv: list[str] | None = None) -> int:
             "promoted_memory_ids": sorted(promoted_memory_ids),
             "false_verified_promotions": 0,
             "gate_checks": gate_checks,
-            "gate_pass": all(gate_checks.values()),
+            "diagnostic_gate_pass": (
+                all(gate_checks.values()) if DIAGNOSTIC_ONLY else None
+            ),
+            "gate_pass": all(gate_checks.values()) and not DIAGNOSTIC_ONLY,
             "final_split_touched": False,
             "raw_output": {
                 "path": str(raw_path),
                 "bytes": raw_path.stat().st_size,
                 "sha256": file_sha256(raw_path),
             },
+            "claim_boundary": (
+                "Opened development evidence; diagnostic only, never a gate."
+                if DIAGNOSTIC_ONLY
+                else "Fresh development evidence only; not admission."
+            ),
         }
     )
     args.artifact.parent.mkdir(parents=True, exist_ok=True)
@@ -372,7 +419,7 @@ def main(argv: list[str] | None = None) -> int:
         encoding="utf-8",
     )
     print(json.dumps(artifact, indent=2, ensure_ascii=False))
-    return 0 if artifact["gate_pass"] else 2
+    return 0 if DIAGNOSTIC_ONLY or artifact["gate_pass"] else 2
 
 
 if __name__ == "__main__":
