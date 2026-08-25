@@ -1,0 +1,230 @@
+{
+  "schema": "wavemind.scientific_v19_admission_plan.v1",
+  "status": "preregistered_before_first_v19_final_outcome",
+  "preregistered_at": "2026-08-26",
+  "candidate": {
+    "id": "targeted-dual-coverage-agent-v19",
+    "source_sha": "c509511f09dbcd3b4206ec1b74a7abc9510d9e73",
+    "checkout_policy": "clean detached exact-SHA worktree",
+    "post_outcome_changes_forbidden": true
+  },
+  "protocol": {
+    "path": "benchmarks/scientific_memory_protocol_v19.json",
+    "bytes": 8256,
+    "sha256": "0fdec6df3a15ed7e16416e0ae9452956f161006b93d5b672aa8d5a17cf005094",
+    "protocol_digest": "443d8a461b10969756579eb6af3e05d7b909d30369fb286b2a582aa8efaef684"
+  },
+  "authorization_evidence": {
+    "development_gate_status": "passed_development_gate_v19",
+    "development_gate_commit": "96adaa9c02a6f9150b8d5da460259b142def8fed",
+    "development_outcome": {
+      "path": "benchmarks/scientific_v19_development_outcome.json",
+      "bytes": 9270,
+      "sha256": "59d041d12c94adc462c44523797aaf198490c6975c78eac805632f07ec1f0af9"
+    },
+    "development_outcome_payload_sha256": "bd755959b6c601deb06528686484da7d534401f393d4181890e318038b6b2f4f",
+    "independent_families_passed": 2,
+    "reproducible_runs_per_family_passed": 3,
+    "all_six_required_runs_passed": true
+  },
+  "execution_harness": {
+    "source_commit": "3919543a92871ff19bc0def1f15ba683c9a0cd7d",
+    "files": [
+      {
+        "path": "benchmarks/scientific_mab_v19_final.py",
+        "bytes": 9644,
+        "sha256": "3409f4e645d2c9a37874eb1f044a98b5e5a682c30b8a1afc271d9451e124c7f8"
+      },
+      {
+        "path": "benchmarks/scientific_memops_v19_final.py",
+        "bytes": 8328,
+        "sha256": "10c005391e3926a8e4abb802e4068d7e2d23cfd920ac5c9e28d892ba251d5675"
+      },
+      {
+        "path": "benchmarks/scientific_longmemeval_v2_backend.py",
+        "bytes": 11532,
+        "sha256": "f59733a2d26f673c0a7f532653398379ad6d90f68175ae7d4c1e855e7ef70bc6"
+      },
+      {
+        "path": "benchmarks/scientific_longmemeval_v2_backend_v19.py",
+        "bytes": 1510,
+        "sha256": "821315b0e4c8ef12074e27bb336be38f200b4f73663632ec62c7e1886e14a23a"
+      },
+      {
+        "path": "benchmarks/scientific_longmemeval_v2_run.py",
+        "bytes": 10537,
+        "sha256": "5c2355a3f64e87d50f133cfa8db95e7a6b7f49b036069fc1c69c0893a507f12e"
+      },
+      {
+        "path": "benchmarks/scientific_longmemeval_v2_run_v19.py",
+        "bytes": 1460,
+        "sha256": "c7d1beb6a6bbe18b36ead49b69ab2e297d617dcb2a182836fc41f5ce33bfa11b"
+      }
+    ],
+    "infrastructure_continuation": "A crashed partial is retained and may continue only with the identical candidate, data, prompts, model, thresholds, order, and deterministic parameters; it is never discarded or counted as a fresh outcome."
+  },
+  "official_sources": {
+    "memoryagentbench": {
+      "code_sha": "fe1735de8cf8b9908e1e3d3b5612afc815698062",
+      "dataset_revision": "7ea066982b140a19337e17e60d45d4076e042faf",
+      "split_manifest": {
+        "path": "benchmarks/memoryagentbench_split_manifest_results.json",
+        "bytes": 90993,
+        "sha256": "750a025a5c51d97fbff78df77d734a1086558f3b4ad5cdffee66704e08612adc"
+      },
+      "split_manifest_payload_sha256": "1ac101c6794d3ef0454d2856b5ed04c2c219a3a44c049dd165b0e3e357eb3c68"
+    },
+    "memops": {
+      "code_and_data_sha": "312af65e2c7b6d1b70f062ffa8b4cde32aaf6f35",
+      "split_manifest": {
+        "path": "benchmarks/evaluation_split_manifest_results.json",
+        "bytes": 504115,
+        "sha256": "0ed183e2ddf198efa101d2e94e8bbfb4290cdabf225fb8720e156b916935dc0a"
+      },
+      "split_manifest_payload_sha256": "bbe38c525c2754ecfc93638312ff7a7ede3eda9cb607a12c01a9c21ab866d742"
+    },
+    "longmemeval_v2": {
+      "code_sha": "2cc8c540bdb87fe6761629b585e727e1c4704520",
+      "dataset_repo": "xiaowu0162/longmemeval-v2",
+      "dataset_revision": "f152293e235517d504809563c833d7190b8c713b",
+      "remote_revision_verified_available_at_preregistration": true
+    }
+  },
+  "frozen_samples": {
+    "memoryagentbench": {
+      "source_split": "final",
+      "unit_ids": [
+        "Accurate_Retrieval:0010:ec65b7cb50d7280b",
+        "Accurate_Retrieval:0017:61ec3a9b2a2e3e8d",
+        "Accurate_Retrieval:0019:c2e1809c93430d92",
+        "Conflict_Resolution:0003:9c8ce1ed911d25a3",
+        "Long_Range_Understanding:0010:5f579da48d431ff2",
+        "Long_Range_Understanding:0011:b721d0a06ba3ad39",
+        "Long_Range_Understanding:0017:e0c3f4d1eab833c9",
+        "Long_Range_Understanding:0028:1f0d367470ebb847",
+        "Long_Range_Understanding:0034:3e3a1a2dbd3bc870",
+        "Long_Range_Understanding:0052:cb1104516284ee52"
+      ],
+      "context_sha256": [
+        "1f0d367470ebb847b375069b31c2cd655bab35e94e7d36c8100189c0e2429337",
+        "3e3a1a2dbd3bc870158bb70f87d8556ea31b3a6c40fdf5fba2c5cef0ab0be905",
+        "5f579da48d431ff2695e3ee5a218d4bc4a2042094d22adcf8fec573769f7b987",
+        "61ec3a9b2a2e3e8d93ac7b94a5fd44923881e114123f0af8ec3bf427be020f92",
+        "9c8ce1ed911d25a3c9d52e5758d9a8d23fa769ded88c5e59dbc1e1a3f6eb1f10",
+        "b721d0a06ba3ad3931feeae383cf593d4170513e5b9dcaee75f5a787143bb6fb",
+        "c2e1809c93430d922a2a022e2dc05b9e35e12d2ee9037af5472b9a2375b90c9d",
+        "cb1104516284ee52e6c76e435af3a22c995f8671fb4a2989eff62402364003e6",
+        "e0c3f4d1eab833c96d7cf9250a60eb77468aff15ad12c15905fa29f2a79a9a28",
+        "ec65b7cb50d7280b85da1116991a736e46f1181e2cf3dfcbf83cdf1f11a03974"
+      ],
+      "required_independent_clusters": 10,
+      "queries_per_context": 1
+    },
+    "memops": {
+      "source_split": "final",
+      "subjects": [
+        "A05",
+        "A11",
+        "A20",
+        "B03",
+        "B04"
+      ],
+      "unit_ids": [
+        "A05_forget",
+        "A05_reflect",
+        "A05_remember",
+        "A05_trajectory_ops",
+        "A05_update",
+        "A11_forget",
+        "A11_reflect",
+        "A11_update",
+        "A20_reflect",
+        "A20_trajectory_ops",
+        "B03_reflect",
+        "B03_remember",
+        "B03_trajectory_ops",
+        "B03_update",
+        "B04_forget",
+        "B04_reflect",
+        "B04_remember",
+        "B04_trajectory_ops",
+        "B04_update"
+      ],
+      "required_independent_subject_clusters": 5,
+      "question_selection": "state-verification-v4"
+    },
+    "longmemeval_v2": {
+      "tier": "small",
+      "question_count": 451,
+      "maximum_logical_full_runs": 1
+    }
+  },
+  "frozen_parameters": {
+    "seed": 17,
+    "bootstrap_repeats": 2000,
+    "confidence_level": 0.95,
+    "token_budget": 8192,
+    "latency_budget_ms": 1000.0,
+    "top_k_context": 10,
+    "sequence_coverage_points": 28,
+    "sequence_coverage_includes_first_and_last": true,
+    "plot_plan_max_tokens": 800,
+    "draft_word_rewrite_threshold": 700,
+    "maximum_length_rewrites": 1,
+    "summarization_generation_max_tokens": 1200,
+    "maximum_treatment_generation_calls": 3,
+    "memops_question_selection": "state-verification-v4",
+    "memops_target_scoped_tombstones": true,
+    "memops_complete_dialogue_registration": true,
+    "memops_trajectory_sequence_coverage": true,
+    "memops_trajectory_operation_only_sequence_coverage": true,
+    "memops_update_sequence_coverage": false,
+    "causal_noop_fallback": true,
+    "answer_model": "mistral:7b",
+    "judge_model": "mistral:7b",
+    "model_digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768,
+    "python_utf8_mode": true,
+    "recsys_entity_mapping_sha256": "63353aca481bc9558b502f91cb98f6fa26438796fdd7e0bc06b5a1532126e8b5"
+  },
+  "frozen_gates": {
+    "memoryagentbench_and_memops": {
+      "paired_cluster_bootstrap_ci_lower_strictly_greater_than": 0.0,
+      "mean_non_negative": true,
+      "minimum_intervention_coverage": 0.8,
+      "false_verified_promotions_maximum": 0,
+      "production_case_count_maximum": 0
+    },
+    "longmemeval_v2": {
+      "uplift_minimum": 0.01,
+      "improved_categories_minimum": 4,
+      "repeated_error_reduction_minimum": 0.5,
+      "stale_or_contradiction_error_rate_maximum": 0.02,
+      "context_reduction_vs_full_context_minimum": 0.3,
+      "runtime_p95_must_be_within_frozen_budget": true,
+      "ablation_required_for_every_improvement": true
+    }
+  },
+  "stage_order": {
+    "arms": [
+      "memoryagentbench_final",
+      "memops_final",
+      "longmemeval_v2_small_full"
+    ],
+    "stop_on_first_failure": true,
+    "rationale": "Fail-fast preserves every later independent held-out arm when an earlier necessary arm fails."
+  },
+  "held_out_state_at_preregistration": {
+    "memoryagentbench_final_outcomes_opened": false,
+    "memops_final_outcomes_opened": false,
+    "longmemeval_v2_examples_downloaded": false,
+    "longmemeval_v2_full_runs": 0
+  },
+  "decision_rule": "Full v19 admission passes only when every frozen arm passes on the exact candidate SHA with all raw evidence retained and validated. Any failed arm is immutable and stops later held-out execution.",
+  "claim_boundary": "Preregistration is not a benchmark result. Even a single arm pass does not authorize a 100%-pass, SOTA, production, universal, or revolutionary claim.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "75d770a345cef7205a3d32e9423d1fc566dab96d0ebd00f7dc1ab16acf31f12e"
+  }
+}
