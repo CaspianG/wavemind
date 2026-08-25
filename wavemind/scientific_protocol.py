@@ -18,6 +18,7 @@ SCIENTIFIC_PROTOCOL_V2_SCHEMA = "wavemind.scientific_memory_protocol.v2"
 SCIENTIFIC_PROTOCOL_V3_SCHEMA = "wavemind.scientific_memory_protocol.v3"
 SCIENTIFIC_PROTOCOL_V4_SCHEMA = "wavemind.scientific_memory_protocol.v4"
 SCIENTIFIC_PROTOCOL_V5_SCHEMA = "wavemind.scientific_memory_protocol.v5"
+SCIENTIFIC_PROTOCOL_V6_SCHEMA = "wavemind.scientific_memory_protocol.v6"
 GIT_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 REQUIRED_BASELINES = {
@@ -538,4 +539,85 @@ def validate_scientific_protocol_v5(
     terminal = str(payload.get("terminal_rule") or "")
     if "failed_experiment_v5" not in terminal or "remain unchanged" not in terminal:
         errors.append("scientific v5 fail-closed terminal rule is missing")
+    return errors
+
+
+def validate_scientific_protocol_v6(
+    payload: Mapping[str, Any], *, project_root: str | Path
+) -> list[str]:
+    """Validate operation-aware v6 while preserving every frozen gate."""
+
+    errors: list[str] = []
+    project = Path(project_root).resolve()
+    if payload.get("schema") != SCIENTIFIC_PROTOCOL_V6_SCHEMA:
+        errors.append("scientific v6 protocol schema is invalid")
+    if payload.get("status") != "preregistered":
+        errors.append("scientific v6 protocol must remain preregistered")
+    if payload.get("protocol_digest") != protocol_digest(payload):
+        errors.append("scientific v6 protocol digest mismatch")
+    negative = payload.get("immutable_negative_evidence") or {}
+    expected_statuses = {
+        "v1_status": "failed_experiment",
+        "v2_status": "failed_experiment_v2",
+        "v3_status": "failed_experiment_v3_runtime_budget",
+        "v4_status": "failed_experiment_v4_runtime_budget",
+        "v5_status": "failed_development_gate",
+    }
+    for key, expected in expected_statuses.items():
+        if negative.get(key) != expected:
+            errors.append(f"v6 did not preserve negative status: {key}")
+    v5_path = project / "benchmarks" / "SCIENTIFIC_MEMORY_V5_OUTCOME.md"
+    if not v5_path.is_file() or negative.get("v5_outcome_sha256") != file_sha256(
+        v5_path
+    ):
+        errors.append("v5 immutable outcome hash mismatch")
+    if negative.get("may_be_overwritten") is not False:
+        errors.append("v6 negative evidence must remain immutable")
+    candidate = payload.get("candidate") or {}
+    if candidate.get("id") != "operation-aware-tombstone-reconciler-v6":
+        errors.append("scientific v6 candidate identity changed")
+    if candidate.get("frozen_before_first_v6_outcome") is not True:
+        errors.append("scientific v6 candidate must be frozen before outcomes")
+    tombstone = str(candidate.get("tombstone_policy") or "")
+    for required in ("forget", "mandatory", "provenance"):
+        if required not in tombstone:
+            errors.append(f"scientific v6 tombstone rule is missing: {required}")
+    parameters = payload.get("frozen_parameters") or {}
+    if parameters.get("source_recency_bonus") != 0.0:
+        errors.append("v6 generic source-recency bonus must remain disabled")
+    if parameters.get("event_batch_transaction_count_per_context") != 1:
+        errors.append("v6 must use one event transaction per context")
+    v5 = load_scientific_protocol(
+        project / "benchmarks" / "scientific_memory_protocol_v5.json"
+    )
+    if payload.get("development_gate") != v5.get("development_gate"):
+        errors.append("v6 development gates differ from frozen v5 gates")
+    if payload.get("admission_gates") != v5.get("admission_gates"):
+        errors.append("v6 admission gates differ from frozen v5 gates")
+    validity = payload.get("validity_controls") or {}
+    for key in (
+        "official_scorers_only",
+        "intervention_audit_required",
+        "event_chain_validation_required",
+        "batch_rollback_test_required",
+        "production_index_absence_required_during_shadow",
+        "memory_intent_detection_blind_to_gold_required",
+    ):
+        if validity.get(key) is not True:
+            errors.append(f"v6 validity control is missing: {key}")
+    if validity.get("gold_fields_exposed_to_candidate") != []:
+        errors.append("v6 candidate may not inspect gold fields")
+    sample = payload.get("frozen_development_sample") or {}
+    if "all available operation" not in str(sample.get("memops") or "").lower():
+        errors.append("v6 MemOps sample must include all available operations")
+    if sample.get("required_repeats_on_exact_source_sha") != 3:
+        errors.append("v6 reproducibility count changed")
+    held_out = payload.get("held_out_policy") or {}
+    if held_out.get("opened_at_preregistration") is not False:
+        errors.append("v6 held-out data was opened before preregistration")
+    if held_out.get("maximum_full_longmemeval_v2_runs") != 1:
+        errors.append("v6 LongMemEval must remain one-shot")
+    terminal = str(payload.get("terminal_rule") or "")
+    if "failed_experiment_v6" not in terminal or "remain unchanged" not in terminal:
+        errors.append("scientific v6 fail-closed terminal rule is missing")
     return errors

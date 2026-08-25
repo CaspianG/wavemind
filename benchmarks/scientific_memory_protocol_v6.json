@@ -1,0 +1,126 @@
+{
+  "schema": "wavemind.scientific_memory_protocol.v6",
+  "protocol_id": "scientific-core-operation-aware-2026-08-25-v6",
+  "status": "preregistered",
+  "preregistered_at": "2026-08-25",
+  "baseline_source_sha": "f9108a3031036d8316ed66d605e51f934280527e",
+  "supersedes_protocol_digest": "2b0af0171226eee0d1cc1acd134c196982fb095454b885a136662fb51e8e0331",
+  "immutable_negative_evidence": {
+    "v1_status": "failed_experiment",
+    "v2_status": "failed_experiment_v2",
+    "v3_status": "failed_experiment_v3_runtime_budget",
+    "v4_status": "failed_experiment_v4_runtime_budget",
+    "v5_status": "failed_development_gate",
+    "v5_outcome_sha256": "1043c817fb1526072d25431b125b81859ff97cf1fd2376ff2cf3c1266c0bf895",
+    "may_be_overwritten": false
+  },
+  "claim_boundary": "No product-superiority, SOTA, revolutionary, replacement, validation, or held-out claim is permitted unless an exact-SHA v6 admission artifact passes every frozen gate.",
+  "candidate": {
+    "id": "operation-aware-tombstone-reconciler-v6",
+    "frozen_before_first_v6_outcome": true,
+    "implementation_boundary": [
+      "wavemind.scientific_memops.ScientificMemOpsRetriever._register_corpus",
+      "wavemind.scientific_reconciliation.ProofCarryingStateReconciler.select",
+      "wavemind.scientific_runtime.ScientificMemoryRuntime.evaluation_recall",
+      "wavemind.scientific_memoryagentbench.compile_candidate_units"
+    ],
+    "ingestion": "MemoryAgentBench uses the unchanged v5 blind structural compiler and atomic event batch. MemOps compiles only sessions containing explicit user memory intent or assistant state acknowledgement; all detection is over raw dialogue text and may not inspect gold operations, expected answers, scorer outputs, split labels, validation, or final fields.",
+    "memory_intent_cues": [
+      "remember or keep/store/note/track this information",
+      "assistant acknowledgement using noted/remembered/removed/forgotten",
+      "forget/remove/delete/discard/do not store/do not reference requests"
+    ],
+    "tombstone_policy": "A session containing an explicit forget/remove/delete/discard/do-not-store request is a mandatory state-constraint candidate. It is ranked ahead of ordinary recalled sessions and remains provenance-visible; earlier raw values are never converted into active claims.",
+    "retrieval": "Deterministic query-token IDF over operation-bearing units; tombstone units first, then lexical score, then source order and memory ID. The generic source-recency bonus used by v5 is removed. At most twenty units are selected under frozen budgets.",
+    "evaluation_storage": "Shadow units use one atomic scientific-event batch only. Production index count remains zero and production recall remains fail-closed.",
+    "production_promotion": "95% paired cluster-bootstrap CI lower bound strictly greater than zero, at least five independent clusters, three reproducible runs, and zero false verified promotions."
+  },
+  "frozen_parameters": {
+    "seed": 17,
+    "bootstrap_repeats": 2000,
+    "confidence_level": 0.95,
+    "maximum_graph_hops": 4,
+    "maximum_retrieval_candidates": 20,
+    "token_budget": 8192,
+    "latency_budget_ms": 1000.0,
+    "maximum_safety_risk": 0.0,
+    "top_k_context": 10,
+    "minimum_structural_unit_characters": 1,
+    "evaluation_legacy_vector_indexing": false,
+    "event_batch_transaction_count_per_context": 1,
+    "sqlite_synchronous": "FULL",
+    "source_recency_bonus": 0.0,
+    "answer_model": "mistral:7b",
+    "answer_model_digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768
+  },
+  "development_scope": {
+    "allowed": [
+      "MemoryAgentBench units labeled development in the frozen split manifest",
+      "MemOps subjects labeled development in the frozen evaluation split manifest",
+      "STATE-Bench development learning trajectories already prepared without validation/final execution"
+    ],
+    "forbidden": [
+      "MemoryAgentBench validation or final units",
+      "MemOps validation or final subjects",
+      "STATE-Bench validation or final tasks",
+      "LongMemEval-V2 full 451-question run"
+    ],
+    "candidate_changes_after_development_outcomes": "A changed mechanism requires a new protocol version and digest; thresholds and admission gates may never be weakened."
+  },
+  "frozen_development_sample": {
+    "memoryagentbench": "The same five Accurate_Retrieval development context IDs used by v5, one query each.",
+    "memops": "All available operation files for the first five lexicographic subjects whose entire subject is labeled development and for which every included file is present in both official input directories. Select subjects before running any v6 outcome; include every available operation for each selected subject; aggregate confidence intervals by subject, not row.",
+    "required_repeats_on_exact_source_sha": 3
+  },
+  "development_gate": {
+    "required_reproducible_runs": 3,
+    "independent_benchmark_families_with_positive_uplift_lcb": 2,
+    "minimum_independent_clusters_per_family": 5,
+    "cluster_identity": "content or subject fingerprint; repeated rows with the same fingerprint are one cluster",
+    "task_success_uplift_ci_lower_strictly_greater_than": 0.0,
+    "minimum_candidate_intervention_coverage": 0.8,
+    "absent_intervention_policy": "A row with zero selected memories or byte-identical treatment/control prompts is invalid for uplift estimation and must be reported, not coerced to zero effect.",
+    "all_observed_family_means_must_be_non_negative": true,
+    "false_verified_promotions_maximum": 0,
+    "raw_per_case_evidence_required": true,
+    "failed_attempts_must_be_retained": true
+  },
+  "admission_gates": {
+    "independent_benchmark_families_with_positive_uplift_lcb": 2,
+    "task_success_uplift_ci_lower_strictly_greater_than": 0.0,
+    "longmemeval_v2_uplift_minimum": 0.01,
+    "longmemeval_v2_improved_categories_minimum": 4,
+    "repeated_error_reduction_minimum": 0.5,
+    "stale_or_contradiction_error_rate_maximum": 0.02,
+    "false_verified_promotions_maximum": 0,
+    "context_reduction_vs_full_context_minimum": 0.3,
+    "runtime_p95_must_be_within_frozen_budget": true,
+    "raw_per_case_evidence_required": true,
+    "ablation_required_for_every_improvement": true
+  },
+  "validity_controls": {
+    "official_scorers_only": true,
+    "gold_fields_exposed_to_candidate": [],
+    "answer_model_and_prompt_bytes_equal_except_selected_memory": true,
+    "randomized_or_hash_balanced_arm_order": true,
+    "duplicate_cluster_detection_required": true,
+    "intervention_audit_required": true,
+    "confidence_interval_unit_must_match_independent_cluster": true,
+    "event_chain_validation_required": true,
+    "batch_rollback_test_required": true,
+    "interleaved_writer_test_required": true,
+    "production_index_absence_required_during_shadow": true,
+    "memory_intent_detection_blind_to_gold_required": true
+  },
+  "held_out_policy": {
+    "opened_at_preregistration": false,
+    "post_hoc_candidate_changes_forbidden": true,
+    "threshold_relaxation_forbidden": true,
+    "failed_cases_must_be_retained": true,
+    "full_longmemeval_v2_run_count_at_preregistration": 0,
+    "maximum_full_longmemeval_v2_runs": 1
+  },
+  "terminal_rule": "If the frozen v6 candidate does not pass the development gate, report failed_experiment_v6 and create no validation, held-out, admission, SOTA, or revolutionary claim. Public WaveField descriptions and WaveMind Connect remain unchanged.",
+  "protocol_digest": "d140bd10012dc698656b211621be1fb851ae511294114a4b3d5cd73cbdfd2ebc"
+}
