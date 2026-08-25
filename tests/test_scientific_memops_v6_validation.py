@@ -54,4 +54,3 @@ def test_frozen_memops_validation_subjects_and_operation_matrix_are_untouched():
     assert all(unit["split"] == "validation" for unit in units)
     assert adjacent_names == longitudinal_names
     assert len(adjacent_names) == 23
-

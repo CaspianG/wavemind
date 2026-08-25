@@ -38,4 +38,3 @@ def test_frozen_mab_validation_units_are_independent_and_untouched():
         "Conflict_Resolution",
         "Long_Range_Understanding",
     }
-
