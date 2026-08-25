@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import sys
 from pathlib import Path
 
@@ -7,7 +8,15 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from benchmarks import scientific_memops_v10_development as runner
+_SPEC = importlib.util.spec_from_file_location(
+    "wavemind_scientific_memops_v12_base",
+    ROOT / "benchmarks" / "scientific_memops_v10_development.py",
+)
+if _SPEC is None or _SPEC.loader is None:
+    raise RuntimeError("unable to load isolated v12 MemOps runner")
+runner = importlib.util.module_from_spec(_SPEC)
+sys.modules[_SPEC.name] = runner
+_SPEC.loader.exec_module(runner)
 from wavemind.scientific_runtime import ScientificCandidateMode
 
 
