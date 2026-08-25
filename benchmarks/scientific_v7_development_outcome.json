@@ -1,0 +1,73 @@
+{
+  "schema": "wavemind.scientific_development_outcome.v7",
+  "status": "failed_development_gate_v7",
+  "candidate_id": "query-sliced-operation-aware-reconciler-v7",
+  "candidate_source_sha": "7a239cd6564920d758d0099a0e24922dc222c642",
+  "protocol_digest": "898de5766fcf7d509218c28966a950db9dda8ee21795e2faf17d08247c7ba73e",
+  "failed_gate": "memoryagentbench_development_positive_uplift_lcb_run_1",
+  "memoryagentbench_development": {
+    "status": "failed_development_gate",
+    "run_number": 1,
+    "planned_run_count": 3,
+    "case_count": 11,
+    "independent_cluster_count": 11,
+    "intervention_coverage": 1.0,
+    "paired_effect_values": [
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "positive_count": 2,
+    "zero_count": 9,
+    "negative_count": 0,
+    "mean_difference": 0.18181818181818182,
+    "ci95_lower": 0.0,
+    "ci95_upper": 0.45454545454545453,
+    "required_ci95_lower_strictly_greater_than": 0.0,
+    "production_case_count": 0,
+    "false_verified_promotions": 0,
+    "promoted_memory_ids": [],
+    "artifact": {
+      "path": "benchmarks/scientific_mab_v7_development_run1_results.json",
+      "bytes": 3340,
+      "sha256": "de7b814eeda7073ec0c5f2478e994def5ac4383aa08ecd705ef71f64c3965483"
+    },
+    "raw": {
+      "path": "benchmarks/scientific_mab_v7_development_run1_raw.jsonl",
+      "bytes": 191425,
+      "sha256": "f3c9874966a4c37244d799e847377ccc4e78e5780ac669532d4734940ac0d874"
+    }
+  },
+  "unopened_evidence": {
+    "memoryagentbench_development_runs_2_and_3_executed": false,
+    "memops_development_gate_executed": false,
+    "memoryagentbench_validation_executed": false,
+    "memops_validation_executed": false,
+    "memoryagentbench_final_executed": false,
+    "memops_final_executed": false,
+    "longmemeval_v2_examples_downloaded": false,
+    "longmemeval_v2_full_run_executed": false,
+    "reason": "The first mandatory development run failed its frozen confidence-bound rule. Later gates cannot rescue v7 and remain independent for a preregistered successor."
+  },
+  "post_outcome_policy": {
+    "v7_candidate_changes_forbidden": true,
+    "opened_v7_cases_may_be_used_only_as_development_evidence": true,
+    "thresholds_may_be_relaxed": false,
+    "next_protocol_must_be_registered_before_candidate_implementation": true,
+    "validation_and_final_splits_remain_untouched": true
+  },
+  "claim_boundary": "v7 failed its first frozen development run. No validation, admission, superiority, SOTA, production-promotion, 100%-pass, or revolutionary claim is permitted.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "52beb991548422a4924fc49608765397d080d61f31a5e38ef91ba0ecea958b29"
+  }
+}
