@@ -17,6 +17,7 @@ SCIENTIFIC_PROTOCOL_SCHEMA = "wavemind.scientific_memory_protocol.v1"
 SCIENTIFIC_PROTOCOL_V2_SCHEMA = "wavemind.scientific_memory_protocol.v2"
 SCIENTIFIC_PROTOCOL_V3_SCHEMA = "wavemind.scientific_memory_protocol.v3"
 SCIENTIFIC_PROTOCOL_V4_SCHEMA = "wavemind.scientific_memory_protocol.v4"
+SCIENTIFIC_PROTOCOL_V5_SCHEMA = "wavemind.scientific_memory_protocol.v5"
 GIT_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 REQUIRED_BASELINES = {
@@ -469,4 +470,72 @@ def validate_scientific_protocol_v4(
     terminal = str(payload.get("terminal_rule") or "")
     if "failed_experiment_v4" not in terminal or "remain unchanged" not in terminal:
         errors.append("scientific v4 fail-closed terminal rule is missing")
+    return errors
+
+
+def validate_scientific_protocol_v5(
+    payload: Mapping[str, Any], *, project_root: str | Path
+) -> list[str]:
+    """Validate atomic-batch v5 and unchanged scientific gates."""
+
+    errors: list[str] = []
+    project = Path(project_root).resolve()
+    if payload.get("schema") != SCIENTIFIC_PROTOCOL_V5_SCHEMA:
+        errors.append("scientific v5 protocol schema is invalid")
+    if payload.get("status") != "preregistered":
+        errors.append("scientific v5 protocol must remain preregistered")
+    if payload.get("protocol_digest") != protocol_digest(payload):
+        errors.append("scientific v5 protocol digest mismatch")
+    negative = payload.get("immutable_negative_evidence") or {}
+    expected_statuses = {
+        "v1_status": "failed_experiment",
+        "v2_status": "failed_experiment_v2",
+        "v3_status": "failed_experiment_v3_runtime_budget",
+        "v4_status": "failed_experiment_v4_runtime_budget",
+    }
+    for key, expected in expected_statuses.items():
+        if negative.get(key) != expected:
+            errors.append(f"v5 did not preserve negative status: {key}")
+    v4_path = project / "benchmarks" / "SCIENTIFIC_MEMORY_V4_OUTCOME.md"
+    if not v4_path.is_file() or negative.get("v4_outcome_sha256") != file_sha256(
+        v4_path
+    ):
+        errors.append("v4 immutable outcome hash mismatch")
+    candidate = payload.get("candidate") or {}
+    if candidate.get("id") != "atomic-batch-hierarchical-proof-state-reconciler-v5":
+        errors.append("scientific v5 candidate identity changed")
+    if candidate.get("frozen_before_first_v5_outcome") is not True:
+        errors.append("scientific v5 candidate must be frozen before outcomes")
+    atomic = str(candidate.get("atomic_batch") or "")
+    for required in ("BEGIN IMMEDIATE", "executemany", "COMMIT", "ROLLBACK"):
+        if required not in atomic:
+            errors.append(f"scientific v5 atomic rule is missing: {required}")
+    parameters = payload.get("frozen_parameters") or {}
+    if parameters.get("event_batch_transaction_count_per_context") != 1:
+        errors.append("v5 must use one event transaction per context")
+    if parameters.get("evaluation_legacy_vector_indexing") is not False:
+        errors.append("v5 evaluation vector indexing must remain disabled")
+    if parameters.get("sqlite_synchronous") != "FULL":
+        errors.append("v5 SQLite durability was weakened")
+    v4 = load_scientific_protocol(
+        project / "benchmarks" / "scientific_memory_protocol_v4.json"
+    )
+    if payload.get("development_gate") != v4.get("development_gate"):
+        errors.append("v5 development gates differ from frozen v4 gates")
+    if payload.get("admission_gates") != v4.get("admission_gates"):
+        errors.append("v5 admission gates differ from frozen v4 gates")
+    validity = payload.get("validity_controls") or {}
+    for key in (
+        "event_chain_validation_required",
+        "batch_rollback_test_required",
+        "interleaved_writer_test_required",
+        "production_index_absence_required_during_shadow",
+    ):
+        if validity.get(key) is not True:
+            errors.append(f"v5 validity control is missing: {key}")
+    if validity.get("gold_fields_exposed_to_candidate") != []:
+        errors.append("v5 candidate may not inspect gold fields")
+    terminal = str(payload.get("terminal_rule") or "")
+    if "failed_experiment_v5" not in terminal or "remain unchanged" not in terminal:
+        errors.append("scientific v5 fail-closed terminal rule is missing")
     return errors
