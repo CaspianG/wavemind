@@ -21,6 +21,7 @@ from .evidence import (
     validate_artifact_integrity,
 )
 from .scientific_answer_transducer import (
+    canonicalize_evidence_contracted_answer,
     canonicalize_query_constrained_answer,
     canonicalize_strict_multiple_choice_answer,
 )
@@ -101,6 +102,7 @@ def compile_candidate_units(
         ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
         ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
         ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
+        ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
     }
 
     def finalize(
@@ -130,6 +132,7 @@ def compile_candidate_units(
         ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
         ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
         ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
+        ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
     }:
         return tuple(
             CandidateMemoryUnit(str(chunk), index, "official-chunk")
@@ -156,6 +159,7 @@ def compile_candidate_units(
         ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
         ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
         ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
+        ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
     }:
         markers = list(_DOCUMENT_MARKER_RE.finditer(context))
         if markers:
@@ -745,6 +749,7 @@ def run_scientific_candidate_development(
                         ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
                         ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
                         ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
+                        ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
                     }:
                         batch_definitions.append(definition)
                     elif mode is ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER:
@@ -764,6 +769,7 @@ def run_scientific_candidate_development(
                     ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
                     ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
                     ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
+                    ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
                 }:
                     runtime.register_evaluation_memories(
                         batch_definitions,
@@ -840,10 +846,18 @@ def run_scientific_candidate_development(
                     if mode in {
                         ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
                         ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
+                        ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
                     }:
                         raw_treatment_output = str(generated["treatment"]["output"])
                         transduction = (
-                            canonicalize_strict_multiple_choice_answer(
+                            canonicalize_evidence_contracted_answer(
+                                runtime_case.query,
+                                raw_treatment_output,
+                                treatment_recall.contents,
+                            )
+                            if mode
+                            is ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT
+                            else canonicalize_strict_multiple_choice_answer(
                                 runtime_case.query,
                                 raw_treatment_output,
                             )
@@ -1207,6 +1221,7 @@ def build_candidate_development_artifact(
                     ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER.value,
                     ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER.value,
                     ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT.value,
+                    ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT.value,
                 }
             ),
         },

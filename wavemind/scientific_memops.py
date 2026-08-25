@@ -96,6 +96,7 @@ class ScientificMemOpsRetriever:
                 ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
                 ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
                 ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
+                ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
             } and not operation:
                 continue
             content_slices = (
@@ -106,6 +107,7 @@ class ScientificMemOpsRetriever:
                     ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
                     ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
                     ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
+                    ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
                 }
                 else ((content, 0),)
             )
@@ -148,6 +150,7 @@ class ScientificMemOpsRetriever:
                     ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
                     ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
                     ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
+                    ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
                 }:
                     batch_definitions.append(definition)
                 elif (
@@ -175,6 +178,7 @@ class ScientificMemOpsRetriever:
             ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
             ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
             ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
+            ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
         }:
             self.runtime.register_evaluation_memories(
                 batch_definitions,
@@ -185,6 +189,7 @@ class ScientificMemOpsRetriever:
                         ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
                         ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
                         ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
+                        ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
                     }
                     else (
                         "memops-development-adapter-v7"

@@ -4,6 +4,7 @@ from collections import Counter
 from dataclasses import dataclass
 import json
 import re
+from typing import Sequence
 
 from .scientific_query_phrases import (
     extract_query_candidate_options,
@@ -114,3 +115,49 @@ def canonicalize_strict_multiple_choice_answer(
         if normalized_candidate == normalize_query_phrase(option):
             return AnswerTransduction(options[label], True, 1.0, 1.0, len(options))
     return AnswerTransduction(raw_output, False, 0.0, 0.0, len(options))
+
+
+def canonicalize_evidence_contracted_answer(
+    query: str,
+    model_output: str,
+    evidence_contents: Sequence[str],
+) -> AnswerTransduction:
+    """Resolve query contracts using only treatment-visible evidence.
+
+    Explicit A-D answers remain strict. For list-style options, a unique exact
+    occurrence in retrieved evidence is authoritative; otherwise the existing
+    conservative paraphrase projection is used. Gold and scorer fields are not
+    accepted by this interface.
+    """
+
+    strict = canonicalize_strict_multiple_choice_answer(query, model_output)
+    if strict.applied:
+        return strict
+
+    options = extract_query_candidate_options(query)
+    normalized_evidence = tuple(
+        normalize_query_phrase(content) for content in evidence_contents
+    )
+    if options and normalized_evidence:
+        scored = []
+        for index, option in enumerate(options):
+            normalized_option = normalize_query_phrase(option)
+            occurrence_count = sum(
+                content.count(normalized_option)
+                for content in normalized_evidence
+                if normalized_option
+            )
+            scored.append((occurrence_count, index, option))
+        scored.sort(key=lambda item: (-item[0], item[1]))
+        best_count, _, best_option = scored[0]
+        runner_up_count = scored[1][0] if len(scored) > 1 else 0
+        if best_count > 0 and best_count > runner_up_count:
+            return AnswerTransduction(
+                best_option,
+                True,
+                1.0,
+                (best_count - runner_up_count) / best_count,
+                len(options),
+            )
+
+    return canonicalize_query_constrained_answer(query, model_output)
