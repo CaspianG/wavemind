@@ -1,0 +1,66 @@
+{
+  "schema": "wavemind.scientific_admission_outcome.v10",
+  "status": "failed_admission_v10",
+  "candidate_id": "operation-trace-strict-output-agent-v10",
+  "candidate_source_sha": "47b68e366aab9ce07b659c61a51c81d634b3fff2",
+  "protocol_digest": "d522705fdc9d49ed97874b6ce09c6372d7189673945b894856805be625d21b50",
+  "mab_final_plan_digest": "92de9fbcd3ab296d0b66ba5995ade10f3f483db1d0a178b657650faad1051e32",
+  "failed_gate": "memoryagentbench_final_positive_uplift_lcb",
+  "memoryagentbench_final": {
+    "status": "failed_final",
+    "case_count": 5,
+    "independent_cluster_count": 5,
+    "intervention_coverage": 1.0,
+    "paired_effect_values": [
+      1.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "mean_difference": 0.4,
+    "ci95_lower": 0.0,
+    "ci95_upper": 0.8,
+    "required_ci95_lower_strictly_greater_than": 0.0,
+    "production_case_count": 0,
+    "false_verified_promotions": 0,
+    "promoted_memory_ids": [],
+    "gate_checks": {
+      "five_independent_clusters": true,
+      "paired_cluster_bootstrap_ci_lower_strictly_positive": false,
+      "mean_non_negative": true,
+      "minimum_intervention_coverage": true,
+      "no_production_cases": true,
+      "no_promoted_memories": true
+    },
+    "artifact": {
+      "path": "benchmarks/scientific_mab_v10_final_results.json",
+      "bytes": 2617,
+      "sha256": "1de10b59effb8d6f470affdb6496fec097d93b83724808159d86ba9e7a4137f5"
+    },
+    "raw": {
+      "path": "benchmarks/scientific_mab_v10_final_raw.jsonl",
+      "bytes": 55092,
+      "sha256": "0517479e417440a58aeb9315abd61bd2bbb780aa7330381dcd51d100340b6f93"
+    }
+  },
+  "unopened_held_out_evidence": {
+    "memops_final_executed": false,
+    "longmemeval_v2_examples_downloaded": false,
+    "longmemeval_v2_full_run_executed": false,
+    "reason": "The preregistered MAB final gate failed. Opening later held-out arms cannot rescue v10 and would spend independent evidence."
+  },
+  "post_outcome_policy": {
+    "v10_candidate_changes_forbidden": true,
+    "mab_final_cases_may_be_used_for_future_tuning": false,
+    "thresholds_may_be_relaxed": false,
+    "future_candidates_require_new_preregistration": true,
+    "future_gates_must_use_unopened_development_evidence": true
+  },
+  "claim_boundary": "v10 passed six exact-SHA development runs but failed its first held-out final arm. No full admission, 100%-pass, superiority, SOTA, production, universal, or revolutionary claim is permitted.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "80dae752b754cd5ffb8a08c557e9ddf76395c173de33a79bec52dc3c27b201e4"
+  }
+}
