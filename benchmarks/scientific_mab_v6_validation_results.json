@@ -1,0 +1,123 @@
+{
+  "schema": "wavemind.memoryagentbench_validation.v6",
+  "phase": "validation",
+  "status": "failed_validation",
+  "candidate_id": "operation-aware-tombstone-reconciler-v6",
+  "candidate_source_sha": "a8240fe6bd9a79aec3d524b1cbbbdb4b907f8d97",
+  "protocol_digest": "d140bd10012dc698656b211621be1fb851ae511294114a4b3d5cd73cbdfd2ebc",
+  "model": {
+    "id": "mistral:7b",
+    "digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768
+  },
+  "official_repository_sha": "fe1735de8cf8b9908e1e3d3b5612afc815698062",
+  "dataset_revision": "7ea066982b140a19337e17e60d45d4076e042faf",
+  "source_split": "validation",
+  "unit_ids": [
+    "Accurate_Retrieval:0004:4a190b7aec81123d",
+    "Accurate_Retrieval:0012:2bc8ffde99c2c47b",
+    "Accurate_Retrieval:0013:6dc878c847d183ff",
+    "Conflict_Resolution:0000:e46cb14b53eedd71",
+    "Long_Range_Understanding:0003:f186cd415885b43b"
+  ],
+  "context_sha256": [
+    "2bc8ffde99c2c47b4f6f3f4eec15cd604949db6788c1dbf2e3b202632702be70",
+    "4a190b7aec81123da0609d66517e84be7ceeee4b4c1a59d134fd18d18fd847ea",
+    "6dc878c847d183ffb3ec6d10e7f3d1d680664d6848eec4e2d0f7be480c16a911",
+    "e46cb14b53eedd71bf92762974a597d46b001157b6b769c03865dee9641818a1",
+    "f186cd415885b43befa96d5f56ae1c0a0bb4c85842539ca57b00f70e4e71d7ed"
+  ],
+  "case_count": 5,
+  "cluster_count": 5,
+  "paired_effect": {
+    "values": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "positive_count": 0,
+    "zero_count": 5,
+    "negative_count": 0
+  },
+  "paired_cluster_bootstrap": {
+    "paired": true,
+    "cluster_key": "cluster",
+    "cluster_count": 5,
+    "row_count": 5,
+    "repeats": 2000,
+    "seed": 17,
+    "confidence_level": 0.95,
+    "mean_difference": 0.0,
+    "ci_lower": 0.0,
+    "ci_upper": 0.0
+  },
+  "intervention_coverage": 1.0,
+  "selected_memory_ids": [
+    "mab-032bf832577635306e01b4c0",
+    "mab-03d9398c7c8d08bb13f93275",
+    "mab-1772f8746217c07ca5259ce3",
+    "mab-1f94b7985f8b8f0386285d07",
+    "mab-26273fb76ecb1fe208590923",
+    "mab-26d878ed9fc8e299b20cd5d5",
+    "mab-26fe01be9a6cab28d888d407",
+    "mab-29d065415651050f7bf589dd",
+    "mab-2bac4f6b4fa473b4cadbbd91",
+    "mab-2e4558874611774acd8bfa07",
+    "mab-2fb5b890e389775726f1b790",
+    "mab-325c4372012836e4a540d8d7",
+    "mab-32c52dd1c835649cc6d9e111",
+    "mab-38fe755a67a1ebf4136bbd28",
+    "mab-4bfa9d465fef6535184a7794",
+    "mab-4e28b35e823443be232fb82c",
+    "mab-5913b1dc64a53a823f98fa05",
+    "mab-62d532cb79b1769ea478f67e",
+    "mab-6317314dab965d3b7fdfffd9",
+    "mab-65cbdf1b972d86638090d231",
+    "mab-6dca69a2ee0ced65a0c47f9a",
+    "mab-7321e16d4e724430e7d20ae7",
+    "mab-8d4b7fb6bf49e967514bcabc",
+    "mab-90464d169b20fd77df800792",
+    "mab-97d1c6ca5a8f1176a85b8c25",
+    "mab-9aec648b3b95b6bf2f749b4e",
+    "mab-9b0c18b4d48918752b4944cb",
+    "mab-9b46044b0826c6f71102bece",
+    "mab-9c5f2e977a1070db1ad12265",
+    "mab-a5e8cfe82e4a083164436aa3",
+    "mab-b32f5439a4468a5fa164546f",
+    "mab-bcd910f1b2f96a0797c2e029",
+    "mab-c3c8965330b0c8a0b017bc5a",
+    "mab-c4f4aaa616a007c0de2f703f",
+    "mab-c9a1a86576ba557dab3ec3f9",
+    "mab-cde325e06c9a1f8b85223ea6",
+    "mab-cecbab239901848fd1ffdce9",
+    "mab-cede5bde58d57a0e68f2bb7a",
+    "mab-d29c4042f965adf343b21e7a",
+    "mab-d2d06c9a3baa3eec4598c43a",
+    "mab-dfdc5000ed9b3cdb287242e5",
+    "mab-dfea364bbbc6b6413443be2c",
+    "mab-f295961e9e4316b5dbc84d58",
+    "mab-f6bb288aed79ef5d074326d0",
+    "mab-fcf762672e1783cdc73283e9"
+  ],
+  "promoted_memory_ids": [],
+  "false_verified_promotions": 0,
+  "production_case_count": 0,
+  "raw_output": {
+    "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\mab-v6-validation-a8240fe\\raw.jsonl",
+    "bytes": 50045,
+    "sha256": "9e619f4ae9289a539d0bbb4ca59f9688b074f86b0921a0e359a5bece8c926b69"
+  },
+  "source_split_manifest": {
+    "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\work\\wavemind-scientific-core\\benchmarks\\memoryagentbench_split_manifest_results.json",
+    "sha256": "750a025a5c51d97fbff78df77d734a1086558f3b4ad5cdffee66704e08612adc"
+  },
+  "final_split_touched": false,
+  "claim_boundary": "This is validation evidence, not full v6 admission.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "a8046914a4b87f5620fdd54ad9ced39802d3e7c168a4a3360efd1e6a574b9c8c"
+  }
+}
