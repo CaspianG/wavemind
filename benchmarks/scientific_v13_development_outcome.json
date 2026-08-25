@@ -1,0 +1,36 @@
+{
+  "schema": "wavemind.scientific_v13_development_outcome.v1",
+  "status": "failed_development_gate_v13",
+  "candidate_source_sha": "10ff3779240b87d1c2865cf451e491ed76abdca2",
+  "protocol_digest": "da5273cd618e9d6207f47ce6841cb300c914d90949a45ea0ae7df4e20aa8db8d",
+  "failed_gate": "memoryagentbench_summarization_positive_uplift_lcb_run_1",
+  "run": {
+    "artifact": {"path": "benchmarks/scientific_mab_v13_run1_results.json", "bytes": 3534, "sha256": "e45c70190f33cc65d9dc05799aa08addd80951c57f90370520cef1f4d4ecb9f5"},
+    "raw": {"path": "benchmarks/scientific_mab_v13_run1_raw.jsonl", "bytes": 439928, "sha256": "f1e668bd653d8bdb72c101859a9bbc799516b6ac4361d0096a3cc0dd25d07873"},
+    "case_count": 10,
+    "paired_effect_values": [-0.0027472527472527514, 0.011290322580645162, 0.008578431372549017, -0.00648648648648649, -0.0158311345646438, -0.008426966292134824, 0.003460207612456759, -0.006402048655569786, -0.004106776180698157, 0.0],
+    "mean_difference": -0.002067170336113487,
+    "ci95_lower": -0.006686766694299967,
+    "ci95_upper": 0.002683092123037799,
+    "intervention_coverage": 1.0
+  },
+  "unexecuted": {
+    "mab_development_runs_2_and_3": true,
+    "memops_development_runs": true,
+    "mab_final": true,
+    "memops_final": true,
+    "longmemeval_v2": true
+  },
+  "post_outcome_policy": {
+    "v13_exact_sha_may_be_changed": false,
+    "thresholds_may_be_relaxed": false,
+    "opened_contexts_may_be_reused": false,
+    "new_protocol_requires_fresh_development_contexts": true
+  },
+  "claim_boundary": "v13 failed development. No admission, 100%-pass, superiority, SOTA, production, or revolutionary claim is permitted.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "f241899ce0ef8c70788024b2d51f07079e047d0da828070e10959b05b4dd30a0"
+  }
+}
