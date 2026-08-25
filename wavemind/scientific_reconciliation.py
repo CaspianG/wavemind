@@ -228,6 +228,52 @@ class ProofCarryingStateReconciler:
             latency_budget_ms=latency_budget_ms,
         )
 
+    def select_sequence_coverage(
+        self,
+        definitions: Mapping[str, MemoryDefinition],
+        *,
+        token_budget: int,
+        latency_budget_ms: float,
+    ) -> ReconciliationSelection:
+        """Select source-ordered evidence at deterministic, evenly spaced positions.
+
+        Query relevance is deliberately absent: global summarization is a coverage
+        task, and few-shot examples in the query are not evidence about the target
+        sequence. Endpoints are retained so beginnings and resolutions remain
+        represented when the source is much larger than the memory budget.
+        """
+
+        ordered = sorted(
+            definitions,
+            key=lambda memory_id: (
+                _source_order(definitions[memory_id]),
+                memory_id,
+            ),
+        )
+        if not ordered:
+            return ReconciliationSelection((), {}, "no source sequence available")
+        target_count = min(self.maximum_candidates, len(ordered))
+        if target_count == 1:
+            candidate_ids = ordered[:1]
+        else:
+            last = len(ordered) - 1
+            positions = {
+                round(index * last / (target_count - 1))
+                for index in range(target_count)
+            }
+            candidate_ids = [ordered[index] for index in sorted(positions)]
+        memory_ids = self._fit_budget(
+            candidate_ids,
+            definitions,
+            token_budget=token_budget,
+            latency_budget_ms=latency_budget_ms,
+        )
+        return ReconciliationSelection(
+            memory_ids=memory_ids,
+            relevance={memory_id: 1.0 for memory_id in memory_ids},
+            reason="evaluation-only deterministic source-sequence coverage",
+        )
+
     def _select_operation_memories(
         self,
         query: str,

@@ -32,6 +32,9 @@ CANDIDATE_MODE = ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT
 ARTIFACT_SCHEMA = "wavemind.memoryagentbench_development.v11"
 FAMILY_KEY = "memoryagentbench_cross_family"
 REQUIRED_SOURCE: str | None = None
+CANDIDATE_ID_OVERRIDE: str | None = None
+ARTIFACT_PHASE = "bounded-development"
+DIAGNOSTIC_ONLY = False
 
 
 def _require_clean_exact_source(expected_sha: str) -> str:
@@ -170,11 +173,17 @@ def main(argv: list[str] | None = None) -> int:
     artifact = attach_artifact_integrity(
         {
             "schema": ARTIFACT_SCHEMA,
-            "phase": "bounded-development",
+            "phase": ARTIFACT_PHASE,
             "admission_eligible": False,
-            "status": "pass" if all(gate_checks.values()) else "failed_development_gate",
+            "status": (
+                "diagnostic_only"
+                if DIAGNOSTIC_ONLY
+                else "pass"
+                if all(gate_checks.values())
+                else "failed_development_gate"
+            ),
             "run_number": args.run_number,
-            "candidate_id": protocol["candidate"]["id"],
+            "candidate_id": CANDIDATE_ID_OVERRIDE or protocol["candidate"]["id"],
             "candidate_source_sha": source_sha,
             "protocol_digest": protocol["protocol_digest"],
             "model": {"id": MODEL, "digest": MODEL_DIGEST, "context_window": 32768},
@@ -197,7 +206,11 @@ def main(argv: list[str] | None = None) -> int:
                 "sha256": file_sha256(raw_path),
             },
             "final_split_touched": False,
-            "claim_boundary": "Fresh development evidence only; not admission.",
+            "claim_boundary": (
+                "Previously opened development evidence; diagnostic only, never a gate."
+                if DIAGNOSTIC_ONLY
+                else "Fresh development evidence only; not admission."
+            ),
         }
     )
     args.artifact.parent.mkdir(parents=True, exist_ok=True)

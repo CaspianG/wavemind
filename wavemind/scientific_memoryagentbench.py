@@ -103,6 +103,7 @@ def compile_candidate_units(
         ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
         ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
         ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
+        ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
     }
 
     def finalize(
@@ -133,6 +134,7 @@ def compile_candidate_units(
         ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
         ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
         ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
+        ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
     }:
         return tuple(
             CandidateMemoryUnit(str(chunk), index, "official-chunk")
@@ -160,6 +162,7 @@ def compile_candidate_units(
         ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
         ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
         ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
+        ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
     }:
         markers = list(_DOCUMENT_MARKER_RE.finditer(context))
         if markers:
@@ -480,6 +483,36 @@ def official_primary_metric(source: str) -> str:
     return "substring_exact_match"
 
 
+def build_task_aware_treatment_prompt(
+    *,
+    source: str,
+    contents: Sequence[str],
+    query: str,
+) -> str:
+    """Keep target evidence distinct from few-shot demonstrations in a task query."""
+
+    if source != "infbench_sum_eng_shots2":
+        memory_prompt = "\n\n".join(
+            f"Memory {index + 1}:\n{content}"
+            for index, content in enumerate(contents)
+        )
+        return f"{memory_prompt}\n\n{query}" if memory_prompt else query
+    excerpts = "\n\n".join(
+        f"Target-book excerpt {index + 1} (chronological):\n{content}"
+        for index, content in enumerate(contents)
+    )
+    if not excerpts:
+        return query
+    return (
+        f"{excerpts}\n\n{query}\n\n"
+        "Important: the target-book excerpts above are the only evidence about "
+        "the book to summarize. Any named books, plots, or characters inside "
+        "the task examples are unrelated formatting demonstrations. Summarize "
+        "the target book represented by the chronological excerpts, not a "
+        "demonstration book."
+    )
+
+
 def install_official_compatibility_shims() -> list[dict[str, str]]:
     """Bridge dependency API removals without changing benchmark semantics."""
 
@@ -762,6 +795,7 @@ def run_scientific_candidate_development(
                         ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
                         ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
                         ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
+                        ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
                     }:
                         batch_definitions.append(definition)
                     elif mode is ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER:
@@ -782,6 +816,7 @@ def run_scientific_candidate_development(
                     ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
                     ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
                     ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
+                    ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
                 }:
                     runtime.register_evaluation_memories(
                         batch_definitions,
@@ -803,14 +838,29 @@ def run_scientific_candidate_development(
                         max_safety_risk=0.0,
                     )
                     if production_recall.abstained:
-                        treatment_recall = runtime.evaluation_recall(
-                            runtime_case.query,
-                            context={},
-                            moment=0.0,
-                            token_budget=token_budget,
-                            latency_budget_ms=1000.0,
-                            max_safety_risk=0.0,
-                        )
+                        if (
+                            mode
+                            is ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT
+                            and unit.source == "infbench_sum_eng_shots2"
+                        ):
+                            treatment_recall = (
+                                runtime.evaluation_sequence_coverage_recall(
+                                    context={},
+                                    moment=0.0,
+                                    token_budget=token_budget,
+                                    latency_budget_ms=1000.0,
+                                    max_safety_risk=0.0,
+                                )
+                            )
+                        else:
+                            treatment_recall = runtime.evaluation_recall(
+                                runtime_case.query,
+                                context={},
+                                moment=0.0,
+                                token_budget=token_budget,
+                                latency_budget_ms=1000.0,
+                                max_safety_risk=0.0,
+                            )
                         candidate_phase = "shadow"
                     else:
                         treatment_recall = production_recall
@@ -819,14 +869,10 @@ def run_scientific_candidate_development(
                     candidate_recall_times_ms.append(
                         (time.perf_counter() - recall_started) * 1000.0
                     )
-                    memory_prompt = "\n\n".join(
-                        f"Memory {index + 1}:\n{content}"
-                        for index, content in enumerate(treatment_recall.contents)
-                    )
-                    treatment_prompt = (
-                        f"{memory_prompt}\n\n{runtime_case.query}"
-                        if memory_prompt
-                        else runtime_case.query
+                    treatment_prompt = build_task_aware_treatment_prompt(
+                        source=unit.source,
+                        contents=treatment_recall.contents,
+                        query=runtime_case.query,
                     )
                     intervention_present = bool(
                         treatment_recall.selected_memory_ids
@@ -859,7 +905,12 @@ def run_scientific_candidate_development(
                         ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
                         ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
                         ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
-                    }:
+                        ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
+                    } and not (
+                        mode
+                        is ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT
+                        and unit.source == "infbench_sum_eng_shots2"
+                    ):
                         raw_treatment_output = str(generated["treatment"]["output"])
                         transduction = (
                             canonicalize_evidence_contracted_answer(
@@ -868,7 +919,10 @@ def run_scientific_candidate_development(
                                 treatment_recall.contents,
                             )
                             if mode
-                            is ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT
+                            in {
+                                ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
+                                ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
+                            }
                             else canonicalize_strict_multiple_choice_answer(
                                 runtime_case.query,
                                 raw_treatment_output,
@@ -1234,6 +1288,7 @@ def build_candidate_development_artifact(
                     ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER.value,
                     ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT.value,
                     ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT.value,
+                    ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT.value,
                 }
             ),
         },

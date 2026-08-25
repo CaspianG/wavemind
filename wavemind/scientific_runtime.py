@@ -40,6 +40,7 @@ class ScientificCandidateMode(str, Enum):
     EVIDENCE_GROUNDED_ANSWER_TRANSDUCER = "evidence-grounded-answer-transducer-v9"
     OPERATION_TRACE_STRICT_OUTPUT_AGENT = "operation-trace-strict-output-agent-v10"
     EVIDENCE_CONTRACTED_QUERY_AGENT = "evidence-contracted-query-agent-v11"
+    TASK_AWARE_SEQUENCE_COVERAGE_AGENT = "task-aware-sequence-coverage-agent-v14"
 
 
 @dataclass(frozen=True)
@@ -88,7 +89,12 @@ class ScientificMemoryRuntime:
         self.graph = EvidenceConstrainedAssociativeGraph()
         self.state_reconciler = ProofCarryingStateReconciler(
             maximum_graph_hops=4,
-            maximum_candidates=20,
+            maximum_candidates=(
+                28
+                if self.mode
+                is ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT
+                else 20
+            ),
             operation_aware=(
                 self.mode
                 in {
@@ -98,6 +104,7 @@ class ScientificMemoryRuntime:
                     ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
                     ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
                     ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
+                    ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
                 }
             ),
             source_recency_weight=(
@@ -109,6 +116,7 @@ class ScientificMemoryRuntime:
                     ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
                     ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
                     ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
+                    ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
                 }
                 else 0.25
             ),
@@ -119,6 +127,7 @@ class ScientificMemoryRuntime:
                     ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
                     ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
                     ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
+                    ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
                 }
             ),
         )
@@ -193,6 +202,7 @@ class ScientificMemoryRuntime:
             ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
             ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
             ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
+            ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
         }:
             raise ValueError("atomic evaluation storage is frozen to v5/v6 candidates")
         events = self.event_log.register_memories(definitions, actor=actor)
@@ -433,6 +443,7 @@ class ScientificMemoryRuntime:
             ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
             ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
             ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
+            ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
         }:
             return self.shadow_recall(
                 query,
@@ -460,6 +471,51 @@ class ScientificMemoryRuntime:
         )
         return ScientificRecall(
             query=query,
+            selected_memory_ids=selected,
+            contents=tuple(definitions[memory_id].content for memory_id in selected),
+            relevance=selection.relevance,
+            abstained=not bool(selected),
+            reason=selection.reason,
+            estimated_tokens=tokens,
+            estimated_latency_ms=latency,
+            evaluation_only=True,
+        )
+
+    def evaluation_sequence_coverage_recall(
+        self,
+        *,
+        context: Mapping[str, str],
+        moment: float,
+        token_budget: int,
+        latency_budget_ms: float,
+        max_safety_risk: float,
+    ) -> ScientificRecall:
+        """Recall chronological evidence for a preregistered global coverage task."""
+
+        if self.mode is not ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT:
+            raise ValueError("sequence coverage recall is frozen to the v14 candidate")
+        definitions = {
+            memory_id: definition
+            for memory_id, definition in self.event_log.definitions().items()
+            if definition.safety_risk <= max_safety_risk
+            and definition.validity.contains(moment)
+            and all(
+                str(context.get(key)) == value
+                for key, value in definition.applicability.items()
+            )
+        }
+        selection = self.state_reconciler.select_sequence_coverage(
+            definitions,
+            token_budget=token_budget,
+            latency_budget_ms=latency_budget_ms,
+        )
+        selected = selection.memory_ids
+        tokens = sum(definitions[memory_id].estimated_tokens for memory_id in selected)
+        latency = sum(
+            definitions[memory_id].estimated_latency_ms for memory_id in selected
+        )
+        return ScientificRecall(
+            query="global source-sequence coverage",
             selected_memory_ids=selected,
             contents=tuple(definitions[memory_id].content for memory_id in selected),
             relevance=selection.relevance,
