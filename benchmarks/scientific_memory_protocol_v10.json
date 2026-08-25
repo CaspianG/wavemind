@@ -1,0 +1,115 @@
+{
+  "schema": "wavemind.scientific_memory_protocol.v10",
+  "protocol_id": "scientific-core-operation-trace-strict-output-2026-08-25-v10",
+  "status": "preregistered",
+  "preregistered_at": "2026-08-25",
+  "baseline_source_sha": "479cf55b30eba68dcb001ed2bd2ce16ae9751652",
+  "supersedes_protocol_digest": "adced0fd1642ca4639e2902792197ebec947a562ad4746d3fe1256eff5d0e180",
+  "immutable_negative_evidence": {
+    "v8_status": "failed_development_gate_v8",
+    "v9_status": "failed_development_gate_v9",
+    "v9_outcome_sha256": "33ae5e4ad14be0bc0c83fcccfbc17510033ea153f03e44ada276b23985f39264",
+    "opened_v9_development_may_inform_v10": true,
+    "opened_v9_contexts_may_be_reused_for_v10_gate": false,
+    "all_validation_and_final_evidence_preserved": true,
+    "may_be_overwritten": false
+  },
+  "candidate": {
+    "id": "operation-trace-strict-output-agent-v10",
+    "frozen_before_first_v10_outcome": true,
+    "hypothesis": "A single operation-aware memory path should produce positive task-success uplift in both clean adjacent-operation recall and distractor-heavy longitudinal operation reasoning when subject identity is kept independent across tracks. Separately, explicit A-D query options and JSON answer contracts can be decoded deterministically without gold to prevent exact-match formatting failures observed in v9.",
+    "implementation_boundary": [
+      "wavemind.scientific_answer_transducer.canonicalize_strict_multiple_choice_answer",
+      "wavemind.scientific_runtime.ScientificCandidateMode",
+      "wavemind.scientific_memops.ScientificMemOpsRetriever",
+      "benchmarks.scientific_memops_v10_development"
+    ],
+    "retrieval": "Frozen v9 operation-aware query-sliced shadow retrieval: filter raw dialogues for explicit memory operations, preserve tombstones, zero source-recency weight, maximum twenty candidates, atomic event batch, and no production promotion.",
+    "strict_output_decoder": {
+      "input": "query text and treatment model output only",
+      "option_scope": "only A-D options following the final Now Answer the Question marker",
+      "accepted_model_shape": "valid JSON object with a string answer field, or a direct option string",
+      "action": "emit the exact query-provided option when its label or normalized text matches; otherwise retain the model output",
+      "control_output_transformed": false,
+      "gold_expected_answer_or_scorer_fields_permitted": false,
+      "raw_pretransduction_output_retained": true
+    },
+    "memops_tracks": {
+      "adjacent_operation": "Candidate retrieval over the clean per-file session corpus versus no-memory control, scored by the pinned official MemOps answer evaluator.",
+      "longitudinal_operation": "Candidate retrieval over the distractor-injected longitudinal corpus versus no-memory control, scored by the pinned official MemOps answer evaluator.",
+      "subject_overlap_between_tracks_permitted": false
+    }
+  },
+  "frozen_parameters": {
+    "seed": 17,
+    "bootstrap_repeats": 2000,
+    "confidence_level": 0.95,
+    "maximum_retrieval_candidates": 20,
+    "token_budget": 8192,
+    "latency_budget_ms": 1000.0,
+    "top_k_context": 10,
+    "source_recency_weight": 0.0,
+    "answer_model": "mistral:7b",
+    "judge_model": "mistral:7b",
+    "model_digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768
+  },
+  "development_firewall": {
+    "allowed": "Opened development evidence plus only MemOps subjects marked development in the pinned split manifest.",
+    "forbidden": [
+      "all MemoryAgentBench validation and final units",
+      "all MemOps validation and final subjects",
+      "all LongMemEval-V2 examples",
+      "all v6 validation per-case evidence",
+      "reuse of any v7-v9 opened development subject or context in the v10 gate"
+    ]
+  },
+  "frozen_development_gate": {
+    "families": {
+      "memops_adjacent_operation": {
+        "subjects": ["A28", "A30", "A31", "B02", "B05"],
+        "evaluation_setting": "adjacent_operation"
+      },
+      "memops_longitudinal_operation": {
+        "subjects": ["A16", "A19", "A22", "A26", "A27"],
+        "evaluation_setting": "longitudinal_operation"
+      }
+    },
+    "subjects_disjoint_across_families": true,
+    "questions_per_operation_file": 1,
+    "required_reproducible_runs": 3,
+    "required_independent_families": 2,
+    "minimum_independent_subject_clusters_per_family": 5,
+    "paired_subject_cluster_bootstrap_ci_lower_strictly_greater_than": 0.0,
+    "minimum_intervention_coverage": 0.8,
+    "all_family_means_non_negative": true,
+    "false_verified_promotions_maximum": 0,
+    "raw_per_case_evidence_required": true,
+    "stop_on_first_failed_required_run": true
+  },
+  "frozen_admission": {
+    "memoryagentbench_final_unit_ids": [
+      "Accurate_Retrieval:0007:aea0f2d603e1c8a3",
+      "Accurate_Retrieval:0009:153a2cce98f93cb3",
+      "Conflict_Resolution:0001:2a44d6ad3264a775",
+      "Long_Range_Understanding:0002:4fb345e28ef3ce1a",
+      "Test_Time_Learning:0002:36d1c3fde8d8fb21"
+    ],
+    "memops_final_subjects": ["A05", "A11", "A20", "B03", "B04"],
+    "longmemeval_v2_dataset_revision": "f152293e235517d504809563c833d7190b8c713b",
+    "longmemeval_v2_tier": "small",
+    "longmemeval_v2_question_count": 451,
+    "maximum_longmemeval_v2_logical_full_runs": 1,
+    "independent_families_with_positive_uplift_lcb": 2,
+    "longmemeval_v2_uplift_minimum": 0.01,
+    "longmemeval_v2_improved_categories_minimum": 4,
+    "repeated_error_reduction_minimum": 0.5,
+    "stale_or_contradiction_error_rate_maximum": 0.02,
+    "context_reduction_vs_full_context_minimum": 0.3,
+    "runtime_p95_must_be_within_frozen_budget": true,
+    "ablation_required_for_every_improvement": true
+  },
+  "terminal_rule": "Any failed development or admission gate is retained as failed_experiment_v10 or failed_admission_v10. Thresholds may not be relaxed and opened held-out evidence may never become tuning data.",
+  "claim_boundary": "Only a full exact-SHA admission pass permits a bounded benchmark claim. SOTA, universal superiority, production promotion, replacement, 100%-pass, and revolutionary claims remain forbidden without separate external evidence.",
+  "protocol_digest": "d522705fdc9d49ed97874b6ce09c6372d7189673945b894856805be625d21b50"
+}
