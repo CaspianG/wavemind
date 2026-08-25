@@ -625,6 +625,7 @@ def run_scientific_candidate_development(
     production_cases = 0
     compiled_units_total = 0
     production_index_records = 0
+    candidate_recall_times_ms: list[float] = []
     score_metric = "substring_exact_match"
     scratch = Path(scratch_dir).resolve()
     scratch.mkdir(parents=True, exist_ok=True)
@@ -711,6 +712,7 @@ def run_scientific_candidate_development(
                     "Simple_rag_bm25",
                 )
                 for runtime_case, scoring_case in zip(runtime_cases, scoring_cases):
+                    recall_started = time.perf_counter()
                     production_recall = runtime.recall(
                         runtime_case.query,
                         context={},
@@ -733,6 +735,9 @@ def run_scientific_candidate_development(
                         treatment_recall = production_recall
                         candidate_phase = "production"
                         production_cases += 1
+                    candidate_recall_times_ms.append(
+                        (time.perf_counter() - recall_started) * 1000.0
+                    )
                     memory_prompt = "\n\n".join(
                         f"Memory {index + 1}:\n{content}"
                         for index, content in enumerate(treatment_recall.contents)
@@ -851,6 +856,7 @@ def run_scientific_candidate_development(
                             ),
                             "paired_metric": score_metric,
                             "paired_effect": effect,
+                            "candidate_recall_time_ms": candidate_recall_times_ms[-1],
                             "intervention_present": intervention_present,
                             "treatment_prompt_sha256": sha256_bytes(
                                 treatment_prompt.encode("utf-8")
@@ -892,6 +898,7 @@ def run_scientific_candidate_development(
         "selected_memory_ids": sorted(selected_memory_ids),
         "promoted_memory_ids": sorted(promoted_memory_ids),
         "false_verified_promotions": 0,
+        "candidate_recall_times_ms": candidate_recall_times_ms,
     }
     return rows, summary
 
@@ -1106,6 +1113,16 @@ def build_candidate_development_artifact(
                     ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER.value,
                     ScientificCandidateMode.ATOMIC_BATCH_RECONCILER.value,
                 }
+            ),
+        },
+        "runtime_audit": {
+            "candidate_recall_times_ms": list(
+                summary.get("candidate_recall_times_ms", [])
+            ),
+            "latency_budget_ms": 1000.0,
+            "budget_exceeded_count": sum(
+                value > 1000.0
+                for value in summary.get("candidate_recall_times_ms", [])
             ),
         },
         "verified_receipt_count": int(summary["verified_receipt_count"]),
