@@ -1,0 +1,87 @@
+{
+  "schema": "wavemind.scientific_v10_mab_final_plan.v1",
+  "status": "preregistered",
+  "preregistered_at": "2026-08-25",
+  "candidate": {
+    "id": "operation-trace-strict-output-agent-v10",
+    "source_sha": "47b68e366aab9ce07b659c61a51c81d634b3fff2",
+    "checkout_policy": "clean exact-SHA worktree",
+    "post_outcome_changes_forbidden": true
+  },
+  "protocol": {
+    "path": "benchmarks/scientific_memory_protocol_v10.json",
+    "file_sha256": "396edacdb7f0eda930f26b78e6653e1d7dfac887e044a2ef817282ae2f3c6560",
+    "protocol_digest": "d522705fdc9d49ed97874b6ce09c6372d7189673945b894856805be625d21b50"
+  },
+  "authorization_evidence": {
+    "development_gate_status": "passed_development_gate_v10",
+    "development_gate_commit": "0a1fdec21bd69177e36dae8038b6546e676cd77b",
+    "development_outcome_path": "benchmarks/scientific_v10_development_outcome.json",
+    "development_outcome_file_sha256": "7336e2f7d9d47324c797014c0cdbc91de01c19bc0dd28c8f061cdcd21e9193e4",
+    "development_outcome_payload_sha256": "1c3e4fc507f096eeabd7c94b574542663b63df535b40819d92dc70bbdd7db17f",
+    "independent_families_passed": 2,
+    "reproducible_runs_per_family_passed": 3
+  },
+  "execution_harness": {
+    "source_commit": "974b79be8a8752a55af9c8f61ca29730c9eb5b02",
+    "path": "benchmarks/scientific_mab_v10_final.py",
+    "sha256": "5649495e9bebbbbe3aead511064f0f3d4501c0421136e926d24f77f82c965c57",
+    "infrastructure_continuation": "A crashed partial invocation is retained verbatim and may continue only with identical candidate, cases, prompts, model, thresholds, and deterministic parameters; it is never discarded or counted as a fresh outcome."
+  },
+  "official_source": {
+    "code_sha": "fe1735de8cf8b9908e1e3d3b5612afc815698062",
+    "dataset_revision": "7ea066982b140a19337e17e60d45d4076e042faf",
+    "split_manifest_path": "benchmarks/memoryagentbench_split_manifest_results.json",
+    "split_manifest_file_sha256": "750a025a5c51d97fbff78df77d734a1086558f3b4ad5cdffee66704e08612adc",
+    "split_manifest_payload_sha256": "1ac101c6794d3ef0454d2856b5ed04c2c219a3a44c049dd165b0e3e357eb3c68"
+  },
+  "frozen_sample": {
+    "source_split": "final",
+    "queries_per_context": 1,
+    "unit_ids": [
+      "Accurate_Retrieval:0007:aea0f2d603e1c8a3",
+      "Accurate_Retrieval:0009:153a2cce98f93cb3",
+      "Conflict_Resolution:0001:2a44d6ad3264a775",
+      "Long_Range_Understanding:0002:4fb345e28ef3ce1a",
+      "Test_Time_Learning:0002:36d1c3fde8d8fb21"
+    ],
+    "cluster": "whole context_sha256",
+    "required_independent_clusters": 5
+  },
+  "frozen_parameters": {
+    "candidate_mode": "operation_trace_strict_output_agent",
+    "model": "mistral:7b",
+    "model_digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768,
+    "token_budget": 8192,
+    "paired_cluster_bootstrap_repeats": 2000,
+    "seed": 17,
+    "confidence_level": 0.95
+  },
+  "frozen_gate": {
+    "paired_cluster_bootstrap_ci_lower_strictly_greater_than": 0.0,
+    "mean_non_negative": true,
+    "minimum_intervention_coverage": 0.8,
+    "false_verified_promotions_maximum": 0,
+    "production_case_count_maximum": 0,
+    "raw_per_case_evidence_required": true
+  },
+  "stage_order": {
+    "current_arm": "memoryagentbench_final",
+    "stop_on_failure": true,
+    "subsequent_arms_if_pass": [
+      "memops_final",
+      "longmemeval_v2_small_full"
+    ],
+    "rationale": "Fail-fast preserves the unspent held-out MemOps and LongMemEval-V2 arms if this necessary independent-family gate fails."
+  },
+  "held_out_state_at_preregistration": {
+    "memoryagentbench_final_outcomes_opened": false,
+    "memops_final_outcomes_opened": false,
+    "longmemeval_v2_examples_downloaded": false,
+    "longmemeval_v2_full_runs": 0
+  },
+  "decision_rule": "This stage passes only when all frozen MAB checks pass on the exact candidate SHA and all raw evidence is retained. Any failed check irreversibly records failed_admission_v10 and stops later held-out arms.",
+  "claim_boundary": "A stage pass is only one admission arm. It does not authorize a full v10, 100%-pass, SOTA, production, universal-superiority, or revolutionary claim.",
+  "plan_digest": "92de9fbcd3ab296d0b66ba5995ade10f3f483db1d0a178b657650faad1051e32"
+}
