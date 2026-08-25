@@ -33,6 +33,7 @@ class ScientificCandidateMode(str, Enum):
     )
     ATOMIC_BATCH_RECONCILER = "atomic-batch-hierarchical-proof-state-reconciler-v5"
     OPERATION_AWARE_TOMBSTONE_RECONCILER = "operation-aware-tombstone-reconciler-v6"
+    QUERY_SLICED_OPERATION_RECONCILER = "query-sliced-operation-aware-reconciler-v7"
 
 
 @dataclass(frozen=True)
@@ -84,7 +85,16 @@ class ScientificMemoryRuntime:
             maximum_candidates=20,
             operation_aware=(
                 self.mode
-                is ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER
+                in {
+                    ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
+                    ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
+                }
+            ),
+            source_recency_weight=(
+                0.0
+                if self.mode
+                is ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER
+                else 0.25
             ),
         )
         self.retriever = WaveMind(
@@ -153,6 +163,7 @@ class ScientificMemoryRuntime:
         if self.mode not in {
             ScientificCandidateMode.ATOMIC_BATCH_RECONCILER,
             ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
+            ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
         }:
             raise ValueError("atomic evaluation storage is frozen to v5/v6 candidates")
         events = self.event_log.register_memories(definitions, actor=actor)
@@ -388,6 +399,7 @@ class ScientificMemoryRuntime:
             ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER,
             ScientificCandidateMode.ATOMIC_BATCH_RECONCILER,
             ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
+            ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
         }:
             return self.shadow_recall(
                 query,

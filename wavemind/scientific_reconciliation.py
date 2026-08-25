@@ -164,12 +164,16 @@ class ProofCarryingStateReconciler:
         maximum_graph_hops: int = 4,
         maximum_candidates: int = 20,
         operation_aware: bool = False,
+        source_recency_weight: float = 0.25,
     ):
         if maximum_graph_hops < 1 or maximum_candidates < 1:
             raise ValueError("reconciliation bounds must be positive")
         self.maximum_graph_hops = int(maximum_graph_hops)
         self.maximum_candidates = int(maximum_candidates)
         self.operation_aware = bool(operation_aware)
+        self.source_recency_weight = float(source_recency_weight)
+        if self.source_recency_weight < 0.0:
+            raise ValueError("source recency weight must be non-negative")
 
     def select(
         self,
@@ -375,7 +379,7 @@ class ProofCarryingStateReconciler:
             lexical = sum(query_weight[token] for token in overlap) / denominator
             order = _source_order(definition)
             recency = (order / maximum_order) if maximum_order else 0.0
-            score = lexical + (0.25 * recency)
+            score = lexical + (self.source_recency_weight * recency)
             ranked.append((score, order, memory_id))
         ranked.sort(key=lambda item: (-item[0], -item[1], item[2]))
         candidates = [item[2] for item in ranked[: self.maximum_candidates]]
@@ -389,7 +393,11 @@ class ProofCarryingStateReconciler:
         return ReconciliationSelection(
             memory_ids=memory_ids,
             relevance={memory_id: min(1.0, scores[memory_id]) for memory_id in memory_ids},
-            reason="evaluation-only lexical-state retrieval with source recency",
+            reason=(
+                "evaluation-only lexical-state retrieval without source recency"
+                if self.source_recency_weight == 0.0
+                else "evaluation-only lexical-state retrieval with source recency"
+            ),
         )
 
     @staticmethod

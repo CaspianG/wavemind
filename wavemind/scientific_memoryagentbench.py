@@ -31,6 +31,7 @@ from .scientific_memory import (
     VerifierResult,
 )
 from .scientific_runtime import ScientificCandidateMode, ScientificMemoryRuntime
+from .scientific_slicing import slice_candidate_content
 from .scientific_splits import (
     MEMORYAGENTBENCH_REVISION,
     MEMORYAGENTBENCH_SPLIT_SCHEMA,
@@ -81,8 +82,6 @@ class CandidateMemoryUnit:
 
 _DOCUMENT_MARKER_RE = re.compile(r"(?m)^Document ([0-9]+):")
 _BLANK_LINE_RE = re.compile(r"\n[\t ]*\n+")
-
-
 def compile_candidate_units(
     *,
     context: str,
@@ -93,12 +92,34 @@ def compile_candidate_units(
     """Blindly compile frozen v2/v3 structural units without answer fields."""
 
     selected_mode = ScientificCandidateMode(mode)
+    query_sliced = (
+        selected_mode is ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER
+    )
+
+    def finalize(
+        units: Sequence[CandidateMemoryUnit],
+    ) -> tuple[CandidateMemoryUnit, ...]:
+        if not query_sliced:
+            return tuple(units)
+        sliced: list[CandidateMemoryUnit] = []
+        for unit in units:
+            for content_slice, offset in slice_candidate_content(unit.content):
+                sliced.append(
+                    CandidateMemoryUnit(
+                        content_slice,
+                        unit.source_order * 1_000_000 + offset,
+                        f"query-slice:{unit.structural_kind}",
+                    )
+                )
+        return tuple(sliced)
+
     if selected_mode not in {
         ScientificCandidateMode.STATE_RECONCILER,
         ScientificCandidateMode.HIERARCHICAL_RECONCILER,
         ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER,
         ScientificCandidateMode.ATOMIC_BATCH_RECONCILER,
         ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
+        ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
     }:
         return tuple(
             CandidateMemoryUnit(str(chunk), index, "official-chunk")
@@ -115,12 +136,13 @@ def compile_candidate_units(
                         line.strip(), int(match.group(1)), "numbered-fact"
                     )
                 )
-        return tuple(facts)
+        return finalize(facts)
     if selected_mode in {
         ScientificCandidateMode.HIERARCHICAL_RECONCILER,
         ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER,
         ScientificCandidateMode.ATOMIC_BATCH_RECONCILER,
         ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
+        ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
     }:
         markers = list(_DOCUMENT_MARKER_RE.finditer(context))
         if markers:
@@ -136,15 +158,15 @@ def compile_candidate_units(
                             "document-section",
                         )
                     )
-            return tuple(documents)
+            return finalize(documents)
         paragraphs = [item.strip() for item in _BLANK_LINE_RE.split(context)]
         paragraphs = [item for item in paragraphs if item]
         if len(paragraphs) > 1:
-            return tuple(
+            return finalize(
                 CandidateMemoryUnit(content, index, "prose-paragraph")
                 for index, content in enumerate(paragraphs)
             )
-    return tuple(
+    return finalize(
         CandidateMemoryUnit(str(chunk), index, "official-chunk")
         for index, chunk in enumerate(official_chunks)
         if str(chunk).strip()
@@ -694,6 +716,7 @@ def run_scientific_candidate_development(
                     if mode in {
                         ScientificCandidateMode.ATOMIC_BATCH_RECONCILER,
                         ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
+                        ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
                     }:
                         batch_definitions.append(definition)
                     elif mode is ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER:
@@ -709,6 +732,7 @@ def run_scientific_candidate_development(
                 if mode in {
                     ScientificCandidateMode.ATOMIC_BATCH_RECONCILER,
                     ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
+                    ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
                 }:
                     runtime.register_evaluation_memories(
                         batch_definitions,
@@ -1121,6 +1145,7 @@ def build_candidate_development_artifact(
                     ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER.value,
                     ScientificCandidateMode.ATOMIC_BATCH_RECONCILER.value,
                     ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER.value,
+                    ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER.value,
                 }
             ),
         },

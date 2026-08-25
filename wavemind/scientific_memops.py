@@ -21,6 +21,7 @@ from .scientific_runtime import (
     ScientificMemoryRuntime,
     ScientificRecall,
 )
+from .scientific_slicing import slice_candidate_content
 
 
 MEMOPS_BOUNDED_DEV_SCHEMA = "wavemind.memops_bounded_development.v1"
@@ -89,64 +90,90 @@ class ScientificMemOpsRetriever:
                 raise ValueError(f"duplicate MemOps corpus_id: {corpus_id}")
             seen_corpus_ids.add(corpus_id)
             operation, tombstone = classify_memory_operation_dialogue(content)
-            if (
-                self.runtime.mode
-                is ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER
-                and not operation
-            ):
-                continue
-            memory_id = "memops-" + sha256_bytes(
-                canonical_json_bytes({"corpus_id": corpus_id, "text": content})
-            )[:24]
-            definition = MemoryDefinition(
-                memory_id=memory_id,
-                kind=MemoryKind.FACT,
-                content=content,
-                provenance=tuple(
-                    value
-                    for value in (
-                    corpus_id,
-                    f"source-order:{int(item.get('session_index') or 0)}",
-                    "memory-operation:1" if operation else "",
-                    "memory-tombstone:1" if tombstone else "",
-                    )
-                    if value
-                ),
-                estimated_tokens=max(1, (len(content) + 3) // 4),
-                estimated_latency_ms=0.1,
-                safety_risk=0.0,
-            )
             if self.runtime.mode in {
-                ScientificCandidateMode.ATOMIC_BATCH_RECONCILER,
                 ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
-            }:
-                batch_definitions.append(definition)
-            elif (
-                self.runtime.mode
-                is ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER
-            ):
-                self.runtime.register_evaluation_memory(
-                    definition,
-                    actor="memops-development-adapter-v4",
+                ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
+            } and not operation:
+                continue
+            content_slices = (
+                slice_candidate_content(content)
+                if self.runtime.mode
+                is ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER
+                else ((content, 0),)
+            )
+            for content_slice, slice_offset in content_slices:
+                memory_id = "memops-" + sha256_bytes(
+                    canonical_json_bytes(
+                        {
+                            "corpus_id": corpus_id,
+                            "slice_offset": slice_offset,
+                            "text": content_slice,
+                        }
+                    )
+                )[:24]
+                definition = MemoryDefinition(
+                    memory_id=memory_id,
+                    kind=MemoryKind.FACT,
+                    content=content_slice,
+                    provenance=tuple(
+                        value
+                        for value in (
+                            corpus_id,
+                            (
+                                "source-order:"
+                                f"{int(item.get('session_index') or 0) * 1_000_000 + slice_offset}"
+                            ),
+                            f"slice-offset:{slice_offset}",
+                            "memory-operation:1" if operation else "",
+                            "memory-tombstone:1" if tombstone else "",
+                        )
+                        if value
+                    ),
+                    estimated_tokens=max(1, (len(content_slice) + 3) // 4),
+                    estimated_latency_ms=0.1,
+                    safety_risk=0.0,
                 )
-            else:
-                self.runtime.register_memory(
-                    definition, actor="memops-development-adapter"
-                )
-            # The untouched official item is retained only for official prompt/scorer
-            # compatibility. Retrieval decisions above cannot inspect its gold flags.
-            self._corpus_by_memory_id[memory_id] = dict(item)
+                if self.runtime.mode in {
+                    ScientificCandidateMode.ATOMIC_BATCH_RECONCILER,
+                    ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
+                    ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
+                }:
+                    batch_definitions.append(definition)
+                elif (
+                    self.runtime.mode
+                    is ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER
+                ):
+                    self.runtime.register_evaluation_memory(
+                        definition,
+                        actor="memops-development-adapter-v4",
+                    )
+                else:
+                    self.runtime.register_memory(
+                        definition, actor="memops-development-adapter"
+                    )
+                # Gold fields remain scorer-only. v7 replaces only the visible text
+                # with its frozen slice while preserving the official corpus ID.
+                visible_item = dict(item)
+                visible_item["text"] = content_slice
+                visible_item["scientific_slice_offset"] = slice_offset
+                self._corpus_by_memory_id[memory_id] = visible_item
         if self.runtime.mode in {
             ScientificCandidateMode.ATOMIC_BATCH_RECONCILER,
             ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
+            ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
         }:
             self.runtime.register_evaluation_memories(
                 batch_definitions,
                 actor=(
-                    "memops-development-adapter-v6"
+                    "memops-development-adapter-v7"
                     if self.runtime.mode
-                    is ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER
-                    else "memops-development-adapter-v5"
+                    is ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER
+                    else (
+                        "memops-development-adapter-v6"
+                        if self.runtime.mode
+                        is ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER
+                        else "memops-development-adapter-v5"
+                    )
                 ),
             )
 
