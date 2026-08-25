@@ -51,4 +51,3 @@ def test_v6_admission_plan_is_frozen_before_held_out_execution():
     )
     for record in payload["execution_harness"]["files"]:
         assert _sha256(ROOT / record["path"]) == record["sha256"]
-
