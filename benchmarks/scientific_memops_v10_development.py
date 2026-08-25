@@ -83,6 +83,27 @@ def _select_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 ),
             )
         ]
+    if QUESTION_SELECTION == "state-verification-v3":
+        priority = {
+            "StateTransition": 0,
+            "StateTrajectory": 1,
+            "TargetBinding": 2,
+            "OperationApplication": 3,
+            "CandidateDisambiguation": 4,
+            "OperationTrace": 5,
+        }
+
+        def key(entry: Mapping[str, Any]) -> tuple[int, int, str]:
+            question_id = str(entry.get("question_id", ""))
+            digits = "".join(character for character in question_id if character.isdigit())
+            question_number = int(digits) if digits else -1
+            return (
+                priority.get(str(entry.get("evaluation_type")), 99),
+                -question_number,
+                question_id,
+            )
+
+        return [min(entries, key=key)]
     raise RuntimeError(f"unknown MemOps question selection: {QUESTION_SELECTION}")
 
 
