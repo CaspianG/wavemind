@@ -33,6 +33,8 @@ from wavemind.scientific_runtime import ScientificCandidateMode
 
 PROTOCOL_PATH = ROOT / "benchmarks" / "scientific_memory_protocol_v10.json"
 CANDIDATE_MODE = ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT
+ARTIFACT_SCHEMA = "wavemind.scientific_memops_v10_development.v1"
+CLUSTER_GATE_KEY = "minimum_independent_subject_clusters_per_family"
 
 
 def _write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
@@ -307,7 +309,7 @@ def main(argv: list[str] | None = None) -> int:
     gate_checks = {
         "minimum_independent_subject_clusters": (
             statistics["cluster_count"]
-            >= gate["minimum_independent_subject_clusters_per_family"]
+            >= gate[CLUSTER_GATE_KEY]
         ),
         "paired_subject_cluster_bootstrap_ci_lower_strictly_positive": (
             statistics["ci_lower"]
@@ -322,7 +324,7 @@ def main(argv: list[str] | None = None) -> int:
     }
     artifact = attach_artifact_integrity(
         {
-            "schema": "wavemind.scientific_memops_v10_development.v1",
+            "schema": ARTIFACT_SCHEMA,
             "phase": "bounded-development",
             "admission_eligible": False,
             "source_sha": source_sha,
