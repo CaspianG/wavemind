@@ -61,6 +61,7 @@ def main(argv: list[str] | None = None) -> int:
             ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER.value,
             ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER.value,
             ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER.value,
+            ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT.value,
         ),
         default=ScientificCandidateMode.CAUSAL.value,
     )

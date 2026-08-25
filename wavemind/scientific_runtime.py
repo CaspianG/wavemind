@@ -38,6 +38,7 @@ class ScientificCandidateMode(str, Enum):
         "phrase-aligned-query-sliced-reconciler-v8"
     )
     EVIDENCE_GROUNDED_ANSWER_TRANSDUCER = "evidence-grounded-answer-transducer-v9"
+    OPERATION_TRACE_STRICT_OUTPUT_AGENT = "operation-trace-strict-output-agent-v10"
 
 
 @dataclass(frozen=True)
@@ -94,6 +95,7 @@ class ScientificMemoryRuntime:
                     ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
                     ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
                     ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
+                    ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
                 }
             ),
             source_recency_weight=(
@@ -103,6 +105,7 @@ class ScientificMemoryRuntime:
                     ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
                     ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
                     ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
+                    ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
                 }
                 else 0.25
             ),
@@ -111,6 +114,7 @@ class ScientificMemoryRuntime:
                 in {
                     ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
                     ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
+                    ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
                 }
             ),
         )
@@ -183,6 +187,7 @@ class ScientificMemoryRuntime:
             ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
             ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
             ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
+            ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
         }:
             raise ValueError("atomic evaluation storage is frozen to v5/v6 candidates")
         events = self.event_log.register_memories(definitions, actor=actor)
@@ -421,6 +426,7 @@ class ScientificMemoryRuntime:
             ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
             ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
             ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
+            ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
         }:
             return self.shadow_recall(
                 query,

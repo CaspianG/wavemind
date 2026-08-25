@@ -20,7 +20,10 @@ from .evidence import (
     sha256_bytes,
     validate_artifact_integrity,
 )
-from .scientific_answer_transducer import canonicalize_query_constrained_answer
+from .scientific_answer_transducer import (
+    canonicalize_query_constrained_answer,
+    canonicalize_strict_multiple_choice_answer,
+)
 from .scientific_memops import NativeOllamaCaller
 from .scientific_memory import (
     CanaryArm,
@@ -97,6 +100,7 @@ def compile_candidate_units(
         ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
         ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
         ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
+        ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
     }
 
     def finalize(
@@ -125,6 +129,7 @@ def compile_candidate_units(
         ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
         ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
         ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
+        ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
     }:
         return tuple(
             CandidateMemoryUnit(str(chunk), index, "official-chunk")
@@ -150,6 +155,7 @@ def compile_candidate_units(
         ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
         ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
         ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
+        ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
     }:
         markers = list(_DOCUMENT_MARKER_RE.finditer(context))
         if markers:
@@ -738,6 +744,7 @@ def run_scientific_candidate_development(
                         ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
                         ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
                         ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
+                        ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
                     }:
                         batch_definitions.append(definition)
                     elif mode is ScientificCandidateMode.EFFICIENT_HIERARCHICAL_RECONCILER:
@@ -756,6 +763,7 @@ def run_scientific_candidate_development(
                     ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
                     ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
                     ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
+                    ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
                 }:
                     runtime.register_evaluation_memories(
                         batch_definitions,
@@ -829,14 +837,22 @@ def run_scientific_candidate_development(
                             ),
                             max_tokens=int(dataset_config["generation_max_length"]),
                         )
-                    if (
-                        mode
-                        is ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER
-                    ):
+                    if mode in {
+                        ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
+                        ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
+                    }:
                         raw_treatment_output = str(generated["treatment"]["output"])
-                        transduction = canonicalize_query_constrained_answer(
-                            runtime_case.query,
-                            raw_treatment_output,
+                        transduction = (
+                            canonicalize_strict_multiple_choice_answer(
+                                runtime_case.query,
+                                raw_treatment_output,
+                            )
+                            if mode
+                            is ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT
+                            else canonicalize_query_constrained_answer(
+                                runtime_case.query,
+                                raw_treatment_output,
+                            )
                         )
                         generated["treatment"]["raw_pretransduction_output"] = (
                             raw_treatment_output
@@ -1190,6 +1206,7 @@ def build_candidate_development_artifact(
                     ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER.value,
                     ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER.value,
                     ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER.value,
+                    ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT.value,
                 }
             ),
         },

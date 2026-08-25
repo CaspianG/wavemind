@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass
+import json
+import re
 
 from .scientific_query_phrases import (
     extract_query_candidate_options,
@@ -16,6 +18,11 @@ class AnswerTransduction:
     similarity: float
     winner_margin: float
     candidate_count: int
+
+
+_FINAL_QUESTION_MARKER = "Now Answer the Question:"
+_LABELED_OPTION_RE = re.compile(r"(?m)^\s*([A-D])[.)]\s*(\S.*)\s*$")
+_DIRECT_LABEL_RE = re.compile(r"^\s*([A-D])(?:[.)](?:\s|$)|\s)")
 
 
 def _token_multiset_f1(left: str, right: str) -> float:
@@ -59,3 +66,51 @@ def canonicalize_query_constrained_answer(
         margin,
         len(options),
     )
+
+
+def canonicalize_strict_multiple_choice_answer(
+    query: str,
+    model_output: str,
+) -> AnswerTransduction:
+    """Decode an explicit A-D answer without consulting any gold field.
+
+    Only options after the final benchmark question marker are eligible.  The
+    output is changed only when a JSON ``answer`` string or a direct answer
+    identifies one of those options by label or exact normalized text.
+    """
+
+    raw_output = str(model_output)
+    question_scope = str(query).rsplit(_FINAL_QUESTION_MARKER, 1)
+    if len(question_scope) != 2:
+        return AnswerTransduction(raw_output, False, 0.0, 0.0, 0)
+    options: dict[str, str] = {}
+    for match in _LABELED_OPTION_RE.finditer(question_scope[1]):
+        label = match.group(1)
+        option_text = match.group(2).strip()
+        if label not in options:
+            options[label] = f"{label}. {option_text}"
+    if not options:
+        return AnswerTransduction(raw_output, False, 0.0, 0.0, 0)
+
+    candidate = raw_output.strip()
+    try:
+        decoded = json.loads(candidate)
+    except (json.JSONDecodeError, TypeError):
+        decoded = None
+    if isinstance(decoded, dict) and isinstance(decoded.get("answer"), str):
+        candidate = decoded["answer"].strip()
+
+    label_match = _DIRECT_LABEL_RE.match(candidate)
+    if label_match and label_match.group(1) in options:
+        return AnswerTransduction(
+            options[label_match.group(1)], True, 1.0, 1.0, len(options)
+        )
+
+    normalized_candidate = normalize_query_phrase(candidate)
+    for label, option in options.items():
+        option_text = option.split(". ", 1)[1]
+        if normalized_candidate == normalize_query_phrase(option_text):
+            return AnswerTransduction(option, True, 1.0, 1.0, len(options))
+        if normalized_candidate == normalize_query_phrase(option):
+            return AnswerTransduction(options[label], True, 1.0, 1.0, len(options))
+    return AnswerTransduction(raw_output, False, 0.0, 0.0, len(options))
