@@ -1,0 +1,141 @@
+{
+  "schema": "wavemind.scientific_memory_protocol.v8",
+  "protocol_id": "scientific-core-phrase-aligned-2026-08-25-v8",
+  "status": "preregistered",
+  "preregistered_at": "2026-08-25",
+  "baseline_source_sha": "9b1f03c398455bcd1214b17c407922fb7ac378b5",
+  "supersedes_protocol_digest": "898de5766fcf7d509218c28966a950db9dda8ee21795e2faf17d08247c7ba73e",
+  "immutable_negative_evidence": {
+    "v6_status": "failed_admission_v6",
+    "v7_status": "failed_development_gate_v7",
+    "v7_outcome_sha256": "71346bba5e9993d21ea2366ee45f4167b66e2afdab958dea3d7506031419efbd",
+    "v7_opened_development_units_may_be_used_as_development_diagnostics": true,
+    "v7_opened_development_units_may_be_reused_for_v8_gate": false,
+    "v7_unopened_memops_development_preserved_for_v8_gate": true,
+    "all_validation_and_final_evidence_preserved": true,
+    "may_be_overwritten": false
+  },
+  "candidate": {
+    "id": "phrase-aligned-query-sliced-reconciler-v8",
+    "frozen_before_first_v8_outcome": true,
+    "hypothesis": "When a benchmark query exposes candidate answer phrases, deterministically ranking evidence slices that contain a complete query-provided phrase ahead of ordinary lexical matches will recover answer-bearing local evidence without inspecting gold labels. Queries without extractable candidate phrases retain the v7 lexical fallback.",
+    "implementation_boundary": [
+      "wavemind.scientific_memoryagentbench.compile_candidate_units",
+      "wavemind.scientific_query_phrases.extract_query_candidate_phrases",
+      "wavemind.scientific_reconciliation.ProofCarryingStateReconciler.select",
+      "wavemind.scientific_memops.ScientificMemOpsRetriever._register_corpus",
+      "wavemind.scientific_runtime.ScientificMemoryRuntime.evaluation_recall"
+    ],
+    "query_phrase_policy": {
+      "source": "query text only",
+      "accepted_shape": "a Python-literal list or tuple of at least two string options embedded in the query",
+      "parser": "ast.literal_eval over bounded bracket candidates; malformed or non-string structures fail closed to no phrases",
+      "normalization": "Unicode NFKC, casefold, replace non-alphanumeric runs with one space, trim, and require at least two normalized tokens",
+      "minimum_distinct_phrases": 2,
+      "maximum_distinct_phrases": 20,
+      "gold_answer_expected_output_or_scorer_fields_permitted": false
+    },
+    "slicing": {
+      "maximum_characters": 1024,
+      "overlap_characters": 256,
+      "stride_characters": 768,
+      "boundary_policy": "unchanged from frozen v7",
+      "minimum_non_whitespace_characters": 1
+    },
+    "ranking": "Operation-bearing tombstone slices first. Then slices containing any complete normalized query-provided candidate phrase, ordered by number of distinct complete phrase hits; then query-token IDF lexical score; then source order and memory ID. Source-recency weight is exactly zero. Without at least two accepted phrases, ranking is exactly the v7 fallback.",
+    "storage": "One atomic scientific-event batch per benchmark context; evaluation-only shadow storage; production index count remains zero.",
+    "production_promotion": "No promotion is permitted during development or admission."
+  },
+  "frozen_parameters": {
+    "seed": 17,
+    "bootstrap_repeats": 2000,
+    "confidence_level": 0.95,
+    "maximum_graph_hops": 4,
+    "maximum_retrieval_candidates": 20,
+    "token_budget": 8192,
+    "latency_budget_ms": 1000.0,
+    "maximum_safety_risk": 0.0,
+    "top_k_context": 10,
+    "source_recency_weight": 0.0,
+    "answer_model": "mistral:7b",
+    "answer_model_digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768
+  },
+  "development_firewall": {
+    "allowed": "Only units and subjects whose frozen manifests label them development.",
+    "forbidden": [
+      "all MemoryAgentBench validation and final units",
+      "all MemOps validation and final subjects",
+      "all LongMemEval-V2 examples",
+      "all v6 validation per-case evidence",
+      "all v7 development gold values and expected outputs",
+      "all v7 selected-memory contents and model answers"
+    ],
+    "permitted_v7_evidence": "The v7 aggregate outcome, family-level effect counts, intervention coverage, runtime aggregate, and the observed mismatch between the local all-family substring scorer and official family-specific MemoryAgentBench metrics may guide v8. Per-case gold, expected outputs, answers, and selected evidence may not."
+  },
+  "metric_governance": {
+    "memoryagentbench_gate_family": "Accurate_Retrieval",
+    "primary_metric": "substring_exact_match",
+    "official_mapping_source": "MemoryAgentBench repository README and configs at pinned code revision fe1735de8cf8b9908e1e3d3b5612afc815698062",
+    "local_metric_override_after_preregistration_permitted": false,
+    "note": "The v8 MemoryAgentBench development gate contains only Accurate_Retrieval units, so one official family metric applies uniformly."
+  },
+  "frozen_development_gate": {
+    "memoryagentbench_unit_ids": [
+      "Accurate_Retrieval:0014:21075069be9ce036",
+      "Accurate_Retrieval:0015:13f7b62d03ae1368",
+      "Accurate_Retrieval:0016:3ef36797263fea91",
+      "Accurate_Retrieval:0018:49264170c654189c",
+      "Accurate_Retrieval:0020:df9c9f3f789da3e2"
+    ],
+    "memops_subjects": [
+      "A16",
+      "A19",
+      "A22",
+      "A26",
+      "A27"
+    ],
+    "queries_per_memoryagentbench_context": 1,
+    "memops_questions_per_operation_file": 1,
+    "required_reproducible_runs": 3,
+    "required_independent_families": 2,
+    "minimum_independent_clusters_per_family": 5,
+    "paired_cluster_bootstrap_ci_lower_strictly_greater_than": 0.0,
+    "minimum_intervention_coverage": 0.8,
+    "all_family_means_non_negative": true,
+    "false_verified_promotions_maximum": 0,
+    "raw_per_case_evidence_required": true,
+    "stop_on_first_failed_required_run": true
+  },
+  "frozen_admission": {
+    "memoryagentbench_final_unit_ids": [
+      "Accurate_Retrieval:0007:aea0f2d603e1c8a3",
+      "Accurate_Retrieval:0009:153a2cce98f93cb3",
+      "Conflict_Resolution:0001:2a44d6ad3264a775",
+      "Long_Range_Understanding:0002:4fb345e28ef3ce1a",
+      "Test_Time_Learning:0002:36d1c3fde8d8fb21"
+    ],
+    "memops_final_subjects": [
+      "A05",
+      "A11",
+      "A20",
+      "B03",
+      "B04"
+    ],
+    "longmemeval_v2_dataset_revision": "f152293e235517d504809563c833d7190b8c713b",
+    "longmemeval_v2_tier": "small",
+    "longmemeval_v2_question_count": 451,
+    "maximum_longmemeval_v2_logical_full_runs": 1,
+    "independent_families_with_positive_uplift_lcb": 2,
+    "longmemeval_v2_uplift_minimum": 0.01,
+    "longmemeval_v2_improved_categories_minimum": 4,
+    "repeated_error_reduction_minimum": 0.5,
+    "stale_or_contradiction_error_rate_maximum": 0.02,
+    "context_reduction_vs_full_context_minimum": 0.3,
+    "runtime_p95_must_be_within_frozen_budget": true,
+    "ablation_required_for_every_improvement": true
+  },
+  "terminal_rule": "Any failed development or admission gate is retained as failed_experiment_v8 or failed_admission_v8. Thresholds may not be relaxed and opened held-out evidence may never become tuning data.",
+  "claim_boundary": "Only a full exact-SHA admission pass permits a bounded benchmark claim. SOTA, universal superiority, production promotion, replacement, 100%-pass, and revolutionary claims remain forbidden without separate external evidence.",
+  "protocol_digest": "19c5cd37874863b9a0b4db4003f699e5c5d0979fbdf8e32b44c9c17b7d1d4144"
+}
