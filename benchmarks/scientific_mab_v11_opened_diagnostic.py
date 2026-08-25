@@ -8,13 +8,22 @@ from pathlib import Path
 from typing import Any, Sequence
 
 
-OPENED_UNIT_IDS = (
-    "Long_Range_Understanding:0100:cd66eabd2f070a38",
-    "Long_Range_Understanding:0102:951f75cd34e22188",
-    "Long_Range_Understanding:0103:0f57134e5ed36d75",
-    "Long_Range_Understanding:0104:720f3ad635ebebf1",
-    "Long_Range_Understanding:0106:9132aca9b3be661d",
-)
+OPENED_UNIT_SETS = {
+    "detective_v9": (
+        "Long_Range_Understanding:0100:cd66eabd2f070a38",
+        "Long_Range_Understanding:0102:951f75cd34e22188",
+        "Long_Range_Understanding:0103:0f57134e5ed36d75",
+        "Long_Range_Understanding:0104:720f3ad635ebebf1",
+        "Long_Range_Understanding:0106:9132aca9b3be661d",
+    ),
+    "retrieval_v8": (
+        "Accurate_Retrieval:0014:21075069be9ce036",
+        "Accurate_Retrieval:0015:13f7b62d03ae1368",
+        "Accurate_Retrieval:0016:3ef36797263fea91",
+        "Accurate_Retrieval:0018:49264170c654189c",
+        "Accurate_Retrieval:0020:df9c9f3f789da3e2",
+    ),
+}
 MODEL = "mistral:7b"
 MODEL_DIGEST = "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091"
 
@@ -61,21 +70,27 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     manifest = json.loads(args.split_manifest.read_text(encoding="utf-8"))
     if validate_artifact_integrity(manifest):
         raise RuntimeError("MemoryAgentBench split manifest integrity failed")
+    unit_ids = OPENED_UNIT_SETS[args.opened_unit_set]
     selected = [
-        unit for unit in manifest["units"] if unit.get("unit_id") in OPENED_UNIT_IDS
+        unit for unit in manifest["units"] if unit.get("unit_id") in unit_ids
     ]
-    if {unit["unit_id"] for unit in selected} != set(OPENED_UNIT_IDS):
+    if {unit["unit_id"] for unit in selected} != set(unit_ids):
         raise RuntimeError("opened diagnostic unit is missing")
     if any(unit.get("split") != "development" for unit in selected):
         raise RuntimeError("diagnostic attempted a non-development unit")
 
+    families = {str(unit["family"]) for unit in selected}
+    if len(families) != 1:
+        raise RuntimeError("one opened diagnostic set must use one MAB family")
     units = load_development_units(
         dataset_root=args.dataset_root,
         split_manifest=manifest,
-        family="Long_Range_Understanding",
-        unit_ids=OPENED_UNIT_IDS,
+        family=next(iter(families)),
+        unit_ids=unit_ids,
     )
-    if any(unit.source != "detective_qa" for unit in units):
+    if args.opened_unit_set == "detective_v9" and any(
+        unit.source != "detective_qa" for unit in units
+    ):
         raise RuntimeError("opened diagnostic source changed")
     rows, summary = run_scientific_candidate_development(
         official_repository=args.official_repository,
@@ -114,7 +129,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "candidate_mode": ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT.value,
             "model": {"id": MODEL, "digest": MODEL_DIGEST, "context_window": 32768},
             "source_split": "development",
-            "unit_ids": list(OPENED_UNIT_IDS),
+            "opened_unit_set": args.opened_unit_set,
+            "unit_ids": list(unit_ids),
             "case_count": len(rows),
             "paired_effect_values": [float(row["paired_effect"]) for row in rows],
             "paired_cluster_bootstrap": interval,
@@ -148,6 +164,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--candidate-repository", type=Path, required=True)
     parser.add_argument("--candidate-sha", required=True)
+    parser.add_argument(
+        "--opened-unit-set",
+        choices=tuple(sorted(OPENED_UNIT_SETS)),
+        default="detective_v9",
+    )
     parser.add_argument("--official-repository", type=Path, required=True)
     parser.add_argument("--dataset-root", type=Path, required=True)
     parser.add_argument("--split-manifest", type=Path, required=True)
