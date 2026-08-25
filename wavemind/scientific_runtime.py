@@ -34,6 +34,9 @@ class ScientificCandidateMode(str, Enum):
     ATOMIC_BATCH_RECONCILER = "atomic-batch-hierarchical-proof-state-reconciler-v5"
     OPERATION_AWARE_TOMBSTONE_RECONCILER = "operation-aware-tombstone-reconciler-v6"
     QUERY_SLICED_OPERATION_RECONCILER = "query-sliced-operation-aware-reconciler-v7"
+    PHRASE_ALIGNED_QUERY_SLICED_RECONCILER = (
+        "phrase-aligned-query-sliced-reconciler-v8"
+    )
 
 
 @dataclass(frozen=True)
@@ -88,13 +91,21 @@ class ScientificMemoryRuntime:
                 in {
                     ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
                     ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
+                    ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
                 }
             ),
             source_recency_weight=(
                 0.0
                 if self.mode
-                is ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER
+                in {
+                    ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
+                    ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
+                }
                 else 0.25
+            ),
+            query_phrase_aware=(
+                self.mode
+                is ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER
             ),
         )
         self.retriever = WaveMind(
@@ -164,6 +175,7 @@ class ScientificMemoryRuntime:
             ScientificCandidateMode.ATOMIC_BATCH_RECONCILER,
             ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
             ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
+            ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
         }:
             raise ValueError("atomic evaluation storage is frozen to v5/v6 candidates")
         events = self.event_log.register_memories(definitions, actor=actor)
@@ -400,6 +412,7 @@ class ScientificMemoryRuntime:
             ScientificCandidateMode.ATOMIC_BATCH_RECONCILER,
             ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
             ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
+            ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
         }:
             return self.shadow_recall(
                 query,

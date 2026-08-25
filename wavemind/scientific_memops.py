@@ -93,12 +93,16 @@ class ScientificMemOpsRetriever:
             if self.runtime.mode in {
                 ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
                 ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
+                ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
             } and not operation:
                 continue
             content_slices = (
                 slice_candidate_content(content)
                 if self.runtime.mode
-                is ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER
+                in {
+                    ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
+                    ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
+                }
                 else ((content, 0),)
             )
             for content_slice, slice_offset in content_slices:
@@ -137,6 +141,7 @@ class ScientificMemOpsRetriever:
                     ScientificCandidateMode.ATOMIC_BATCH_RECONCILER,
                     ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
                     ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
+                    ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
                 }:
                     batch_definitions.append(definition)
                 elif (
@@ -151,8 +156,8 @@ class ScientificMemOpsRetriever:
                     self.runtime.register_memory(
                         definition, actor="memops-development-adapter"
                     )
-                # Gold fields remain scorer-only. v7 replaces only the visible text
-                # with its frozen slice while preserving the official corpus ID.
+                # Gold fields remain scorer-only. v7/v8 replace only visible text
+                # with a frozen slice while preserving the official corpus ID.
                 visible_item = dict(item)
                 visible_item["text"] = content_slice
                 visible_item["scientific_slice_offset"] = slice_offset
@@ -161,18 +166,24 @@ class ScientificMemOpsRetriever:
             ScientificCandidateMode.ATOMIC_BATCH_RECONCILER,
             ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER,
             ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER,
+            ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER,
         }:
             self.runtime.register_evaluation_memories(
                 batch_definitions,
                 actor=(
-                    "memops-development-adapter-v7"
+                    "memops-development-adapter-v8"
                     if self.runtime.mode
-                    is ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER
+                    is ScientificCandidateMode.PHRASE_ALIGNED_QUERY_SLICED_RECONCILER
                     else (
-                        "memops-development-adapter-v6"
+                        "memops-development-adapter-v7"
                         if self.runtime.mode
-                        is ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER
-                        else "memops-development-adapter-v5"
+                        is ScientificCandidateMode.QUERY_SLICED_OPERATION_RECONCILER
+                        else (
+                            "memops-development-adapter-v6"
+                            if self.runtime.mode
+                            is ScientificCandidateMode.OPERATION_AWARE_TOMBSTONE_RECONCILER
+                            else "memops-development-adapter-v5"
+                        )
                     )
                 ),
             )

@@ -7,6 +7,10 @@ from dataclasses import dataclass
 from typing import Mapping, Sequence
 
 from .scientific_memory import MemoryDefinition
+from .scientific_query_phrases import (
+    extract_query_candidate_phrases,
+    normalize_query_phrase,
+)
 
 
 STATE_RECONCILER_ID = "proof-carrying-state-reconciler-v2"
@@ -165,6 +169,7 @@ class ProofCarryingStateReconciler:
         maximum_candidates: int = 20,
         operation_aware: bool = False,
         source_recency_weight: float = 0.25,
+        query_phrase_aware: bool = False,
     ):
         if maximum_graph_hops < 1 or maximum_candidates < 1:
             raise ValueError("reconciliation bounds must be positive")
@@ -172,6 +177,7 @@ class ProofCarryingStateReconciler:
         self.maximum_candidates = int(maximum_candidates)
         self.operation_aware = bool(operation_aware)
         self.source_recency_weight = float(source_recency_weight)
+        self.query_phrase_aware = bool(query_phrase_aware)
         if self.source_recency_weight < 0.0:
             raise ValueError("source recency weight must be non-negative")
 
@@ -248,23 +254,31 @@ class ProofCarryingStateReconciler:
             for token in query_tokens
         }
         denominator = sum(weights.values()) or 1.0
-        ranked: list[tuple[int, float, int, str]] = []
+        query_phrases = (
+            extract_query_candidate_phrases(query) if self.query_phrase_aware else ()
+        )
+        ranked: list[tuple[int, int, float, int, str]] = []
         scores: dict[str, float] = {}
         for memory_id, definition in definitions.items():
             overlap = query_tokens.intersection(tokenized[memory_id])
             lexical = sum(weights[token] for token in overlap) / denominator
             tombstone = _MEMORY_TOMBSTONE_MARKER in definition.provenance
+            normalized_content = normalize_query_phrase(definition.content)
+            phrase_hits = sum(
+                phrase in normalized_content for phrase in query_phrases
+            )
             scores[memory_id] = 1.0 if tombstone else lexical
             ranked.append(
                 (
                     0 if tombstone else 1,
+                    -phrase_hits,
                     -lexical,
                     -_source_order(definition),
                     memory_id,
                 )
             )
         ranked.sort()
-        candidate_ids = [item[3] for item in ranked[: self.maximum_candidates]]
+        candidate_ids = [item[4] for item in ranked[: self.maximum_candidates]]
         memory_ids = self._fit_budget(
             candidate_ids,
             definitions,
@@ -274,7 +288,11 @@ class ProofCarryingStateReconciler:
         return ReconciliationSelection(
             memory_ids=memory_ids,
             relevance={memory_id: scores[memory_id] for memory_id in memory_ids},
-            reason="evaluation-only operation evidence with mandatory tombstones",
+            reason=(
+                "evaluation-only phrase-aligned operation evidence with mandatory tombstones"
+                if query_phrases
+                else "evaluation-only operation evidence with mandatory tombstones"
+            ),
         )
 
     def _select_claim_graph(
@@ -371,7 +389,10 @@ class ProofCarryingStateReconciler:
         }
         denominator = sum(query_weight.values()) or 1.0
         maximum_order = max((_source_order(item) for item in definitions.values()), default=0)
-        ranked: list[tuple[float, int, str]] = []
+        query_phrases = (
+            extract_query_candidate_phrases(query) if self.query_phrase_aware else ()
+        )
+        ranked: list[tuple[int, float, int, str]] = []
         for memory_id, definition in definitions.items():
             overlap = query_tokens.intersection(tokenized[memory_id])
             if not overlap:
@@ -380,21 +401,27 @@ class ProofCarryingStateReconciler:
             order = _source_order(definition)
             recency = (order / maximum_order) if maximum_order else 0.0
             score = lexical + (self.source_recency_weight * recency)
-            ranked.append((score, order, memory_id))
-        ranked.sort(key=lambda item: (-item[0], -item[1], item[2]))
-        candidates = [item[2] for item in ranked[: self.maximum_candidates]]
+            normalized_content = normalize_query_phrase(definition.content)
+            phrase_hits = sum(
+                phrase in normalized_content for phrase in query_phrases
+            )
+            ranked.append((phrase_hits, score, order, memory_id))
+        ranked.sort(key=lambda item: (-item[0], -item[1], -item[2], item[3]))
+        candidates = [item[3] for item in ranked[: self.maximum_candidates]]
         memory_ids = self._fit_budget(
             candidates,
             definitions,
             token_budget=token_budget,
             latency_budget_ms=latency_budget_ms,
         )
-        scores = {memory_id: score for score, _, memory_id in ranked}
+        scores = {memory_id: score for _, score, _, memory_id in ranked}
         return ReconciliationSelection(
             memory_ids=memory_ids,
             relevance={memory_id: min(1.0, scores[memory_id]) for memory_id in memory_ids},
             reason=(
-                "evaluation-only lexical-state retrieval without source recency"
+                "evaluation-only phrase-aligned lexical-state retrieval without source recency"
+                if query_phrases
+                else "evaluation-only lexical-state retrieval without source recency"
                 if self.source_recency_weight == 0.0
                 else "evaluation-only lexical-state retrieval with source recency"
             ),
