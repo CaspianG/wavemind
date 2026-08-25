@@ -1,0 +1,38 @@
+{
+  "schema": "wavemind.scientific_v14_hierarchical_prototype_diagnostic_outcome.v1",
+  "status": "promising_on_opened_development_diagnostic_only",
+  "prototype_source_sha": "f87289a571775bbdcecb1c021ba839153b95a732",
+  "source_protocol_digest": "da5273cd618e9d6207f47ce6841cb300c914d90949a45ea0ae7df4e20aa8db8d",
+  "admission_eligible": false,
+  "official_gate_decision": false,
+  "opened_contexts_only": true,
+  "raw": {
+    "path": "benchmarks/scientific_mab_v14_hierarchical_diagnostic_raw.jsonl",
+    "bytes": 147869,
+    "sha256": "7b6b9eb109455ef3c0aca81cdb327ec9747ac073ff2bf92cd854a7a3995df745"
+  },
+  "observed_cases": 3,
+  "planned_cases": 10,
+  "stopped_after_preregistered_diagnostic_minimum": true,
+  "paired_effect_values": [0.03983516483516484, 0.03709677419354839, 0.06372549019607843],
+  "mean_difference": 0.04688580974159722,
+  "official_rouge_l_recall_pairs": [
+    {"control": 0.11538461538461539, "treatment": 0.15521978021978022},
+    {"control": 0.0782258064516129, "treatment": 0.1153225806451613},
+    {"control": 0.10416666666666667, "treatment": 0.1678921568627451}
+  ],
+  "output_token_pairs": [
+    {"control": 600, "treatment": 920},
+    {"control": 600, "treatment": 855},
+    {"control": 638, "treatment": 1089}
+  ],
+  "length_rewrite_applied_in_all_observed_cases": true,
+  "causal_hypothesis": "Sequence coverage plus a gold-free chronological plot plan and one task-length-triggered rewrite increases plot-event coverage relative to the no-memory control.",
+  "next_required_action": "Preregister fresh development contexts and all generation parameters, freeze an exact candidate SHA, then apply the unchanged stop-on-first-failure gate.",
+  "claim_boundary": "Opened development diagnostic only. Positive results authorize preregistration, not a pass, admission, superiority, production, or revolutionary claim.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "508853ad6c5ef9fd79e2907ace07c6cfa6d17185c2a2e7734a85e069dac699bd"
+  }
+}
