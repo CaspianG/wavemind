@@ -1,0 +1,90 @@
+{
+  "schema": "wavemind.memoryagentbench_final.v19",
+  "phase": "final",
+  "status": "pass",
+  "candidate_id": "targeted-dual-coverage-agent-v19",
+  "candidate_source_sha": "c509511f09dbcd3b4206ec1b74a7abc9510d9e73",
+  "protocol_digest": "443d8a461b10969756579eb6af3e05d7b909d30369fb286b2a582aa8efaef684",
+  "model": {
+    "id": "mistral:7b",
+    "digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768
+  },
+  "official_repository_sha": "fe1735de8cf8b9908e1e3d3b5612afc815698062",
+  "dataset_revision": "7ea066982b140a19337e17e60d45d4076e042faf",
+  "source_split": "final",
+  "unit_ids": [
+    "Accurate_Retrieval:0010:ec65b7cb50d7280b",
+    "Accurate_Retrieval:0017:61ec3a9b2a2e3e8d",
+    "Accurate_Retrieval:0019:c2e1809c93430d92",
+    "Conflict_Resolution:0003:9c8ce1ed911d25a3",
+    "Long_Range_Understanding:0010:5f579da48d431ff2",
+    "Long_Range_Understanding:0011:b721d0a06ba3ad39",
+    "Long_Range_Understanding:0017:e0c3f4d1eab833c9",
+    "Long_Range_Understanding:0028:1f0d367470ebb847",
+    "Long_Range_Understanding:0034:3e3a1a2dbd3bc870",
+    "Long_Range_Understanding:0052:cb1104516284ee52"
+  ],
+  "context_sha256": [
+    "1f0d367470ebb847b375069b31c2cd655bab35e94e7d36c8100189c0e2429337",
+    "3e3a1a2dbd3bc870158bb70f87d8556ea31b3a6c40fdf5fba2c5cef0ab0be905",
+    "5f579da48d431ff2695e3ee5a218d4bc4a2042094d22adcf8fec573769f7b987",
+    "61ec3a9b2a2e3e8d93ac7b94a5fd44923881e114123f0af8ec3bf427be020f92",
+    "9c8ce1ed911d25a3c9d52e5758d9a8d23fa769ded88c5e59dbc1e1a3f6eb1f10",
+    "b721d0a06ba3ad3931feeae383cf593d4170513e5b9dcaee75f5a787143bb6fb",
+    "c2e1809c93430d922a2a022e2dc05b9e35e12d2ee9037af5472b9a2375b90c9d",
+    "cb1104516284ee52e6c76e435af3a22c995f8671fb4a2989eff62402364003e6",
+    "e0c3f4d1eab833c96d7cf9250a60eb77468aff15ad12c15905fa29f2a79a9a28",
+    "ec65b7cb50d7280b85da1116991a736e46f1181e2cf3dfcbf83cdf1f11a03974"
+  ],
+  "case_count": 10,
+  "paired_effect_values": [
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.039961941008563276,
+    0.032755298651252415,
+    0.10328638497652583,
+    0.02620545073375262,
+    0.05255681818181819,
+    0.009733939000648936
+  ],
+  "paired_cluster_bootstrap": {
+    "paired": true,
+    "cluster_key": "cluster",
+    "cluster_count": 10,
+    "row_count": 10,
+    "repeats": 2000,
+    "seed": 17,
+    "confidence_level": 0.95,
+    "mean_difference": 0.1264499832552561,
+    "ci_lower": 0.015719089630187373,
+    "ci_upper": 0.32591295881348703
+  },
+  "intervention_coverage": 1.0,
+  "production_case_count": 0,
+  "promoted_memory_ids": [],
+  "false_verified_promotions": 0,
+  "gate_checks": {
+    "ten_independent_clusters": true,
+    "paired_cluster_bootstrap_ci_lower_strictly_positive": true,
+    "mean_non_negative": true,
+    "minimum_intervention_coverage": true,
+    "no_production_cases": true,
+    "no_promoted_memories": true
+  },
+  "gate_pass": true,
+  "raw_output": {
+    "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\work\\wavemind-scientific-core\\benchmarks\\scientific_mab_v19_final_raw.jsonl",
+    "bytes": 286519,
+    "sha256": "a2e496e03ce7501829ccfa1c90b4060b9d470468aa817cb349f98aefd54a24ba"
+  },
+  "final_split_touched": true,
+  "claim_boundary": "MAB final arm only; full v19 admission remains incomplete until every later frozen arm passes.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "8e3be763cf7d6ec3a0f4478a02e0426eb040bca2806d662b0f5e9ce0399d719f"
+  }
+}
