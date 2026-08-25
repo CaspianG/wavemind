@@ -1,0 +1,40 @@
+{
+  "schema": "wavemind.scientific_v11_infrastructure_continuation.v1",
+  "status": "infrastructure_failed_no_gate_decision",
+  "logical_run": "memoryagentbench_cross_family_run_1",
+  "candidate_source_sha": "c7857539f686abd717e897315026afb836fd18f4",
+  "protocol_digest": "0acb2b82a16b6eb87437c9b489775f48910b0bf14969b277096e961ac9e30df3",
+  "attempt": 2,
+  "previous_attempt_record": "benchmarks/scientific_mab_v11_run1_attempt1_infrastructure_failure.json",
+  "completed_clusters_before_failure": 7,
+  "partial_raw": {
+    "path": "benchmarks/scientific_mab_v11_run1_attempt2_partial_raw.jsonl",
+    "bytes": 114430,
+    "sha256": "8f5c29bad754a108f620534cc28eabf3cb008b599fb8e182b0122f9c89eee003"
+  },
+  "failure": {
+    "type": "UnicodeDecodeError",
+    "stage": "pinned official MemoryAgentBench Recsys scorer reading entity2id.json",
+    "system_default_encoding": "cp1251",
+    "asset_encoding": "utf-8",
+    "scientific_gate_evaluated": false,
+    "candidate_or_threshold_failure": false
+  },
+  "continuation_policy": {
+    "same_logical_run": true,
+    "candidate_unchanged": true,
+    "cases_unchanged": true,
+    "model_unchanged": true,
+    "thresholds_unchanged": true,
+    "deterministic_parameters_unchanged": true,
+    "attempt2_retained_verbatim": true,
+    "environment_only_change": "PYTHONUTF8=1 forces Python UTF-8 mode for the pinned UTF-8 JSON asset",
+    "attempts_count_as_scientific_runs": 1
+  },
+  "claim_boundary": "No complete development result exists and no pass or failure claim is permitted from this partial attempt.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "802008633fa07f498f9d76e60dda47632d0407fe45e354031fb5ac5d577c35d3"
+  }
+}
