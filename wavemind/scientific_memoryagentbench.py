@@ -475,6 +475,8 @@ def official_primary_metric(source: str) -> str:
         return "recsys_recall@10"
     if normalized.startswith("ruler_"):
         return "ruler_recall"
+    if normalized == "infbench_sum_eng_shots2":
+        return "rougeL_recall"
     return "substring_exact_match"
 
 

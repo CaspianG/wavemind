@@ -30,6 +30,8 @@ MODEL = "mistral:7b"
 MODEL_DIGEST = "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091"
 CANDIDATE_MODE = ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT
 ARTIFACT_SCHEMA = "wavemind.memoryagentbench_development.v11"
+FAMILY_KEY = "memoryagentbench_cross_family"
+REQUIRED_SOURCE: str | None = None
 
 
 def _require_clean_exact_source(expected_sha: str) -> str:
@@ -72,9 +74,7 @@ def main(argv: list[str] | None = None) -> int:
 
     source_sha = _require_clean_exact_source(args.expected_source_sha)
     protocol = json.loads(PROTOCOL_PATH.read_text(encoding="utf-8"))
-    spec = protocol["frozen_development_gate"]["families"][
-        "memoryagentbench_cross_family"
-    ]
+    spec = protocol["frozen_development_gate"]["families"][FAMILY_KEY]
     unit_ids = tuple(spec["unit_ids"])
     manifest = json.loads(args.split_manifest.read_text(encoding="utf-8"))
     if validate_artifact_integrity(manifest):
@@ -102,6 +102,11 @@ def main(argv: list[str] | None = None) -> int:
             family=family,
             unit_ids=(unit_id,),
         )
+        if REQUIRED_SOURCE is not None and units[0].source != REQUIRED_SOURCE:
+            raise RuntimeError(
+                f"frozen source mismatch: expected {REQUIRED_SOURCE}, "
+                f"got {units[0].source}"
+            )
         unit_rows, summary = run_scientific_candidate_development(
             official_repository=args.official_repository,
             units=units,
@@ -174,7 +179,7 @@ def main(argv: list[str] | None = None) -> int:
             "protocol_digest": protocol["protocol_digest"],
             "model": {"id": MODEL, "digest": MODEL_DIGEST, "context_window": 32768},
             "source_split": "development",
-            "metric_family": "memoryagentbench_cross_family",
+            "metric_family": FAMILY_KEY,
             "unit_ids": list(unit_ids),
             "context_sha256": sorted(fingerprints),
             "case_count": len(rows),
