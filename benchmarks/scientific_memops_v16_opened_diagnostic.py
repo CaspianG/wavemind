@@ -21,7 +21,7 @@ runner = importlib.util.module_from_spec(_SPEC)
 sys.modules[_SPEC.name] = runner
 _SPEC.loader.exec_module(runner)
 
-runner.PROTOCOL_PATH = ROOT / "benchmarks" / "scientific_memory_protocol_v15.json"
+runner.PROTOCOL_PATH = ROOT / "benchmarks" / "scientific_memory_protocol_v16.json"
 runner.CANDIDATE_MODE = ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT
 runner.CANDIDATE_ID_OVERRIDE = "safe-trajectory-state-agent-v17-prototype"
 runner.ARTIFACT_SCHEMA = "wavemind.scientific_memops_v17_opened_diagnostic.v1"
