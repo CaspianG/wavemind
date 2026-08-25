@@ -1,0 +1,36 @@
+{
+  "schema": "wavemind.scientific_v12_development_outcome.v1",
+  "status": "failed_development_gate_v12",
+  "candidate_source_sha": "7e502192ee26e0ee994372f9168ac1fa00bb9a1a",
+  "protocol_digest": "09c02d0b7900a001fadb0337fcf57b9b9468624b115449375d49664def8b49d1",
+  "failed_gate": "memoryagentbench_cross_family_positive_uplift_lcb_run_1",
+  "run": {
+    "artifact": {"path": "benchmarks/scientific_mab_v12_run1_results.json", "bytes": 3300, "sha256": "5735de99131fe8b13e37569ec38f46a73918be8740a3c38cd28ba3becfffa0bd"},
+    "raw": {"path": "benchmarks/scientific_mab_v12_run1_raw.jsonl", "bytes": 288999, "sha256": "73f1fbb7157f2d79f0de2550f47ba7cd9e3ca8529b11a2d29e976f6e9ccaca3c"},
+    "case_count": 10,
+    "paired_effect_values": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0],
+    "mean_difference": 0.2,
+    "ci95_lower": 0.0,
+    "ci95_upper": 0.5,
+    "intervention_coverage": 1.0
+  },
+  "unexecuted": {
+    "mab_development_runs_2_and_3": true,
+    "memops_development_runs": true,
+    "mab_final": true,
+    "memops_final": true,
+    "longmemeval_v2": true
+  },
+  "post_outcome_policy": {
+    "v12_exact_sha_may_be_changed": false,
+    "thresholds_may_be_relaxed": false,
+    "opened_contexts_may_be_reused": false,
+    "new_protocol_requires_fresh_development_contexts": true
+  },
+  "claim_boundary": "v12 failed development. No admission, 100%-pass, superiority, SOTA, production, or revolutionary claim is permitted.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "d1068cff8556d99e3ceacdd47793a2810d4a54644b23076666312d8a355c9215"
+  }
+}
