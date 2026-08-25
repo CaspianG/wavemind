@@ -1,0 +1,45 @@
+{
+  "schema": "wavemind.scientific_v14_development_outcome.v1",
+  "status": "invalid_harness_after_complete_memops_raw",
+  "candidate_source_sha": "17c97fecbb9c8ce8349d1045f1fdc131d595684b",
+  "protocol_digest": "e8de1b5a67e790a6bc45dd2b0802b76ccbe60dafcbea7a61c59762fd7f9fafe3",
+  "official_development_gate_pass": false,
+  "memoryagentbench_completed_runs": [
+    {"run_number": 1, "status": "pass", "artifact_file_sha256": "bf19cf7fc2fb203631a97cbf08e8095c3f201bb9fd36f3cb1cb09faa58a47329", "artifact_payload_sha256": "34d7cf6f40b0a288f7b2b4006c676919568108b9d9bcea7396951fca698e5528", "mean_difference": 0.03414877584069566, "ci95_lower": 0.021149696619128043},
+    {"run_number": 2, "status": "pass", "artifact_file_sha256": "53524083ce754bce89932fd6a0025532dcac5e7695269a7b3be8ab516d032177", "artifact_payload_sha256": "984320eff65805ad4eaff6e2517fe04b28568690706c9e4f1e3358af2a8965fa", "mean_difference": 0.03303629129186995, "ci95_lower": 0.020273676343642816},
+    {"run_number": 3, "status": "pass", "artifact_file_sha256": "3c2beda8f414ea57cef9c32815ebb88d654ba33c14b73e84b22440c19e7e4050", "artifact_payload_sha256": "0b9933c3f9093ee6a844dc823bf98f6f9c37530f9cf19d007e5e4ad5be88c8c6", "mean_difference": 0.03303629129186995, "ci95_lower": 0.020273676343642816}
+  ],
+  "memops_run_1": {
+    "status": "invalid_harness_no_official_artifact",
+    "raw": {"path": "benchmarks/scientific_memops_v14_longitudinal_run1/raw_pairs.jsonl", "bytes": 459235, "sha256": "bd7e47ed0605a0a550b74126911848a60bfd55cea10bdc88dc661c8344a8f051"},
+    "case_count": 20,
+    "subjects": ["A04", "A06", "A07", "A13", "A14"],
+    "harness_error": "KeyError: minimum_independent_subject_clusters_per_family",
+    "protocol_key_present": "minimum_independent_clusters_per_family",
+    "posthoc_diagnostic_only": {
+      "mean_difference": 0.38666666666666666,
+      "ci95_lower": 0.16666666666666666,
+      "ci95_upper": 0.6066666666666667,
+      "official_gate_decision": false
+    }
+  },
+  "unexecuted": {
+    "memops_development_runs_2_and_3": true,
+    "mab_final": true,
+    "memops_final": true,
+    "longmemeval_v2": true
+  },
+  "post_outcome_policy": {
+    "v14_exact_sha_may_be_changed": false,
+    "thresholds_may_be_relaxed": false,
+    "opened_mab_contexts_may_be_reused": false,
+    "opened_memops_subjects_may_be_reused": false,
+    "new_protocol_requires_fresh_development_units": true
+  },
+  "claim_boundary": "v14 is invalid as a complete development gate because the frozen MemOps harness emitted no official artifact. No admission, 100%-pass, superiority, production, or revolutionary claim is permitted.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "67a51b49f5487fcadfb654a7f7061f68d58b193776eaea84c2bedbff8eb0f739"
+  }
+}
