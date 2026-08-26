@@ -1,0 +1,23 @@
+{
+  "schema": "wavemind.scientific_v24_preflight_outcome.v1",
+  "status": "invalid_before_execution",
+  "candidate_id": "targeted-operation-application-agent-v24",
+  "candidate_source_sha": "a8fb7c9a899d08e99ac436eba9dfd66611dcdae0",
+  "protocol_digest": "a072744892d9d314ef92993f98cad148234211755df7ed168e3d97ae3e1165f2",
+  "reason": "The preregistered A04 subject has four official operation files and no A04_update.json, contradicting the frozen requirement of five operation files per subject.",
+  "missing_paths": [
+    "2-evidence_conversation/A04_update.json"
+  ],
+  "benchmark_invocations": 0,
+  "fresh_development_cases_executed": 0,
+  "model_calls": 0,
+  "final_split_touched": false,
+  "thresholds_changed": false,
+  "replacement_within_v24_forbidden": true,
+  "claim_boundary": "Preflight invalidity only; no performance evidence.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "c49bfbf3b8a62ee7ff86de5374ca5af62681bfa7fa780680c9eeb7caef61941f"
+  }
+}
