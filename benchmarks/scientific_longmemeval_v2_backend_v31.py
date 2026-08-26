@@ -34,10 +34,14 @@ def register_backend(*, official_repository: str | Path, candidate_repository: s
     )
     original_init = backend_class.__init__
     original_compile_once = backend_class._compile_once
+    original_query = backend_class.query
+    original_post_query_hook = backend_class.post_query_hook
 
     def synchronized_init(self, memory_params):
         original_init(self, memory_params)
         self._v31_compile_lock = threading.Lock()
+        self._v31_query_lock = threading.Lock()
+        self._v31_query_metadata = threading.local()
 
     def synchronized_compile_once(self):
         if self._compiled:
@@ -47,8 +51,34 @@ def register_backend(*, official_repository: str | Path, candidate_repository: s
                 return
             original_compile_once(self)
 
+    def synchronized_query(self, query, query_image=None):
+        with self._v31_query_lock:
+            context = original_query(self, query, query_image=query_image)
+            self._v31_query_metadata.value = dict(self._last_metadata or {})
+            return context
+
+    def thread_local_post_query_hook(
+        self,
+        *,
+        query,
+        query_image,
+        memory_context,
+    ):
+        metadata = getattr(self._v31_query_metadata, "value", None)
+        if metadata is None:
+            return original_post_query_hook(
+                self,
+                query=query,
+                query_image=query_image,
+                memory_context=memory_context,
+            )
+        del self._v31_query_metadata.value
+        return dict(metadata)
+
     backend_class.__init__ = synchronized_init
     backend_class._compile_once = synchronized_compile_once
+    backend_class.query = synchronized_query
+    backend_class.post_query_hook = thread_local_post_query_hook
     return backend_class
 
 

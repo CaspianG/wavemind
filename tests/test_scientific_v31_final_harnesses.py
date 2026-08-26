@@ -2,9 +2,13 @@ from __future__ import annotations
 
 import ast
 import concurrent.futures
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import threading
+import time
+from types import SimpleNamespace
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -130,3 +134,92 @@ def test_v31_longmemeval_backend_registers_exact_candidate_without_gold(tmp_path
     assert metadata["production_index_count"] == 0
     assert metadata["evaluation_only"] is True
     assert metadata["intervention_present"] is True
+
+
+def test_v31_longmemeval_backend_serializes_shared_queries_and_keeps_metadata_local(
+    tmp_path,
+):
+    path = ROOT / "benchmarks" / "scientific_longmemeval_v2_backend_v31.py"
+    spec = importlib.util.spec_from_file_location(
+        "scientific_lme_v31_backend_query_lock_test", path
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    backend_class = module.register_backend(
+        official_repository=OFFICIAL_LONGMEM,
+        candidate_repository=CANDIDATE,
+    )
+    backend = backend_class({"scratch_root": str(tmp_path)})
+    backend.insert(
+        {
+            "id": "synthetic-trajectory",
+            "environment": "shop",
+            "goal": "find checkout rule",
+            "outcome": "success",
+            "states": [
+                {
+                    "state_index": 0,
+                    "url": "https://example.test/checkout",
+                    "action": "open checkout",
+                    "thought": "observe",
+                    "accessibility_tree": "Checkout requires a delivery window.",
+                }
+            ],
+        }
+    )
+    backend._compile_once()
+
+    counter_lock = threading.Lock()
+    active = 0
+    maximum_active = 0
+
+    def fake_recall(query, **_kwargs):
+        nonlocal active, maximum_active
+        with counter_lock:
+            active += 1
+            maximum_active = max(maximum_active, active)
+        time.sleep(0.02)
+        with counter_lock:
+            active -= 1
+        return SimpleNamespace(
+            contents=(f"context:{query}",),
+            selected_memory_ids=(f"memory:{query}",),
+            estimated_tokens=1,
+            evaluation_only=True,
+            reason="query-lock-test",
+        )
+
+    backend._runtime.evaluation_recall = fake_recall
+    barrier = threading.Barrier(4)
+
+    def perform(query):
+        context = backend.query(query)
+        barrier.wait(timeout=5.0)
+        metadata = backend.post_query_hook(
+            query=query,
+            query_image=None,
+            memory_context=context,
+        )
+        return context, metadata
+
+    queries = [f"query-{index}" for index in range(4)]
+    try:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+            results = list(executor.map(perform, queries))
+    finally:
+        backend.close()
+
+    assert maximum_active == 1
+    for query, (context, metadata) in zip(queries, results):
+        assert context == [{"type": "text", "value": f"context:{query}"}]
+        assert metadata is not None
+        expected_digest = hashlib.sha256(
+            json.dumps(
+                [f"context:{query}"],
+                ensure_ascii=False,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        ).hexdigest()
+        assert metadata["context_sha256"] == expected_digest
+        assert metadata["selected_memory_ids"] == [f"memory:{query}"]
