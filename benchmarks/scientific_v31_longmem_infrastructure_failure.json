@@ -1,0 +1,70 @@
+{
+  "schema": "wavemind.scientific_v31_longmem_infrastructure_failure.v1",
+  "status": "infrastructure_failed_before_outcomes",
+  "logical_run": "longmemeval_v2_small_full_v31",
+  "logical_full_run_count": 1,
+  "candidate_source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+  "protocol_digest": "bc1f895bdf8bd30027bcc17f1c3a375099c8ee442681382c56ba57fa7580793b",
+  "original_harness_commit": "8d5052b94dea2cdc2db020208800577e3267ab3c",
+  "admission_plan_commit": "8135561b4c532817bf9502556c099a5e52ebb19e",
+  "failure": {
+    "stage": "candidate_web_small_prompt_build",
+    "type": "RuntimeError",
+    "outer_message": "Prompt building failed for question 6652c337",
+    "cause_type": "ValueError",
+    "cause_message": "memory already exists: lme-v6-000233a3f2c2d6f006e13912",
+    "causal_diagnosis": "Four frozen prompt workers entered the adapter's unguarded one-time compilation concurrently and attempted duplicate evaluation-memory registration.",
+    "candidate_or_threshold_failure": false,
+    "scientific_gate_evaluated": false
+  },
+  "observed_state": {
+    "completed_official_arms": [],
+    "partial_arm": "candidate_web_small",
+    "answers_generated": false,
+    "outcome_scores_opened": false,
+    "per_question_files": 0,
+    "aggregated_metrics_files": 0,
+    "marker_completed": false,
+    "marker": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/full_run_marker.json",
+      "bytes": 1460,
+      "sha256": "9872e1d94096e7c8fa0a9b4b592f64312d7902e4a74326907c765a034c7a4355"
+    },
+    "run_args": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/candidate_web_small/run_args.json",
+      "bytes": 1873,
+      "sha256": "206c714c16eda276bf0de5962622ac46e3ef97601d66b24e6f4c15c73cefdab3"
+    }
+  },
+  "frozen_execution_parameters": {
+    "model": "mistral:7b",
+    "evaluator_model": "mistral:7b",
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "top_k": 20,
+    "shuffle_questions_seed": 17,
+    "prompt_build_max_workers": 4,
+    "reader_max_concurrent_requests": 4,
+    "memory_context_max_tokens": 8192
+  },
+  "continuation_policy": {
+    "authorized_by_preregistered_plan": true,
+    "same_logical_run_required": true,
+    "partial_retained_verbatim_required": true,
+    "candidate_unchanged_required": true,
+    "data_unchanged_required": true,
+    "prompts_unchanged_required": true,
+    "model_unchanged_required": true,
+    "thresholds_unchanged_required": true,
+    "order_unchanged_required": true,
+    "deterministic_parameters_unchanged_required": true,
+    "permitted_change": "Synchronize the adapter's one-time compilation so the frozen four-worker prompt builder cannot register the same evaluation memory twice.",
+    "attempts_count_as_scientific_runs": 1
+  },
+  "claim_boundary": "No LongMemEval outcome exists. This infrastructure failure is neither a pass nor a scientific gate failure, and it authorizes no 100%-pass, SOTA, production, universal, or revolutionary claim.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "310248f56115ad5661c3c2fb87e947e8ffcfdfca7869c0820a9acbd20297bef9"
+  }
+}
