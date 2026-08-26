@@ -1,0 +1,142 @@
+{
+  "schema": "wavemind.scientific_v31_longmem_torchvision_continuation.v1",
+  "status": "preregistered_torchvision_continuation_before_outcome",
+  "preregistered_at": "2026-08-26",
+  "logical_run": "longmemeval_v2_small_full_v31",
+  "logical_full_run_count": 1,
+  "candidate_source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+  "failure_evidence": {
+    "path": "benchmarks/scientific_v31_longmem_infrastructure_failure_5.json",
+    "bytes": 5189,
+    "sha256": "7ed4959d72b5a47ebe11bd005cafeeea566a532b126e3e12e862dd1d48146f34",
+    "commit": "3ad6d255db7daf4812416a4c32f51c81403de815",
+    "payload_sha256": "18131d57871facdfb29c67600b28523f48493412fadba28050c37110a1643781",
+    "failure_type": "MissingOfficialTorchvisionDependency",
+    "outcome_scores_opened": false,
+    "scientific_gate_evaluated": false
+  },
+  "processor_dependency_probe": {
+    "path": "benchmarks/scientific_v31_longmem_processor_probe_results.json",
+    "bytes": 3039,
+    "sha256": "991f246d4c6797ae794f83e0b8323f69d2a68d071b45208e66ac9588788765a3",
+    "commit": "1a365fd1056dafb051d38aa6977b96428873b923",
+    "payload_sha256": "083ac012b221dabcdb3e6365776a966a0d00b8795e5368044c909d6fda0a150f",
+    "question_sha256": "bad0da135416fce5866cdee4a857a22db1e3e1a08628b80d3efe1458ff696ca7",
+    "answer_or_gold_read": false,
+    "model_calls_made": 0,
+    "scores_opened": false,
+    "private_gib_after_processor": 1.356388,
+    "processor_original_tokens": 9545,
+    "processor_truncated_tokens": 7808
+  },
+  "environment_change": {
+    "permitted_change_only": "install resolver-compatible official dependency torchvision 0.28.0",
+    "torch_before": "2.13.0+cpu",
+    "torch_after": "2.13.0+cpu",
+    "torch_unchanged": true,
+    "torchvision_before": null,
+    "torchvision_after": "0.28.0+cpu",
+    "cuda_after": null,
+    "distribution_files": [
+      {
+        "environment_relative_path": "Lib/site-packages/torchvision-0.28.0.dist-info/METADATA",
+        "bytes": 5608,
+        "sha256": "ae92651b9b70a45a22f299c355a779d75e7705089cb33164a35722e7a73dc581"
+      },
+      {
+        "environment_relative_path": "Lib/site-packages/torchvision-0.28.0.dist-info/WHEEL",
+        "bytes": 101,
+        "sha256": "480c3c9ecea42562675e76d1134d13b5ca465b1e386775af8c9b03471c08c6bf"
+      },
+      {
+        "environment_relative_path": "Lib/site-packages/torchvision-0.28.0.dist-info/RECORD",
+        "bytes": 18325,
+        "sha256": "e5259a442baf890b55c44c40be71e41cc2f6d9f848ea2f80642287179e4d334d"
+      }
+    ]
+  },
+  "exact_harness": {
+    "required_commit": "404c6b127e580d8531176d9e79cd1782bbacc79b",
+    "files": [
+      {
+        "path": "benchmarks/scientific_mab_v19_final.py",
+        "bytes": 9644,
+        "sha256": "3409f4e645d2c9a37874eb1f044a98b5e5a682c30b8a1afc271d9451e124c7f8"
+      },
+      {
+        "path": "benchmarks/scientific_mab_v31_final.py",
+        "bytes": 3331,
+        "sha256": "f6d9f995f188d12889740d4ead0f1503c9f2451cebe3f393c0f97fe22668a10c"
+      },
+      {
+        "path": "benchmarks/scientific_memops_v31_final.py",
+        "bytes": 9764,
+        "sha256": "1072978bd36a6fe7524754f9d9740ae0cd6dfdb1552eae77a3648aa717ac13ba"
+      },
+      {
+        "path": "benchmarks/scientific_longmemeval_v2_backend.py",
+        "bytes": 11532,
+        "sha256": "f59733a2d26f673c0a7f532653398379ad6d90f68175ae7d4c1e855e7ef70bc6"
+      },
+      {
+        "path": "benchmarks/scientific_longmemeval_v2_backend_v31.py",
+        "bytes": 7732,
+        "sha256": "aba0f5e17f81902ec5838d302005e768f2843d8ef085ea657b8b9fc44c3f2fcc"
+      },
+      {
+        "path": "benchmarks/scientific_longmemeval_v2_run.py",
+        "bytes": 10537,
+        "sha256": "5c2355a3f64e87d50f133cfa8db95e7a6b7f49b036069fc1c69c0893a507f12e"
+      },
+      {
+        "path": "benchmarks/scientific_longmemeval_v2_run_v31.py",
+        "bytes": 1460,
+        "sha256": "424b561f62a8b255ecc07f4d88a46c7156aec4da1142bbb5b7c7ce9af4049ae7"
+      }
+    ],
+    "harness_change_after_streaming_plan": false
+  },
+  "frozen_invariants": {
+    "candidate_source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+    "protocol_digest": "bc1f895bdf8bd30027bcc17f1c3a375099c8ee442681382c56ba57fa7580793b",
+    "official_repository_sha": "2cc8c540bdb87fe6761629b585e727e1c4704520",
+    "tier": "small",
+    "model": "mistral:7b",
+    "evaluator_model": "mistral:7b",
+    "prompt_build_max_workers": 4,
+    "reader_max_concurrent_requests": 4,
+    "shuffle_questions_seed": 17,
+    "prompts_unchanged": true,
+    "models_unchanged": true,
+    "thresholds_unchanged": true,
+    "question_order_unchanged": true,
+    "scoring_unchanged": true
+  },
+  "continuation_execution": {
+    "same_output_root_required": "benchmarks/scientific_longmemeval_v31_final",
+    "same_marker_required": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/full_run_marker.json",
+      "bytes": 1460,
+      "sha256": "9872e1d94096e7c8fa0a9b4b592f64312d7902e4a74326907c765a034c7a4355"
+    },
+    "logical_full_run_count_must_remain": 1,
+    "retained_partials_before_continuation": [
+      "candidate_web_small-20260826T163942Z",
+      "candidate_web_small-20260826T173742Z",
+      "candidate_web_small-20260826T184002Z",
+      "candidate_web_small-20260826T190840Z"
+    ],
+    "retained_partial_count_before_continuation": 4,
+    "current_partial_must_be_retained_on_restart": true,
+    "restart_first_incomplete_arm": "candidate_web_small",
+    "fresh_scientific_run_forbidden": true,
+    "memory_monitoring_required": true,
+    "safety_abort_before_system_oom_required": true
+  },
+  "claim_boundary": "This dependency continuation plan and processor probe are not benchmark outcomes and authorize no pass, 100%-pass, SOTA, or revolutionary claim.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "a2ac54289eec31cada326de41b2f3055d8f55e5ceac2b511aa7842adca82dfe1"
+  }
+}
