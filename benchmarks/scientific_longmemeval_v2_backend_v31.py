@@ -131,6 +131,79 @@ def _memory_safe_select_operation_memories(
     )
 
 
+def _memory_safe_select_ranked_memories(
+    self,
+    query,
+    definitions,
+    *,
+    token_budget,
+    latency_budget_ms,
+):
+    reconciliation = sys.modules[type(self).__module__]
+    query_tokens = reconciliation._tokens(query)
+    if not query_tokens or not definitions:
+        return reconciliation.ReconciliationSelection(
+            (), {}, "no query-aligned active state"
+        )
+    overlaps = {}
+    document_frequency = Counter()
+    for memory_id, definition in definitions.items():
+        overlap = query_tokens.intersection(
+            reconciliation._tokens(definition.content)
+        )
+        overlaps[memory_id] = overlap
+        document_frequency.update(overlap)
+    total = max(1, len(definitions))
+    query_weight = {
+        token: math.log((total + 1) / (document_frequency[token] + 1)) + 1.0
+        for token in query_tokens
+    }
+    denominator = sum(query_weight.values()) or 1.0
+    maximum_order = max(
+        (reconciliation._source_order(item) for item in definitions.values()),
+        default=0,
+    )
+    query_phrases = (
+        reconciliation.extract_query_candidate_phrases(query)
+        if self.query_phrase_aware
+        else ()
+    )
+    ranked = []
+    for memory_id, definition in definitions.items():
+        overlap = overlaps[memory_id]
+        if not overlap:
+            continue
+        lexical = sum(query_weight[token] for token in overlap) / denominator
+        order = reconciliation._source_order(definition)
+        recency = (order / maximum_order) if maximum_order else 0.0
+        score = lexical + (self.source_recency_weight * recency)
+        normalized_content = reconciliation.normalize_query_phrase(definition.content)
+        phrase_hits = sum(phrase in normalized_content for phrase in query_phrases)
+        ranked.append((phrase_hits, score, order, memory_id))
+    ranked.sort(key=lambda item: (-item[0], -item[1], -item[2], item[3]))
+    candidates = [item[3] for item in ranked[: self.maximum_candidates]]
+    memory_ids = self._fit_budget(
+        candidates,
+        definitions,
+        token_budget=token_budget,
+        latency_budget_ms=latency_budget_ms,
+    )
+    scores = {memory_id: score for _, score, _, memory_id in ranked}
+    return reconciliation.ReconciliationSelection(
+        memory_ids=memory_ids,
+        relevance={
+            memory_id: min(1.0, scores[memory_id]) for memory_id in memory_ids
+        },
+        reason=(
+            "evaluation-only phrase-aligned lexical-state retrieval without source recency"
+            if query_phrases
+            else "evaluation-only lexical-state retrieval without source recency"
+            if self.source_recency_weight == 0.0
+            else "evaluation-only lexical-state retrieval with source recency"
+        ),
+    )
+
+
 def _base_module():
     spec = importlib.util.spec_from_file_location(
         "wavemind_scientific_longmemeval_v31_base", BASE_PATH
@@ -163,6 +236,10 @@ def register_backend(*, official_repository: str | Path, candidate_repository: s
         reconciler = self._runtime.state_reconciler
         reconciler._select_operation_memories = types.MethodType(
             _memory_safe_select_operation_memories,
+            reconciler,
+        )
+        reconciler._select_ranked_memories = types.MethodType(
+            _memory_safe_select_ranked_memories,
             reconciler,
         )
 

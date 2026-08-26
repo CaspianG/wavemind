@@ -373,3 +373,133 @@ def test_v31_longmemeval_streaming_selector_does_not_retain_document_token_sets(
 
     assert reference_peak >= len(definitions) + 1
     assert optimized_peak <= 2
+
+
+def test_v31_longmemeval_streaming_fallback_selector_is_exactly_equivalent():
+    from wavemind.scientific_memory import MemoryDefinition, MemoryKind
+    from wavemind.scientific_reconciliation import ProofCarryingStateReconciler
+
+    path = ROOT / "benchmarks" / "scientific_longmemeval_v2_backend_v31.py"
+    spec = importlib.util.spec_from_file_location(
+        "scientific_lme_v31_fallback_streaming_equivalence_test", path
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    definitions = {}
+    for index in range(600):
+        words = [f"noise-{index}-{offset}" for offset in range(40)]
+        if index % 3 == 0:
+            words.extend(("kevin", "checkout"))
+        if index % 5 == 0:
+            words.extend(("delivery", "state"))
+        definitions[f"memory-{index:04d}"] = MemoryDefinition(
+            memory_id=f"memory-{index:04d}",
+            kind=MemoryKind.FACT,
+            content=" ".join(words),
+            provenance=(f"source-order:{index}",),
+            estimated_tokens=8 + (index % 7),
+            estimated_latency_ms=0.1,
+            safety_risk=0.0,
+        )
+    query = "What is Kevin's checkout delivery state?"
+    configurations = (
+        {},
+        {"source_recency_weight": 0.25},
+        {"query_phrase_aware": True},
+        {"query_phrase_aware": True, "source_recency_weight": 0.25},
+    )
+    for configuration in configurations:
+        reference = ProofCarryingStateReconciler(**configuration)
+        optimized = ProofCarryingStateReconciler(**configuration)
+        optimized._select_ranked_memories = types.MethodType(
+            module._memory_safe_select_ranked_memories,
+            optimized,
+        )
+        expected = reference._select_ranked_memories(
+            query,
+            definitions,
+            token_budget=128,
+            latency_budget_ms=20.0,
+        )
+        actual = optimized._select_ranked_memories(
+            query,
+            definitions,
+            token_budget=128,
+            latency_budget_ms=20.0,
+        )
+        assert actual == expected
+
+
+def test_v31_longmemeval_streaming_fallback_does_not_retain_document_token_sets(
+    monkeypatch,
+):
+    from wavemind.scientific_memory import MemoryDefinition, MemoryKind
+    from wavemind import scientific_reconciliation as reconciliation
+
+    path = ROOT / "benchmarks" / "scientific_longmemeval_v2_backend_v31.py"
+    spec = importlib.util.spec_from_file_location(
+        "scientific_lme_v31_fallback_streaming_memory_test", path
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    class TrackedSet(set):
+        live = 0
+        peak = 0
+
+        def __init__(self, values=()):
+            super().__init__(values)
+            type(self).live += 1
+            type(self).peak = max(type(self).peak, type(self).live)
+
+        def __del__(self):
+            type(self).live -= 1
+
+    monkeypatch.setattr(
+        reconciliation,
+        "_tokens",
+        lambda value: TrackedSet(value.lower().split()),
+    )
+    definitions = {
+        f"memory-{index}": MemoryDefinition(
+            memory_id=f"memory-{index}",
+            kind=MemoryKind.FACT,
+            content=f"document {index} query-token " + "noise " * 100,
+            provenance=(f"source-order:{index}",),
+            estimated_tokens=20,
+            estimated_latency_ms=0.1,
+            safety_risk=0.0,
+        )
+        for index in range(100)
+    }
+    reference = reconciliation.ProofCarryingStateReconciler()
+    reference._select_ranked_memories(
+        "query-token",
+        definitions,
+        token_budget=100,
+        latency_budget_ms=10.0,
+    )
+    reference_peak = TrackedSet.peak
+    gc.collect()
+    assert TrackedSet.live == 0
+
+    TrackedSet.peak = 0
+    optimized = reconciliation.ProofCarryingStateReconciler()
+    optimized._select_ranked_memories = types.MethodType(
+        module._memory_safe_select_ranked_memories,
+        optimized,
+    )
+    optimized._select_ranked_memories(
+        "query-token",
+        definitions,
+        token_budget=100,
+        latency_budget_ms=10.0,
+    )
+    optimized_peak = TrackedSet.peak
+    gc.collect()
+    assert TrackedSet.live == 0
+
+    assert reference_peak >= len(definitions) + 1
+    assert optimized_peak <= 2
