@@ -48,6 +48,7 @@ OPERATION_TRACE_OPERATION_ONLY_SEQUENCE_COVERAGE = False
 CANDIDATE_DISAMBIGUATION_QUERY_OPTIONS = False
 CANDIDATE_DISAMBIGUATION_SEQUENCE_COVERAGE = False
 CANDIDATE_DISAMBIGUATION_OPERATION_ONLY_SEQUENCE_COVERAGE = False
+CANDIDATE_MODE_BY_OPERATION: dict[str, ScientificCandidateMode] = {}
 
 
 def _select_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -203,6 +204,13 @@ def _retrieval_query(entry: Mapping[str, Any]) -> str:
     return question
 
 
+def _candidate_mode_for_entry(entry: Mapping[str, Any]) -> ScientificCandidateMode:
+    return CANDIDATE_MODE_BY_OPERATION.get(
+        str(entry.get("operation_type", "")),
+        CANDIDATE_MODE,
+    )
+
+
 def _write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
@@ -347,7 +355,10 @@ def main(argv: list[str] | None = None) -> int:
             )
             if not entries:
                 continue
-            entry = entries[0]
+            entry = copy.deepcopy(entries[0])
+            case_candidate_mode = _candidate_mode_for_entry(entry)
+            entry["evaluation_method"] = case_candidate_mode.value
+            entry["retrieval_mode"] = f"scientific-{case_candidate_mode.value}"
             case_id = str(entry["question_id"])
             retrieval_query = _retrieval_query(entry)
             sequence_coverage = (
@@ -376,7 +387,7 @@ def main(argv: list[str] | None = None) -> int:
             with ScientificMemOpsRetriever(
                 db_path,
                 corpus=corpus,
-                mode=CANDIDATE_MODE,
+                mode=case_candidate_mode,
             ) as retriever:
                 production_items, production_recall = retriever.retrieve(
                     retrieval_query,
@@ -405,7 +416,7 @@ def main(argv: list[str] | None = None) -> int:
                 treatment_entry["retrieval_results"].update(
                     {
                         "ranked_items": ranked_items,
-                        "retriever": CANDIDATE_MODE.value,
+                        "retriever": case_candidate_mode.value,
                         "top_k": len(ranked_items),
                         "metrics": generation["retrieval_metrics"](
                             ranked_items,
@@ -554,6 +565,10 @@ def main(argv: list[str] | None = None) -> int:
             "source_sha": source_sha,
             "protocol_digest": protocol["protocol_digest"],
             "candidate_id": CANDIDATE_ID_OVERRIDE or CANDIDATE_MODE.value,
+            "candidate_mode_by_operation": {
+                operation_type: mode.value
+                for operation_type, mode in sorted(CANDIDATE_MODE_BY_OPERATION.items())
+            },
             "family": args.family,
             "evaluation_setting": family_specs[args.family]["evaluation_setting"],
             "run_number": args.run_number,
