@@ -1,0 +1,74 @@
+{
+  "schema": "wavemind.scientific_v31_longmem_processor_probe.v1",
+  "status": "passed_official_processor_dependency_probe",
+  "candidate_source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+  "streaming_harness_commit": "404c6b127e580d8531176d9e79cd1782bbacc79b",
+  "input": {
+    "question_kind": "held_out_digest_only_infrastructure_probe",
+    "question_sha256": "bad0da135416fce5866cdee4a857a22db1e3e1a08628b80d3efe1458ff696ca7",
+    "question_chars": 214,
+    "question_has_image": false,
+    "answer_or_gold_read_by_probe": false
+  },
+  "dependency_receipt": {
+    "torch_version": "2.13.0+cpu",
+    "torchvision_version": "0.28.0+cpu",
+    "torch_cuda": null,
+    "distribution_files": [
+      {
+        "environment_relative_path": "Lib/site-packages/torchvision-0.28.0.dist-info/METADATA",
+        "bytes": 5608,
+        "sha256": "ae92651b9b70a45a22f299c355a779d75e7705089cb33164a35722e7a73dc581"
+      },
+      {
+        "environment_relative_path": "Lib/site-packages/torchvision-0.28.0.dist-info/WHEEL",
+        "bytes": 101,
+        "sha256": "480c3c9ecea42562675e76d1134d13b5ca465b1e386775af8c9b03471c08c6bf"
+      },
+      {
+        "environment_relative_path": "Lib/site-packages/torchvision-0.28.0.dist-info/RECORD",
+        "bytes": 18325,
+        "sha256": "e5259a442baf890b55c44c40be71e41cc2f6d9f848ea2f80642287179e4d334d"
+      }
+    ],
+    "official_pyproject": {
+      "repository_relative_path": "pyproject.toml",
+      "bytes": 670,
+      "sha256": "efd5a1e217e946ad48723381e956bb37c09f9f18c5178dcfafd1dd39076d36d0"
+    },
+    "official_requirements_torch": {
+      "repository_relative_path": "requirements-torch.txt",
+      "bytes": 105,
+      "sha256": "1ebd8c6e807e27296a732fbebc8adef8b8d950b18f3e45f289a6f5091e8c6f2e"
+    }
+  },
+  "measurements": {
+    "runtime_open_seconds": 2.866861,
+    "optimized_recall_seconds": 10.788702,
+    "chain_validation_seconds": 1.734862,
+    "official_processor_seconds": 15.159137,
+    "context_items": 15,
+    "context_chars": 32364,
+    "context_estimated_tokens": 8095,
+    "processor_original_tokens": 9545,
+    "processor_truncated_tokens": 7808,
+    "processor_truncated_items": 12,
+    "chain_errors": [],
+    "private_gib_after_processor": 1.356388
+  },
+  "scientific_boundary": {
+    "question_text_emitted": false,
+    "answer_or_gold_read": false,
+    "model_calls_made": 0,
+    "answers_generated": 0,
+    "scores_opened": false,
+    "gate_evaluated": false
+  },
+  "decision_rule": "Processor dependency probe passes only if exact recall, chain validation, and official truncation complete below 3 GiB private memory without reading answers or producing scores.",
+  "claim_boundary": "This dependency probe is not a benchmark outcome and authorizes no scientific pass or revolutionary claim.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "083ac012b221dabcdb3e6365776a966a0d00b8795e5368044c909d6fda0a150f"
+  }
+}
