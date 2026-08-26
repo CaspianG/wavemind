@@ -1,0 +1,105 @@
+{
+  "schema": "wavemind.scientific_v31_longmem_infrastructure_failure.v7",
+  "status": "failed_before_first_reader_answer",
+  "logical_run": "longmemeval_v2_small_full_v31",
+  "logical_full_run_count": 1,
+  "infrastructure_failure_sequence": 7,
+  "candidate_source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+  "fallback_harness_commit": "0dd456e1100a6beb5e60bdf94ddf5ffa071b2965",
+  "fallback_continuation_plan_commit": "4ea14f2dc18ccabb08e5348fdba7075a037b8a20",
+  "failure": {
+    "stage": "candidate_web_small_reader_generation_start",
+    "type": "SystemProxyLoopbackInterception",
+    "observed_error": "openai.InternalServerError: Error code: 503",
+    "generation_progress": "0/240",
+    "causal_diagnosis": "The OpenAI Python client inherited the Windows system proxy for the 127.0.0.1 Ollama base URL. The failed SDK requests did not reach the Ollama access log. A synthetic transport contrast reproduced an empty HTTP 503 with httpx trust_env=True and HTTP 200 with trust_env=False.",
+    "candidate_or_threshold_failure": false,
+    "scientific_gate_evaluated": false
+  },
+  "observed_state": {
+    "completed_official_arms": [],
+    "completed_prompt_rows": 240,
+    "answers_generated": false,
+    "outcome_scores_opened": false,
+    "per_question_files": 0,
+    "aggregated_metrics_files": 0,
+    "marker_completed": false,
+    "marker": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/full_run_marker.json",
+      "bytes": 1460,
+      "sha256": "9872e1d94096e7c8fa0a9b4b592f64312d7902e4a74326907c765a034c7a4355"
+    },
+    "run_args": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/candidate_web_small/run_args.json",
+      "bytes": 1873,
+      "sha256": "43f593dc75e3128ff5bd566e5577b5996f68153a3ddb0e767823f72cd3c6a038"
+    },
+    "prompt_build_summary": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/candidate_web_small/prompt_build_summary.json",
+      "bytes": 8346,
+      "sha256": "d343c22b3ea2ad87e0650a7036a1b01b0ca77dc13efdf9801b0701014f5fe952"
+    },
+    "prompt_rows": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/candidate_web_small/prompt_rows.jsonl",
+      "bytes": 23333665,
+      "sha256": "9d6688e2627f9dcd950162deae5d24474087891ceff9598d0a4e39c907c566f6"
+    },
+    "console_log": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/continuation7_console.log",
+      "bytes": 49190,
+      "sha256": "3ec6945ccada3a2d75f45f1b485a7012f82bdd7edfa0312347c4ea3748affa99"
+    },
+    "retained_partial_count_before_attempt": 6,
+    "retained_partials_before_attempt": [
+      "candidate_web_small-20260826T163942Z",
+      "candidate_web_small-20260826T173742Z",
+      "candidate_web_small-20260826T184002Z",
+      "candidate_web_small-20260826T190840Z",
+      "candidate_web_small-20260826T195850Z",
+      "candidate_web_small-20260826T203124Z"
+    ],
+    "current_partial_requires_retention_on_next_continuation": true
+  },
+  "diagnostic_probe": {
+    "path": "benchmarks/scientific_v31_longmem_loopback_probe_results.json",
+    "bytes": 2462,
+    "sha256": "169e4a404953adebfe049790e2c6b8dce4fc485ed839b896756d2c89400886f5",
+    "payload_sha256": "d9fb10f224cd2399a20e6b8babf7920b395478b1febd81f38ac3ba4f9f4dabc2",
+    "scope": "infrastructure_only_synthetic_text",
+    "inherited_transport_status": 503,
+    "direct_transport_status": 200,
+    "no_proxy_concurrent_statuses": [
+      200,
+      200,
+      200,
+      200
+    ],
+    "benchmark_prompt_or_answer_used": false
+  },
+  "frozen_execution_parameters": {
+    "model": "mistral:7b",
+    "evaluator_model": "mistral:7b",
+    "model_digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768,
+    "memory_context_max_tokens": 8192,
+    "prompt_build_max_workers": 4,
+    "reader_max_concurrent_requests": 4,
+    "shuffle_questions_seed": 17
+  },
+  "required_fix_boundary": {
+    "permitted_changes": [
+      "Bypass the host system proxy for 127.0.0.1 and localhost.",
+      "Warm the exact-digest local model with synthetic text before concurrent reader calls.",
+      "Enforce the preregistered 32768-token Ollama context window and one server-side sequence."
+    ],
+    "candidate_source_sha_unchanged_required": true,
+    "harness_commit_unchanged_required": true,
+    "prompts_models_thresholds_client_workers_question_order_scoring_unchanged_required": true
+  },
+  "claim_boundary": "This pre-answer infrastructure failure contains no answer or score and authorizes no scientific pass or revolutionary claim.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "062f7a84cfac7f9a84b26ceda6420d448780d90d8ed1018202bc236266dc0081"
+  }
+}
