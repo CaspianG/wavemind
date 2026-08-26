@@ -51,6 +51,19 @@ _USER_TOMBSTONE_RE = re.compile(
     r"don't\s+want.*stored"
     r")"
 )
+_SLICE_TOMBSTONE_REQUEST_RE = re.compile(
+    r"(?is)(?:"
+    r"\bplease\s+(?:forget|remove|delete|discard)\b|"
+    r"\b(?:can|could|would)\s+you\s+(?:please\s+)?"
+    r"(?:forget|remove|delete|discard)\b|"
+    r"\byou\s+can\s+(?:forget|remove|delete|discard)\b|"
+    r"(?:^|[.!?]\s+)(?:please\s+)?(?:forget|remove|delete|discard)\b|"
+    r"(?:^|[.!?]\s+)(?:do\s+not|don't)\s+remember\b|"
+    r"\b(?:do\s+not|don't)\s+(?:track|store|reference)\b|"
+    r"\bdon't\s+want.{0,240}\bstored\b|"
+    r"\basked\s+(?:you|me)\s+not\s+to\s+(?:track|store|reference|remember)\b"
+    r")"
+)
 
 
 def classify_memory_operation_dialogue(content: str) -> tuple[bool, bool]:
@@ -72,7 +85,16 @@ def classify_memory_operation_slice(content: str) -> tuple[bool, bool]:
         lambda match: f"\n{match.group(1).lower()}: ",
         str(content),
     )
-    return classify_memory_operation_dialogue(turn_aligned)
+    user_turns = re.findall(
+        r"(?is)(?:^|\n)user:\s*(.*?)(?=\n(?:user|assistant):|\Z)",
+        turn_aligned,
+    )
+    tombstone = any(_SLICE_TOMBSTONE_REQUEST_RE.search(turn) for turn in user_turns)
+    operation = tombstone or bool(
+        _USER_MEMORY_INTENT_RE.search(turn_aligned)
+        or _ASSISTANT_MEMORY_ACK_RE.search(turn_aligned)
+    )
+    return operation, tombstone
 
 
 class ScientificMemOpsRetriever:
@@ -123,6 +145,7 @@ class ScientificMemOpsRetriever:
                     ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
                     ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT,
                     ScientificCandidateMode.SLICE_LOCAL_TOMBSTONE_AGENT,
+                    ScientificCandidateMode.TARGET_STATE_CUTOVER_AGENT,
                 }
                 else ((content, 0),)
             )
@@ -131,6 +154,8 @@ class ScientificMemOpsRetriever:
                     classify_memory_operation_slice(content_slice)
                     if self.runtime.mode
                     is ScientificCandidateMode.SLICE_LOCAL_TOMBSTONE_AGENT
+                    or self.runtime.mode
+                    is ScientificCandidateMode.TARGET_STATE_CUTOVER_AGENT
                     else (operation, tombstone)
                 )
                 memory_id = "memops-" + sha256_bytes(
@@ -175,6 +200,7 @@ class ScientificMemOpsRetriever:
                     ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
                     ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT,
                     ScientificCandidateMode.SLICE_LOCAL_TOMBSTONE_AGENT,
+                    ScientificCandidateMode.TARGET_STATE_CUTOVER_AGENT,
                 }:
                     batch_definitions.append(definition)
                 elif (
@@ -206,6 +232,7 @@ class ScientificMemOpsRetriever:
                     ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
                     ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT,
                     ScientificCandidateMode.SLICE_LOCAL_TOMBSTONE_AGENT,
+                    ScientificCandidateMode.TARGET_STATE_CUTOVER_AGENT,
         }:
             self.runtime.register_evaluation_memories(
                 batch_definitions,
@@ -220,6 +247,7 @@ class ScientificMemOpsRetriever:
                         ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
                         ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT,
                         ScientificCandidateMode.SLICE_LOCAL_TOMBSTONE_AGENT,
+                        ScientificCandidateMode.TARGET_STATE_CUTOVER_AGENT,
                     }
                     else (
                         "memops-development-adapter-v7"

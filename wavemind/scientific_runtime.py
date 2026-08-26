@@ -43,6 +43,7 @@ class ScientificCandidateMode(str, Enum):
     TASK_AWARE_SEQUENCE_COVERAGE_AGENT = "task-aware-sequence-coverage-agent-v14"
     TARGET_SCOPED_OPERATION_AGENT = "target-scoped-operation-agent-v16"
     SLICE_LOCAL_TOMBSTONE_AGENT = "slice-local-tombstone-agent-v28"
+    TARGET_STATE_CUTOVER_AGENT = "target-state-cutover-agent-v29"
 
 
 @dataclass(frozen=True)
@@ -109,6 +110,7 @@ class ScientificMemoryRuntime:
                     ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
                     ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT,
                     ScientificCandidateMode.SLICE_LOCAL_TOMBSTONE_AGENT,
+                    ScientificCandidateMode.TARGET_STATE_CUTOVER_AGENT,
                 }
             ),
             source_recency_weight=(
@@ -123,6 +125,7 @@ class ScientificMemoryRuntime:
                     ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
                     ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT,
                     ScientificCandidateMode.SLICE_LOCAL_TOMBSTONE_AGENT,
+                    ScientificCandidateMode.TARGET_STATE_CUTOVER_AGENT,
                 }
                 else 0.25
             ),
@@ -136,14 +139,23 @@ class ScientificMemoryRuntime:
                     ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
                     ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT,
                     ScientificCandidateMode.SLICE_LOCAL_TOMBSTONE_AGENT,
+                    ScientificCandidateMode.TARGET_STATE_CUTOVER_AGENT,
                 }
             ),
             target_scoped_tombstones=(
                 self.mode is ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT
                 or self.mode is ScientificCandidateMode.SLICE_LOCAL_TOMBSTONE_AGENT
+                or self.mode is ScientificCandidateMode.TARGET_STATE_CUTOVER_AGENT
             ),
             relevant_tombstones_first=(
-                self.mode is ScientificCandidateMode.SLICE_LOCAL_TOMBSTONE_AGENT
+                self.mode
+                in {
+                    ScientificCandidateMode.SLICE_LOCAL_TOMBSTONE_AGENT,
+                    ScientificCandidateMode.TARGET_STATE_CUTOVER_AGENT,
+                }
+            ),
+            tombstone_cutover=(
+                self.mode is ScientificCandidateMode.TARGET_STATE_CUTOVER_AGENT
             ),
         )
         self.retriever = WaveMind(
@@ -220,6 +232,7 @@ class ScientificMemoryRuntime:
             ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
             ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT,
             ScientificCandidateMode.SLICE_LOCAL_TOMBSTONE_AGENT,
+            ScientificCandidateMode.TARGET_STATE_CUTOVER_AGENT,
         }:
             raise ValueError("atomic evaluation storage is frozen to v5/v6 candidates")
         events = self.event_log.register_memories(definitions, actor=actor)
@@ -463,6 +476,7 @@ class ScientificMemoryRuntime:
             ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
             ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT,
             ScientificCandidateMode.SLICE_LOCAL_TOMBSTONE_AGENT,
+            ScientificCandidateMode.TARGET_STATE_CUTOVER_AGENT,
         }:
             return self.shadow_recall(
                 query,
@@ -516,6 +530,7 @@ class ScientificMemoryRuntime:
             ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
             ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT,
             ScientificCandidateMode.SLICE_LOCAL_TOMBSTONE_AGENT,
+            ScientificCandidateMode.TARGET_STATE_CUTOVER_AGENT,
         }:
             raise ValueError("sequence coverage recall is not enabled for this candidate")
         definitions = {

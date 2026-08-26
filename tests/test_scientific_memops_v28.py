@@ -27,6 +27,18 @@ def test_slice_classifier_recovers_embedded_forget_turn():
     )
 
 
+def test_slice_classifier_does_not_treat_autobiographical_uncertainty_as_deletion():
+    content = (
+        "user: James's test was in March, but I don't remember the exact date. "
+        "assistant: I will note that the date is uncertain."
+    )
+
+    operation, tombstone = classify_memory_operation_slice(content)
+
+    assert tombstone is False
+    assert operation is False
+
+
 def test_v28_prioritizes_relevant_local_tombstone_without_marking_whole_session(
     tmp_path,
 ):
