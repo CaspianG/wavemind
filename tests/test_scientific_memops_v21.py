@@ -63,3 +63,21 @@ def test_v21_retrieval_query_does_not_change_other_question_types():
         assert runner._retrieval_query(entry) == entry["question"]
     finally:
         runner.CANDIDATE_DISAMBIGUATION_QUERY_OPTIONS = previous
+
+
+def test_v22_configuration_keeps_query_grounding_out_of_blind_sequence_mode():
+    spec = importlib.util.spec_from_file_location(
+        "test_scientific_memops_v22_wrapper",
+        ROOT / "benchmarks" / "scientific_memops_v22_opened_diagnostic.py",
+    )
+    assert spec is not None and spec.loader is not None
+    wrapper = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = wrapper
+    spec.loader.exec_module(wrapper)
+    assert wrapper.runner.CANDIDATE_DISAMBIGUATION_QUERY_OPTIONS is True
+    assert wrapper.runner.CANDIDATE_DISAMBIGUATION_SEQUENCE_COVERAGE is False
+    assert (
+        wrapper.runner.CANDIDATE_DISAMBIGUATION_OPERATION_ONLY_SEQUENCE_COVERAGE
+        is False
+    )
+    assert wrapper.runner.TRAJECTORY_SEQUENCE_COVERAGE is True
