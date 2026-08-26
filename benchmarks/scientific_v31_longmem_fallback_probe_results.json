@@ -1,0 +1,81 @@
+{
+  "schema": "wavemind.scientific_v31_longmem_fallback_probe.v1",
+  "status": "passed_first_batch_digest_only_fallback_probe",
+  "candidate_source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+  "fallback_harness_commit": "0dd456e1100a6beb5e60bdf94ddf5ffa071b2965",
+  "input": {
+    "question_kind": "held_out_digest_only_infrastructure_probe",
+    "shuffle_seed": 17,
+    "question_count": 4,
+    "answer_or_gold_read_by_probe": false
+  },
+  "measurements": {
+    "runtime_open_seconds": 2.758579,
+    "rows": [
+      {
+        "shuffled_position": 0,
+        "question_sha256": "bad0da135416fce5866cdee4a857a22db1e3e1a08628b80d3efe1458ff696ca7",
+        "question_chars": 214,
+        "question_has_image": false,
+        "recall_seconds": 10.20187,
+        "selected_count": 15,
+        "estimated_tokens": 8095,
+        "reason": "evaluation-only lexical-state retrieval with source recency",
+        "context_sha256": "e2097739832aeb83b5019faa31bdf452f172569d5b22610b45d50e50132da571"
+      },
+      {
+        "shuffled_position": 1,
+        "question_sha256": "c3e24aea5539df2af6790c849bab79f47ec262a6d3c55a57dd3192461aebcbcb",
+        "question_chars": 286,
+        "question_has_image": false,
+        "recall_seconds": 10.54318,
+        "selected_count": 14,
+        "estimated_tokens": 7922,
+        "reason": "evaluation-only lexical-state retrieval with source recency",
+        "context_sha256": "1829041938de484d5a94d2d9a6e60e4d1f6caf11b8579409f842f8a0aa785b23"
+      },
+      {
+        "shuffled_position": 2,
+        "question_sha256": "ad2c817e3ae808c1ecf5ce854ed650aa4137d1a69783b386b2ed53c8d68cb3d5",
+        "question_chars": 224,
+        "question_has_image": false,
+        "recall_seconds": 10.42082,
+        "selected_count": 14,
+        "estimated_tokens": 7953,
+        "reason": "evaluation-only lexical-state retrieval with source recency",
+        "context_sha256": "b82f9bc4051aa1cf43f00a9d927964809b41df4bdb43f985f4753448d118cd88"
+      },
+      {
+        "shuffled_position": 3,
+        "question_sha256": "8580c0c4de0249b88ea9b64306cccb93007f72a9b9e84f480a8b204660b5b585",
+        "question_chars": 166,
+        "question_has_image": false,
+        "recall_seconds": 9.880155,
+        "selected_count": 13,
+        "estimated_tokens": 7921,
+        "reason": "evaluation-only lexical-state retrieval with source recency",
+        "context_sha256": "64c6f3457ef54bc329f5d8cedbd2f8add87485909581de6f207657f48b7e25f1"
+      }
+    ],
+    "maximum_recall_seconds": 10.54318,
+    "total_recall_seconds": 41.046025,
+    "chain_validation_seconds": 1.766075,
+    "chain_errors": [],
+    "private_gib_after_probe": 0.932728
+  },
+  "scientific_boundary": {
+    "question_text_emitted": false,
+    "answer_or_gold_read": false,
+    "model_calls_made": 0,
+    "answers_generated": 0,
+    "scores_opened": false,
+    "gate_evaluated": false
+  },
+  "decision_rule": "The exact fallback fix passes only if all first-batch digest-only recalls complete within 30 seconds each, chain validation has no errors, and private memory remains below 3 GiB without model calls or scores.",
+  "claim_boundary": "This digest-only infrastructure probe is not a benchmark outcome and authorizes no scientific pass or revolutionary claim.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "453a1f7a8457166d2d0a3d8368f3752cd7099a7dbaf248fbab40dfb644b842b7"
+  }
+}
