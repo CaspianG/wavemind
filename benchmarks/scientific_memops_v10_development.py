@@ -43,6 +43,8 @@ DIAGNOSTIC_ONLY = False
 TRAJECTORY_SEQUENCE_COVERAGE = False
 UPDATE_SEQUENCE_COVERAGE = False
 TRAJECTORY_OPERATION_ONLY_SEQUENCE_COVERAGE = False
+OPERATION_TRACE_SEQUENCE_COVERAGE = False
+OPERATION_TRACE_OPERATION_ONLY_SEQUENCE_COVERAGE = False
 
 
 def _select_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -115,6 +117,27 @@ def _select_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "TargetBinding": 3,
             "OperationApplication": 4,
             "OperationTrace": 5,
+        }
+
+        def key(entry: Mapping[str, Any]) -> tuple[int, int, str]:
+            question_id = str(entry.get("question_id", ""))
+            digits = "".join(character for character in question_id if character.isdigit())
+            question_number = int(digits) if digits else 999
+            return (
+                priority.get(str(entry.get("evaluation_type")), 99),
+                question_number,
+                question_id,
+            )
+
+        return [min(entries, key=key)]
+    if QUESTION_SELECTION == "memory-dependence-v5":
+        priority = {
+            "OperationTrace": 0,
+            "StateTrajectory": 1,
+            "TargetBinding": 2,
+            "OperationApplication": 3,
+            "StateTransition": 4,
+            "CandidateDisambiguation": 5,
         }
 
         def key(entry: Mapping[str, Any]) -> tuple[int, int, str]:
@@ -282,10 +305,16 @@ def main(argv: list[str] | None = None) -> int:
                 and path.stem.endswith("_trajectory_ops")
             ) or (
                 UPDATE_SEQUENCE_COVERAGE and path.stem.endswith("_update")
+            ) or (
+                OPERATION_TRACE_SEQUENCE_COVERAGE
+                and str(entry.get("evaluation_type")) == "OperationTrace"
             )
             sequence_operation_only = (
                 TRAJECTORY_OPERATION_ONLY_SEQUENCE_COVERAGE
                 and path.stem.endswith("_trajectory_ops")
+            ) or (
+                OPERATION_TRACE_OPERATION_ONLY_SEQUENCE_COVERAGE
+                and str(entry.get("evaluation_type")) == "OperationTrace"
             )
             db_path = Path(temp_dir) / f"{path.stem}.db"
             with ScientificMemOpsRetriever(
@@ -495,6 +524,10 @@ def main(argv: list[str] | None = None) -> int:
                 TRAJECTORY_OPERATION_ONLY_SEQUENCE_COVERAGE
             ),
             "update_sequence_coverage": UPDATE_SEQUENCE_COVERAGE,
+            "operation_trace_sequence_coverage": OPERATION_TRACE_SEQUENCE_COVERAGE,
+            "operation_trace_operation_only_sequence_coverage": (
+                OPERATION_TRACE_OPERATION_ONLY_SEQUENCE_COVERAGE
+            ),
             "case_count": len(rows),
             "intervention_coverage": coverage,
             "statistics": statistics,
