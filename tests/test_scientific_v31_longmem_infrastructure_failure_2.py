@@ -7,7 +7,7 @@ from wavemind.evidence import file_sha256, validate_artifact_integrity
 
 
 ROOT = Path(__file__).resolve().parents[1]
-REPORT = ROOT / "benchmarks" / "scientific_v31_longmem_infrastructure_failure.json"
+REPORT = ROOT / "benchmarks" / "scientific_v31_longmem_infrastructure_failure_2.json"
 
 
 def _record_exists_or_is_retained(record: dict[str, object]) -> bool:
@@ -29,44 +29,40 @@ def _record_exists_or_is_retained(record: dict[str, object]) -> bool:
     )
 
 
-def test_v31_longmem_failure_is_pre_outcome_and_preserved():
+def test_v31_longmem_second_failure_is_pre_outcome_and_preserved():
     payload = json.loads(REPORT.read_text(encoding="utf-8"))
 
     assert validate_artifact_integrity(payload) == []
     assert payload["status"] == "infrastructure_failed_before_outcomes"
+    assert payload["infrastructure_failure_sequence"] == 2
     assert payload["logical_full_run_count"] == 1
-    assert payload["candidate_source_sha"] == (
-        "2a55c83ef3d3e4a3c5d9dff4418258eacb378127"
-    )
-    assert payload["original_harness_commit"] == (
-        "8d5052b94dea2cdc2db020208800577e3267ab3c"
-    )
+    assert payload["failure"]["cause_type"] == "ModuleNotFoundError"
+    assert payload["failure"]["cause_message"] == "No module named 'PIL'"
     assert payload["failure"]["scientific_gate_evaluated"] is False
-    assert payload["failure"]["candidate_or_threshold_failure"] is False
     state = payload["observed_state"]
-    assert state["completed_official_arms"] == []
+    assert state["one_time_compilation_completed"] is True
     assert state["answers_generated"] is False
     assert state["outcome_scores_opened"] is False
     assert state["per_question_files"] == 0
     assert state["aggregated_metrics_files"] == 0
-    assert state["marker_completed"] is False
-    for key in ("marker", "run_args"):
+    for key in ("marker", "run_args", "console_log"):
         assert _record_exists_or_is_retained(state[key])
 
 
-def test_v31_longmem_failure_allows_only_same_run_synchronization_fix():
+def test_v31_longmem_second_failure_allows_only_declared_dependency_install():
     payload = json.loads(REPORT.read_text(encoding="utf-8"))
+    dependency = payload["official_dependency_evidence"]
     policy = payload["continuation_policy"]
 
-    assert policy["authorized_by_preregistered_plan"] is True
+    assert dependency["repository_sha"] == (
+        "2cc8c540bdb87fe6761629b585e727e1c4704520"
+    )
+    assert dependency["dependency_name"] == "pillow"
+    assert dependency["declared_by_official_repository"] is True
+    assert dependency["module_available_at_failure"] is False
     assert policy["same_logical_run_required"] is True
-    assert policy["partial_retained_verbatim_required"] is True
+    assert policy["harness_unchanged_required"] is True
     assert policy["candidate_unchanged_required"] is True
-    assert policy["data_unchanged_required"] is True
-    assert policy["prompts_unchanged_required"] is True
-    assert policy["model_unchanged_required"] is True
     assert policy["thresholds_unchanged_required"] is True
-    assert policy["order_unchanged_required"] is True
-    assert policy["deterministic_parameters_unchanged_required"] is True
     assert policy["attempts_count_as_scientific_runs"] == 1
-    assert "Synchronize" in policy["permitted_change"]
+    assert "Pillow" in policy["permitted_environment_change"]
