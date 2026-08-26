@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import sys
 from typing import TypedDict
 
 import pytest
@@ -52,7 +53,14 @@ def compiler(tmp_path):
 
 
 def test_openai_agents_runtime_session_protocol(tmp_path) -> None:
-    agents_memory = pytest.importorskip("agents.memory")
+    try:
+        agents_memory = pytest.importorskip("agents.memory")
+    except (KeyError, TypeError) as exc:
+        if sys.version_info[:3] == (3, 11, 0):
+            pytest.skip(
+                "openai-agents ParamSpec aliases are incompatible with CPython 3.11.0"
+            )
+        raise exc
     session = WaveMindAgentsSession(
         "official-session",
         db_path=tmp_path / "openai.db",

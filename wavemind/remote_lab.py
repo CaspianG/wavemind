@@ -14,10 +14,6 @@ from pathlib import Path
 from typing import Any, Callable, Mapping
 from urllib.parse import quote, urlparse
 
-from .active_active_drill import run_active_active_drill
-from .sharding import HTTPNamespaceShardClient
-
-
 INVENTORY_SCHEMA = "wavemind.remote_production_lab.v1"
 ATTESTATION_SCHEMA = "wavemind.remote_production_attestation.v1"
 DEPLOYMENT_SCHEMA = "wavemind.remote_production_deployment.v1"
@@ -32,6 +28,18 @@ _PINNED_IMAGE = re.compile(
 
 class RemoteLabError(RuntimeError):
     pass
+
+
+def run_active_active_drill(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    from .active_active_drill import run_active_active_drill as implementation
+
+    return implementation(*args, **kwargs)
+
+
+def HTTPNamespaceShardClient(*args: Any, **kwargs: Any) -> Any:
+    from .sharding import HTTPNamespaceShardClient as implementation
+
+    return implementation(*args, **kwargs)
 
 
 @dataclass(frozen=True)
