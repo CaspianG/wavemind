@@ -1,0 +1,176 @@
+{
+  "schema": "wavemind.scientific_v31_longmem_infrastructure_failure.v3",
+  "status": "infrastructure_failed_before_outcomes",
+  "logical_run": "longmemeval_v2_small_full_v31",
+  "logical_full_run_count": 1,
+  "infrastructure_failure_sequence": 3,
+  "candidate_source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+  "fixed_harness_commit": "303d06138fd205a36ea15473c13d0aa71fe4b150",
+  "dependency_continuation_plan_commit": "0b1fe80a97e3e0fa3708b21e805b5bccb6ab5d36",
+  "failure": {
+    "stage": "candidate_web_small_parallel_prompt_build",
+    "type": "WindowsVirtualMemoryExhaustion",
+    "causal_diagnosis": "Four official prompt workers concurrently invoked the shared candidate backend. Each recall held a large private working set; Windows detected system commit exhaustion at 27.8 GB and then 29.8 GB allocated by the benchmark Python process.",
+    "python_pid": 15588,
+    "peak_observed_python_virtual_allocation_bytes": 29787037696,
+    "python_traceback_emitted": false,
+    "benchmark_process_present_after_app_restart": false,
+    "supervising_codex_app_crashed": true,
+    "candidate_or_threshold_failure": false,
+    "scientific_gate_evaluated": false
+  },
+  "windows_event_evidence": {
+    "resource_exhaustion_events": [
+      {
+        "time_created": "2026-08-26T21:20:25.4376083+03:00",
+        "ProviderName": "Microsoft-Windows-Resource-Exhaustion-Detector",
+        "Id": 2004,
+        "RecordId": 33211,
+        "Message": "Windows successfully diagnosed a low virtual memory condition. The following programs consumed the most virtual memory: python.exe (15588) consumed 27802656768 bytes, Telegram.exe (26712) consumed 1425014784 bytes, and asus_framework.exe (24984) consumed 1138135040 bytes."
+      },
+      {
+        "time_created": "2026-08-26T21:25:25.4145636+03:00",
+        "ProviderName": "Microsoft-Windows-Resource-Exhaustion-Detector",
+        "Id": 2004,
+        "RecordId": 33215,
+        "Message": "Windows successfully diagnosed a low virtual memory condition. The following programs consumed the most virtual memory: python.exe (15588) consumed 29787037696 bytes, asus_framework.exe (24984) consumed 1138135040 bytes, and asus_framework.exe (26200) consumed 1136369664 bytes."
+      }
+    ],
+    "collateral_application_events": [
+      {
+        "time_created": "2026-08-26T21:21:09.7234128+03:00",
+        "ProviderName": "Application Error",
+        "Id": 1000,
+        "RecordId": 45072,
+        "Message": "Faulting application name: Telegram.exe, version: 7.1.1.0, time stamp: 0x6a89aa9a\r\nFaulting module name: Telegram.exe, version: 7.1.1.0, time stamp: 0x6a89aa9a\r\nException code: 0xc0000409\r\nFault offset: 0x0000000005cfb499\r\nFaulting process id: 0x6858\r\nFaulting application start time: 0x1DD330D959F78AC\r\nFaulting application path: D:\\telegram\\Telegram Desktop\\Telegram.exe\r\nFaulting module path: D:\\telegram\\Telegram Desktop\\Telegram.exe\r\nReport Id: ee9fd8d0-6b3e-4dd4-b31f-08e41bd35de5\r\nFaulting package full name: \r\nFaulting package-relative application ID: "
+      },
+      {
+        "time_created": "2026-08-26T21:21:24.7955262+03:00",
+        "ProviderName": "Windows Error Reporting",
+        "Id": 1001,
+        "RecordId": 45077,
+        "Message": "Fault bucket 1866177532215962603, type 5\r\nEvent Name: BEX64\r\nResponse: Нет данных\r\nCab Id: 0\r\n\r\nProblem signature:\r\nP1: Telegram.exe\r\nP2: 7.1.1.0\r\nP3: 6a89aa9a\r\nP4: Telegram.exe\r\nP5: 7.1.1.0\r\nP6: 6a89aa9a\r\nP7: 0000000005cfb499\r\nP8: c0000409\r\nP9: 0000000000000007\r\nP10: \r\n\r\nAttached files:\r\n\\\\?\\C:\\ProgramData\\Microsoft\\Windows\\WER\\Temp\\WER.17226f06-bab1-43d3-be39-26bec6735798.tmp.dmp\r\n\\\\?\\C:\\ProgramData\\Microsoft\\Windows\\WER\\Temp\\WER.7dccd9cf-0392-4238-b3ad-0308217129b7.tmp.WERInternalMetadata.xml\r\n\\\\?\\C:\\ProgramData\\Microsoft\\Windows\\WER\\Temp\\WER.56d1b847-e75c-46e8-a809-cb8838a39f50.tmp.csv\r\n\\\\?\\C:\\ProgramData\\Microsoft\\Windows\\WER\\Temp\\WER.034e31ba-b71e-4dfd-ba6b-1e71c35de5aa.tmp.txt\r\n\\\\?\\C:\\ProgramData\\Microsoft\\Windows\\WER\\Temp\\WER.31b9aea9-283b-43f3-a01f-4da5b7ae9503.tmp.xml\r\n\r\nThese files may be available here:\r\n\\\\?\\C:\\ProgramData\\Microsoft\\Windows\\WER\\ReportArchive\\AppCrash_Telegram.exe_26c99c1e0ea2a63856d8d8b34718e366f34348_a02b4467_3967f909-7fe8-4c2d-b313-4943d40e9e3e\r\n\r\nAnalysis symbol: \r\nRechecking for solution: 0\r\nReport Id: ee9fd8d0-6b3e-4dd4-b31f-08e41bd35de5\r\nReport Status: 268435456\r\nHashed bucket: 8b59610bd8e5cac3f9e5fe93ff8c2beb\r\nCab Guid: 0"
+      },
+      {
+        "time_created": "2026-08-26T21:25:37.6117984+03:00",
+        "ProviderName": "Application Error",
+        "Id": 1000,
+        "RecordId": 45083,
+        "Message": "Faulting application name: codex.exe, version: 0.0.0.0, time stamp: 0x6a835e34\r\nFaulting module name: codex.exe, version: 0.0.0.0, time stamp: 0x6a835e34\r\nException code: 0xc0000409\r\nFault offset: 0x000000000ca62ac1\r\nFaulting process id: 0x7958\r\nFaulting application start time: 0x1DD330D1C1AECAB\r\nFaulting application path: C:\\Program Files\\WindowsApps\\OpenAI.Codex_26.818.2441.0_x64__2p2nqsd0c76g0\\app\\resources\\codex.exe\r\nFaulting module path: C:\\Program Files\\WindowsApps\\OpenAI.Codex_26.818.2441.0_x64__2p2nqsd0c76g0\\app\\resources\\codex.exe\r\nReport Id: 76c86852-7b92-4902-8633-e554d8ddc284\r\nFaulting package full name: OpenAI.Codex_26.818.2441.0_x64__2p2nqsd0c76g0\r\nFaulting package-relative application ID: App"
+      },
+      {
+        "time_created": "2026-08-26T21:25:46.6132179+03:00",
+        "ProviderName": "Windows Error Reporting",
+        "Id": 1001,
+        "RecordId": 45085,
+        "Message": "Fault bucket 1459727997758806442, type 5\r\nEvent Name: MoBEX\r\nResponse: Нет данных\r\nCab Id: 0\r\n\r\nProblem signature:\r\nP1: OpenAI.Codex_26.818.2441.0_x64__2p2nqsd0c76g0\r\nP2: praid:App\r\nP3: 0.0.0.0\r\nP4: 6a835e34\r\nP5: codex.exe\r\nP6: 0.0.0.0\r\nP7: 6a835e34\r\nP8: 000000000ca62ac1\r\nP9: c0000409\r\nP10: 0000000000000007\r\n\r\nAttached files:\r\n\\\\?\\C:\\ProgramData\\Microsoft\\Windows\\WER\\Temp\\WER.d298f085-5f48-4464-8e18-a213fb5e64d6.tmp.dmp\r\n\\\\?\\C:\\ProgramData\\Microsoft\\Windows\\WER\\Temp\\WER.16da5b61-84b8-48f1-b4cf-1846cdc9a51b.tmp.WERInternalMetadata.xml\r\n\\\\?\\C:\\ProgramData\\Microsoft\\Windows\\WER\\Temp\\WER.455dc4e3-af96-472a-81cb-19853370ae48.tmp.csv\r\n\\\\?\\C:\\ProgramData\\Microsoft\\Windows\\WER\\Temp\\WER.3b54b914-ad7b-4d99-9214-f8ee713bb161.tmp.txt\r\n\\\\?\\C:\\ProgramData\\Microsoft\\Windows\\WER\\Temp\\WER.d9336bb2-43f6-478a-af88-1500a1773b0e.tmp.xml\r\n\r\nThese files may be available here:\r\n\\\\?\\C:\\ProgramData\\Microsoft\\Windows\\WER\\ReportArchive\\AppCrash_OpenAI.Codex_26._1de1f68ddaf839e92408a6c57ddd996a2624_971de642_b692edca-cfb5-44bd-9c83-c1bd6291efdc\r\n\r\nAnalysis symbol: \r\nRechecking for solution: 0\r\nReport Id: 76c86852-7b92-4902-8633-e554d8ddc284\r\nReport Status: 268435456\r\nHashed bucket: 7bd3c2380c46a6b10441fee1471b19aa\r\nCab Guid: 0"
+      }
+    ],
+    "resource_event_ids": [
+      33211,
+      33215
+    ],
+    "python_allocations_bytes": [
+      27802656768,
+      29787037696
+    ]
+  },
+  "observed_state": {
+    "completed_official_arms": [],
+    "partial_arm": "candidate_web_small",
+    "answers_generated": false,
+    "outcome_scores_opened": false,
+    "per_question_files": 0,
+    "aggregated_metrics_files": 0,
+    "marker_completed": false,
+    "marker": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/full_run_marker.json",
+      "bytes": 1460,
+      "sha256": "9872e1d94096e7c8fa0a9b4b592f64312d7902e4a74326907c765a034c7a4355"
+    },
+    "run_args": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/candidate_web_small/run_args.json",
+      "bytes": 1873,
+      "sha256": "0f87df6e482190d57c933f0baca55f97742cc9bb4104a1536aaaf4163127de43"
+    },
+    "console_log": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/continuation2_console.log",
+      "bytes": 1481,
+      "sha256": "378f1ea5d915bd418810d60e5d8684c3389ac1c3ef0bc9936185a0232885ff3c"
+    }
+  },
+  "resolved_official_tokenizer": {
+    "repository": "Qwen/Qwen3.5-9B",
+    "snapshot_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+    "files": [
+      {
+        "cache_relative_path": "snapshots/c202236235762e1c871ad0ccb60c8ee5ba337b9a/chat_template.jinja",
+        "bytes": 7756,
+        "sha256": "a4aee8afcf2e0711942cf848899be66016f8d14a889ff9ede07bca099c28f715"
+      },
+      {
+        "cache_relative_path": "snapshots/c202236235762e1c871ad0ccb60c8ee5ba337b9a/config.json",
+        "bytes": 3126,
+        "sha256": "d0883072e01861ed0b2d47be3c16c36a8e81c224c7ffaa310c6558fb3f932b05"
+      },
+      {
+        "cache_relative_path": "snapshots/c202236235762e1c871ad0ccb60c8ee5ba337b9a/merges.txt",
+        "bytes": 3353259,
+        "sha256": "a9d356d7bdf1ef4949e3e748e95b8e10ad9d4e2e838eddc38a0a7b6b94d1db8d"
+      },
+      {
+        "cache_relative_path": "snapshots/c202236235762e1c871ad0ccb60c8ee5ba337b9a/preprocessor_config.json",
+        "bytes": 390,
+        "sha256": "27225450ac9c6529872ee1924fcb0962ff5634834f817040f444118116f4e516"
+      },
+      {
+        "cache_relative_path": "snapshots/c202236235762e1c871ad0ccb60c8ee5ba337b9a/tokenizer.json",
+        "bytes": 12807982,
+        "sha256": "5f9e4d4901a92b997e463c1f46055088b6cca5ca61a6522d1b9f64c4bb81cb42"
+      },
+      {
+        "cache_relative_path": "snapshots/c202236235762e1c871ad0ccb60c8ee5ba337b9a/tokenizer_config.json",
+        "bytes": 16710,
+        "sha256": "316230d6a809701f4db5ea8f8fc862bc3a6f3229c937c174e674ff3ca0a64ac8"
+      },
+      {
+        "cache_relative_path": "snapshots/c202236235762e1c871ad0ccb60c8ee5ba337b9a/video_preprocessor_config.json",
+        "bytes": 385,
+        "sha256": "7768af27c1fafa9cc9011c1dc20067e03f8915e03b63504550e11d5066986d13"
+      },
+      {
+        "cache_relative_path": "snapshots/c202236235762e1c871ad0ccb60c8ee5ba337b9a/vocab.json",
+        "bytes": 6722759,
+        "sha256": "ce99b4cb2983d118806ce0a8b777a35b093e2000a503ebde25853284c9dfa003"
+      }
+    ],
+    "reader_or_evaluator_model_changed": false
+  },
+  "frozen_execution_parameters": {
+    "model": "mistral:7b",
+    "evaluator_model": "mistral:7b",
+    "temperature": 0.0,
+    "shuffle_questions_seed": 17,
+    "prompt_build_max_workers": 4,
+    "reader_max_concurrent_requests": 4
+  },
+  "continuation_policy": {
+    "same_logical_run_required": true,
+    "partial_retained_verbatim_required": true,
+    "candidate_unchanged_required": true,
+    "data_unchanged_required": true,
+    "prompts_unchanged_required": true,
+    "models_unchanged_required": true,
+    "thresholds_unchanged_required": true,
+    "order_unchanged_required": true,
+    "worker_counts_unchanged_required": true,
+    "permitted_harness_change": "Serialize only calls into the shared candidate backend and keep per-worker metadata thread-local. Preserve four official prompt workers and all candidate, query, prompt, token-count, model, ordering, and scoring semantics.",
+    "attempts_count_as_scientific_runs": 1
+  },
+  "claim_boundary": "This system-capacity failure produced no benchmark outcome and authorizes no pass, 100%-pass, SOTA, or revolutionary claim.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "5e3bec76e273765ec29b0024ac64703f3dbb3b0617c1941a9e4c551e6a6ef5bc"
+  }
+}
