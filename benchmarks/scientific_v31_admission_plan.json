@@ -1,0 +1,257 @@
+{
+  "schema": "wavemind.scientific_v31_admission_plan.v1",
+  "status": "preregistered_before_first_v31_final_outcome",
+  "preregistered_at": "2026-08-26",
+  "candidate": {
+    "id": "operation-routed-target-state-agent-v31",
+    "source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+    "checkout_policy": "clean detached exact-SHA worktree",
+    "post_outcome_changes_forbidden": true
+  },
+  "protocol": {
+    "path": "benchmarks/scientific_memory_protocol_v31.json",
+    "bytes": 14133,
+    "sha256": "80add107df4a642548ee59c58f6712a0f2b31c470405dd7689f10e5892105d02",
+    "protocol_digest": "bc1f895bdf8bd30027bcc17f1c3a375099c8ee442681382c56ba57fa7580793b"
+  },
+  "authorization_evidence": {
+    "development_gate_status": "passed_development_gate_v31",
+    "development_gate_commit": "f76ffd0c23f608c15e232771d292b88f5cbbb904",
+    "development_outcome": {
+      "path": "benchmarks/scientific_v31_development_outcome.json",
+      "bytes": 9464,
+      "sha256": "a0b93413370d67d3223ed06ce574f752cc133da7e6f06369d9144c01e052396f"
+    },
+    "development_outcome_payload_sha256": "69f6fcb21f1e49b3c93db8120fde417990477d328c635356303a4c3edcb0187d",
+    "independent_families_passed": 2,
+    "reproducible_runs_per_family_passed": 3,
+    "all_six_required_runs_passed": true
+  },
+  "execution_harness": {
+    "source_commit": "8d5052b94dea2cdc2db020208800577e3267ab3c",
+    "files": [
+      {
+        "path": "benchmarks/scientific_mab_v19_final.py",
+        "bytes": 9644,
+        "sha256": "3409f4e645d2c9a37874eb1f044a98b5e5a682c30b8a1afc271d9451e124c7f8"
+      },
+      {
+        "path": "benchmarks/scientific_mab_v31_final.py",
+        "bytes": 3331,
+        "sha256": "f6d9f995f188d12889740d4ead0f1503c9f2451cebe3f393c0f97fe22668a10c"
+      },
+      {
+        "path": "benchmarks/scientific_memops_v31_final.py",
+        "bytes": 9764,
+        "sha256": "1072978bd36a6fe7524754f9d9740ae0cd6dfdb1552eae77a3648aa717ac13ba"
+      },
+      {
+        "path": "benchmarks/scientific_longmemeval_v2_backend.py",
+        "bytes": 11532,
+        "sha256": "f59733a2d26f673c0a7f532653398379ad6d90f68175ae7d4c1e855e7ef70bc6"
+      },
+      {
+        "path": "benchmarks/scientific_longmemeval_v2_backend_v31.py",
+        "bytes": 1510,
+        "sha256": "a42b49810af099ed170f4302a7fecdbb94b663e39e4e5121780e343cb9802842"
+      },
+      {
+        "path": "benchmarks/scientific_longmemeval_v2_run.py",
+        "bytes": 10537,
+        "sha256": "5c2355a3f64e87d50f133cfa8db95e7a6b7f49b036069fc1c69c0893a507f12e"
+      },
+      {
+        "path": "benchmarks/scientific_longmemeval_v2_run_v31.py",
+        "bytes": 1460,
+        "sha256": "424b561f62a8b255ecc07f4d88a46c7156aec4da1142bbb5b7c7ce9af4049ae7"
+      }
+    ],
+    "infrastructure_continuation": "A crashed partial is retained and may continue only with the identical candidate, data, prompts, model, thresholds, order, and deterministic parameters; it is never discarded or counted as a fresh outcome."
+  },
+  "official_sources": {
+    "memoryagentbench": {
+      "code_sha": "fe1735de8cf8b9908e1e3d3b5612afc815698062",
+      "dataset_revision": "7ea066982b140a19337e17e60d45d4076e042faf",
+      "split_manifest": {
+        "path": "benchmarks/memoryagentbench_split_manifest_results.json",
+        "bytes": 90993,
+        "sha256": "750a025a5c51d97fbff78df77d734a1086558f3b4ad5cdffee66704e08612adc"
+      },
+      "split_manifest_payload_sha256": "1ac101c6794d3ef0454d2856b5ed04c2c219a3a44c049dd165b0e3e357eb3c68"
+    },
+    "memops": {
+      "code_and_data_sha": "312af65e2c7b6d1b70f062ffa8b4cde32aaf6f35",
+      "split_manifest": {
+        "path": "benchmarks/evaluation_split_manifest_results.json",
+        "bytes": 504115,
+        "sha256": "0ed183e2ddf198efa101d2e94e8bbfb4290cdabf225fb8720e156b916935dc0a"
+      },
+      "split_manifest_payload_sha256": "bbe38c525c2754ecfc93638312ff7a7ede3eda9cb607a12c01a9c21ab866d742"
+    },
+    "longmemeval_v2": {
+      "code_sha": "2cc8c540bdb87fe6761629b585e727e1c4704520",
+      "dataset_repo": "xiaowu0162/longmemeval-v2",
+      "dataset_revision": "f152293e235517d504809563c833d7190b8c713b",
+      "remote_revision_verified_available_at_preregistration": true
+    }
+  },
+  "frozen_samples": {
+    "memoryagentbench": {
+      "source_split": "final",
+      "unit_ids": [
+        "Long_Range_Understanding:0069:c7f1535f7238600e",
+        "Long_Range_Understanding:0070:8a93d4cd5cbd681e",
+        "Long_Range_Understanding:0072:893a573e50a0f0ec",
+        "Long_Range_Understanding:0076:3448e84ad791bded",
+        "Long_Range_Understanding:0077:d3fa1ef5e2ffc10b",
+        "Long_Range_Understanding:0078:ef8ee769eeaaf621",
+        "Long_Range_Understanding:0083:db96042a8a5aa313",
+        "Long_Range_Understanding:0085:a348120f6cdda6a0",
+        "Long_Range_Understanding:0088:4f8eeff8019e736b",
+        "Long_Range_Understanding:0098:b8164c32e0eba3df"
+      ],
+      "context_sha256": [
+        "3448e84ad791bded66313ad1d840008238be55d824812c8422dd15167848cf89",
+        "4f8eeff8019e736bd48b7689e42da3a9236c4b44703107cfe411edb37cafa9d4",
+        "893a573e50a0f0ec75ec2305b04f8ca5ae63013f0f0210e02539779b4b01e7b4",
+        "8a93d4cd5cbd681e16d446e2e69d8586045dd43e3621f113d0fb137b52019a2c",
+        "a348120f6cdda6a000248dd03492d4d5fbb21601c98293733c991b9a1c3163ad",
+        "b8164c32e0eba3dfa34f4045dd48857f442c8c169ec2f862f2d1a302134bf3b8",
+        "c7f1535f7238600e45611e78fa9e4fe27c15fa23f9e90886606a29ddb77971c2",
+        "d3fa1ef5e2ffc10becdfc8114abdecef784a6f354ea62d987b39065d7bb36b50",
+        "db96042a8a5aa3132add3cd113697c3a43d03b0d31dd8aeb5604fc4a3ddadb01",
+        "ef8ee769eeaaf621170a5615e7f200deb5fc9b576f6745e831881297b356c15f"
+      ],
+      "required_independent_clusters": 10,
+      "queries_per_context": 1,
+      "candidate_mode": "task-aware-sequence-coverage-agent-v11"
+    },
+    "memops": {
+      "source_split": "final",
+      "subjects": [
+        "B23",
+        "C11",
+        "D20",
+        "E08",
+        "E11"
+      ],
+      "unit_ids": [
+        "B23_forget",
+        "B23_reflect",
+        "B23_remember",
+        "B23_trajectory_ops",
+        "B23_update",
+        "C11_forget",
+        "C11_reflect",
+        "C11_remember",
+        "C11_trajectory_ops",
+        "C11_update",
+        "D20_forget",
+        "D20_reflect",
+        "D20_remember",
+        "D20_trajectory_ops",
+        "D20_update",
+        "E08_forget",
+        "E08_reflect",
+        "E08_remember",
+        "E08_trajectory_ops",
+        "E08_update",
+        "E11_forget",
+        "E11_reflect",
+        "E11_remember",
+        "E11_trajectory_ops",
+        "E11_update"
+      ],
+      "required_independent_subject_clusters": 5,
+      "question_selection": "operation-adaptive-v7",
+      "candidate_mode_default": "target-state-cutover-agent-v29",
+      "candidate_mode_by_operation": {
+        "TrajectoryOps": "target-scoped-operation-agent-v16"
+      }
+    },
+    "longmemeval_v2": {
+      "tier": "small",
+      "question_count": 451,
+      "maximum_logical_full_runs": 1
+    }
+  },
+  "frozen_parameters": {
+    "seed": 17,
+    "bootstrap_repeats": 2000,
+    "confidence_level": 0.95,
+    "token_budget": 8192,
+    "latency_budget_ms": 1000.0,
+    "top_k_context": 10,
+    "sequence_coverage_points": 28,
+    "sequence_coverage_includes_first_and_last": true,
+    "plot_plan_max_tokens": 800,
+    "draft_word_rewrite_threshold": 700,
+    "maximum_length_rewrites": 1,
+    "summarization_generation_max_tokens": 1200,
+    "maximum_treatment_generation_calls": 3,
+    "memops_question_selection": "operation-adaptive-v7",
+    "memops_target_scoped_tombstones": true,
+    "memops_complete_dialogue_registration": true,
+    "memops_trajectory_sequence_coverage": false,
+    "memops_trajectory_operation_only_sequence_coverage": false,
+    "memops_update_sequence_coverage": false,
+    "causal_noop_fallback": true,
+    "answer_model": "mistral:7b",
+    "judge_model": "mistral:7b",
+    "model_digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768,
+    "python_utf8_mode": true,
+    "recsys_entity_mapping_sha256": "63353aca481bc9558b502f91cb98f6fa26438796fdd7e0bc06b5a1532126e8b5",
+    "memops_operation_trace_sequence_coverage": true,
+    "memops_operation_trace_operation_only_sequence_coverage": true,
+    "memops_candidate_disambiguation_query_options": true,
+    "memops_candidate_disambiguation_sequence_coverage": false,
+    "memops_candidate_disambiguation_operation_only_sequence_coverage": false,
+    "memops_candidate_mode_default": "target-state-cutover-agent-v29",
+    "memops_candidate_mode_by_operation": {
+      "TrajectoryOps": "target-scoped-operation-agent-v16"
+    },
+    "memops_slice_local_operation_markers": true,
+    "memops_target_state_tombstone_cutover": true
+  },
+  "frozen_gates": {
+    "memoryagentbench_and_memops": {
+      "paired_cluster_bootstrap_ci_lower_strictly_greater_than": 0.0,
+      "mean_non_negative": true,
+      "minimum_intervention_coverage": 0.8,
+      "false_verified_promotions_maximum": 0,
+      "production_case_count_maximum": 0
+    },
+    "longmemeval_v2": {
+      "uplift_minimum": 0.01,
+      "improved_categories_minimum": 4,
+      "repeated_error_reduction_minimum": 0.5,
+      "stale_or_contradiction_error_rate_maximum": 0.02,
+      "context_reduction_vs_full_context_minimum": 0.3,
+      "runtime_p95_must_be_within_frozen_budget": true,
+      "ablation_required_for_every_improvement": true
+    }
+  },
+  "stage_order": {
+    "arms": [
+      "memoryagentbench_final",
+      "memops_final",
+      "longmemeval_v2_small_full"
+    ],
+    "stop_on_first_failure": true,
+    "rationale": "Fail-fast preserves every later independent held-out arm when an earlier necessary arm fails."
+  },
+  "held_out_state_at_preregistration": {
+    "memoryagentbench_final_outcomes_opened": false,
+    "memops_final_outcomes_opened": false,
+    "longmemeval_v2_examples_downloaded": false,
+    "longmemeval_v2_full_runs": 0
+  },
+  "decision_rule": "Full v31 admission passes only when every frozen arm passes on the exact candidate SHA with all raw evidence retained and validated. Any failed arm is immutable and stops later held-out execution.",
+  "claim_boundary": "Preregistration is not a benchmark result. Even a single arm pass does not authorize a 100%-pass, SOTA, production, universal, or revolutionary claim.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "dc3bf69e57785b59b6d5e4b579b8a93908d4e8039236797e8bcb8b5482831000"
+  }
+}
