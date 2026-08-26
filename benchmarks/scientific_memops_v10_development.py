@@ -154,6 +154,39 @@ def _select_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
             )
 
         return [min(entries, key=key)]
+    if QUESTION_SELECTION == "operation-adaptive-v7":
+        operation_type = str(entries[0].get("operation_type", ""))
+        if operation_type == "Update":
+            priority = {
+                "OperationApplication": 0,
+                "CandidateDisambiguation": 1,
+                "TargetBinding": 2,
+                "OperationTrace": 3,
+            }
+        elif operation_type == "TrajectoryOps":
+            priority = {
+                "OperationTrace": 0,
+                "StateTrajectory": 1,
+                "OperationApplication": 2,
+                "TargetBinding": 3,
+            }
+        else:
+            priority = {
+                "CandidateDisambiguation": 0,
+                "OperationApplication": 1,
+                "StateTransition": 2,
+                "TargetBinding": 3,
+                "OperationTrace": 4,
+            }
+        return [
+            min(
+                entries,
+                key=lambda entry: (
+                    priority.get(str(entry.get("evaluation_type")), 99),
+                    str(entry.get("question_id", "")),
+                ),
+            )
+        ]
     raise RuntimeError(f"unknown MemOps question selection: {QUESTION_SELECTION}")
 
 
