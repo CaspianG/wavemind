@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import ast
 import concurrent.futures
+import gc
 import hashlib
 import importlib.util
 import json
 from pathlib import Path
 import threading
 import time
+import types
 from types import SimpleNamespace
 
 
@@ -223,3 +225,151 @@ def test_v31_longmemeval_backend_serializes_shared_queries_and_keeps_metadata_lo
         ).hexdigest()
         assert metadata["context_sha256"] == expected_digest
         assert metadata["selected_memory_ids"] == [f"memory:{query}"]
+
+
+def test_v31_longmemeval_streaming_operation_selector_is_exactly_equivalent():
+    from wavemind.scientific_memory import MemoryDefinition, MemoryKind
+    from wavemind.scientific_reconciliation import ProofCarryingStateReconciler
+
+    path = ROOT / "benchmarks" / "scientific_longmemeval_v2_backend_v31.py"
+    spec = importlib.util.spec_from_file_location(
+        "scientific_lme_v31_streaming_equivalence_test", path
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    definitions = {}
+    for index in range(600):
+        words = [f"noise-{index}-{offset}" for offset in range(40)]
+        if index % 3 == 0:
+            words.extend(("kevin", "checkout"))
+        if index % 5 == 0:
+            words.extend(("delivery", "state"))
+        provenance = [f"source-order:{index}", "memory-operation:1"]
+        if index % 11 == 0:
+            provenance.append("memory-tombstone:1")
+        definitions[f"memory-{index:04d}"] = MemoryDefinition(
+            memory_id=f"memory-{index:04d}",
+            kind=MemoryKind.FACT,
+            content=" ".join(words),
+            provenance=tuple(provenance),
+            estimated_tokens=8 + (index % 7),
+            estimated_latency_ms=0.1,
+            safety_risk=0.0,
+        )
+    query = "What is Kevin's checkout delivery state?"
+    configurations = (
+        {},
+        {"query_phrase_aware": True, "target_scoped_tombstones": True},
+        {
+            "query_phrase_aware": True,
+            "target_scoped_tombstones": True,
+            "relevant_tombstones_first": True,
+        },
+        {
+            "query_phrase_aware": True,
+            "target_scoped_tombstones": True,
+            "relevant_tombstones_first": True,
+            "tombstone_cutover": True,
+        },
+    )
+    for configuration in configurations:
+        reference = ProofCarryingStateReconciler(
+            operation_aware=True,
+            **configuration,
+        )
+        optimized = ProofCarryingStateReconciler(
+            operation_aware=True,
+            **configuration,
+        )
+        optimized._select_operation_memories = types.MethodType(
+            module._memory_safe_select_operation_memories,
+            optimized,
+        )
+        expected = reference._select_operation_memories(
+            query,
+            definitions,
+            token_budget=128,
+            latency_budget_ms=20.0,
+        )
+        actual = optimized._select_operation_memories(
+            query,
+            definitions,
+            token_budget=128,
+            latency_budget_ms=20.0,
+        )
+        assert actual == expected
+
+
+def test_v31_longmemeval_streaming_selector_does_not_retain_document_token_sets(
+    monkeypatch,
+):
+    from wavemind.scientific_memory import MemoryDefinition, MemoryKind
+    from wavemind import scientific_reconciliation as reconciliation
+
+    path = ROOT / "benchmarks" / "scientific_longmemeval_v2_backend_v31.py"
+    spec = importlib.util.spec_from_file_location(
+        "scientific_lme_v31_streaming_memory_test", path
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    class TrackedSet(set):
+        live = 0
+        peak = 0
+
+        def __init__(self, values=()):
+            super().__init__(values)
+            type(self).live += 1
+            type(self).peak = max(type(self).peak, type(self).live)
+
+        def __del__(self):
+            type(self).live -= 1
+
+    monkeypatch.setattr(
+        reconciliation,
+        "_tokens",
+        lambda value: TrackedSet(value.lower().split()),
+    )
+    definitions = {
+        f"memory-{index}": MemoryDefinition(
+            memory_id=f"memory-{index}",
+            kind=MemoryKind.FACT,
+            content=f"document {index} query-token " + "noise " * 100,
+            provenance=(f"source-order:{index}", "memory-operation:1"),
+            estimated_tokens=20,
+            estimated_latency_ms=0.1,
+            safety_risk=0.0,
+        )
+        for index in range(100)
+    }
+    reference = reconciliation.ProofCarryingStateReconciler(operation_aware=True)
+    reference._select_operation_memories(
+        "query-token",
+        definitions,
+        token_budget=100,
+        latency_budget_ms=10.0,
+    )
+    reference_peak = TrackedSet.peak
+    gc.collect()
+    assert TrackedSet.live == 0
+
+    TrackedSet.peak = 0
+    optimized = reconciliation.ProofCarryingStateReconciler(operation_aware=True)
+    optimized._select_operation_memories = types.MethodType(
+        module._memory_safe_select_operation_memories,
+        optimized,
+    )
+    optimized._select_operation_memories(
+        "query-token",
+        definitions,
+        token_budget=100,
+        latency_budget_ms=10.0,
+    )
+    optimized_peak = TrackedSet.peak
+    gc.collect()
+    assert TrackedSet.live == 0
+
+    assert reference_peak >= len(definitions) + 1
+    assert optimized_peak <= 2

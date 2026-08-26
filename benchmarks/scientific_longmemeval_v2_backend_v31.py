@@ -2,7 +2,11 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import math
+import sys
 import threading
+import types
+from collections import Counter
 from pathlib import Path
 
 
@@ -11,6 +15,120 @@ BASE_PATH = ROOT / "benchmarks" / "scientific_longmemeval_v2_backend.py"
 OFFICIAL_REPOSITORY_SHA = "2cc8c540bdb87fe6761629b585e727e1c4704520"
 CANDIDATE_SOURCE_SHA = "2a55c83ef3d3e4a3c5d9dff4418258eacb378127"
 MEMORY_TYPE = "wavemind_scientific_v31"
+
+
+def _memory_safe_select_operation_memories(
+    self,
+    query,
+    definitions,
+    *,
+    token_budget,
+    latency_budget_ms,
+):
+    reconciliation = sys.modules[type(self).__module__]
+    query_tokens = reconciliation._tokens(query)
+    overlaps = {}
+    document_frequency = Counter()
+    for memory_id, definition in definitions.items():
+        overlap = query_tokens.intersection(
+            reconciliation._tokens(definition.content)
+        )
+        overlaps[memory_id] = overlap
+        document_frequency.update(overlap)
+    total = max(1, len(definitions))
+    weights = {
+        token: math.log((total + 1) / (document_frequency[token] + 1)) + 1.0
+        for token in query_tokens
+    }
+    denominator = sum(weights.values()) or 1.0
+    query_phrases = (
+        reconciliation.extract_query_candidate_phrases(query)
+        if self.query_phrase_aware
+        else ()
+    )
+    ranked = []
+    scores = {}
+    relevant_tombstones = set()
+    for memory_id, definition in definitions.items():
+        overlap = overlaps[memory_id]
+        lexical = sum(weights[token] for token in overlap) / denominator
+        tombstone = reconciliation._MEMORY_TOMBSTONE_MARKER in definition.provenance
+        normalized_content = reconciliation.normalize_query_phrase(definition.content)
+        phrase_hits = sum(phrase in normalized_content for phrase in query_phrases)
+        scores[memory_id] = (
+            max(lexical, min(1.0, phrase_hits / max(1, len(query_phrases))))
+            if self.target_scoped_tombstones
+            else 1.0
+            if tombstone
+            else lexical
+        )
+        if self.target_scoped_tombstones:
+            relevant_tombstone = tombstone and bool(phrase_hits or lexical > 0.0)
+            if relevant_tombstone:
+                relevant_tombstones.add(memory_id)
+            ranked.append(
+                (
+                    (
+                        0
+                        if self.relevant_tombstones_first and relevant_tombstone
+                        else 1
+                        if self.relevant_tombstones_first
+                        else 0
+                    ),
+                    -phrase_hits,
+                    -lexical,
+                    -reconciliation._source_order(definition),
+                    0 if tombstone else 1,
+                    memory_id,
+                )
+            )
+        else:
+            ranked.append(
+                (
+                    0,
+                    0 if tombstone else 1,
+                    -phrase_hits,
+                    -lexical,
+                    -reconciliation._source_order(definition),
+                    memory_id,
+                )
+            )
+    ranked.sort()
+    candidate_ids = [item[-1] for item in ranked[: self.maximum_candidates]]
+    if self.tombstone_cutover and relevant_tombstones:
+        cutover_order = max(
+            reconciliation._source_order(definitions[memory_id])
+            for memory_id in relevant_tombstones
+        )
+        candidate_ids = [
+            memory_id
+            for memory_id in (item[-1] for item in ranked)
+            if memory_id in relevant_tombstones
+            or reconciliation._source_order(definitions[memory_id]) >= cutover_order
+        ][: self.maximum_candidates]
+    memory_ids = self._fit_budget(
+        candidate_ids,
+        definitions,
+        token_budget=token_budget,
+        latency_budget_ms=latency_budget_ms,
+    )
+    return reconciliation.ReconciliationSelection(
+        memory_ids=memory_ids,
+        relevance={memory_id: scores[memory_id] for memory_id in memory_ids},
+        reason=(
+            "evaluation-only target-state tombstone cutover evidence"
+            if self.tombstone_cutover
+            else "evaluation-only slice-local relevant-tombstone-first operation evidence"
+            if self.relevant_tombstones_first
+            else "evaluation-only target-scoped phrase-aligned operation evidence"
+            if self.target_scoped_tombstones
+            else (
+                "evaluation-only phrase-aligned operation evidence with mandatory tombstones"
+                if query_phrases
+                else "evaluation-only operation evidence with mandatory tombstones"
+            )
+        ),
+    )
 
 
 def _base_module():
@@ -42,6 +160,11 @@ def register_backend(*, official_repository: str | Path, candidate_repository: s
         self._v31_compile_lock = threading.Lock()
         self._v31_query_lock = threading.Lock()
         self._v31_query_metadata = threading.local()
+        reconciler = self._runtime.state_reconciler
+        reconciler._select_operation_memories = types.MethodType(
+            _memory_safe_select_operation_memories,
+            reconciler,
+        )
 
     def synchronized_compile_once(self):
         if self._compiled:
