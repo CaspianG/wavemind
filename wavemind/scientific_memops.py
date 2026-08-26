@@ -64,6 +64,17 @@ def classify_memory_operation_dialogue(content: str) -> tuple[bool, bool]:
     return operation, tombstone
 
 
+def classify_memory_operation_slice(content: str) -> tuple[bool, bool]:
+    """Classify a normalized slice while preserving embedded dialogue turn markers."""
+
+    turn_aligned = re.sub(
+        r"(?i)\s+(user|assistant):\s*",
+        lambda match: f"\n{match.group(1).lower()}: ",
+        str(content),
+    )
+    return classify_memory_operation_dialogue(turn_aligned)
+
+
 class ScientificMemOpsRetriever:
     """Leakage-safe adapter from an official MemOps corpus to a candidate runtime."""
 
@@ -111,10 +122,17 @@ class ScientificMemOpsRetriever:
                     ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
                     ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
                     ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT,
+                    ScientificCandidateMode.SLICE_LOCAL_TOMBSTONE_AGENT,
                 }
                 else ((content, 0),)
             )
             for content_slice, slice_offset in content_slices:
+                slice_operation, slice_tombstone = (
+                    classify_memory_operation_slice(content_slice)
+                    if self.runtime.mode
+                    is ScientificCandidateMode.SLICE_LOCAL_TOMBSTONE_AGENT
+                    else (operation, tombstone)
+                )
                 memory_id = "memops-" + sha256_bytes(
                     canonical_json_bytes(
                         {
@@ -137,8 +155,8 @@ class ScientificMemOpsRetriever:
                                 f"{int(item.get('session_index') or 0) * 1_000_000 + slice_offset}"
                             ),
                             f"slice-offset:{slice_offset}",
-                            "memory-operation:1" if operation else "",
-                            "memory-tombstone:1" if tombstone else "",
+                            "memory-operation:1" if slice_operation else "",
+                            "memory-tombstone:1" if slice_tombstone else "",
                         )
                         if value
                     ),
@@ -156,6 +174,7 @@ class ScientificMemOpsRetriever:
                     ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
                     ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
                     ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT,
+                    ScientificCandidateMode.SLICE_LOCAL_TOMBSTONE_AGENT,
                 }:
                     batch_definitions.append(definition)
                 elif (
@@ -184,8 +203,9 @@ class ScientificMemOpsRetriever:
             ScientificCandidateMode.EVIDENCE_GROUNDED_ANSWER_TRANSDUCER,
             ScientificCandidateMode.OPERATION_TRACE_STRICT_OUTPUT_AGENT,
             ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
-            ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
-            ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT,
+                    ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
+                    ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT,
+                    ScientificCandidateMode.SLICE_LOCAL_TOMBSTONE_AGENT,
         }:
             self.runtime.register_evaluation_memories(
                 batch_definitions,
@@ -199,6 +219,7 @@ class ScientificMemOpsRetriever:
                         ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
                         ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
                         ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT,
+                        ScientificCandidateMode.SLICE_LOCAL_TOMBSTONE_AGENT,
                     }
                     else (
                         "memops-development-adapter-v7"

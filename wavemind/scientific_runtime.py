@@ -42,6 +42,7 @@ class ScientificCandidateMode(str, Enum):
     EVIDENCE_CONTRACTED_QUERY_AGENT = "evidence-contracted-query-agent-v11"
     TASK_AWARE_SEQUENCE_COVERAGE_AGENT = "task-aware-sequence-coverage-agent-v14"
     TARGET_SCOPED_OPERATION_AGENT = "target-scoped-operation-agent-v16"
+    SLICE_LOCAL_TOMBSTONE_AGENT = "slice-local-tombstone-agent-v28"
 
 
 @dataclass(frozen=True)
@@ -107,6 +108,7 @@ class ScientificMemoryRuntime:
                     ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
                     ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
                     ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT,
+                    ScientificCandidateMode.SLICE_LOCAL_TOMBSTONE_AGENT,
                 }
             ),
             source_recency_weight=(
@@ -120,6 +122,7 @@ class ScientificMemoryRuntime:
                     ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
                     ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
                     ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT,
+                    ScientificCandidateMode.SLICE_LOCAL_TOMBSTONE_AGENT,
                 }
                 else 0.25
             ),
@@ -132,10 +135,15 @@ class ScientificMemoryRuntime:
                     ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
                     ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
                     ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT,
+                    ScientificCandidateMode.SLICE_LOCAL_TOMBSTONE_AGENT,
                 }
             ),
             target_scoped_tombstones=(
                 self.mode is ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT
+                or self.mode is ScientificCandidateMode.SLICE_LOCAL_TOMBSTONE_AGENT
+            ),
+            relevant_tombstones_first=(
+                self.mode is ScientificCandidateMode.SLICE_LOCAL_TOMBSTONE_AGENT
             ),
         )
         self.retriever = WaveMind(
@@ -211,6 +219,7 @@ class ScientificMemoryRuntime:
             ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
             ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
             ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT,
+            ScientificCandidateMode.SLICE_LOCAL_TOMBSTONE_AGENT,
         }:
             raise ValueError("atomic evaluation storage is frozen to v5/v6 candidates")
         events = self.event_log.register_memories(definitions, actor=actor)
@@ -453,6 +462,7 @@ class ScientificMemoryRuntime:
             ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT,
             ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
             ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT,
+            ScientificCandidateMode.SLICE_LOCAL_TOMBSTONE_AGENT,
         }:
             return self.shadow_recall(
                 query,
@@ -505,6 +515,7 @@ class ScientificMemoryRuntime:
         if self.mode not in {
             ScientificCandidateMode.TASK_AWARE_SEQUENCE_COVERAGE_AGENT,
             ScientificCandidateMode.TARGET_SCOPED_OPERATION_AGENT,
+            ScientificCandidateMode.SLICE_LOCAL_TOMBSTONE_AGENT,
         }:
             raise ValueError("sequence coverage recall is not enabled for this candidate")
         definitions = {

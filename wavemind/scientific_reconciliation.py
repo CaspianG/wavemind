@@ -171,6 +171,7 @@ class ProofCarryingStateReconciler:
         source_recency_weight: float = 0.25,
         query_phrase_aware: bool = False,
         target_scoped_tombstones: bool = False,
+        relevant_tombstones_first: bool = False,
     ):
         if maximum_graph_hops < 1 or maximum_candidates < 1:
             raise ValueError("reconciliation bounds must be positive")
@@ -180,6 +181,7 @@ class ProofCarryingStateReconciler:
         self.source_recency_weight = float(source_recency_weight)
         self.query_phrase_aware = bool(query_phrase_aware)
         self.target_scoped_tombstones = bool(target_scoped_tombstones)
+        self.relevant_tombstones_first = bool(relevant_tombstones_first)
         if self.source_recency_weight < 0.0:
             raise ValueError("source recency weight must be non-negative")
 
@@ -305,7 +307,7 @@ class ProofCarryingStateReconciler:
         query_phrases = (
             extract_query_candidate_phrases(query) if self.query_phrase_aware else ()
         )
-        ranked: list[tuple[int, int, float, int, str]] = []
+        ranked: list[tuple[int, int, int, float, int, str]] = []
         scores: dict[str, float] = {}
         for memory_id, definition in definitions.items():
             overlap = query_tokens.intersection(tokenized[memory_id])
@@ -323,8 +325,16 @@ class ProofCarryingStateReconciler:
                 else lexical
             )
             if self.target_scoped_tombstones:
+                relevant_tombstone = tombstone and bool(phrase_hits or lexical > 0.0)
                 ranked.append(
                     (
+                        (
+                            0
+                            if self.relevant_tombstones_first and relevant_tombstone
+                            else 1
+                            if self.relevant_tombstones_first
+                            else 0
+                        ),
                         -phrase_hits,
                         -lexical,
                         -_source_order(definition),
@@ -335,6 +345,7 @@ class ProofCarryingStateReconciler:
             else:
                 ranked.append(
                     (
+                        0,
                         0 if tombstone else 1,
                         -phrase_hits,
                         -lexical,
@@ -343,7 +354,7 @@ class ProofCarryingStateReconciler:
                     )
                 )
         ranked.sort()
-        candidate_ids = [item[4] for item in ranked[: self.maximum_candidates]]
+        candidate_ids = [item[-1] for item in ranked[: self.maximum_candidates]]
         memory_ids = self._fit_budget(
             candidate_ids,
             definitions,
@@ -354,7 +365,9 @@ class ProofCarryingStateReconciler:
             memory_ids=memory_ids,
             relevance={memory_id: scores[memory_id] for memory_id in memory_ids},
             reason=(
-                "evaluation-only target-scoped phrase-aligned operation evidence"
+                "evaluation-only slice-local relevant-tombstone-first operation evidence"
+                if self.relevant_tombstones_first
+                else "evaluation-only target-scoped phrase-aligned operation evidence"
                 if self.target_scoped_tombstones
                 else (
                     "evaluation-only phrase-aligned operation evidence with mandatory tombstones"
