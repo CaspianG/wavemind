@@ -45,6 +45,9 @@ UPDATE_SEQUENCE_COVERAGE = False
 TRAJECTORY_OPERATION_ONLY_SEQUENCE_COVERAGE = False
 OPERATION_TRACE_SEQUENCE_COVERAGE = False
 OPERATION_TRACE_OPERATION_ONLY_SEQUENCE_COVERAGE = False
+CANDIDATE_DISAMBIGUATION_QUERY_OPTIONS = False
+CANDIDATE_DISAMBIGUATION_SEQUENCE_COVERAGE = False
+CANDIDATE_DISAMBIGUATION_OPERATION_ONLY_SEQUENCE_COVERAGE = False
 
 
 def _select_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -52,7 +55,7 @@ def _select_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
         return []
     if QUESTION_SELECTION == "first":
         return entries[:1]
-    if QUESTION_SELECTION == "causal-discrimination-v1":
+    if QUESTION_SELECTION in {"causal-discrimination-v1", "causal-discrimination-v6"}:
         priority = {
             "CandidateDisambiguation": 0,
             "StateTrajectory": 1,
@@ -152,6 +155,19 @@ def _select_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
         return [min(entries, key=key)]
     raise RuntimeError(f"unknown MemOps question selection: {QUESTION_SELECTION}")
+
+
+def _retrieval_query(entry: Mapping[str, Any]) -> str:
+    question = str(entry["question"])
+    if (
+        CANDIDATE_DISAMBIGUATION_QUERY_OPTIONS
+        and str(entry.get("evaluation_type")) == "CandidateDisambiguation"
+    ):
+        options = [str(option).strip() for option in entry.get("candidate_options", [])]
+        options = [option for option in options if option]
+        if options:
+            return question + "\nCandidate options: " + " | ".join(options)
+    return question
 
 
 def _write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
@@ -300,6 +316,7 @@ def main(argv: list[str] | None = None) -> int:
                 continue
             entry = entries[0]
             case_id = str(entry["question_id"])
+            retrieval_query = _retrieval_query(entry)
             sequence_coverage = (
                 TRAJECTORY_SEQUENCE_COVERAGE
                 and path.stem.endswith("_trajectory_ops")
@@ -308,6 +325,9 @@ def main(argv: list[str] | None = None) -> int:
             ) or (
                 OPERATION_TRACE_SEQUENCE_COVERAGE
                 and str(entry.get("evaluation_type")) == "OperationTrace"
+            ) or (
+                CANDIDATE_DISAMBIGUATION_SEQUENCE_COVERAGE
+                and str(entry.get("evaluation_type")) == "CandidateDisambiguation"
             )
             sequence_operation_only = (
                 TRAJECTORY_OPERATION_ONLY_SEQUENCE_COVERAGE
@@ -315,6 +335,9 @@ def main(argv: list[str] | None = None) -> int:
             ) or (
                 OPERATION_TRACE_OPERATION_ONLY_SEQUENCE_COVERAGE
                 and str(entry.get("evaluation_type")) == "OperationTrace"
+            ) or (
+                CANDIDATE_DISAMBIGUATION_OPERATION_ONLY_SEQUENCE_COVERAGE
+                and str(entry.get("evaluation_type")) == "CandidateDisambiguation"
             )
             db_path = Path(temp_dir) / f"{path.stem}.db"
             with ScientificMemOpsRetriever(
@@ -323,7 +346,7 @@ def main(argv: list[str] | None = None) -> int:
                 mode=CANDIDATE_MODE,
             ) as retriever:
                 production_items, production_recall = retriever.retrieve(
-                    str(entry["question"]),
+                    retrieval_query,
                     token_budget=int(parameters["token_budget"]),
                     top_k_context=int(parameters["top_k_context"]),
                     evaluation_only=False,
@@ -332,7 +355,7 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 if production_recall.abstained:
                     ranked_items, treatment_recall = retriever.retrieve(
-                        str(entry["question"]),
+                        retrieval_query,
                         token_budget=int(parameters["token_budget"]),
                         top_k_context=int(parameters["top_k_context"]),
                         evaluation_only=True,
@@ -527,6 +550,15 @@ def main(argv: list[str] | None = None) -> int:
             "operation_trace_sequence_coverage": OPERATION_TRACE_SEQUENCE_COVERAGE,
             "operation_trace_operation_only_sequence_coverage": (
                 OPERATION_TRACE_OPERATION_ONLY_SEQUENCE_COVERAGE
+            ),
+            "candidate_disambiguation_query_options": (
+                CANDIDATE_DISAMBIGUATION_QUERY_OPTIONS
+            ),
+            "candidate_disambiguation_sequence_coverage": (
+                CANDIDATE_DISAMBIGUATION_SEQUENCE_COVERAGE
+            ),
+            "candidate_disambiguation_operation_only_sequence_coverage": (
+                CANDIDATE_DISAMBIGUATION_OPERATION_ONLY_SEQUENCE_COVERAGE
             ),
             "case_count": len(rows),
             "intervention_coverage": coverage,
