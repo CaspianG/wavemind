@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import threading
 from pathlib import Path
 
 
@@ -27,10 +28,28 @@ def _base_module():
 
 
 def register_backend(*, official_repository: str | Path, candidate_repository: str | Path):
-    return _base_module().register_backend(
+    backend_class = _base_module().register_backend(
         official_repository=official_repository,
         candidate_repository=candidate_repository,
     )
+    original_init = backend_class.__init__
+    original_compile_once = backend_class._compile_once
+
+    def synchronized_init(self, memory_params):
+        original_init(self, memory_params)
+        self._v31_compile_lock = threading.Lock()
+
+    def synchronized_compile_once(self):
+        if self._compiled:
+            return
+        with self._v31_compile_lock:
+            if self._compiled:
+                return
+            original_compile_once(self)
+
+    backend_class.__init__ = synchronized_init
+    backend_class._compile_once = synchronized_compile_once
+    return backend_class
 
 
 def registration_fingerprint() -> str:

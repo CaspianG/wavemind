@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+import concurrent.futures
 import importlib.util
 import json
 from pathlib import Path
@@ -109,7 +110,10 @@ def test_v31_longmemeval_backend_registers_exact_candidate_without_gold(tmp_path
                 ],
             }
         )
-        context = backend.query("What does checkout require?")
+        queries = ["What does checkout require?"] * 4
+        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+            contexts = list(executor.map(backend.query, queries))
+        context = contexts[0]
         metadata = backend.post_query_hook(
             query="What does checkout require?",
             query_image=None,
@@ -118,7 +122,8 @@ def test_v31_longmemeval_backend_registers_exact_candidate_without_gold(tmp_path
     finally:
         backend.close()
 
-    assert context
+    assert all(contexts)
+    assert all(item == context for item in contexts)
     assert metadata is not None
     assert metadata["candidate_source_sha"] == module.CANDIDATE_SOURCE_SHA
     assert metadata["event_chain_valid"] is True
