@@ -81,3 +81,18 @@ def test_v22_configuration_keeps_query_grounding_out_of_blind_sequence_mode():
         is False
     )
     assert wrapper.runner.TRAJECTORY_SEQUENCE_COVERAGE is True
+
+
+def test_v23_configuration_uses_targeted_application_without_blind_coverage():
+    spec = importlib.util.spec_from_file_location(
+        "test_scientific_memops_v23_wrapper",
+        ROOT / "benchmarks" / "scientific_memops_v23_opened_diagnostic.py",
+    )
+    assert spec is not None and spec.loader is not None
+    wrapper = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = wrapper
+    spec.loader.exec_module(wrapper)
+    assert wrapper.runner.QUESTION_SELECTION == "causal-application-v2"
+    assert wrapper.runner.TRAJECTORY_SEQUENCE_COVERAGE is False
+    assert wrapper.runner.UPDATE_SEQUENCE_COVERAGE is False
+    assert wrapper.runner.CANDIDATE_DISAMBIGUATION_QUERY_OPTIONS is False
