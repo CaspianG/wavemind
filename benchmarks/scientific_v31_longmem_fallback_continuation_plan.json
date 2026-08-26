@@ -1,0 +1,147 @@
+{
+  "schema": "wavemind.scientific_v31_longmem_fallback_continuation.v1",
+  "status": "preregistered_fallback_streaming_continuation_before_outcome",
+  "preregistered_at": "2026-08-26",
+  "logical_run": "longmemeval_v2_small_full_v31",
+  "logical_full_run_count": 1,
+  "candidate_source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+  "failure_evidence": {
+    "path": "benchmarks/scientific_v31_longmem_infrastructure_failure_6.json",
+    "bytes": 5242,
+    "sha256": "82393b66c894efe137fdf16edfac35b1a10cbf00899c95622f49a1c3c702e4ab",
+    "commit": "dfc065b51c928ac3ece4f56e3e2a965053e29d9f",
+    "payload_sha256": "deb490bf60f787310ca1b05a581f33ba05563ab0c9bca6c1273140c12133e800",
+    "failure_type": "UnoptimizedFallbackRankedSelector",
+    "outcome_scores_opened": false,
+    "scientific_gate_evaluated": false
+  },
+  "fallback_probe": {
+    "path": "benchmarks/scientific_v31_longmem_fallback_probe_results.json",
+    "bytes": 3516,
+    "sha256": "3a4aa12cf42a2a981170a6855b40c709283de797ef16e242b0e902f63ba8a6b8",
+    "commit": "e11ebc8e737cd3156b82d89b93b243e65f21869a",
+    "payload_sha256": "453a1f7a8457166d2d0a3d8368f3752cd7099a7dbaf248fbab40dfb644b842b7",
+    "question_kind": "held_out_digest_only_infrastructure_probe",
+    "question_count": 4,
+    "answer_or_gold_read": false,
+    "model_calls_made": 0,
+    "scores_opened": false,
+    "maximum_recall_seconds": 10.54318,
+    "private_gib": 0.932728,
+    "chain_errors": []
+  },
+  "harness_change": {
+    "previous_commit": "404c6b127e580d8531176d9e79cd1782bbacc79b",
+    "fallback_commit": "0dd456e1100a6beb5e60bdf94ddf5ffa071b2965",
+    "changed_frozen_harness_files": [
+      "benchmarks/scientific_longmemeval_v2_backend_v31.py"
+    ],
+    "changed_file_count": 1,
+    "previous_file": {
+      "path": "benchmarks/scientific_longmemeval_v2_backend_v31.py",
+      "bytes": 7732,
+      "sha256": "aba0f5e17f81902ec5838d302005e768f2843d8ef085ea657b8b9fc44c3f2fcc"
+    },
+    "fallback_file": {
+      "path": "benchmarks/scientific_longmemeval_v2_backend_v31.py",
+      "bytes": 10660,
+      "sha256": "f93b0731d0f19495be3e9d4be48f837dac3fe9009d5c9401564c19ff801fff4d"
+    },
+    "all_fallback_harness_files": [
+      {
+        "path": "benchmarks/scientific_mab_v19_final.py",
+        "bytes": 9644,
+        "sha256": "3409f4e645d2c9a37874eb1f044a98b5e5a682c30b8a1afc271d9451e124c7f8"
+      },
+      {
+        "path": "benchmarks/scientific_mab_v31_final.py",
+        "bytes": 3331,
+        "sha256": "f6d9f995f188d12889740d4ead0f1503c9f2451cebe3f393c0f97fe22668a10c"
+      },
+      {
+        "path": "benchmarks/scientific_memops_v31_final.py",
+        "bytes": 9764,
+        "sha256": "1072978bd36a6fe7524754f9d9740ae0cd6dfdb1552eae77a3648aa717ac13ba"
+      },
+      {
+        "path": "benchmarks/scientific_longmemeval_v2_backend.py",
+        "bytes": 11532,
+        "sha256": "f59733a2d26f673c0a7f532653398379ad6d90f68175ae7d4c1e855e7ef70bc6"
+      },
+      {
+        "path": "benchmarks/scientific_longmemeval_v2_backend_v31.py",
+        "bytes": 10660,
+        "sha256": "f93b0731d0f19495be3e9d4be48f837dac3fe9009d5c9401564c19ff801fff4d"
+      },
+      {
+        "path": "benchmarks/scientific_longmemeval_v2_run.py",
+        "bytes": 10537,
+        "sha256": "5c2355a3f64e87d50f133cfa8db95e7a6b7f49b036069fc1c69c0893a507f12e"
+      },
+      {
+        "path": "benchmarks/scientific_longmemeval_v2_run_v31.py",
+        "bytes": 1460,
+        "sha256": "424b561f62a8b255ecc07f4d88a46c7156aec4da1142bbb5b7c7ce9af4049ae7"
+      }
+    ]
+  },
+  "semantic_equivalence_contract": {
+    "original_formula": "Materialize every document token set, then intersect each with query tokens.",
+    "streaming_formula": "Tokenize one document at a time and retain only its query-token intersection.",
+    "query_token_intersections_identical": true,
+    "document_frequency_identical": true,
+    "query_weights_identical": true,
+    "phrase_hits_identical": true,
+    "recency_scores_identical": true,
+    "ranking_tuples_identical": true,
+    "budget_fit_identical": true,
+    "selection_relevance_reason_exactly_equal_in_tests": true,
+    "configurations_tested": 4,
+    "definitions_in_equivalence_test": 600,
+    "original_simultaneous_document_token_sets_minimum": 101,
+    "streaming_simultaneous_document_token_sets_maximum": 2
+  },
+  "frozen_invariants": {
+    "candidate_source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+    "protocol_digest": "bc1f895bdf8bd30027bcc17f1c3a375099c8ee442681382c56ba57fa7580793b",
+    "official_repository_sha": "2cc8c540bdb87fe6761629b585e727e1c4704520",
+    "model": "mistral:7b",
+    "evaluator_model": "mistral:7b",
+    "prompt_build_max_workers": 4,
+    "reader_max_concurrent_requests": 4,
+    "shuffle_questions_seed": 17,
+    "prompts_unchanged": true,
+    "models_unchanged": true,
+    "thresholds_unchanged": true,
+    "question_order_unchanged": true,
+    "scoring_unchanged": true
+  },
+  "continuation_execution": {
+    "same_output_root_required": "benchmarks/scientific_longmemeval_v31_final",
+    "same_marker_required": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/full_run_marker.json",
+      "bytes": 1460,
+      "sha256": "9872e1d94096e7c8fa0a9b4b592f64312d7902e4a74326907c765a034c7a4355"
+    },
+    "logical_full_run_count_must_remain": 1,
+    "retained_partials_before_continuation": [
+      "candidate_web_small-20260826T163942Z",
+      "candidate_web_small-20260826T173742Z",
+      "candidate_web_small-20260826T184002Z",
+      "candidate_web_small-20260826T190840Z",
+      "candidate_web_small-20260826T195850Z"
+    ],
+    "retained_partial_count_before_continuation": 5,
+    "current_partial_must_be_retained_on_restart": true,
+    "restart_first_incomplete_arm": "candidate_web_small",
+    "fallback_harness_commit_required": "0dd456e1100a6beb5e60bdf94ddf5ffa071b2965",
+    "fresh_scientific_run_forbidden": true,
+    "memory_monitoring_required": true
+  },
+  "claim_boundary": "This continuation plan and digest-only probe are not benchmark outcomes and authorize no pass, 100%-pass, SOTA, or revolutionary claim.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "dc162f5788c3741fc63c006068a4f4df9ab5b9dea80390cb163811600b35f3cd"
+  }
+}
