@@ -1,0 +1,127 @@
+{
+  "schema": "wavemind.scientific_frozen_lexical_index_probe.v1",
+  "status": "pass",
+  "evidence_class": "synthetic_performance_probe_not_admission",
+  "held_out_benchmark_rows_used": false,
+  "sources": [
+    {
+      "path": "benchmarks/scientific_frozen_lexical_index.py",
+      "bytes": 20279,
+      "sha256": "9c947d8d735e7681b0d4ba859c6f06d38e892ac118b2de1142c3c2bdc3e7ea74"
+    },
+    {
+      "path": "benchmarks/scientific_frozen_lexical_index_probe.py",
+      "bytes": 7868,
+      "sha256": "d8147d6ef94eb3d4bd28845598e06f2665ca3fccf7fb18715076db94c2d9f172"
+    },
+    {
+      "path": "benchmarks/scientific_longmemeval_v2_backend_indexed_prototype.py",
+      "bytes": 4990,
+      "sha256": "b6eb04162e392561f2b56a2a81df6a989b9ac191f6771e649494ee729b760f28"
+    }
+  ],
+  "workload": {
+    "definition_count": 10000,
+    "query_count": 40,
+    "generator": "deterministic-modular-synthetic-v1",
+    "queries": [
+      "Find account 0 cluster 0 route 0 state 0 checkout update",
+      "Find account 1 cluster 1 route 1 state 1 checkout update",
+      "Find account 2 cluster 2 route 2 state 2 checkout update",
+      "Find account 3 cluster 3 route 3 state 3 checkout update",
+      "Find account 4 cluster 4 route 4 state 4 checkout update",
+      "Find account 5 cluster 5 route 5 state 5 checkout update",
+      "Find account 6 cluster 6 route 6 state 6 checkout update",
+      "Find account 7 cluster 7 route 7 state 7 checkout update",
+      "Find account 8 cluster 8 route 8 state 8 checkout update",
+      "Find account 9 cluster 9 route 9 state 9 checkout update",
+      "Find account 10 cluster 10 route 10 state 10 checkout update",
+      "Find account 11 cluster 11 route 11 state 11 checkout update",
+      "Find account 12 cluster 12 route 12 state 12 checkout update",
+      "Find account 13 cluster 13 route 13 state 13 checkout update",
+      "Find account 14 cluster 14 route 14 state 14 checkout update",
+      "Find account 15 cluster 15 route 15 state 15 checkout update",
+      "Find account 16 cluster 16 route 16 state 16 checkout update",
+      "Find account 17 cluster 17 route 17 state 17 checkout update",
+      "Find account 18 cluster 18 route 18 state 18 checkout update",
+      "Find account 19 cluster 19 route 19 state 19 checkout update",
+      "Find account 20 cluster 20 route 20 state 20 checkout update",
+      "Find account 21 cluster 21 route 21 state 21 checkout update",
+      "Find account 22 cluster 22 route 22 state 22 checkout update",
+      "Find account 23 cluster 23 route 23 state 23 checkout update",
+      "Find account 24 cluster 24 route 24 state 24 checkout update",
+      "Find account 25 cluster 25 route 25 state 25 checkout update",
+      "Find account 26 cluster 26 route 26 state 26 checkout update",
+      "Find account 27 cluster 27 route 27 state 27 checkout update",
+      "Find account 28 cluster 28 route 28 state 28 checkout update",
+      "Find account 29 cluster 29 route 29 state 0 checkout update",
+      "Find account 30 cluster 30 route 30 state 1 checkout update",
+      "Find account 31 cluster 31 route 31 state 2 checkout update",
+      "Find account 32 cluster 32 route 32 state 3 checkout update",
+      "Find account 33 cluster 33 route 33 state 4 checkout update",
+      "Find account 34 cluster 34 route 34 state 5 checkout update",
+      "Find account 35 cluster 35 route 35 state 6 checkout update",
+      "Find account 36 cluster 36 route 36 state 7 checkout update",
+      "Find account 37 cluster 37 route 37 state 8 checkout update",
+      "Find account 38 cluster 38 route 38 state 9 checkout update",
+      "Find account 39 cluster 39 route 39 state 10 checkout update"
+    ],
+    "sha256": "be5432e53f75eb93dd39d190afc4d22ddb503cb36eae97df2b4e35a3a171be88"
+  },
+  "index": {
+    "kind": "sqlite-integer-postings-with-disk-normalized-content",
+    "build_seconds": 1.334442500025034,
+    "bytes": 10063872,
+    "retains_document_content_in_python": false,
+    "retains_per_document_token_sets_in_python": false
+  },
+  "reference": {
+    "runs": [
+      {
+        "total_seconds": 30.29722469986882,
+        "p95_seconds": 0.7775427949876758
+      },
+      {
+        "total_seconds": 30.518728700175416,
+        "p95_seconds": 0.7941918649914441
+      },
+      {
+        "total_seconds": 30.241436199983582,
+        "p95_seconds": 0.7801080749806715
+      }
+    ]
+  },
+  "indexed": {
+    "runs": [
+      {
+        "total_seconds": 3.168565999949351,
+        "p95_seconds": 0.08984110003220849
+      },
+      {
+        "total_seconds": 3.183618499955628,
+        "p95_seconds": 0.0928914399817586
+      },
+      {
+        "total_seconds": 3.13891949999379,
+        "p95_seconds": 0.09089176497072912
+      }
+    ],
+    "maximum_p95_seconds": 0.0928914399817586,
+    "p95_target_seconds": 1.0
+  },
+  "exact_selection_equality": true,
+  "exact_selection_equality_by_run": [
+    true,
+    true,
+    true
+  ],
+  "repeat_count": 3,
+  "selection_count_per_run": 40,
+  "minimum_speedup_at_p95": 8.549677614507884,
+  "claim_boundary": "This probe proves exact selector equivalence and bounded synthetic latency only. It does not alter, rerun, or rescue failed v31 held-out admission evidence.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "68146bc05b777ced9b6b02aaf4f2be6c45c578a2b4accb23fa21d6715c73f576"
+  }
+}
