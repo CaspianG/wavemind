@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
 import pytest
 
+from wavemind.evidence import file_sha256, validate_artifact_integrity
+
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "benchmarks" / "scientific_v31_admission_outcome.py"
+OUTCOME = ROOT / "benchmarks" / "scientific_v31_admission_outcome.json"
 
 
 def _load_module():
@@ -119,3 +123,62 @@ def test_v31_longmem_derivation_rejects_nonofficial_category():
                 "candidate": candidate,
             }
         )
+
+
+def test_v31_admission_outcome_retains_exact_failed_evidence():
+    payload = json.loads(OUTCOME.read_text(encoding="utf-8"))
+
+    assert validate_artifact_integrity(payload) == []
+    assert payload["status"] == "failed_admission_v31"
+    assert payload["all_frozen_gates_passed"] is False
+    assert payload["candidate_source_sha"] == (
+        "2a55c83ef3d3e4a3c5d9dff4418258eacb378127"
+    )
+    assert payload["memoryagentbench_final"]["status"] == "pass"
+    assert payload["memops_final"]["status"] == "pass"
+    longmem = payload["longmemeval_v2_final"]
+    assert longmem["status"] == "failed_final"
+    assert longmem["metrics"]["paired_question_count"] == 451
+    assert longmem["metrics"]["baseline_overall"] == pytest.approx(
+        0.05543237250554324
+    )
+    assert longmem["metrics"]["candidate_overall"] == pytest.approx(
+        0.164079822616408
+    )
+    assert longmem["metrics"]["uplift"] == pytest.approx(0.10864745011086475)
+    assert longmem["metrics"]["improved_categories"] == [
+        "dynamic",
+        "procedure",
+        "static",
+    ]
+    assert longmem["metrics"]["context_reduction_vs_full_context"] == pytest.approx(
+        0.9996413986638786
+    )
+    assert longmem["metrics"]["runtime_p95_seconds"] == pytest.approx(
+        70.71097849996295
+    )
+    failed = {
+        check["id"] for check in longmem["gate_checks"] if not check["passed"]
+    }
+    assert failed == {
+        "longmemeval-v2-improved-categories",
+        "repeated-error-reduction",
+        "stale-or-contradiction-error-rate",
+        "runtime-p95-budget",
+    }
+    for section in ("memoryagentbench_final", "memops_final"):
+        for label in ("artifact", "raw"):
+            record = payload[section][label]
+            path = ROOT / record["path"]
+            assert path.stat().st_size == record["bytes"]
+            assert file_sha256(path) == record["sha256"]
+    marker = longmem["marker"]
+    marker_path = ROOT / marker["path"]
+    assert marker_path.stat().st_size == marker["bytes"]
+    assert file_sha256(marker_path) == marker["sha256"]
+    for arm in longmem["artifacts"].values():
+        for label in ("aggregate", "raw"):
+            record = arm[label]
+            path = ROOT / record["path"]
+            assert path.stat().st_size == record["bytes"]
+            assert file_sha256(path) == record["sha256"]

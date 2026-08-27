@@ -1,0 +1,250 @@
+{
+  "schema": "wavemind.scientific_v31_admission_outcome.v1",
+  "status": "failed_admission_v31",
+  "candidate_id": "operation-routed-target-state-agent-v31",
+  "candidate_source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+  "protocol_digest": "bc1f895bdf8bd30027bcc17f1c3a375099c8ee442681382c56ba57fa7580793b",
+  "admission_plan": {
+    "path": "benchmarks/scientific_v31_admission_plan.json",
+    "bytes": 10772,
+    "sha256": "b1e3e6636b7b4de8f537a5a72deb81fc1103b2c4d97b3545e58f5a8ff6f03f8d",
+    "payload_sha256": "dc3bf69e57785b59b6d5e4b579b8a93908d4e8039236797e8bcb8b5482831000"
+  },
+  "memoryagentbench_final": {
+    "status": "pass",
+    "artifact": {
+      "path": "benchmarks/scientific_mab_v31_final_results.json",
+      "bytes": 3667,
+      "sha256": "fc7fd8df9663f33e23366946a4ba7ccff8f03c0890fdc9ba72c6f0aeb8801e32"
+    },
+    "raw": {
+      "path": "benchmarks/scientific_mab_v31_final_raw.jsonl",
+      "bytes": 602766,
+      "sha256": "0b40e6e9cbf852d12b6ab0d8e275025816f19b7688c9e9a77046da822fe2c3a0"
+    },
+    "gate_checks": {
+      "ten_independent_clusters": true,
+      "paired_cluster_bootstrap_ci_lower_strictly_positive": true,
+      "mean_non_negative": true,
+      "minimum_intervention_coverage": true,
+      "no_production_cases": true,
+      "no_promoted_memories": true
+    }
+  },
+  "memops_final": {
+    "status": "pass",
+    "artifact": {
+      "path": "benchmarks/scientific_memops_v31_final_results.json",
+      "bytes": 3671,
+      "sha256": "a1b7ab05fa7c565ae10dc1ba19a57bbcfbba783f85edcf7428bd21aacf3b9f9e"
+    },
+    "raw": {
+      "path": "benchmarks/scientific_memops_v31_final/raw_pairs.jsonl",
+      "bytes": 518050,
+      "sha256": "77c9eb05c46d5766f5f01c501cb722ab236b0d6c1e96fed2ec7c9e542b2ef50d"
+    },
+    "gate_checks": {
+      "minimum_independent_subject_clusters": true,
+      "paired_subject_cluster_bootstrap_ci_lower_strictly_positive": true,
+      "mean_non_negative": true,
+      "minimum_intervention_coverage": true,
+      "no_production_cases": true,
+      "no_promoted_memories": true
+    }
+  },
+  "longmemeval_v2_final": {
+    "status": "failed_final",
+    "marker": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/full_run_marker.json",
+      "bytes": 1893,
+      "sha256": "4f73fd0d6bafad686aab483492f7968d88561ac07aebcfc12a1b6653773f323b"
+    },
+    "artifacts": {
+      "no_retrieval_web_small": {
+        "aggregate": {
+          "path": "benchmarks/scientific_longmemeval_v31_final/no_retrieval_web_small/aggregated_metrics.json",
+          "bytes": 4924,
+          "sha256": "694da9f09cceca048880b35af3c90f4f1b1c71417a240b6c1003034c372ef444"
+        },
+        "raw": {
+          "path": "benchmarks/scientific_longmemeval_v31_final/no_retrieval_web_small/per_question.jsonl",
+          "bytes": 934608,
+          "sha256": "b212826c96ea2dd64369af70a8ad7379f1590e631929841e5a2496d5ddc8c253"
+        }
+      },
+      "candidate_web_small": {
+        "aggregate": {
+          "path": "benchmarks/scientific_longmemeval_v31_final/candidate_web_small/aggregated_metrics.json",
+          "bytes": 4909,
+          "sha256": "2904872597ccae661f3127bb15febdd9cbe360df6335d1f491d4de390c93f82d"
+        },
+        "raw": {
+          "path": "benchmarks/scientific_longmemeval_v31_final/candidate_web_small/per_question.jsonl",
+          "bytes": 14188637,
+          "sha256": "12f1b88b32a9fd200d1997ddd62482acbcf5254b78a1bbb7d263bd677c961753"
+        }
+      },
+      "no_retrieval_enterprise_small": {
+        "aggregate": {
+          "path": "benchmarks/scientific_longmemeval_v31_final/no_retrieval_enterprise_small/aggregated_metrics.json",
+          "bytes": 4872,
+          "sha256": "3e9341caa4dec647c595ee847711669c2a5f502a916a6925983b286849d55356"
+        },
+        "raw": {
+          "path": "benchmarks/scientific_longmemeval_v31_final/no_retrieval_enterprise_small/per_question.jsonl",
+          "bytes": 782885,
+          "sha256": "791a158aaf526c097f7f7a5c0aca60ebff7aa813b8d1522a4d0aea01205d9f75"
+        }
+      },
+      "candidate_enterprise_small": {
+        "aggregate": {
+          "path": "benchmarks/scientific_longmemeval_v31_final/candidate_enterprise_small/aggregated_metrics.json",
+          "bytes": 4931,
+          "sha256": "92547a5a2fdd45f4054c4649d226ae2d1e2e4f6392a798b433f2388884763d5c"
+        },
+        "raw": {
+          "path": "benchmarks/scientific_longmemeval_v31_final/candidate_enterprise_small/per_question.jsonl",
+          "bytes": 12820572,
+          "sha256": "d5af765981764fbb89794a02dd6d2edbcc17747e12efeb53165cb57e616fcdc0"
+        }
+      }
+    },
+    "metrics": {
+      "paired_question_count": 451,
+      "baseline_overall": 0.05543237250554324,
+      "candidate_overall": 0.164079822616408,
+      "uplift": 0.10864745011086475,
+      "category_metrics": {
+        "dynamic": {
+          "count": 127,
+          "baseline": 0.023622047244094488,
+          "candidate": 0.12598425196850394,
+          "uplift": 0.10236220472440945
+        },
+        "gotchas": {
+          "count": 29,
+          "baseline": 0.3103448275862069,
+          "candidate": 0.27586206896551724,
+          "uplift": -0.034482758620689655
+        },
+        "procedure": {
+          "count": 106,
+          "baseline": 0.02830188679245283,
+          "candidate": 0.1320754716981132,
+          "uplift": 0.10377358490566038
+        },
+        "static": {
+          "count": 189,
+          "baseline": 0.05291005291005291,
+          "candidate": 0.19047619047619047,
+          "uplift": 0.13756613756613756
+        }
+      },
+      "improved_categories": [
+        "dynamic",
+        "procedure",
+        "static"
+      ],
+      "improved_category_count": 3,
+      "selected_estimated_tokens": 3577076.0,
+      "full_context_estimated_tokens": 9975077167.0,
+      "context_reduction_vs_full_context": 0.9996413986638786,
+      "runtime_p95_seconds": 70.71097849996295,
+      "paired_no_retrieval_ablation_complete": true,
+      "repeated_error_reduction": {
+        "verifiable": false,
+        "value": null,
+        "reason": "The frozen v31 plan did not preregister an operational mapping from official LongMemEval-V2 rows to repeated_errors."
+      },
+      "stale_or_contradiction_error_rate": {
+        "verifiable": false,
+        "value": null,
+        "reason": "The official retained rows contain binary correctness but no independently scored stale_or_contradiction_error field, and v31 did not preregister a substitute mapping."
+      }
+    },
+    "gate_checks": [
+      {
+        "id": "longmemeval-v2-uplift",
+        "passed": true,
+        "status": "pass",
+        "evidence": 0.10864745011086475,
+        "target": 0.01,
+        "issue": ""
+      },
+      {
+        "id": "longmemeval-v2-improved-categories",
+        "passed": false,
+        "status": "fail",
+        "evidence": [
+          "dynamic",
+          "procedure",
+          "static"
+        ],
+        "target": 4,
+        "issue": "LongMemEval-V2 did not improve four combined categories"
+      },
+      {
+        "id": "repeated-error-reduction",
+        "passed": false,
+        "status": "fail",
+        "evidence": {
+          "verifiable": false,
+          "value": null,
+          "reason": "The frozen v31 plan did not preregister an operational mapping from official LongMemEval-V2 rows to repeated_errors."
+        },
+        "target": 0.5,
+        "issue": "the repeated-error gate is not verifiable from preregistered evidence"
+      },
+      {
+        "id": "stale-or-contradiction-error-rate",
+        "passed": false,
+        "status": "fail",
+        "evidence": {
+          "verifiable": false,
+          "value": null,
+          "reason": "The official retained rows contain binary correctness but no independently scored stale_or_contradiction_error field, and v31 did not preregister a substitute mapping."
+        },
+        "target": 0.02,
+        "issue": "the stale-or-contradiction gate is not verifiable from preregistered evidence"
+      },
+      {
+        "id": "context-reduction-vs-full-context",
+        "passed": true,
+        "status": "pass",
+        "evidence": 0.9996413986638786,
+        "target": 0.3,
+        "issue": ""
+      },
+      {
+        "id": "runtime-p95-budget",
+        "passed": false,
+        "status": "fail",
+        "evidence": 70.71097849996295,
+        "target": 1.0,
+        "issue": "candidate memory-query p95 exceeds the frozen 1000 ms budget"
+      },
+      {
+        "id": "paired-no-retrieval-ablation",
+        "passed": true,
+        "status": "pass",
+        "evidence": 451,
+        "target": 451,
+        "issue": ""
+      }
+    ]
+  },
+  "all_frozen_gates_passed": false,
+  "post_outcome_policy": {
+    "v31_candidate_changes_forbidden": true,
+    "v31_held_out_rows_may_be_used_for_future_tuning": false,
+    "thresholds_may_be_relaxed": false,
+    "repeat_v31_full_run_forbidden": true,
+    "future_candidates_require_new_preregistration": true
+  },
+  "claim_boundary": "Only a true all-gates pass would authorize the bounded v31 claim. A failed or unverified gate forbids 100%-pass, SOTA, production, universal, and revolutionary claims.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "1070543195cbe45c99ba0157d55c15fcb64e7fb0b5573d0a2c20c6c3384a227d"
+  }
+}
