@@ -15,6 +15,7 @@ if str(ROOT) not in sys.path:
 from wavemind.evidence import (  # noqa: E402
     attach_artifact_integrity,
     file_sha256,
+    sha256_bytes,
     validate_artifact_integrity,
 )
 
@@ -69,7 +70,15 @@ def _read_jsonl(path: Path) -> list[dict[str, Any]]:
     return rows
 
 
-def _record(path: Path) -> dict[str, object]:
+def _record(path: Path, *, canonical_lf: bool = False) -> dict[str, object]:
+    if canonical_lf:
+        content = path.read_bytes().replace(b"\r\n", b"\n")
+        return {
+            "path": path.relative_to(ROOT).as_posix(),
+            "bytes": len(content),
+            "sha256": sha256_bytes(content),
+            "normalization": "lf",
+        }
     return {
         "path": path.relative_to(ROOT).as_posix(),
         "bytes": path.stat().st_size,
@@ -337,8 +346,8 @@ def main() -> int:
             _validate_arm(domain=domain, arm=arm, metrics=metrics, rows=rows)
             rows_by_arm[arm].extend(rows)
             longmem_artifacts[arm_name] = {
-                "aggregate": _record(metrics_path),
-                "raw": _record(raw_path),
+                "aggregate": _record(metrics_path, canonical_lf=True),
+                "raw": _record(raw_path, canonical_lf=True),
             }
 
     metrics = derive_longmem_metrics(rows_by_arm)
@@ -424,7 +433,7 @@ def main() -> int:
             },
             "longmemeval_v2_final": {
                 "status": "pass" if admitted else "failed_final",
-                "marker": _record(marker_path),
+                "marker": _record(marker_path, canonical_lf=True),
                 "artifacts": longmem_artifacts,
                 "metrics": metrics,
                 "gate_checks": checks,

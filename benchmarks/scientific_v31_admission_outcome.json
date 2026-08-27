@@ -56,56 +56,65 @@
     "status": "failed_final",
     "marker": {
       "path": "benchmarks/scientific_longmemeval_v31_final/full_run_marker.json",
-      "bytes": 1893,
-      "sha256": "4f73fd0d6bafad686aab483492f7968d88561ac07aebcfc12a1b6653773f323b"
+      "bytes": 1855,
+      "sha256": "5ef2c065308046543d0dd814df21350fcbe12b709006b5cfebf56823944e0074",
+      "normalization": "lf"
     },
     "artifacts": {
       "no_retrieval_web_small": {
         "aggregate": {
           "path": "benchmarks/scientific_longmemeval_v31_final/no_retrieval_web_small/aggregated_metrics.json",
-          "bytes": 4924,
-          "sha256": "694da9f09cceca048880b35af3c90f4f1b1c71417a240b6c1003034c372ef444"
+          "bytes": 4711,
+          "sha256": "6f42335c098323d54c7e20f089085b30671a7987b9e41a0d76acac56c925d025",
+          "normalization": "lf"
         },
         "raw": {
           "path": "benchmarks/scientific_longmemeval_v31_final/no_retrieval_web_small/per_question.jsonl",
-          "bytes": 934608,
-          "sha256": "b212826c96ea2dd64369af70a8ad7379f1590e631929841e5a2496d5ddc8c253"
+          "bytes": 934368,
+          "sha256": "0d665ec26528f63d792dcf26f61c14e9d5e94673cd442ce2036316fbbe188c90",
+          "normalization": "lf"
         }
       },
       "candidate_web_small": {
         "aggregate": {
           "path": "benchmarks/scientific_longmemeval_v31_final/candidate_web_small/aggregated_metrics.json",
-          "bytes": 4909,
-          "sha256": "2904872597ccae661f3127bb15febdd9cbe360df6335d1f491d4de390c93f82d"
+          "bytes": 4696,
+          "sha256": "7c76a1c86b54bceaa89c85eb9771a6f956851d32fa60a05e817ae46a4ebc64d1",
+          "normalization": "lf"
         },
         "raw": {
           "path": "benchmarks/scientific_longmemeval_v31_final/candidate_web_small/per_question.jsonl",
-          "bytes": 14188637,
-          "sha256": "12f1b88b32a9fd200d1997ddd62482acbcf5254b78a1bbb7d263bd677c961753"
+          "bytes": 14188397,
+          "sha256": "cdf42b7cf078438da785886397b2972df1547d36c247d45af085a4545ccb5a0b",
+          "normalization": "lf"
         }
       },
       "no_retrieval_enterprise_small": {
         "aggregate": {
           "path": "benchmarks/scientific_longmemeval_v31_final/no_retrieval_enterprise_small/aggregated_metrics.json",
-          "bytes": 4872,
-          "sha256": "3e9341caa4dec647c595ee847711669c2a5f502a916a6925983b286849d55356"
+          "bytes": 4659,
+          "sha256": "47c57715f0f4f98c61b5c072da2e7c2d292c22d539503716598a8efa879d2a3f",
+          "normalization": "lf"
         },
         "raw": {
           "path": "benchmarks/scientific_longmemeval_v31_final/no_retrieval_enterprise_small/per_question.jsonl",
-          "bytes": 782885,
-          "sha256": "791a158aaf526c097f7f7a5c0aca60ebff7aa813b8d1522a4d0aea01205d9f75"
+          "bytes": 782674,
+          "sha256": "146ec1795598e15dc062bb81f4a80f45229ae733c52c693dbd3659bd069112ab",
+          "normalization": "lf"
         }
       },
       "candidate_enterprise_small": {
         "aggregate": {
           "path": "benchmarks/scientific_longmemeval_v31_final/candidate_enterprise_small/aggregated_metrics.json",
-          "bytes": 4931,
-          "sha256": "92547a5a2fdd45f4054c4649d226ae2d1e2e4f6392a798b433f2388884763d5c"
+          "bytes": 4718,
+          "sha256": "c4c446fa88b9c0568be891ce369046a92e1d64dab1223a62a949298c1f5ca38b",
+          "normalization": "lf"
         },
         "raw": {
           "path": "benchmarks/scientific_longmemeval_v31_final/candidate_enterprise_small/per_question.jsonl",
-          "bytes": 12820572,
-          "sha256": "d5af765981764fbb89794a02dd6d2edbcc17747e12efeb53165cb57e616fcdc0"
+          "bytes": 12820361,
+          "sha256": "de89605aa5fa6003411420b5c63230bebde5fa2ae82aca493ea29d102f77e8a9",
+          "normalization": "lf"
         }
       }
     },
@@ -245,6 +254,6 @@
   "integrity": {
     "schema": "wavemind.artifact_integrity.v1",
     "algorithm": "sha256",
-    "payload_sha256": "1070543195cbe45c99ba0157d55c15fcb64e7fb0b5573d0a2c20c6c3384a227d"
+    "payload_sha256": "ea80b7ec52fcbcdf7ec13f83945fb62fef6e7178b19b624c68736773e1d95b29"
   }
 }
