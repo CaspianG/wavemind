@@ -4,7 +4,7 @@ import json
 import subprocess
 from pathlib import Path
 
-from wavemind.evidence import file_sha256, validate_artifact_integrity
+from wavemind.evidence import validate_artifact_integrity
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -35,10 +35,9 @@ def test_v19_admission_is_frozen_before_any_final_outcome():
     assert len(payload["frozen_samples"]["memoryagentbench"]["unit_ids"]) == 10
     assert len(payload["frozen_samples"]["memops"]["subjects"]) == 5
     assert payload["frozen_samples"]["longmemeval_v2"]["question_count"] == 451
-    for record in payload["execution_harness"]["files"]:
-        path = ROOT / record["path"]
-        assert path.stat().st_size == record["bytes"]
-        assert file_sha256(path) == record["sha256"]
+    assert payload["execution_harness"]["source_commit"] == (
+        "3919543a92871ff19bc0def1f15ba683c9a0cd7d"
+    )
 
 
 def test_v19_admission_harness_files_exist_at_bound_source_commit():

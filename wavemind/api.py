@@ -1749,8 +1749,8 @@ def create_app(
             manager = WorkspaceExperienceManager.open(root)
         except (OSError, ValueError) as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
-        app.state.auth.check_namespaces(principal, {manager.identity.namespace})
         try:
+            app.state.auth.check_namespaces(principal, {manager.identity.namespace})
             yield manager
         finally:
             manager.close()

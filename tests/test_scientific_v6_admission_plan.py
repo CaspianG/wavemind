@@ -2,16 +2,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN = ROOT / "benchmarks" / "scientific_v6_admission_plan.json"
-
-
-def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
-
 
 def test_v6_admission_plan_is_frozen_before_held_out_execution():
     payload = json.loads(PLAN.read_text(encoding="utf-8"))
@@ -49,5 +45,9 @@ def test_v6_admission_plan_is_frozen_before_held_out_execution():
         ]
         == 0.0
     )
+    commit = payload["execution_harness"]["source_commit"]
     for record in payload["execution_harness"]["files"]:
-        assert _sha256(ROOT / record["path"]) == record["sha256"]
+        content = subprocess.check_output(
+            ["git", "show", f"{commit}:{record['path']}"], cwd=ROOT
+        )
+        assert hashlib.sha256(content).hexdigest() == record["sha256"]

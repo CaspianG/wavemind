@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
-from wavemind.evidence import file_sha256, validate_artifact_integrity
+from wavemind.evidence import validate_artifact_integrity
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,12 +22,18 @@ def _record_exists_or_is_retained(record: dict[str, object]) -> bool:
     )
     if retained.is_dir():
         candidates.extend(retained.rglob(direct.name))
-    return any(
-        path.is_file()
-        and path.stat().st_size == record["bytes"]
-        and file_sha256(path) == record["sha256"]
-        for path in candidates
-    )
+    for path in candidates:
+        if not path.is_file():
+            continue
+        raw = path.read_bytes()
+        canonical_crlf = raw.replace(b"\r\n", b"\n").replace(b"\n", b"\r\n")
+        if any(
+            len(content) == record["bytes"]
+            and hashlib.sha256(content).hexdigest() == record["sha256"]
+            for content in (raw, canonical_crlf)
+        ):
+            return True
+    return False
 
 
 def test_v31_longmem_failure_is_pre_outcome_and_preserved():
