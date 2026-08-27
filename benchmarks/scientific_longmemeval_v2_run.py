@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -80,6 +81,31 @@ def _require_ollama(endpoint: str) -> None:
         raise RuntimeError(
             f"frozen Ollama model mismatch: expected {MODEL} at {MODEL_DIGEST}"
         )
+
+
+def _install_binary_judgement_compatibility(qa_eval_metrics: Any) -> None:
+    original = qa_eval_metrics._parse_llm_binary_judgement
+    if getattr(original, "_wavemind_leading_binary_reason_compatibility", False):
+        return
+
+    def parse_with_leading_binary_reason(text: str) -> tuple[int, str]:
+        try:
+            return original(text)
+        except ValueError:
+            cleaned = qa_eval_metrics._strip_markdown_code_fence(
+                qa_eval_metrics._stringify_text(text)
+            )
+            match = re.fullmatch(
+                r"\s*([01])\s*,\s*reason\s*:\s*(\S(?:.*\S)?)\s*",
+                cleaned,
+                flags=re.IGNORECASE | re.DOTALL,
+            )
+            if match is None:
+                raise
+            return int(match.group(1)), cleaned
+
+    parse_with_leading_binary_reason._wavemind_leading_binary_reason_compatibility = True
+    qa_eval_metrics._parse_llm_binary_judgement = parse_with_leading_binary_reason
 
 
 def _arm_order(domain: str) -> tuple[str, str]:
@@ -242,8 +268,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         materialize_runtime_questions,
     )
     from evaluation import harness
+    from evaluation import qa_eval_metrics
 
     harness.NONSHARED_PARALLEL_MEMORY_TYPES.update({MEMORY_TYPE, "no_retrieval"})
+    _install_binary_judgement_compatibility(qa_eval_metrics)
     questions = load_questions(data_root)
     if len(questions) != EXPECTED_QUESTION_COUNT:
         raise RuntimeError(
