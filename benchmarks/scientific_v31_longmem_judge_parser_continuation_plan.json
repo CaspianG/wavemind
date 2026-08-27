@@ -1,0 +1,134 @@
+{
+  "schema": "wavemind.scientific_v31_longmem_judge_parser_continuation.v1",
+  "status": "preregistered_judge_parser_continuation_before_comparison_aggregate",
+  "preregistered_at": "2026-08-27",
+  "logical_run": "longmemeval_v2_small_full_v31",
+  "logical_full_run_count": 1,
+  "candidate_source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+  "failure_evidence": {
+    "path": "benchmarks/scientific_v31_longmem_infrastructure_failure_8.json",
+    "bytes": 4087,
+    "sha256": "29c6647647f8816fb6dce26a6099ea33a8cdae0078a3224c09b4f8c9394b0cd4",
+    "commit": "b259bf3204b6078b4ee4354d1401ff998db0d385",
+    "payload_sha256": "d0d571ead54b2f0d18f71e9cdba10b6df8d30b02fa994ae8d16f6f0a48e6896d",
+    "failure_type": "UnacceptedLeadingBinaryReasonFormat",
+    "completed_candidate_arm_metric_opened": false,
+    "failed_comparison_arm_aggregate_exists": false,
+    "scientific_gate_evaluated": false
+  },
+  "harness_change": {
+    "previous_commit": "0dd456e1100a6beb5e60bdf94ddf5ffa071b2965",
+    "parser_commit": "4f8959944e46d9d9cd5c3624e8e82e1f23491c53",
+    "changed_frozen_harness_files": [
+      "benchmarks/scientific_longmemeval_v2_run.py"
+    ],
+    "changed_file_count": 1,
+    "previous_file": {
+      "path": "benchmarks/scientific_longmemeval_v2_run.py",
+      "bytes": 10537,
+      "sha256": "5c2355a3f64e87d50f133cfa8db95e7a6b7f49b036069fc1c69c0893a507f12e"
+    },
+    "parser_file": {
+      "path": "benchmarks/scientific_longmemeval_v2_run.py",
+      "bytes": 11627,
+      "sha256": "dfc4cfc14710107a3a79e4f32d6e0eeedb750211b79d0f8e6a586c224b2ee453"
+    },
+    "all_parser_harness_files": [
+      {
+        "path": "benchmarks/scientific_mab_v19_final.py",
+        "bytes": 9644,
+        "sha256": "3409f4e645d2c9a37874eb1f044a98b5e5a682c30b8a1afc271d9451e124c7f8"
+      },
+      {
+        "path": "benchmarks/scientific_mab_v31_final.py",
+        "bytes": 3331,
+        "sha256": "f6d9f995f188d12889740d4ead0f1503c9f2451cebe3f393c0f97fe22668a10c"
+      },
+      {
+        "path": "benchmarks/scientific_memops_v31_final.py",
+        "bytes": 9764,
+        "sha256": "1072978bd36a6fe7524754f9d9740ae0cd6dfdb1552eae77a3648aa717ac13ba"
+      },
+      {
+        "path": "benchmarks/scientific_longmemeval_v2_backend.py",
+        "bytes": 11532,
+        "sha256": "f59733a2d26f673c0a7f532653398379ad6d90f68175ae7d4c1e855e7ef70bc6"
+      },
+      {
+        "path": "benchmarks/scientific_longmemeval_v2_backend_v31.py",
+        "bytes": 10660,
+        "sha256": "f93b0731d0f19495be3e9d4be48f837dac3fe9009d5c9401564c19ff801fff4d"
+      },
+      {
+        "path": "benchmarks/scientific_longmemeval_v2_run.py",
+        "bytes": 11627,
+        "sha256": "dfc4cfc14710107a3a79e4f32d6e0eeedb750211b79d0f8e6a586c224b2ee453"
+      },
+      {
+        "path": "benchmarks/scientific_longmemeval_v2_run_v31.py",
+        "bytes": 1460,
+        "sha256": "424b561f62a8b255ecc07f4d88a46c7156aec4da1142bbb5b7c7ce9af4049ae7"
+      }
+    ]
+  },
+  "parser_equivalence_contract": {
+    "existing_parser_always_attempted_first": true,
+    "fallback_only_after_value_error": true,
+    "fallback_full_match": "leading [01], comma, reason colon, non-empty reason",
+    "returned_label_is_exact_leading_binary": true,
+    "reason_does_not_change_binary_score": true,
+    "canonical_json_result_unchanged_in_exact_official_parser_test": true,
+    "ambiguous_unlabelled_invalid_label_empty_reason_text_still_raises": true,
+    "focused_tests_passed": 14,
+    "affected_tests_passed": 22
+  },
+  "frozen_invariants": {
+    "candidate_source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+    "protocol_digest": "bc1f895bdf8bd30027bcc17f1c3a375099c8ee442681382c56ba57fa7580793b",
+    "official_repository_sha": "2cc8c540bdb87fe6761629b585e727e1c4704520",
+    "model": "mistral:7b",
+    "evaluator_model": "mistral:7b",
+    "model_digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768,
+    "reader_max_concurrent_requests": 4,
+    "shuffle_questions_seed": 17,
+    "prompts_unchanged": true,
+    "answers_unchanged": true,
+    "models_unchanged": true,
+    "thresholds_unchanged": true,
+    "question_order_unchanged": true,
+    "binary_scoring_rule_unchanged": true,
+    "gate_unchanged": true
+  },
+  "continuation_execution": {
+    "same_output_root_required": "benchmarks/scientific_longmemeval_v31_final",
+    "same_marker_required": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/full_run_marker.json",
+      "bytes": 1460,
+      "sha256": "9872e1d94096e7c8fa0a9b4b592f64312d7902e4a74326907c765a034c7a4355"
+    },
+    "logical_full_run_count_must_remain": 1,
+    "retained_partials_before_continuation": [
+      "candidate_web_small-20260826T163942Z",
+      "candidate_web_small-20260826T173742Z",
+      "candidate_web_small-20260826T184002Z",
+      "candidate_web_small-20260826T190840Z",
+      "candidate_web_small-20260826T195850Z",
+      "candidate_web_small-20260826T203124Z",
+      "candidate_web_small-20260826T213526Z"
+    ],
+    "retained_partial_count_before_continuation": 7,
+    "failed_no_retrieval_web_partial_must_be_retained_on_restart": true,
+    "completed_candidate_web_arm_must_be_skipped": true,
+    "restart_first_incomplete_arm": "no_retrieval_web_small",
+    "parser_harness_commit_required": "4f8959944e46d9d9cd5c3624e8e82e1f23491c53",
+    "loopback_proxy_bypass_required": true,
+    "fresh_scientific_run_forbidden": true
+  },
+  "claim_boundary": "This parser continuation plan is not a benchmark outcome and authorizes no pass, 100%-pass, SOTA, or revolutionary claim.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "1915a18cddfa0b9fbecd1dcb654623b7974b6078b394b54e442a9540d280c1d7"
+  }
+}
