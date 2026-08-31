@@ -30,7 +30,7 @@ jobs:
       WAVEMIND_BENCHMARK_CLAIM_STATUS: current
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Import latest Kubernetes production evidence
         env:
@@ -113,7 +113,7 @@ jobs:
               raise SystemExit("HTTP cluster Kubernetes attestation did not pass")
           PY
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
