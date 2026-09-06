@@ -21,6 +21,8 @@ authoritative release sources.
 - Prevented Python dependency automation from raising already-compatible
   lower bounds, preserving broad library compatibility and avoiding redundant
   update pull requests.
+- Kept explicit Python dependency major boundaries under deliberate migration
+  control instead of allowing automated upper-bound widening.
 
 ## [2.14.0] - 2026-09-06
 
