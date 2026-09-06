@@ -79,3 +79,19 @@ continuity and memoization could fully explain it. Before promotion, search
 certified computation reuse, Bayesian sufficient statistics, Lipschitz action
 caching, adaptive submodularity and posterior robustness in depth. This first
 review cannot establish exhaustive novelty, and its matrix admits no breakthrough.
+
+## Follow-up after R1 (before R2)
+
+[Bayesian ACRONYM Tuning, TQC 2019](https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.TQC.2019.7)
+explicitly reuses information across nearby control settings with a Lipschitz
+assumption. This is close prior art for any broad "certified information reuse
+in quantum control" claim, although it is not the same posterior/EIG cache.
+[NIST OptBayesExpt](https://pages.nist.gov/optbayesexpt/) supplies another mature
+adaptive-design comparator. Both primary pages were read. Novelty remains
+unestablished; a fresh name cannot resolve the overlap.
+
+R1 found zero certified reuse on 3,456 decisions. Tilted-axis margins were
+at numerical zero; x/z had positive but small margins and still failed.
+R2 removes equivalent channels for both candidate and baseline and uses new
+seeds/grid/times. Its purpose is to rule out symmetry degeneracy as the sole
+explanation of R1 failure, not to reset the original failed result.
