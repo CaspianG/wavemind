@@ -60,7 +60,7 @@ multimodal = [
   "Pillow>=10",
   "opencv-python-headless>=4.10",
   "soundfile>=0.13",
-  "trimesh>=4.8",
+  "trimesh>=5.1.0",
 ]
 indexes = [
   "annoy>=1.17",
