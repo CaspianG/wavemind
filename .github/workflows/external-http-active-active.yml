@@ -39,9 +39,9 @@ jobs:
       WAVEMIND_BENCHMARK_REFRESH_PROFILE: external-http-active-active
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 

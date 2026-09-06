@@ -38,9 +38,9 @@ jobs:
             python: "3.13"
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python }}
 
@@ -66,7 +66,7 @@ jobs:
         language: [python, javascript-typescript]
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
@@ -83,15 +83,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: npm
@@ -133,7 +133,7 @@ jobs:
             --require-admitted
 
       - name: Upload exact-SHA admission evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: safe-product-admission-${{ github.sha }}
           path: |
@@ -149,11 +149,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
@@ -162,7 +162,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev,bench]"
 
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           name: safe-product-admission-${{ github.sha }}
           path: ${{ runner.temp }}/safe-product
@@ -186,7 +186,7 @@ jobs:
             --require-admitted
 
       - name: Upload exact-current Workspace Experience evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: workspace-experience-admission-${{ github.sha }}
           path: |
@@ -202,11 +202,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
@@ -215,12 +215,12 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev,bench]"
 
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           name: safe-product-admission-${{ github.sha }}
           path: ${{ runner.temp }}/safe-product
 
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           name: workspace-experience-admission-${{ github.sha }}
           path: ${{ runner.temp }}/workspace-experience
@@ -260,7 +260,7 @@ jobs:
             --require-admitted
 
       - name: Upload exact-current Evaluation Validity evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: evaluation-validity-admission-${{ github.sha }}
           path: |
