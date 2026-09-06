@@ -1,0 +1,27 @@
+{
+  "protocol_id": "adversarial-affine-stitching-r7-20260906",
+  "status": "registered_before_main_cases_generation",
+  "frozen_candidate": "lc_stitching.stitch from R6 source 90579911ad56ae2ef85e0c6f96c5c86d98cec178; no modification",
+  "base_seed": 2026090607,
+  "seed_derivation": "base_seed + 10000*block_length + 100*block_count + repeat_index; same seed across basis/particular arms",
+  "block_lengths": [2, 4, 6],
+  "block_counts": [2, 3, 5, 8],
+  "seed_repeats": 8,
+  "basis_modes": ["localized", "mixed"],
+  "particular_modes": ["all_order_three", "shifted"],
+  "records_total": 384,
+  "hard_arm_records": 96,
+  "predictions": [
+    "Every valid input produces an independently checked preserving rank-one projector and explicit CSS frame, within dimension+1 candidate maps.",
+    "Every one of the 96 localized/all-order-three hard cases has no globally good single candidate and requires exactly block_count nonempty cover pieces.",
+    "At least one overlapping unpartitioned-sum ablation fails the rank-one condition.",
+    "The non-algebra assumption control has per-site feasibility but no globally good point in its affine slice; naive stitching leaves its ambient span."
+  ],
+  "validation": "Dense per-site matrix-unit multiplication, algebra dimension and membership, trace-slice completeness, stabilizer preservation for every intermediate, final idempotence and explicit transformed CSS group rank; no solver verdict as ground truth",
+  "preflight": "One-block Bell control outside main block counts; explicit non-algebra assumption control; no main seeded case generated before freezing",
+  "wall_seconds": 600,
+  "stop_rules": ["stop on first failed invariant, preserve active input and partial outputs", "do not replace frozen R6 helper", "do not overwrite artifacts or alter hard-arm denominator after results"],
+  "statistics": "Constructed exact algebraic mechanism test, not sampled hardware or task performance; no significance, speedup, or state-of-the-art claim",
+  "resources": {"paid_calls": 0, "new_external_data": 0, "hardware_calls": 0, "new_dependencies": 0},
+  "mission_status": "active; both original gates false"
+}
