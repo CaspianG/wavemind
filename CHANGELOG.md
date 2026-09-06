@@ -18,6 +18,9 @@ authoritative release sources.
 - Constrained automated dependency proposals to supported toolchain and
   runtime lines so incompatible major migrations do not create recurring red
   pull requests.
+- Prevented Python dependency automation from raising already-compatible
+  lower bounds, preserving broad library compatibility and avoiding redundant
+  update pull requests.
 
 ## [2.14.0] - 2026-09-06
 
