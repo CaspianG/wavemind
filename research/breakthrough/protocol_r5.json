@@ -5,7 +5,8 @@
   "upstream_commit": "b5b44b05b95d1e645814ff6446235b3ae6b736d6",
   "catalog_git_blob": "98e6e12abef0c561b8c35b399c0a1b7c5834c083",
   "catalog_records": 368,
-  "order": "ascending (n, code_id), complete fixed catalog; no outcome-based selection",
+  "order": "ascending (n, original 1-based source line), complete fixed catalog; immutable line-NNNN record identity; upstream code_id is optional metadata",
+  "metadata_amendment": "Original launch at 34c81bcbfa4d992131163dfc5caf9cdaf4cc3cda failed before the receipt, output creation, matrix construction or solver call: 66 records omit code_id. Preserve this failure, use source-line identity and freeze the amendment before any catalog computation. Hypotheses, corpus, method and resource bounds unchanged.",
   "predictions": {
     "practical_coverage": "At least 95 percent of all 368 records obtain a verified full-LC yes/no certificate within the registered sweep budget.",
     "hidden_css": "At least one record whose upstream lc_any is false admits a full-LC CSS witness. Record rejection if none is found; unresolved records prevent universal rejection."
@@ -16,7 +17,7 @@
     "independent direct full 6^n enumeration on named and seeded small controls in preflight"
   ],
   "validation": [
-    "upstream Git blob equals snapshotted bytes and all 368 unique code IDs present",
+    "upstream Git blob equals snapshotted bytes and all 368 immutable source-line record keys present",
     "two independent matrix constructors agree; commutation and n-k rank match catalog",
     "every positive includes local gates checked with a separate dense group-rank implementation",
     "every negative includes valid necessary constraints independently checked to be impossible",

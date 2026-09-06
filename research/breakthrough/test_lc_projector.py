@@ -6,6 +6,7 @@ import pytest
 
 from lc_certificate_check import brute_lc_css, dense_pbb, dense_rank, unpack, verify_certificate
 from lc_projector import CLIFFORDS, nullspace, pbb_rows, solve, transform
+from experiment_r5 import ordered_catalog
 
 
 def paulis(words):
@@ -87,3 +88,9 @@ def test_invalid_and_tampered_certificates_rejected():
 def test_resource_limit_does_not_claim_impossibility():
     result = solve([], 7, max_dimension=0)
     assert result["status"] == "unresolved" and result["reason"] == "affine_dimension_bound"
+
+
+def test_missing_catalog_ids_keep_stable_source_identity():
+    rows = ordered_catalog([{"n": 6, "code_id": "named"}, {"n": 4}, {"n": 4}])
+    assert [r["record_key"] for r in rows] == ["line-0002", "line-0003", "line-0001"]
+    assert "code_id" not in rows[0] and rows[-1]["code_id"] == "named"

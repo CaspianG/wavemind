@@ -20,14 +20,20 @@ SOURCES = ["protocol_r5.json", "LC_PROJECTOR.md", "lc_projector.py", "lc_certifi
            "external/qcode_catalog.jsonl", "external/qcode_source.json", "external/QCODE_LICENSE.txt"]
 
 
+def ordered_catalog(catalog):
+    # Optional upstream IDs are not record identity. Preserve immutable source lines.
+    return sorted(({**record, "source_line": i, "record_key": f"line-{i:04d}"}
+                   for i, record in enumerate(catalog, start=1)), key=lambda r: (r["n"], r["source_line"]))
+
+
 def run(output):
     protocol = json.loads((HERE / "protocol_r5.json").read_text())
     catalog_bytes = (HERE / "external/qcode_catalog.jsonl").read_bytes()
     blob = hashlib.sha1(b"blob " + str(len(catalog_bytes)).encode() + b"\0" + catalog_bytes).hexdigest()
     assert blob == protocol["catalog_git_blob"]
     catalog = [json.loads(line) for line in catalog_bytes.decode().splitlines()]
-    assert len(catalog) == len({r["code_id"] for r in catalog}) == protocol["catalog_records"]
-    catalog.sort(key=lambda r: (r["n"], r["code_id"]))
+    assert len(catalog) == protocol["catalog_records"]
+    catalog = ordered_catalog(catalog)
     receipt = {"source_sha": source_identity(), "started_unix_ns": time.time_ns(),
                "hashes": {f: digest(HERE / f) for f in SOURCES}, "python": platform.python_version(),
                "numpy": np.__version__, "platform": platform.platform(),
@@ -58,7 +64,8 @@ def run(output):
                     assert candidate["status"] != "not_lc_css"
                 if record["lc_any"]:
                     assert candidate["status"] != "not_lc_css", "contradicts published positive"
-                row = {"code_id": record["code_id"], "n": n, "k": record["k"],
+                row = {"record_key": record["record_key"], "source_line": record["source_line"],
+                       "upstream_code_id": record.get("code_id"), "n": n, "k": record["k"],
                        "upstream_lc_any": record["lc_any"], "candidate": candidate,
                        "independent_check": checked, "uniform_baseline": baseline,
                        "total_seconds": time.perf_counter() - tick}
@@ -70,7 +77,7 @@ def run(output):
                                       "counts": dict(Counter(r["candidate"]["status"] for r in results))}), flush=True)
         counts = Counter(r["candidate"]["status"] for r in results)
         certified = counts["css_equivalent"] + counts["not_lc_css"]
-        hidden = [r["code_id"] for r in results if not r["upstream_lc_any"]
+        hidden = [r["record_key"] for r in results if not r["upstream_lc_any"]
                   and r["candidate"]["status"] == "css_equivalent"]
         complete = len(results) == len(catalog) and counts["unresolved"] == 0
         summary = {**receipt, "status": "complete_catalog_audit" if complete else "partial_catalog_audit",
