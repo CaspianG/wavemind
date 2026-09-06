@@ -86,7 +86,7 @@ otel = [
   "opentelemetry-instrumentation-fastapi>=0.46b0",
 ]
 bench = [
-  "chromadb>=1.0",
+  "chromadb>=1.5.9",
   "qdrant-client>=1.9",
   "zep-cloud>=3.23",
   "pyarrow>=15",
