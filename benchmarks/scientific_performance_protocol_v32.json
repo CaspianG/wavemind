@@ -1,0 +1,101 @@
+{
+  "schema": "wavemind.scientific_performance_protocol.v32",
+  "protocol_id": "immutable-disk-index-performance-2026-08-27-v32",
+  "status": "preregistered_before_first_v32_workload_execution",
+  "preregistered_at": "2026-08-27",
+  "candidate": {
+    "id": "immutable-disk-backed-reconciliation-index-v32",
+    "source_sha": "d33163840ee2871f66cac3c585853aa031eb79ab",
+    "implementation": "benchmarks/scientific_frozen_lexical_index.py",
+    "backend_prototype": "benchmarks/scientific_longmemeval_v2_backend_indexed_prototype.py",
+    "semantics": "Exact v31 lexical, phrase, tombstone, cutover, tie-break, and budget-fit semantics with immutable SQLite integer postings and a frozen definitions snapshot.",
+    "post_outcome_changes_forbidden": true
+  },
+  "allowed_diagnostic_evidence": {
+    "path": "benchmarks/scientific_frozen_lexical_index_probe_results.json",
+    "payload_sha256": "68146bc05b777ced9b6b02aaf4f2be6c45c578a2b4accb23fa21d6715c73f576",
+    "evidence_class": "synthetic_performance_probe_not_admission",
+    "held_out_benchmark_rows_used": false
+  },
+  "firewall": {
+    "allowed": [
+      "deterministically generated synthetic definitions and queries described below",
+      "source-level complexity analysis",
+      "the bound synthetic diagnostic artifact"
+    ],
+    "forbidden": [
+      "all v31 LongMemEval per-question prompts, responses, scores, categories, and metadata",
+      "all v31 MAB and MemOps final rows",
+      "changing ranking semantics from the exact reference selector",
+      "relaxing the 1000 ms p95 budget",
+      "reusing a failed v32 workload as a fresh run"
+    ]
+  },
+  "workloads": {
+    "development": {
+      "generator": "deterministic-modular-synthetic-v2",
+      "definition_count": 12000,
+      "query_start": 100,
+      "query_count": 60,
+      "cluster_modulus": 101,
+      "route_modulus": 47,
+      "state_modulus": 31,
+      "account_modulus": 223,
+      "filler_token_count": 48,
+      "tombstone_period": 127,
+      "executed_at_preregistration": false
+    },
+    "validation": {
+      "generator": "deterministic-modular-synthetic-v2",
+      "definition_count": 15000,
+      "query_start": 1000,
+      "query_count": 80,
+      "cluster_modulus": 103,
+      "route_modulus": 53,
+      "state_modulus": 37,
+      "account_modulus": 227,
+      "filler_token_count": 56,
+      "tombstone_period": 131,
+      "executed_at_preregistration": false
+    }
+  },
+  "frozen_execution": {
+    "repeats": 3,
+    "token_budget": 8192,
+    "latency_budget_ms": 1000.0,
+    "operation_aware": true,
+    "query_phrase_aware": true,
+    "target_scoped_tombstones": true,
+    "relevant_tombstones_first": true,
+    "tombstone_cutover": true,
+    "reference_first_within_each_repeat": true,
+    "same_process_reference_and_candidate": true,
+    "raw_duration_rows_required": true,
+    "source_hashes_required": true
+  },
+  "frozen_gates": {
+    "exact_selection_equality_every_query_every_repeat": true,
+    "indexed_p95_seconds_maximum_every_repeat": 1.0,
+    "p95_speedup_minimum_every_repeat": 5.0,
+    "build_seconds_maximum": 5.0,
+    "index_bytes_per_definition_maximum": 2048,
+    "retains_document_content_in_python": false,
+    "retains_per_document_token_sets_in_python": false,
+    "required_repeats": 3
+  },
+  "stage_order": [
+    "development",
+    "validation"
+  ],
+  "stop_on_first_failure": true,
+  "terminal_rule": "A failed stage is immutable. The candidate, workload, repeat count, and thresholds cannot be changed, and the later stage remains unopened.",
+  "relationship_to_v31": {
+    "v31_status": "failed_admission_v31",
+    "v31_outcome_path": "benchmarks/scientific_v31_admission_outcome.json",
+    "v31_rows_reusable_for_tuning": false,
+    "v31_status_may_be_rewritten": false,
+    "v32_scope": "performance development and validation only"
+  },
+  "claim_boundary": "A full v32 pass proves exact selector equivalence and synthetic performance reproducibility only. It is not LongMemEval admission and does not permit 100%-pass, SOTA, production, universal, or revolutionary claims.",
+  "protocol_digest": "bf5eca063f423df38a0b8bcf9bf79ae6889b6867236e50abef7a288d5d287ebf"
+}

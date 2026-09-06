@@ -1,0 +1,81 @@
+{
+  "schema": "wavemind.scientific_memops_v16_opened_diagnostic.v1",
+  "phase": "opened-development-diagnostic",
+  "admission_eligible": false,
+  "status": "diagnostic_only",
+  "source_sha": "6c42b63d075a6019b84779b99f6a0467e19a2717",
+  "protocol_digest": "eb768a3140a895a64b4de1ec903e692892cbfad56b52c49ffa7b3a2d29537ba3",
+  "candidate_id": "task-aware-causal-discrimination-agent-v16-prototype",
+  "family": "memops_longitudinal_operation",
+  "evaluation_setting": "longitudinal_operation",
+  "run_number": 1,
+  "official_upstream": {
+    "repository": "MemTensor/MemOps",
+    "sha": "312af65e2c7b6d1b70f062ffa8b4cde32aaf6f35",
+    "runners": [
+      "5-test_operation_metrics.py:run_gpt_rag",
+      "5.5-evaluate_operation_metrics.py:evaluate_entry"
+    ],
+    "upstream_modified": false
+  },
+  "model": {
+    "answer": "mistral:7b",
+    "judge": "mistral:7b",
+    "digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768
+  },
+  "subjects": [
+    "B06",
+    "B11",
+    "B14",
+    "B25",
+    "B26"
+  ],
+  "case_ids": [
+    "B06_reflect_q8",
+    "B11_remember_q8",
+    "B14_trajectory_ops_q10",
+    "B25_forget_q8",
+    "B26_reflect_q8"
+  ],
+  "question_selection": "causal-discrimination-v1",
+  "case_count": 5,
+  "intervention_coverage": 1.0,
+  "statistics": {
+    "paired": true,
+    "cluster_key": "subject_id",
+    "cluster_count": 5,
+    "row_count": 5,
+    "repeats": 2000,
+    "seed": 17,
+    "confidence_level": 0.95,
+    "mean_difference": 0.2,
+    "ci_lower": 0.0,
+    "ci_upper": 0.6
+  },
+  "production_case_count": 0,
+  "promoted_memory_ids": [],
+  "false_verified_promotions": 0,
+  "gate_checks": {
+    "minimum_independent_subject_clusters": true,
+    "paired_subject_cluster_bootstrap_ci_lower_strictly_positive": false,
+    "mean_non_negative": true,
+    "minimum_intervention_coverage": true,
+    "no_production_cases": true,
+    "no_promoted_memories": true
+  },
+  "diagnostic_gate_pass": false,
+  "gate_pass": false,
+  "final_split_touched": false,
+  "raw_output": {
+    "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\work\\wavemind-scientific-core\\benchmarks\\scientific_memops_v16_opened_diagnostic\\raw_pairs.jsonl",
+    "bytes": 112482,
+    "sha256": "d30a3370630b84f549f7cc5d1873e81bcb4842ec01b7ae485b94b99596c0a89c"
+  },
+  "claim_boundary": "Opened development evidence; diagnostic only, never a gate.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "0c84c1a8dd03baa179a34fb2310ea42d988c4c779a7965b60159f15878018f97"
+  }
+}

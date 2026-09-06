@@ -1,0 +1,14 @@
+* text=auto eol=lf
+benchmarks/scientific_development_evidence_results.json text eol=crlf
+benchmarks/scientific_memoryagentbench_v2_accurate_pilot_results.json text eol=crlf
+benchmarks/scientific_mab_v6_validation_results.json text eol=crlf
+benchmarks/scientific_mab_v6_validation_raw.jsonl text eol=crlf
+benchmarks/scientific_mab_v7_development_run1_results.json text eol=crlf
+benchmarks/scientific_mab_v7_development_run1_raw.jsonl text eol=crlf
+benchmarks/scientific_mab_v8_development_run1_results.json text eol=crlf
+benchmarks/scientific_mab_v8_development_run1_raw.jsonl text eol=crlf
+benchmarks/scientific_mab_v9_development_run1_results.json text eol=crlf
+benchmarks/scientific_mab_v9_development_run1_raw.jsonl text eol=crlf
+benchmarks/scientific_memops_v10_*/raw_pairs.jsonl text eol=crlf
+benchmarks/scientific_memops_v10_*_results.json text eol=crlf
+scientific-memory-admission/manifest.json text eol=crlf

@@ -1,0 +1,24 @@
+{
+  "schema": "wavemind.scientific_v13_candidate_freeze.v1",
+  "status": "frozen_before_fresh_development",
+  "candidate_id": "official-summarization-evidence-contracted-agent-v13",
+  "candidate_source_sha": "10ff3779240b87d1c2865cf451e491ed76abdca2",
+  "protocol_digest": "da5273cd618e9d6207f47ce6841cb300c914d90949a45ea0ae7df4e20aa8db8d",
+  "files": [
+    {"path": "wavemind/scientific_answer_transducer.py", "sha256": "17d7b2a496539dd4089910633b5583035f83cedec6ab130ce6c08bbc0ba3ef09"},
+    {"path": "wavemind/scientific_runtime.py", "sha256": "23872fb64138447ee19465a2d699759e728813686e9f888f2eb8415e9d6d51de"},
+    {"path": "wavemind/scientific_memops.py", "sha256": "95ceff049766e1f3d2ca1954e39380fc5169b57ce19817db85a73bc71ba75bd2"},
+    {"path": "wavemind/scientific_memoryagentbench.py", "sha256": "cd9575cebc1b89cffb092497dff14e11b846f572de2e0e5a60fb22142a6ec600"},
+    {"path": "benchmarks/scientific_memory_protocol_v13.json", "sha256": "df07b0a8e37b3ca608542c41c28c974105bd716d3a11b5a69edf2993f7e301a8"},
+    {"path": "benchmarks/scientific_mab_v13_development.py", "sha256": "31c8e4dc081b2c7877b60c65e8f8ef970c17ad79e252e51ec2a3d23cdb260b5b"},
+    {"path": "benchmarks/scientific_memops_v13_development.py", "sha256": "cb7b3b5532a54b942c7ec7cfdcc850ac4209ad14bd418e92df701b4978d14bfe"}
+  ],
+  "verification_before_freeze": {"passed": 130, "failed": 0, "deselected": 1134},
+  "fresh_v13_development_runs_executed": 0,
+  "post_outcome_source_changes_forbidden": true,
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "8b13af6c29a8d3e04ee611ec1f85979cc895a366d897fa44d0f024c2bb68b5ce"
+  }
+}

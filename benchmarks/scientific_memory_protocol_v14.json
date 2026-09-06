@@ -1,0 +1,141 @@
+{
+  "schema": "wavemind.scientific_memory_protocol.v14",
+  "protocol_id": "scientific-core-task-aware-hierarchical-coverage-2026-08-25-v14",
+  "status": "preregistered",
+  "preregistered_at": "2026-08-25",
+  "supersedes_protocol_digest": "da5273cd618e9d6207f47ce6841cb300c914d90949a45ea0ae7df4e20aa8db8d",
+  "immutable_v13_evidence": {
+    "status": "failed_development_gate_v13",
+    "outcome_path": "benchmarks/scientific_v13_development_outcome.json",
+    "outcome_file_sha256": "0dfd7d84ef98054ad9dfadba17d602a9f82279aa72091e8b011c5308f5c8ed8e",
+    "outcome_payload_sha256": "f241899ce0ef8c70788024b2d51f07079e047d0da828070e10959b05b4dd30a0",
+    "opened_contexts_may_be_reused_for_official_gate": false,
+    "thresholds_may_be_relaxed": false
+  },
+  "opened_diagnostic_evidence": {
+    "status": "promising_on_opened_development_diagnostic_only",
+    "outcome_path": "benchmarks/scientific_v14_hierarchical_prototype_diagnostic_outcome.json",
+    "outcome_file_sha256": "39900796c46228f9e0e2426984380ebd2d027eb193fc74ab882c442ec5c83a04",
+    "outcome_payload_sha256": "508853ad6c5ef9fd79e2907ace07c6cfa6d17185c2a2e7734a85e069dac699bd",
+    "observed_cases": 3,
+    "official_gate_decision": false
+  },
+  "candidate": {
+    "id": "task-aware-sequence-coverage-agent-v14",
+    "memory_algorithm": "For pinned long-form summarization source metadata only: compile blind source-ordered slices; choose 28 deterministic evenly spaced slices including both endpoints under the unchanged memory budget; derive one gold-free chronological plot plan; generate one draft; if and only if the draft has fewer than 700 Unicode word tokens, perform one bounded evidence-only length rewrite. All other sources retain the v11 evidence-contracted query path.",
+    "hypothesis": "Global source coverage plus a chronological intermediate plot representation and task-requested length compliance yields a strictly positive paired official ROUGE-L recall lower confidence bound over no-memory control without harming the independent MemOps operation family.",
+    "source_routing": {
+      "infbench_sum_eng_shots2": "task-aware-sequence-coverage-and-hierarchical-long-form-generation",
+      "all_other_sources": "evidence-contracted-query-agent-v11"
+    },
+    "official_primary_metric_routing": {
+      "detective_qa": "exact_match",
+      "recsys_*": "recsys_recall@10",
+      "ruler_*": "ruler_recall",
+      "infbench_sum_eng_shots2": "rougeL_recall",
+      "all_other_sources": "substring_exact_match"
+    },
+    "routing_inputs": "Pinned official source/sub-dataset name and the explicit task text only; output, gold, metric values, split, case outcome, and answer fields are forbidden.",
+    "frozen_before_first_v14_outcome": true
+  },
+  "frozen_parameters": {
+    "seed": 17,
+    "bootstrap_repeats": 2000,
+    "confidence_level": 0.95,
+    "token_budget": 8192,
+    "latency_budget_ms": 1000.0,
+    "top_k_context": 10,
+    "sequence_coverage_points": 28,
+    "sequence_coverage_includes_first_and_last": true,
+    "plot_plan_max_tokens": 800,
+    "draft_word_rewrite_threshold": 700,
+    "maximum_length_rewrites": 1,
+    "summarization_generation_max_tokens": 1200,
+    "maximum_treatment_generation_calls": 3,
+    "answer_model": "mistral:7b",
+    "judge_model": "mistral:7b",
+    "model_digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768,
+    "python_utf8_mode": true,
+    "recsys_entity_mapping_sha256": "63353aca481bc9558b502f91cb98f6fa26438796fdd7e0bc06b5a1532126e8b5"
+  },
+  "development_firewall": {
+    "allowed": "Only the listed fresh MAB development contexts and still-untouched MemOps development subjects.",
+    "forbidden": [
+      "all MAB contexts opened through the v14 prototype diagnostics",
+      "all MAB validation and final units",
+      "all duplicate context_sha256 values of opened units",
+      "all MemOps validation and final subjects",
+      "all LongMemEval-V2 examples"
+    ]
+  },
+  "frozen_development_gate": {
+    "families": {
+      "memoryagentbench_summarization": {
+        "unit_ids": [
+          "Long_Range_Understanding:0047:24036473611dfb3b",
+          "Long_Range_Understanding:0048:8b4e980619ddd48a",
+          "Long_Range_Understanding:0049:5828b6339183116b",
+          "Long_Range_Understanding:0051:0bec916936a55899",
+          "Long_Range_Understanding:0054:2f2d0e3b9a78ee8c",
+          "Long_Range_Understanding:0056:8d802a1d4dfbf5f3",
+          "Long_Range_Understanding:0057:d0925847758b4895",
+          "Long_Range_Understanding:0058:b5ce958a6db77979",
+          "Long_Range_Understanding:0059:961cc874530c4d0c",
+          "Long_Range_Understanding:0060:0500cf617d8b5523"
+        ],
+        "selection": "First ten development rows after the maximum v13 diagnostic row, excluding every opened unit, every opened context_sha256 duplicate, validation units, and all frozen final reservations.",
+        "required_source": "infbench_sum_eng_shots2",
+        "cluster": "whole context_sha256",
+        "queries_per_context": 1
+      },
+      "memops_longitudinal_operation": {
+        "subjects": ["A04", "A06", "A07", "A13", "A14"],
+        "evaluation_setting": "longitudinal_operation",
+        "questions_per_operation_file": 1,
+        "cluster": "subject_id",
+        "previously_opened": false
+      }
+    },
+    "required_reproducible_runs": 3,
+    "required_independent_families": 2,
+    "minimum_independent_clusters_per_family": 5,
+    "paired_cluster_bootstrap_ci_lower_strictly_greater_than": 0.0,
+    "minimum_intervention_coverage": 0.8,
+    "all_family_means_non_negative": true,
+    "false_verified_promotions_maximum": 0,
+    "production_case_count_maximum": 0,
+    "raw_per_case_evidence_required": true,
+    "stop_on_first_failed_required_run": true
+  },
+  "frozen_admission": {
+    "memoryagentbench_fresh_final_unit_ids": [
+      "Accurate_Retrieval:0010:ec65b7cb50d7280b",
+      "Accurate_Retrieval:0017:61ec3a9b2a2e3e8d",
+      "Accurate_Retrieval:0019:c2e1809c93430d92",
+      "Conflict_Resolution:0003:9c8ce1ed911d25a3",
+      "Long_Range_Understanding:0010:5f579da48d431ff2",
+      "Long_Range_Understanding:0011:b721d0a06ba3ad39",
+      "Long_Range_Understanding:0017:e0c3f4d1eab833c9",
+      "Long_Range_Understanding:0028:1f0d367470ebb847",
+      "Long_Range_Understanding:0034:3e3a1a2dbd3bc870",
+      "Long_Range_Understanding:0052:cb1104516284ee52"
+    ],
+    "memops_final_subjects": ["A05", "A11", "A20", "B03", "B04"],
+    "longmemeval_v2_dataset_revision": "f152293e235517d504809563c833d7190b8c713b",
+    "longmemeval_v2_tier": "small",
+    "longmemeval_v2_question_count": 451,
+    "maximum_longmemeval_v2_logical_full_runs": 1,
+    "independent_families_with_positive_uplift_lcb": 2,
+    "longmemeval_v2_uplift_minimum": 0.01,
+    "longmemeval_v2_improved_categories_minimum": 4,
+    "repeated_error_reduction_minimum": 0.5,
+    "stale_or_contradiction_error_rate_maximum": 0.02,
+    "context_reduction_vs_full_context_minimum": 0.3,
+    "runtime_p95_must_be_within_frozen_budget": true,
+    "ablation_required_for_every_improvement": true
+  },
+  "terminal_rule": "Any failed gate is retained; thresholds cannot be relaxed and opened evidence cannot be reused for tuning.",
+  "claim_boundary": "Only full exact-SHA admission permits a bounded claim; 100%-pass, SOTA, universal, production, and revolutionary claims remain forbidden without separate evidence.",
+  "protocol_digest": "e8de1b5a67e790a6bc45dd2b0802b76ccbe60dafcbea7a61c59762fd7f9fafe3"
+}

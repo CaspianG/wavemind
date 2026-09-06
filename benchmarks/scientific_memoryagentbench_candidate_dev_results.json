@@ -1,0 +1,74 @@
+{
+  "schema": "wavemind.memoryagentbench_candidate_development.v1",
+  "phase": "bounded-development",
+  "admission_eligible": false,
+  "reason_not_admission_eligible": "single development context, local Ollama answer transport, and shadow-only scientific candidate evaluation",
+  "source_sha": "b8dfbf7b535907aa4b6699d6f62d25bf6177bfcd",
+  "protocol_digest": "489d3ff6fca733340b65b26c52ccb5533b19ad14fef66b1d2d912691dac22d59",
+  "official_upstream": {
+    "repository": "HUST-AI-HYZ/MemoryAgentBench",
+    "sha": "fe1735de8cf8b9908e1e3d3b5612afc815698062",
+    "scorer": "utils.eval_other_utils.metrics_summarization",
+    "upstream_modified": false
+  },
+  "dataset": {
+    "repository": "ai-hyz/MemoryAgentBench",
+    "revision": "7ea066982b140a19337e17e60d45d4076e042faf",
+    "root": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\upstreams\\memory-agent-bench"
+  },
+  "candidate_id": "causal-utility-controller-v1",
+  "control_id": "no-memory",
+  "model": {
+    "id": "mistral:7b",
+    "digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768
+  },
+  "transport": "ollama-native-api/local-development-only",
+  "token_budget": 8192,
+  "gold_fields_exposed_to_answer_agent": [],
+  "split_unit_ids": [
+    "Conflict_Resolution:0002:e2789821b46e6626"
+  ],
+  "case_ids": [
+    "Conflict_Resolution:0002:e2789821b46e6626:q0000",
+    "Conflict_Resolution:0002:e2789821b46e6626:q0001",
+    "Conflict_Resolution:0002:e2789821b46e6626:q0002"
+  ],
+  "case_count": 3,
+  "validation_split_touched": false,
+  "final_split_touched": false,
+  "paired_effect": {
+    "metric": "substring_exact_match",
+    "values": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "mean": 0.0,
+    "positive_count": 0,
+    "zero_count": 3,
+    "negative_count": 0
+  },
+  "verified_receipt_count": 0,
+  "production_case_count": 0,
+  "selected_memory_ids": [],
+  "promoted_memory_ids": [],
+  "false_verified_promotions": 0,
+  "failed_attempts_retained": [
+    {
+      "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\work\\wavemind-scientific-core\\benchmarks\\scientific_memoryagentbench_candidate_failed_attempts.jsonl",
+      "bytes": 767,
+      "sha256": "0c24600721f85722d68257f0c1b59803a3a904ecf756f7aa87a56298533142f9"
+    }
+  ],
+  "raw_results": {
+    "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\work\\wavemind-scientific-core\\benchmarks\\scientific_memoryagentbench_candidate_dev_raw.jsonl",
+    "bytes": 10618,
+    "sha256": "b4d4fb3be74b54214e49a21f40072394e5ac852ea113885b6fea5dc029c5ce02"
+  },
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "6832a2cfd93adc5a06a7f58e549fedcd3a7db9491ecb67c8c327152057887edf"
+  }
+}

@@ -1,0 +1,120 @@
+{
+  "schema": "wavemind.scientific_v31_longmem_infrastructure_failure.v5",
+  "status": "safety_aborted_before_outcomes",
+  "logical_run": "longmemeval_v2_small_full_v31",
+  "logical_full_run_count": 1,
+  "infrastructure_failure_sequence": 5,
+  "candidate_source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+  "streaming_harness_commit": "404c6b127e580d8531176d9e79cd1782bbacc79b",
+  "streaming_continuation_plan_commit": "878b650c9eb7aefb76b23aefaecf362676e57f50",
+  "failure": {
+    "stage": "candidate_web_small_official_context_processor_initialization",
+    "type": "MissingOfficialTorchvisionDependency",
+    "processor_error": {
+      "type": "ImportError",
+      "message": "Qwen3VLVideoProcessor requires the Torchvision library but it was not found in your environment. Check out the instructions on the\ninstallation page: https://pytorch.org/get-started/locally/ and follow the ones that match your environment.\nPlease note that you may need to restart your runtime after installation.",
+      "seconds_until_error": 11.780314,
+      "private_gib_after_error": 1.301479
+    },
+    "causal_diagnosis": "The exact streaming recall and chain validation complete below one GiB in the isolated phase probe. The official Qwen3.5 AutoProcessor then imports Qwen3VLVideoProcessor, which requires Torchvision. Four prompt workers concurrently attempted this missing initialization, creating the observed memory growth.",
+    "operator_interrupt_sent": true,
+    "candidate_or_threshold_failure": false,
+    "scientific_gate_evaluated": false
+  },
+  "phase_probe": {
+    "question_sha256": "bad0da135416fce5866cdee4a857a22db1e3e1a08628b80d3efe1458ff696ca7",
+    "question_chars": 214,
+    "question_has_image": false,
+    "runtime_open_seconds": 2.726382,
+    "optimized_recall_seconds": 10.715514,
+    "context_items": 15,
+    "context_chars": 32364,
+    "context_estimated_tokens": 8095,
+    "chain_validation_seconds": 1.761284,
+    "chain_errors": []
+  },
+  "full_run_resource_telemetry": {
+    "samples": [
+      {
+        "elapsed_minutes": 1.71,
+        "private_gib": 3.542
+      },
+      {
+        "elapsed_minutes": 4.53,
+        "private_gib": 5.622
+      },
+      {
+        "elapsed_minutes": 11.06,
+        "private_gib": 9.721
+      }
+    ],
+    "growth_plateau_observed": false,
+    "aborted_to_prevent_repeated_system_oom": true
+  },
+  "official_dependency_evidence": {
+    "pyproject": {
+      "repository_relative_path": "pyproject.toml",
+      "bytes": 670,
+      "sha256": "efd5a1e217e946ad48723381e956bb37c09f9f18c5178dcfafd1dd39076d36d0"
+    },
+    "requirements_torch": {
+      "repository_relative_path": "requirements-torch.txt",
+      "bytes": 105,
+      "sha256": "1ebd8c6e807e27296a732fbebc8adef8b8d950b18f3e45f289a6f5091e8c6f2e"
+    },
+    "torchvision_declared": true,
+    "official_historical_torch_pin": "2.6.0+cu124",
+    "official_historical_torchvision_pin": "0.21.0+cu124",
+    "installed_torch_version": "2.13.0+cpu",
+    "installed_torchvision_at_failure": false,
+    "dry_run_compatible_torchvision": "0.28.0",
+    "dry_run_packages_to_install": 1,
+    "dry_run_existing_torch_change": false
+  },
+  "observed_state": {
+    "completed_official_arms": [],
+    "completed_prompt_rows": 0,
+    "answers_generated": false,
+    "outcome_scores_opened": false,
+    "per_question_files": 0,
+    "aggregated_metrics_files": 0,
+    "marker_completed": false,
+    "marker": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/full_run_marker.json",
+      "bytes": 1460,
+      "sha256": "9872e1d94096e7c8fa0a9b4b592f64312d7902e4a74326907c765a034c7a4355"
+    },
+    "run_args": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/candidate_web_small/run_args.json",
+      "bytes": 1873,
+      "sha256": "44bb5ac95c367a9dc222cde160c01dffd6ab2e22d8fb697fbe23c8fbb903c26c"
+    },
+    "console_log": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/continuation5_console.log",
+      "bytes": 575,
+      "sha256": "bb67760cbe782adc6405d4b4f6a6f017c593b19b694d93bc9041c27249798a91"
+    }
+  },
+  "frozen_execution_parameters": {
+    "model": "mistral:7b",
+    "evaluator_model": "mistral:7b",
+    "prompt_build_max_workers": 4,
+    "reader_max_concurrent_requests": 4,
+    "shuffle_questions_seed": 17
+  },
+  "continuation_policy": {
+    "same_logical_run_required": true,
+    "partial_retained_verbatim_required": true,
+    "candidate_unchanged_required": true,
+    "harness_unchanged_required": true,
+    "prompts_models_thresholds_workers_unchanged_required": true,
+    "permitted_environment_change": "Install only torchvision 0.28.0, the resolver-compatible form of the official declared dependency, without changing Torch.",
+    "attempts_count_as_scientific_runs": 1
+  },
+  "claim_boundary": "This dependency failure and phase probe contain no answer or score and authorize no scientific pass or revolutionary claim.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "18131d57871facdfb29c67600b28523f48493412fadba28050c37110a1643781"
+  }
+}

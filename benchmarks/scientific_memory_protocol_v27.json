@@ -1,0 +1,231 @@
+{
+  "schema": "wavemind.scientific_memory_protocol.v27",
+  "protocol_id": "scientific-core-operation-adaptive-memory-2026-08-26-v27",
+  "status": "preregistered",
+  "preregistered_at": "2026-08-26",
+  "supersedes_protocol_digest": "02b458cd3c4da6b575b2ab6f088836f5d16a3f4a1cb662e8573fdcb555aeaf4e",
+  "candidate": {
+    "id": "operation-adaptive-memory-agent-v27",
+    "memory_algorithm": "Route official MemOps probes using operation_type only: Update to OperationApplication with target-scoped retrieval; TrajectoryOps to OperationTrace with operation-only chronological coverage; Forget, Reflect, and Remember to CandidateDisambiguation with query-option-grounded target-scoped retrieval. MAB remains the frozen v19/v14 task-aware path.",
+    "hypothesis": "No-memory score saturation is operation-dependent. A gold-blind operation router should preserve perfect treatment accuracy while exposing causal memory dependence across enough subject clusters to yield a strictly positive lower confidence bound.",
+    "routing_inputs": "Pinned source name, official operation_type, evaluation_type, question_id, operation-file name, operation dialogue, candidate options, and explicit task text only; output, gold, expected answer, metric values, split, and case outcome are forbidden.",
+    "frozen_before_first_v27_outcome": true
+  },
+  "frozen_parameters": {
+    "seed": 17,
+    "bootstrap_repeats": 2000,
+    "confidence_level": 0.95,
+    "token_budget": 8192,
+    "latency_budget_ms": 1000.0,
+    "top_k_context": 10,
+    "sequence_coverage_points": 28,
+    "sequence_coverage_includes_first_and_last": true,
+    "plot_plan_max_tokens": 800,
+    "draft_word_rewrite_threshold": 700,
+    "maximum_length_rewrites": 1,
+    "summarization_generation_max_tokens": 1200,
+    "maximum_treatment_generation_calls": 3,
+    "memops_question_selection": "operation-adaptive-v7",
+    "memops_target_scoped_tombstones": true,
+    "memops_complete_dialogue_registration": true,
+    "memops_trajectory_sequence_coverage": false,
+    "memops_trajectory_operation_only_sequence_coverage": false,
+    "memops_update_sequence_coverage": false,
+    "causal_noop_fallback": true,
+    "answer_model": "mistral:7b",
+    "judge_model": "mistral:7b",
+    "model_digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768,
+    "python_utf8_mode": true,
+    "recsys_entity_mapping_sha256": "63353aca481bc9558b502f91cb98f6fa26438796fdd7e0bc06b5a1532126e8b5",
+    "memops_operation_trace_sequence_coverage": true,
+    "memops_operation_trace_operation_only_sequence_coverage": true,
+    "memops_candidate_disambiguation_query_options": true,
+    "memops_candidate_disambiguation_sequence_coverage": false,
+    "memops_candidate_disambiguation_operation_only_sequence_coverage": false
+  },
+  "development_firewall": {
+    "allowed": "Only the ten listed never-executed MAB development contexts and the manifest-exhaustive files of five listed never-opened MemOps development subjects.",
+    "forbidden": [
+      "all MAB contexts or duplicate context_sha256 values opened through v26",
+      "all MAB validation and final units",
+      "all MemOps subjects opened through v26 development or diagnostics",
+      "all MemOps validation and final subjects",
+      "all LongMemEval-V2 examples"
+    ]
+  },
+  "frozen_development_gate": {
+    "families": {
+      "memoryagentbench_summarization": {
+        "unit_ids": [
+          "Long_Range_Understanding:0079:8d12067c93f36205",
+          "Long_Range_Understanding:0080:1e3c9386f6389d19",
+          "Long_Range_Understanding:0081:b448d04712c3b0ff",
+          "Long_Range_Understanding:0084:c0f8cf56d00012e9",
+          "Long_Range_Understanding:0086:99d769c182f259fd",
+          "Long_Range_Understanding:0087:cf4482da4014b92c",
+          "Long_Range_Understanding:0092:4221d0632c354128",
+          "Long_Range_Understanding:0093:e9669039f2684bf4",
+          "Long_Range_Understanding:0097:1ebe843e50d22cae",
+          "Long_Range_Understanding:0099:fe7d09b9fd9f2c33"
+        ],
+        "selection": "Ten frozen v20 development rows never executed because v20 stopped at its first MemOps fail-fast gate.",
+        "required_source": "infbench_sum_eng_shots2",
+        "cluster": "whole context_sha256",
+        "queries_per_context": 1
+      },
+      "memops_longitudinal_operation": {
+        "subjects": [
+          "A04",
+          "C03",
+          "D02",
+          "E13",
+          "F17"
+        ],
+        "selection": "Prefix-stratified first available never-opened development subject from A, C, D, E, and F groups, selected without reading source content.",
+        "evaluation_setting": "longitudinal_operation",
+        "questions_per_operation_file": 1,
+        "question_selection": "operation-adaptive-v7",
+        "cluster": "subject_id",
+        "required_operation_files_per_subject": null,
+        "previously_opened": false,
+        "manifest_operation_file_counts": {
+          "A04": 4,
+          "C03": 4,
+          "D02": 4,
+          "E13": 4,
+          "F17": 5
+        },
+        "expected_case_count": 21,
+        "required_manifest_exhaustive_files": true
+      }
+    },
+    "required_reproducible_runs": 3,
+    "required_independent_families": 2,
+    "minimum_independent_clusters_per_family": 5,
+    "paired_cluster_bootstrap_ci_lower_strictly_greater_than": 0.0,
+    "minimum_intervention_coverage": 0.8,
+    "all_family_means_non_negative": true,
+    "false_verified_promotions_maximum": 0,
+    "production_case_count_maximum": 0,
+    "raw_per_case_evidence_required": true,
+    "stop_on_first_failed_required_run": true
+  },
+  "frozen_admission": {
+    "memoryagentbench_fresh_final_unit_ids": [
+      "Long_Range_Understanding:0069:c7f1535f7238600e",
+      "Long_Range_Understanding:0070:8a93d4cd5cbd681e",
+      "Long_Range_Understanding:0072:893a573e50a0f0ec",
+      "Long_Range_Understanding:0076:3448e84ad791bded",
+      "Long_Range_Understanding:0077:d3fa1ef5e2ffc10b",
+      "Long_Range_Understanding:0078:ef8ee769eeaaf621",
+      "Long_Range_Understanding:0083:db96042a8a5aa313",
+      "Long_Range_Understanding:0085:a348120f6cdda6a0",
+      "Long_Range_Understanding:0088:4f8eeff8019e736b",
+      "Long_Range_Understanding:0098:b8164c32e0eba3df"
+    ],
+    "memops_final_subjects": [
+      "B23",
+      "C11",
+      "D20",
+      "E08",
+      "E11"
+    ],
+    "longmemeval_v2_dataset_revision": "f152293e235517d504809563c833d7190b8c713b",
+    "longmemeval_v2_tier": "small",
+    "longmemeval_v2_question_count": 451,
+    "maximum_longmemeval_v2_logical_full_runs": 1,
+    "independent_families_with_positive_uplift_lcb": 2,
+    "longmemeval_v2_uplift_minimum": 0.01,
+    "longmemeval_v2_improved_categories_minimum": 4,
+    "repeated_error_reduction_minimum": 0.5,
+    "stale_or_contradiction_error_rate_maximum": 0.02,
+    "context_reduction_vs_full_context_minimum": 0.3,
+    "runtime_p95_must_be_within_frozen_budget": true,
+    "ablation_required_for_every_improvement": true
+  },
+  "terminal_rule": "Any failed or invalid gate is retained; thresholds cannot be relaxed and opened evidence cannot be reused for tuning.",
+  "claim_boundary": "Only full exact-SHA admission permits a bounded claim; 100%-pass, SOTA, universal, production, and revolutionary claims remain forbidden without separate evidence.",
+  "immutable_v19_admission_evidence": {
+    "status": "failed_admission_v19",
+    "outcome_path": "benchmarks/scientific_v19_admission_outcome.json",
+    "outcome_file_sha256": "f2413604fc847a3804d9220d4fd70b982eb9fb840aa07e692a455d348a5fd5a3",
+    "outcome_payload_sha256": "b24e08562fbbf5e7d3e2ec2595d6fca0d1afeccb9fea8b16f9a6064fc9a49e84",
+    "mab_final_passed": true,
+    "memops_final_mean_difference": 0.15,
+    "memops_final_ci_lower": 0.0,
+    "opened_v19_final_cases_may_be_reused": false,
+    "thresholds_may_be_relaxed": false
+  },
+  "immutable_v20_development_evidence": {
+    "status": "failed_development_gate",
+    "outcome_path": "benchmarks/scientific_memops_v20_longitudinal_run1_results.json",
+    "outcome_file_sha256": "080085c4c09a7e31b1345f81d92e86fc9c668e28679c4ff9fef37c59ffac8540",
+    "outcome_payload_sha256": "ce02e8f1711a6c2622106f72e703d6b79b66e3a86b396ac7521bc2ac516d186b",
+    "mean_difference": 0.16,
+    "ci_lower": -0.040000000000000015,
+    "failed_run_may_be_rerun": false,
+    "thresholds_may_be_relaxed": false
+  },
+  "opened_v21_v23_diagnostics": [
+    {
+      "path": "benchmarks/scientific_memops_v21_opened_diagnostic_results.json",
+      "file_sha256": "1116acd3b7990730e00759857b1f7506a691bbd78a5577b3c972d73c5d9fb273",
+      "payload_sha256": "700444ffed4e7efa95329e376d77fd9abaa9bc05292a8f96c9b7d6dddf99d59d",
+      "candidate_id": "query-grounded-discrimination-agent-v21-prototype",
+      "mean_difference": 0.04,
+      "ci_lower": -0.16,
+      "diagnostic_gate_pass": false,
+      "official_gate_decision": false
+    },
+    {
+      "path": "benchmarks/scientific_memops_v22_opened_diagnostic_results.json",
+      "file_sha256": "e40016cc36d6ae3b38bd227015e15e1c09818557582b5c137c9f653c939411f8",
+      "payload_sha256": "e73b13d1912a28c3280d5cac071f64deacdb0a5de0f7bd40bbe474f9482bd61a",
+      "candidate_id": "query-grounded-targeted-discrimination-agent-v22-prototype",
+      "mean_difference": 0.12,
+      "ci_lower": -0.08,
+      "diagnostic_gate_pass": false,
+      "official_gate_decision": false
+    },
+    {
+      "path": "benchmarks/scientific_memops_v23_opened_diagnostic_results.json",
+      "file_sha256": "169b3df3edebd25be8a6bcbd39091e6888d5dacd9e64af3322af88117e58062c",
+      "payload_sha256": "528b8ffc7efb075b30cf654615ec3c543b87ab65cabf4aa3b5623471c110d217",
+      "candidate_id": "targeted-operation-application-agent-v23-prototype",
+      "mean_difference": 0.24,
+      "ci_lower": 0.08,
+      "diagnostic_gate_pass": true,
+      "official_gate_decision": false
+    }
+  ],
+  "immutable_v24_preflight_evidence": {
+    "status": "invalid_before_execution",
+    "outcome_path": "benchmarks/scientific_v24_preflight_outcome.json",
+    "outcome_file_sha256": "ef9093ef5a6455fd5a026a45e40506bccee4cbee96a6e195a9730ea643b2a7f1",
+    "outcome_payload_sha256": "c49bfbf3b8a62ee7ff86de5374ca5af62681bfa7fa780680c9eeb7caef61941f",
+    "benchmark_invocations": 0,
+    "fresh_development_cases_executed": 0,
+    "replacement_within_v24_forbidden": true
+  },
+  "immutable_v25_development_evidence": {
+    "status": "failed_development_gate",
+    "outcome_path": "benchmarks/scientific_memops_v25_longitudinal_run1_results.json",
+    "outcome_file_sha256": "7e52a8135edde9ab227722bfeaa8fe77d4fda41818794146819c12751b9d3047",
+    "outcome_payload_sha256": "e76228a501638665961c99f0367032626563917d4781aba7c6388ad36d3becf1",
+    "mean_difference": 0.09,
+    "ci_lower": 0.0,
+    "failed_run_may_be_rerun": false,
+    "thresholds_may_be_relaxed": false
+  },
+  "opened_v26_diagnostic": {
+    "path": "benchmarks/scientific_memops_v26_opened_diagnostic_results.json",
+    "file_sha256": "f620b1fac8785142eda68830cefacf5de7122b539d13b4dd78f2e3dd2d00cc61",
+    "payload_sha256": "97d4885d79cceae93f3c46125fbca6d3d00b1786837da5537fb9c7924a009c9f",
+    "mean_difference": 0.17,
+    "ci_lower": 0.04,
+    "diagnostic_gate_pass": true,
+    "official_gate_decision": false
+  },
+  "protocol_digest": "90de0468db2f0e9c88b2bff269e11f26cca87cee2212185e6b995b4a8fb0240f"
+}

@@ -1,0 +1,81 @@
+{
+  "schema": "wavemind.scientific_v31_longmem_infrastructure_failure.v8",
+  "status": "failed_during_second_arm_scoring_before_aggregate",
+  "logical_run": "longmemeval_v2_small_full_v31",
+  "logical_full_run_count": 1,
+  "infrastructure_failure_sequence": 8,
+  "candidate_source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+  "loopback_continuation_plan_commit": "0893153a8ffc650ddd24425f1b2b0c75159c9bc4",
+  "failure": {
+    "stage": "no_retrieval_web_small_official_scoring",
+    "type": "UnacceptedLeadingBinaryReasonFormat",
+    "observed_error": "ValueError: Could not parse evaluator binary judgement",
+    "observed_judge_shape": "1, reason: <non-empty explanation>",
+    "scoring_progress": "7/240",
+    "causal_diagnosis": "The frozen evaluator emitted an unambiguous leading binary label followed by a comma and reason field. The official parser accepts JSON and explicit label fields but not this semantically equivalent surface form.",
+    "candidate_or_threshold_failure": false,
+    "scientific_gate_evaluated": false
+  },
+  "observed_state": {
+    "completed_official_arms": [
+      "candidate_web_small"
+    ],
+    "completed_reader_outputs_in_failed_arm": 240,
+    "completed_scoring_rows_in_failed_arm": 7,
+    "failed_arm_aggregate_exists": false,
+    "failed_arm_scientific_gate_evaluated": false,
+    "outcome_scores_opened_by_operator": false,
+    "marker_completed": false,
+    "marker": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/full_run_marker.json",
+      "bytes": 1460,
+      "sha256": "9872e1d94096e7c8fa0a9b4b592f64312d7902e4a74326907c765a034c7a4355"
+    },
+    "candidate_web_metrics_unopened": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/candidate_web_small/aggregated_metrics.json",
+      "bytes": 4909,
+      "sha256": "2904872597ccae661f3127bb15febdd9cbe360df6335d1f491d4de390c93f82d"
+    },
+    "candidate_web_rows_unopened": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/candidate_web_small/per_question.jsonl",
+      "bytes": 14188637,
+      "sha256": "12f1b88b32a9fd200d1997ddd62482acbcf5254b78a1bbb7d263bd677c961753"
+    },
+    "failed_arm_rows_unopened": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/no_retrieval_web_small/per_question.jsonl",
+      "bytes": 25119,
+      "sha256": "da9c9350577adcc9af6224ed7a2d9f11af3189c4f81d0984e9c7c88bccfbdce2"
+    },
+    "console_log": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/continuation8_console.log",
+      "bytes": 92254,
+      "sha256": "3717d3e15fc6ae394969bd646666d584a9754d71c8d6ec335adf4c3c7c7f7c82"
+    },
+    "retained_partial_count": 7,
+    "retained_partials": [
+      "candidate_web_small-20260826T163942Z",
+      "candidate_web_small-20260826T173742Z",
+      "candidate_web_small-20260826T184002Z",
+      "candidate_web_small-20260826T190840Z",
+      "candidate_web_small-20260826T195850Z",
+      "candidate_web_small-20260826T203124Z",
+      "candidate_web_small-20260826T213526Z"
+    ],
+    "failed_arm_partial_requires_retention_on_next_continuation": true
+  },
+  "required_fix_boundary": {
+    "permitted_change": "If and only if the frozen parser raises ValueError, accept a full evaluator response matching leading 0-or-1, comma, reason colon, non-empty reason.",
+    "accepted_compatibility_pattern": "^[01]\\s*,\\s*reason\\s*:\\s*\\S",
+    "existing_parser_attempted_first": true,
+    "returned_label_identical_to_leading_binary": true,
+    "ambiguous_or_unlabelled_text_must_still_fail": true,
+    "candidate_source_sha_unchanged_required": true,
+    "prompts_models_thresholds_workers_question_order_and_gate_unchanged_required": true
+  },
+  "claim_boundary": "The completed candidate arm metric remains unopened, the failed comparison arm has no aggregate, and this receipt authorizes no pass or revolutionary claim.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "d0d571ead54b2f0d18f71e9cdba10b6df8d30b02fa994ae8d16f6f0a48e6896d"
+  }
+}

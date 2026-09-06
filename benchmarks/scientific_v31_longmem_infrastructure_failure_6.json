@@ -1,0 +1,136 @@
+{
+  "schema": "wavemind.scientific_v31_longmem_infrastructure_failure.v6",
+  "status": "safety_aborted_before_outcomes",
+  "logical_run": "longmemeval_v2_small_full_v31",
+  "logical_full_run_count": 1,
+  "infrastructure_failure_sequence": 6,
+  "candidate_source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+  "streaming_harness_commit": "404c6b127e580d8531176d9e79cd1782bbacc79b",
+  "torchvision_continuation_plan_commit": "223e722e9b90d4b0fcdad138287146618be1f583",
+  "failure": {
+    "stage": "candidate_web_small_official_prompt_build_fallback_recall",
+    "type": "UnoptimizedFallbackRankedSelector",
+    "causal_diagnosis": "The operation-aware selector was streaming, but a held-out query with no eligible operation markers took the frozen candidate fallback _select_ranked_memories path. That path materialized a complete token set for every one of 28,768 definitions before intersecting with the small query token set. The v31 query lock left three workers waiting while one CPU-bound fallback selector ran.",
+    "operator_interrupt_sent": true,
+    "candidate_or_threshold_failure": false,
+    "scientific_gate_evaluated": false
+  },
+  "read_only_stack_snapshot": {
+    "tool": "py-spy 0.4.2 dump",
+    "process_python": "3.11.0",
+    "main_thread_state": "waiting for ThreadPoolExecutor shutdown",
+    "waiting_prompt_workers": 3,
+    "active_prompt_workers": 1,
+    "active_frames": [
+      "wavemind.scientific_reconciliation._tokens:108",
+      "wavemind.scientific_reconciliation._select_ranked_memories:476-477",
+      "wavemind.scientific_reconciliation.select:230",
+      "wavemind.scientific_runtime.evaluation_recall:491",
+      "scientific_longmemeval_v2_backend.query:244",
+      "scientific_longmemeval_v2_backend_v31.synchronized_query:179",
+      "evaluation.harness.build_prompt_row:567"
+    ],
+    "question_text_or_answer_emitted": false
+  },
+  "resource_telemetry": {
+    "samples": [
+      {
+        "elapsed_minutes": 1.52,
+        "private_gib": 3.009
+      },
+      {
+        "elapsed_minutes": 2.31,
+        "private_gib": 3.885
+      },
+      {
+        "elapsed_minutes": 4.61,
+        "private_gib": 3.951
+      },
+      {
+        "elapsed_minutes": 7.36,
+        "private_gib": 3.829
+      },
+      {
+        "elapsed_minutes": 10.98,
+        "private_gib": 3.985
+      },
+      {
+        "elapsed_minutes": 15.14,
+        "private_gib": 4.004
+      },
+      {
+        "elapsed_minutes": 19.21,
+        "private_gib": 3.929
+      }
+    ],
+    "plateau_observed": true,
+    "maximum_observed_private_gib": 4.007,
+    "elapsed_minutes_at_abort": 19.21,
+    "prompt_rows_completed": 0,
+    "top_four_worker_cpu_seconds_range": [
+      276.4,
+      290.0
+    ]
+  },
+  "observed_state": {
+    "completed_official_arms": [],
+    "completed_prompt_rows": 0,
+    "answers_generated": false,
+    "outcome_scores_opened": false,
+    "per_question_files": 0,
+    "aggregated_metrics_files": 0,
+    "marker_completed": false,
+    "marker": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/full_run_marker.json",
+      "bytes": 1460,
+      "sha256": "9872e1d94096e7c8fa0a9b4b592f64312d7902e4a74326907c765a034c7a4355"
+    },
+    "run_args": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/candidate_web_small/run_args.json",
+      "bytes": 1873,
+      "sha256": "abbfc5a5d65cb833aa9d52ef1603c4b99e7d0b1d3e96971a39915c197fa59c9c"
+    },
+    "console_log": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/continuation6_console.log",
+      "bytes": 575,
+      "sha256": "a1cec690e7176d382fab1309d25ebed74ad0a242b4a5bb549518f3f02c459f35"
+    },
+    "retained_partial_count_before_attempt": 5,
+    "retained_partials_before_attempt": [
+      "candidate_web_small-20260826T163942Z",
+      "candidate_web_small-20260826T173742Z",
+      "candidate_web_small-20260826T184002Z",
+      "candidate_web_small-20260826T190840Z",
+      "candidate_web_small-20260826T195850Z"
+    ],
+    "current_partial_requires_retention_on_next_continuation": true
+  },
+  "frozen_execution_parameters": {
+    "model": "mistral:7b",
+    "evaluator_model": "mistral:7b",
+    "prompt_build_max_workers": 4,
+    "reader_max_concurrent_requests": 4,
+    "shuffle_questions_seed": 17
+  },
+  "required_fix_boundary": {
+    "permitted_change": "Replace only fallback _select_ranked_memories full token-set materialization with an exact streaming query-token intersection.",
+    "must_preserve": [
+      "query tokenization",
+      "document frequency",
+      "query weights",
+      "phrase hits",
+      "recency scores",
+      "ranking tuples",
+      "budget fit",
+      "selection relevance and reason"
+    ],
+    "candidate_source_sha_unchanged_required": true,
+    "prompts_models_thresholds_workers_scoring_unchanged_required": true
+  },
+  "claim_boundary": "This pre-outcome infrastructure failure contains no answer or score and authorizes no scientific pass or revolutionary claim.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "deb490bf60f787310ca1b05a581f33ba05563ab0c9bca6c1273140c12133e800"
+  }
+}

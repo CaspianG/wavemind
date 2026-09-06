@@ -1,0 +1,55 @@
+{
+  "schema": "wavemind.memoryagentbench_opened_diagnostic.v11",
+  "phase": "opened-development-diagnostic",
+  "status": "diagnostic_only",
+  "candidate_source_sha": "22e5c99e449b8156050975babb37ed8258701699",
+  "candidate_mode": "evidence-contracted-query-agent-v11",
+  "model": {
+    "id": "mistral:7b",
+    "digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768
+  },
+  "source_split": "development",
+  "unit_ids": [
+    "Long_Range_Understanding:0100:cd66eabd2f070a38",
+    "Long_Range_Understanding:0102:951f75cd34e22188",
+    "Long_Range_Understanding:0103:0f57134e5ed36d75",
+    "Long_Range_Understanding:0104:720f3ad635ebebf1",
+    "Long_Range_Understanding:0106:9132aca9b3be661d"
+  ],
+  "case_count": 5,
+  "paired_effect_values": [
+    0.0,
+    1.0,
+    0.0,
+    1.0,
+    0.0
+  ],
+  "paired_cluster_bootstrap": {
+    "paired": true,
+    "cluster_key": "cluster",
+    "cluster_count": 5,
+    "row_count": 5,
+    "repeats": 2000,
+    "seed": 17,
+    "confidence_level": 0.95,
+    "mean_difference": 0.4,
+    "ci_lower": 0.0,
+    "ci_upper": 0.8
+  },
+  "intervention_coverage": 1.0,
+  "production_case_count": 0,
+  "promoted_memory_ids": [],
+  "raw_output": {
+    "path": "benchmarks/scientific_mab_v11_opened_diagnostic_raw.jsonl",
+    "bytes": 36502,
+    "sha256": "c94f157b9f15e147ab980884074108800a2360da8bed84cea343add4c336a173"
+  },
+  "final_split_touched": false,
+  "claim_boundary": "Previously opened development evidence only. This diagnostic may inform v11 design but is not a gate or admission result.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "4b8f27addde0d0308bb6512e7451e88bbec0c44df1680faa499c8ed6af5e92ce"
+  }
+}

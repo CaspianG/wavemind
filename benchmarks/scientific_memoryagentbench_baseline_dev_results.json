@@ -1,0 +1,418 @@
+{
+  "schema": "wavemind.scientific_baseline_matrix.v1",
+  "phase": "bounded-development",
+  "admission_eligible": false,
+  "reason_not_admission_eligible": "development split, local Ollama transport, and exact-prompt answer cache; cached generation timings are excluded from admission",
+  "source_sha": "2f673be12dc268d66b769c40a19023ff71d1da80",
+  "protocol_digest": "489d3ff6fca733340b65b26c52ccb5533b19ad14fef66b1d2d912691dac22d59",
+  "official_upstream": {
+    "repository": "HUST-AI-HYZ/MemoryAgentBench",
+    "expected_sha": "fe1735de8cf8b9908e1e3d3b5612afc815698062",
+    "observed_sha": "fe1735de8cf8b9908e1e3d3b5612afc815698062",
+    "main_py_sha256": "809c44650730ad64cc93757f56980330c5db4de19c2abde5a2aef059210e7677",
+    "upstream_modified": false
+  },
+  "dataset": {
+    "repository": "ai-hyz/MemoryAgentBench",
+    "revision": "7ea066982b140a19337e17e60d45d4076e042faf",
+    "root": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\upstreams\\memory-agent-bench",
+    "split_unit_ids": [
+      "Conflict_Resolution:0002:e2789821b46e6626"
+    ],
+    "validation_split_touched": false,
+    "final_split_touched": false
+  },
+  "controls": {
+    "model": {
+      "id": "mistral:7b",
+      "digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+      "context_window": 32768,
+      "temperature": 0.0
+    },
+    "prompt": "official MemoryAgentBench system template and one common memory wrapper",
+    "embedding": {
+      "id": "wavemind-hashing-text-encoder-384",
+      "dimensions": 384,
+      "implementation": "wavemind.encoders.HashingTextEncoder",
+      "source_file": "wavemind/encoders.py",
+      "source_file_sha256": "ae457b57374ee4038e71519c735775fff1ab8a832402b1a1a3ca7a66ba03445d"
+    },
+    "seed": 17,
+    "token_budget": 8192,
+    "top_k": 10,
+    "case_order": [
+      "Conflict_Resolution:0002:e2789821b46e6626:q0000",
+      "Conflict_Resolution:0002:e2789821b46e6626:q0001",
+      "Conflict_Resolution:0002:e2789821b46e6626:q0002"
+    ],
+    "hardware_inventory": {
+      "platform": "Windows-10-10.0.26200-SP0",
+      "machine": "AMD64",
+      "processor": "Intel64 Family 6 Model 165 Stepping 5, GenuineIntel",
+      "logical_cpu_count": 20,
+      "python": "3.11.0",
+      "physical_cpu_count": 10,
+      "memory_bytes": 34180739072,
+      "torch_version": "2.13.0+cpu",
+      "cuda_available": false,
+      "cuda_device": null
+    }
+  },
+  "gold_fields_exposed_to_retrievers_or_answer_agent": [],
+  "baselines_executed": [
+    "chroma",
+    "langgraph",
+    "mem0-oss",
+    "no-memory",
+    "qdrant-local",
+    "static-vector-retrieval",
+    "wavemind-full-frozen-pipeline",
+    "wavemind-graph",
+    "wavemind-memory-os",
+    "wavemind-no-field",
+    "wavemind-wavefield"
+  ],
+  "frozen_baseline_configs": {
+    "no-memory": {},
+    "static-vector-retrieval": {
+      "vector_weight": 1.0,
+      "field_weight": 0.0,
+      "priority_weight": 0.0,
+      "lexical_weight": 0.0,
+      "graph_weight": 0.0,
+      "memory_os": false
+    },
+    "wavemind-no-field": {
+      "vector_weight": 0.94,
+      "field_weight": 0.0,
+      "priority_weight": 0.02,
+      "lexical_weight": 0.2,
+      "graph_weight": 0.0,
+      "memory_os": false
+    },
+    "wavemind-wavefield": {
+      "vector_weight": 0.94,
+      "field_weight": 0.04,
+      "priority_weight": 0.02,
+      "lexical_weight": 0.2,
+      "graph_weight": 0.0,
+      "memory_os": false
+    },
+    "wavemind-graph": {
+      "vector_weight": 0.88,
+      "field_weight": 0.0,
+      "priority_weight": 0.02,
+      "lexical_weight": 0.2,
+      "graph_weight": 0.1,
+      "memory_os": false
+    },
+    "wavemind-memory-os": {
+      "vector_weight": 0.94,
+      "field_weight": 0.04,
+      "priority_weight": 0.02,
+      "lexical_weight": 0.2,
+      "graph_weight": 0.0,
+      "memory_os": true
+    },
+    "wavemind-full-frozen-pipeline": {
+      "vector_weight": 0.84,
+      "field_weight": 0.04,
+      "priority_weight": 0.02,
+      "lexical_weight": 0.2,
+      "graph_weight": 0.1,
+      "memory_os": true
+    },
+    "mem0-oss": {},
+    "langgraph": {},
+    "chroma": {},
+    "qdrant-local": {}
+  },
+  "real_package_metadata": {
+    "mem0-oss": {
+      "package": "mem0ai",
+      "version": "2.0.18",
+      "pinned_source_revision": "c427a453a89c5a3fee73cdb2e4c4df6a651e1692",
+      "source_revision_observable_from_installed_wheel": false,
+      "installed_record_sha256": "217ddb7f32b60130f6b21c61862b5f7b36db96db50ee087ed84b65d0a2863934"
+    },
+    "langgraph": {
+      "package": "langgraph",
+      "version": "1.2.11",
+      "pinned_source_revision": "644815f9e5bc52ad8f7a5227a456227e9c3e639b",
+      "source_revision_observable_from_installed_wheel": false,
+      "installed_record_sha256": "d03211334b09088a230ea6f40ac80d7a31510bad9173e48015fe28d7314f9c0c"
+    },
+    "chroma": {
+      "package": "chromadb",
+      "version": "1.5.9",
+      "pinned_source_revision": null,
+      "source_revision_observable_from_installed_wheel": false,
+      "installed_record_sha256": "a5ccb368aa6eafca19855010f7fa439a97e395f6572f511095c3c49229f7c7af"
+    },
+    "qdrant-local": {
+      "package": "qdrant-client",
+      "version": "1.19.0",
+      "pinned_source_revision": null,
+      "source_revision_observable_from_installed_wheel": false,
+      "installed_record_sha256": "d8eec7f6368d08d85d5a4d72825cdff3923c727f67f4ead695295bb5d0e50b02"
+    }
+  },
+  "preloaded_real_package_modules": {
+    "mem0-oss": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-env\\Lib\\site-packages\\mem0\\__init__.py"
+  },
+  "runtime_dependency_lock": {
+    "python_executable": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-env\\Scripts\\python.exe",
+    "python_version": "3.11.0",
+    "packages": {
+      "numpy": "2.4.6",
+      "tiktoken": "0.14.0",
+      "rouge-score": "0.1.2",
+      "langchain-community": "0.4.2",
+      "torch": "2.13.0",
+      "transformers": "5.15.1",
+      "datasets": "5.0.1"
+    },
+    "real_baseline_packages": {
+      "mem0-oss": {
+        "package": "mem0ai",
+        "version": "2.0.18",
+        "pinned_source_revision": "c427a453a89c5a3fee73cdb2e4c4df6a651e1692",
+        "source_revision_observable_from_installed_wheel": false,
+        "installed_record_sha256": "217ddb7f32b60130f6b21c61862b5f7b36db96db50ee087ed84b65d0a2863934"
+      },
+      "langgraph": {
+        "package": "langgraph",
+        "version": "1.2.11",
+        "pinned_source_revision": "644815f9e5bc52ad8f7a5227a456227e9c3e639b",
+        "source_revision_observable_from_installed_wheel": false,
+        "installed_record_sha256": "d03211334b09088a230ea6f40ac80d7a31510bad9173e48015fe28d7314f9c0c"
+      },
+      "chroma": {
+        "package": "chromadb",
+        "version": "1.5.9",
+        "pinned_source_revision": null,
+        "source_revision_observable_from_installed_wheel": false,
+        "installed_record_sha256": "a5ccb368aa6eafca19855010f7fa439a97e395f6572f511095c3c49229f7c7af"
+      },
+      "qdrant-local": {
+        "package": "qdrant-client",
+        "version": "1.19.0",
+        "pinned_source_revision": null,
+        "source_revision_observable_from_installed_wheel": false,
+        "installed_record_sha256": "d8eec7f6368d08d85d5a4d72825cdff3923c727f67f4ead695295bb5d0e50b02"
+      }
+    }
+  },
+  "real_package_execution": {
+    "mem0-oss": "mem0.Memory.add(infer=False)/search with real local Qdrant",
+    "langgraph": "langgraph.store.memory.InMemoryStore.put/search",
+    "chroma": "chromadb.PersistentClient collection.add/query",
+    "qdrant-local": "qdrant_client.QdrantClient local upsert/query_points"
+  },
+  "answer_cache": {
+    "policy": "complete prompt sha256 equality only",
+    "unique_prompt_count": 10,
+    "answer_invocation_count": 10,
+    "logical_arm_case_count": 33,
+    "timing_admission_eligible": false
+  },
+  "official_metric_summary": {
+    "chroma": {
+      "case_count": 3,
+      "metric": "substring_exact_match",
+      "values": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mean": 0.0,
+      "mean_context_tokens": 5149.0
+    },
+    "langgraph": {
+      "case_count": 3,
+      "metric": "substring_exact_match",
+      "values": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mean": 0.0,
+      "mean_context_tokens": 5149.0
+    },
+    "mem0-oss": {
+      "case_count": 3,
+      "metric": "substring_exact_match",
+      "values": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mean": 0.0,
+      "mean_context_tokens": 5149.0
+    },
+    "no-memory": {
+      "case_count": 3,
+      "metric": "substring_exact_match",
+      "values": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mean": 0.0,
+      "mean_context_tokens": 0.0
+    },
+    "qdrant-local": {
+      "case_count": 3,
+      "metric": "substring_exact_match",
+      "values": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mean": 0.0,
+      "mean_context_tokens": 5149.0
+    },
+    "static-vector-retrieval": {
+      "case_count": 3,
+      "metric": "substring_exact_match",
+      "values": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mean": 0.0,
+      "mean_context_tokens": 5149.0
+    },
+    "wavemind-full-frozen-pipeline": {
+      "case_count": 3,
+      "metric": "substring_exact_match",
+      "values": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mean": 0.0,
+      "mean_context_tokens": 4268.0
+    },
+    "wavemind-graph": {
+      "case_count": 3,
+      "metric": "substring_exact_match",
+      "values": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mean": 0.0,
+      "mean_context_tokens": 4268.0
+    },
+    "wavemind-memory-os": {
+      "case_count": 3,
+      "metric": "substring_exact_match",
+      "values": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mean": 0.0,
+      "mean_context_tokens": 5149.0
+    },
+    "wavemind-no-field": {
+      "case_count": 3,
+      "metric": "substring_exact_match",
+      "values": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mean": 0.0,
+      "mean_context_tokens": 5149.0
+    },
+    "wavemind-wavefield": {
+      "case_count": 3,
+      "metric": "substring_exact_match",
+      "values": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mean": 0.0,
+      "mean_context_tokens": 5155.333333333333
+    }
+  },
+  "ablation_pairs": [
+    {
+      "id": "field-on-vs-field-off",
+      "control_id": "wavemind-no-field",
+      "treatment_id": "wavemind-wavefield",
+      "config_differences": {
+        "field_weight": {
+          "control": 0.0,
+          "treatment": 0.04
+        }
+      },
+      "single_factor": true
+    },
+    {
+      "id": "graph-on-vs-graph-off",
+      "control_id": "wavemind-no-field",
+      "treatment_id": "wavemind-graph",
+      "config_differences": {
+        "graph_weight": {
+          "control": 0.0,
+          "treatment": 0.1
+        },
+        "vector_weight": {
+          "control": 0.94,
+          "treatment": 0.88
+        }
+      },
+      "single_factor": false
+    },
+    {
+      "id": "memory-os-on-vs-memory-os-off",
+      "control_id": "wavemind-wavefield",
+      "treatment_id": "wavemind-memory-os",
+      "config_differences": {
+        "memory_os": {
+          "control": false,
+          "treatment": true
+        }
+      },
+      "single_factor": true
+    },
+    {
+      "id": "full-frozen-vs-memory-os",
+      "control_id": "wavemind-memory-os",
+      "treatment_id": "wavemind-full-frozen-pipeline",
+      "config_differences": {
+        "graph_weight": {
+          "control": 0.0,
+          "treatment": 0.1
+        },
+        "vector_weight": {
+          "control": 0.94,
+          "treatment": 0.84
+        }
+      },
+      "single_factor": false
+    }
+  ],
+  "failed_attempts_retained": [
+    {
+      "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\work\\wavemind-scientific-core\\benchmarks\\scientific_memoryagentbench_baseline_failed_attempts.jsonl",
+      "bytes": 944,
+      "sha256": "fe507f9cc8b1631b8c34b40e04dec8bbe7fa2a746c2c003c6e9ac2c2c172ad42"
+    }
+  ],
+  "raw_results": {
+    "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\work\\wavemind-scientific-core\\benchmarks\\scientific_memoryagentbench_baseline_dev_raw.jsonl",
+    "bytes": 942646,
+    "sha256": "ffd36889cb758f70ed20b6719b7eb078b4860aff1fa24e1a8588ae75f5890904"
+  },
+  "claim_boundary": "Bounded development evidence only. This matrix cannot satisfy scientific admission and does not authorize held-out or public superiority claims.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "963142121e3d6848848c0468448ca3f520cba71059280f771445b098c425a268"
+  }
+}

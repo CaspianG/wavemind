@@ -1,0 +1,101 @@
+{
+  "schema": "wavemind.scientific_v31_longmem_loopback_continuation.v1",
+  "status": "preregistered_loopback_bypass_continuation_before_outcome",
+  "preregistered_at": "2026-08-27",
+  "logical_run": "longmemeval_v2_small_full_v31",
+  "logical_full_run_count": 1,
+  "candidate_source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+  "failure_evidence": {
+    "path": "benchmarks/scientific_v31_longmem_infrastructure_failure_7.json",
+    "bytes": 4814,
+    "sha256": "113088cefc28948bd22aaeac8daa1d8407d458ff8451923b81e15d18676bc067",
+    "commit": "a1b2a0fad1700825a0d85d519d4327a4a2c5e39c",
+    "payload_sha256": "062f7a84cfac7f9a84b26ceda6420d448780d90d8ed1018202bc236266dc0081",
+    "failure_type": "SystemProxyLoopbackInterception",
+    "completed_prompt_rows": 240,
+    "answers_generated": false,
+    "outcome_scores_opened": false,
+    "scientific_gate_evaluated": false
+  },
+  "synthetic_transport_probe": {
+    "path": "benchmarks/scientific_v31_longmem_loopback_probe_results.json",
+    "bytes": 2462,
+    "sha256": "169e4a404953adebfe049790e2c6b8dce4fc485ed839b896756d2c89400886f5",
+    "commit": "a1b2a0fad1700825a0d85d519d4327a4a2c5e39c",
+    "payload_sha256": "d9fb10f224cd2399a20e6b8babf7920b395478b1febd81f38ac3ba4f9f4dabc2",
+    "inherited_status": 503,
+    "direct_status": 200,
+    "no_proxy_statuses": [
+      200,
+      200,
+      200,
+      200
+    ],
+    "benchmark_prompt_read": false,
+    "benchmark_answer_or_gold_read": false,
+    "scores_opened": false
+  },
+  "operational_remediation": {
+    "environment": {
+      "NO_PROXY": "127.0.0.1,localhost",
+      "no_proxy": "127.0.0.1,localhost",
+      "OLLAMA_CONTEXT_LENGTH": "32768",
+      "OLLAMA_NUM_PARALLEL": "1"
+    },
+    "preflight": [
+      "Verify /api/tags exposes the exact preregistered model digest.",
+      "Warm the exact model with synthetic text through the direct loopback route.",
+      "Verify four concurrent synthetic OpenAI SDK requests return HTTP 200."
+    ],
+    "scientific_effect": "transport_and_serving_reliability_only"
+  },
+  "frozen_invariants": {
+    "candidate_source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+    "fallback_harness_commit": "0dd456e1100a6beb5e60bdf94ddf5ffa071b2965",
+    "protocol_digest": "bc1f895bdf8bd30027bcc17f1c3a375099c8ee442681382c56ba57fa7580793b",
+    "official_repository_sha": "2cc8c540bdb87fe6761629b585e727e1c4704520",
+    "model": "mistral:7b",
+    "evaluator_model": "mistral:7b",
+    "model_digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768,
+    "memory_context_max_tokens": 8192,
+    "prompt_build_max_workers": 4,
+    "reader_max_concurrent_requests": 4,
+    "shuffle_questions_seed": 17,
+    "prompts_unchanged": true,
+    "models_unchanged": true,
+    "thresholds_unchanged": true,
+    "question_order_unchanged": true,
+    "scoring_unchanged": true,
+    "client_worker_count_unchanged": true
+  },
+  "continuation_execution": {
+    "same_output_root_required": "benchmarks/scientific_longmemeval_v31_final",
+    "same_marker_required": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/full_run_marker.json",
+      "bytes": 1460,
+      "sha256": "9872e1d94096e7c8fa0a9b4b592f64312d7902e4a74326907c765a034c7a4355"
+    },
+    "logical_full_run_count_must_remain": 1,
+    "retained_partials_before_continuation": [
+      "candidate_web_small-20260826T163942Z",
+      "candidate_web_small-20260826T173742Z",
+      "candidate_web_small-20260826T184002Z",
+      "candidate_web_small-20260826T190840Z",
+      "candidate_web_small-20260826T195850Z",
+      "candidate_web_small-20260826T203124Z"
+    ],
+    "retained_partial_count_before_continuation": 6,
+    "current_partial_must_be_retained_on_restart": true,
+    "restart_first_incomplete_arm": "candidate_web_small",
+    "fallback_harness_commit_required": "0dd456e1100a6beb5e60bdf94ddf5ffa071b2965",
+    "fresh_scientific_run_forbidden": true,
+    "memory_and_service_monitoring_required": true
+  },
+  "claim_boundary": "This continuation plan and synthetic probe are not benchmark outcomes and authorize no pass, 100%-pass, SOTA, or revolutionary claim.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "3542410e9271a004ffa825266950a6f5ae99fe1fdb990f91d9100b8c69ed9954"
+  }
+}

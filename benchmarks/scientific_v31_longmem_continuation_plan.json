@@ -1,0 +1,147 @@
+{
+  "schema": "wavemind.scientific_v31_longmem_continuation_plan.v1",
+  "status": "preregistered_infrastructure_continuation_before_outcome",
+  "preregistered_at": "2026-08-26",
+  "logical_run": "longmemeval_v2_small_full_v31",
+  "logical_full_run_count": 1,
+  "candidate_source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+  "protocol_digest": "bc1f895bdf8bd30027bcc17f1c3a375099c8ee442681382c56ba57fa7580793b",
+  "original_admission_plan": {
+    "path": "benchmarks/scientific_v31_admission_plan.json",
+    "bytes": 10772,
+    "sha256": "b1e3e6636b7b4de8f537a5a72deb81fc1103b2c4d97b3545e58f5a8ff6f03f8d",
+    "commit": "8135561b4c532817bf9502556c099a5e52ebb19e",
+    "payload_sha256": "dc3bf69e57785b59b6d5e4b579b8a93908d4e8039236797e8bcb8b5482831000"
+  },
+  "infrastructure_failure": {
+    "path": "benchmarks/scientific_v31_longmem_infrastructure_failure.json",
+    "bytes": 3200,
+    "sha256": "bd1f7aa31364ac11b12d9d06565dc3b511345f064bfc7d5923b3af025da889be",
+    "commit": "7dcdcb505cf22503d169f1ad55d2a89d4b241104",
+    "payload_sha256": "310248f56115ad5661c3c2fb87e947e8ffcfdfca7869c0820a9acbd20297bef9",
+    "outcome_scores_opened": false,
+    "scientific_gate_evaluated": false
+  },
+  "harness_change": {
+    "original_commit": "8d5052b94dea2cdc2db020208800577e3267ab3c",
+    "fixed_commit": "303d06138fd205a36ea15473c13d0aa71fe4b150",
+    "changed_frozen_harness_files": [
+      "benchmarks/scientific_longmemeval_v2_backend_v31.py"
+    ],
+    "changed_file_count": 1,
+    "original_file": {
+      "path": "benchmarks/scientific_longmemeval_v2_backend_v31.py",
+      "bytes": 1510,
+      "sha256": "a42b49810af099ed170f4302a7fecdbb94b663e39e4e5121780e343cb9802842"
+    },
+    "fixed_file": {
+      "path": "benchmarks/scientific_longmemeval_v2_backend_v31.py",
+      "bytes": 2129,
+      "sha256": "03cde3cc89204cf8dc9d5987a95cda8159e7e98b127328a4859b615af947a8a5"
+    },
+    "change_scope": "Add a per-instance lock and double-checked synchronization around one-time compilation; candidate compilation, retrieval, prompts, model calls, ordering, and scoring remain unchanged.",
+    "all_fixed_harness_files": [
+      {
+        "path": "benchmarks/scientific_mab_v19_final.py",
+        "bytes": 9644,
+        "sha256": "3409f4e645d2c9a37874eb1f044a98b5e5a682c30b8a1afc271d9451e124c7f8"
+      },
+      {
+        "path": "benchmarks/scientific_mab_v31_final.py",
+        "bytes": 3331,
+        "sha256": "f6d9f995f188d12889740d4ead0f1503c9f2451cebe3f393c0f97fe22668a10c"
+      },
+      {
+        "path": "benchmarks/scientific_memops_v31_final.py",
+        "bytes": 9764,
+        "sha256": "1072978bd36a6fe7524754f9d9740ae0cd6dfdb1552eae77a3648aa717ac13ba"
+      },
+      {
+        "path": "benchmarks/scientific_longmemeval_v2_backend.py",
+        "bytes": 11532,
+        "sha256": "f59733a2d26f673c0a7f532653398379ad6d90f68175ae7d4c1e855e7ef70bc6"
+      },
+      {
+        "path": "benchmarks/scientific_longmemeval_v2_backend_v31.py",
+        "bytes": 2129,
+        "sha256": "03cde3cc89204cf8dc9d5987a95cda8159e7e98b127328a4859b615af947a8a5"
+      },
+      {
+        "path": "benchmarks/scientific_longmemeval_v2_run.py",
+        "bytes": 10537,
+        "sha256": "5c2355a3f64e87d50f133cfa8db95e7a6b7f49b036069fc1c69c0893a507f12e"
+      },
+      {
+        "path": "benchmarks/scientific_longmemeval_v2_run_v31.py",
+        "bytes": 1460,
+        "sha256": "424b561f62a8b255ecc07f4d88a46c7156aec4da1142bbb5b7c7ce9af4049ae7"
+      }
+    ]
+  },
+  "semantic_invariants": {
+    "candidate_source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+    "official_repository_sha": "2cc8c540bdb87fe6761629b585e727e1c4704520",
+    "dataset_files": [
+      {
+        "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\longmemeval-v31-f152293e\\questions.jsonl",
+        "bytes": 286186,
+        "sha256": "0a3ae5ebea938c24d7800e1e0b0828e08ae1646f939a53853b2b8cdc08e292b7"
+      },
+      {
+        "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\longmemeval-v31-f152293e\\trajectories.jsonl",
+        "bytes": 1195604539,
+        "sha256": "363cec9a8e87aa8d9101ce4e600aadbf7031d674056ebe4f969e8424abc5f3c6"
+      },
+      {
+        "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\longmemeval-v31-f152293e\\haystacks\\lme_v2_small.json",
+        "bytes": 822632,
+        "sha256": "9b5301defb23a088a5f06e45ff8d5f35e569d78305a66d492046a9fff9b46593"
+      }
+    ],
+    "dataset_revision": "f152293e235517d504809563c833d7190b8c713b",
+    "tier": "small",
+    "question_count": 451,
+    "arm_order": [
+      "candidate_web_small",
+      "no_retrieval_web_small",
+      "candidate_enterprise_small",
+      "no_retrieval_enterprise_small"
+    ],
+    "model": "mistral:7b",
+    "evaluator_model": "mistral:7b",
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "top_k": 20,
+    "shuffle_questions_seed": 17,
+    "prompt_build_max_workers": 4,
+    "reader_max_concurrent_requests": 4,
+    "memory_context_max_tokens": 8192,
+    "prompts_unchanged": true,
+    "thresholds": {
+      "uplift_minimum": 0.01,
+      "improved_categories_minimum": 4,
+      "repeated_error_reduction_minimum": 0.5,
+      "stale_or_contradiction_error_rate_maximum": 0.02,
+      "context_reduction_vs_full_context_minimum": 0.3,
+      "runtime_p95_must_be_within_frozen_budget": true,
+      "ablation_required_for_every_improvement": true
+    },
+    "thresholds_unchanged": true
+  },
+  "continuation_execution": {
+    "same_output_root_required": "benchmarks/scientific_longmemeval_v31_final",
+    "same_marker_required": true,
+    "logical_full_run_count_must_remain": 1,
+    "partial_must_be_moved_to_retained_partials": true,
+    "restart_first_incomplete_arm": "candidate_web_small",
+    "fresh_scientific_run_forbidden": true,
+    "post_outcome_candidate_change_forbidden": true
+  },
+  "decision_rule": "Continuation may start only from the fixed exact harness commit and must preserve every semantic invariant above. It remains the first and only logical LongMemEval full run.",
+  "claim_boundary": "This addendum is not a benchmark outcome and authorizes no pass, 100%-pass, SOTA, production, universal, or revolutionary claim.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "f01630d7ecc33bfb9487ef793a60911a38d0548e56aaa1a41a1236059d460f11"
+  }
+}

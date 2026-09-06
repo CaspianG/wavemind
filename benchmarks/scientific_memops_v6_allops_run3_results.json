@@ -1,0 +1,90 @@
+{
+  "schema": "wavemind.memops_candidate_development.v1",
+  "phase": "bounded-development",
+  "admission_eligible": false,
+  "reason_not_admission_eligible": "single development split, local answer model and local judge; held-out admission arms were not executed",
+  "source_sha": "a8240fe6bd9a79aec3d524b1cbbbdb4b907f8d97",
+  "protocol_digest": "d140bd10012dc698656b211621be1fb851ae511294114a4b3d5cd73cbdfd2ebc",
+  "official_upstream": {
+    "repository": "MemTensor/MemOps",
+    "sha": "312af65e2c7b6d1b70f062ffa8b4cde32aaf6f35",
+    "runners": [
+      "5-test_operation_metrics.py:run_gpt_rag",
+      "5.5-evaluate_operation_metrics.py:evaluate_entry"
+    ],
+    "upstream_modified": false
+  },
+  "candidate_id": "operation-aware-tombstone-reconciler-v6",
+  "control_id": "no-memory",
+  "model": {
+    "id": "mistral:7b",
+    "digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768
+  },
+  "case_ids": [
+    "A04_forget_q2",
+    "A04_reflect_q2",
+    "A04_remember_q2",
+    "A04_trajectory_ops_q2",
+    "A06_forget_q2",
+    "A06_reflect_q2",
+    "A06_remember_q2",
+    "A06_trajectory_ops_q2",
+    "A06_update_q2",
+    "A07_forget_q2",
+    "A07_reflect_q2",
+    "A07_remember_q2",
+    "A07_trajectory_ops_q2",
+    "A13_forget_q2",
+    "A13_reflect_q2",
+    "A13_update_q2",
+    "A14_forget_q2",
+    "A14_reflect_q2",
+    "A14_trajectory_ops_q2",
+    "A14_update_q2"
+  ],
+  "case_count": 20,
+  "final_split_touched": false,
+  "paired_effect": {
+    "values": [
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      0.0,
+      1.0,
+      1.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "mean": 0.4,
+    "positive_count": 8,
+    "zero_count": 12,
+    "negative_count": 0
+  },
+  "verified_receipt_count": 20,
+  "false_verified_promotions": 0,
+  "production_case_count": 0,
+  "promoted_memory_ids": [],
+  "raw_output": {
+    "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-v6-dev-five\\run3-allops-firstquery\\raw_pairs.jsonl",
+    "bytes": 440205,
+    "sha256": "2747e1887041f3af54f958c5628e09e2da5583610e2aa0efc50ec82362587557"
+  },
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "a8a98487ee95696ca476b7880718cecb16870bc4845a0bd4c82b76b7b32595e4"
+  }
+}

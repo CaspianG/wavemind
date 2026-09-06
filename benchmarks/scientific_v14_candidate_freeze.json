@@ -1,0 +1,25 @@
+{
+  "schema": "wavemind.scientific_v14_candidate_freeze.v1",
+  "status": "frozen_before_fresh_development",
+  "candidate_id": "task-aware-sequence-coverage-agent-v14",
+  "candidate_source_sha": "17c97fecbb9c8ce8349d1045f1fdc131d595684b",
+  "protocol_digest": "e8de1b5a67e790a6bc45dd2b0802b76ccbe60dafcbea7a61c59762fd7f9fafe3",
+  "files": [
+    {"path": "wavemind/scientific_answer_transducer.py", "sha256": "17d7b2a496539dd4089910633b5583035f83cedec6ab130ce6c08bbc0ba3ef09"},
+    {"path": "wavemind/scientific_runtime.py", "sha256": "0025de35d1118306da9243b1bf867b8c9ae0b98dc2eb260768731ddaa271d797"},
+    {"path": "wavemind/scientific_memops.py", "sha256": "e872f0498dde69429b16de11d933ec996c169d168264d93187bf15fcc7aaa8c9"},
+    {"path": "wavemind/scientific_memoryagentbench.py", "sha256": "b655a6dbb00494e1ad3a99d708802c5c83e9418bb9502f953625ba94b2257b6f"},
+    {"path": "wavemind/scientific_reconciliation.py", "sha256": "be3e04575b1b1163b2bb9902e556e8a75971228639eaa541180bff19c938abf8"},
+    {"path": "benchmarks/scientific_memory_protocol_v14.json", "sha256": "8b16f43b24480570d2ee2c60012d9dc18248ba8055e91e9bb0c8e7d506657271"},
+    {"path": "benchmarks/scientific_mab_v14_development.py", "sha256": "bf2f5d73c2b2d9e55b0b14c4bc8024586545b78ba98c1a49fdbbfa50b5724995"},
+    {"path": "benchmarks/scientific_memops_v14_development.py", "sha256": "ff3cd3e1032e2d478d2c6fed43d7941a4c90d1456992deb0be59a7bb6b3c339e"}
+  ],
+  "verification_before_freeze": {"passed": 139, "failed": 0, "deselected": 1134},
+  "fresh_v14_development_runs_executed": 0,
+  "post_outcome_source_changes_forbidden": true,
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "dd1375f9b67330519ce8b98897aec688b0d14527c03e4bd534d966b082c7018b"
+  }
+}

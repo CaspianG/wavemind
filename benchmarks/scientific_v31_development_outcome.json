@@ -1,0 +1,252 @@
+{
+  "schema": "wavemind.scientific_v31_development_outcome.v1",
+  "status": "passed_development_gate_v31",
+  "candidate_id": "operation-routed-target-state-agent-v31",
+  "candidate_source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+  "protocol_digest": "bc1f895bdf8bd30027bcc17f1c3a375099c8ee442681382c56ba57fa7580793b",
+  "required_independent_families": 2,
+  "passing_independent_families": 2,
+  "required_reproducible_runs_per_family": 3,
+  "all_required_runs_pass": true,
+  "families": {
+    "memoryagentbench_summarization": {
+      "required_runs": 3,
+      "passing_runs": 3,
+      "all_runs_pass": true,
+      "runs": [
+        {
+          "run_number": 1,
+          "artifact": {
+            "path": "benchmarks/scientific_mab_v31_run1_results.json",
+            "bytes": 3500,
+            "sha256": "15ea9b3105aa994e7bdbb79f30c165cbdecaf34f8d10d911c48ae38dfd45d952"
+          },
+          "raw": {
+            "path": "benchmarks/scientific_mab_v31_run1_raw.jsonl",
+            "bytes": 602362,
+            "sha256": "e47a4628483162f1b621fc6fafc2c918b8d48001881da6cc782f09b7d6d27714"
+          },
+          "case_count": 10,
+          "intervention_coverage": 1.0,
+          "statistics": {
+            "paired": true,
+            "cluster_key": "cluster",
+            "cluster_count": 10,
+            "row_count": 10,
+            "repeats": 2000,
+            "seed": 17,
+            "confidence_level": 0.95,
+            "mean_difference": 0.06255909252522374,
+            "ci_lower": 0.054497244655421904,
+            "ci_upper": 0.07037424612991425
+          },
+          "gate_checks": {
+            "minimum_independent_clusters": true,
+            "paired_cluster_bootstrap_ci_lower_strictly_positive": true,
+            "mean_non_negative": true,
+            "minimum_intervention_coverage": true,
+            "no_production_cases": true,
+            "no_promoted_memories": true
+          },
+          "gate_pass": true
+        },
+        {
+          "run_number": 2,
+          "artifact": {
+            "path": "benchmarks/scientific_mab_v31_run2_results.json",
+            "bytes": 3498,
+            "sha256": "0a3d1b68826694e8df47b6f848e872f3b7583bb8e6bd4fcf1e383382dd6a044a"
+          },
+          "raw": {
+            "path": "benchmarks/scientific_mab_v31_run2_raw.jsonl",
+            "bytes": 601630,
+            "sha256": "56aa9af29e9b4f6d0f95e6f6b07d401f125358eaaf814f19dbc27b069c0b977e"
+          },
+          "case_count": 10,
+          "intervention_coverage": 1.0,
+          "statistics": {
+            "paired": true,
+            "cluster_key": "cluster",
+            "cluster_count": 10,
+            "row_count": 10,
+            "repeats": 2000,
+            "seed": 17,
+            "confidence_level": 0.95,
+            "mean_difference": 0.06415060446156325,
+            "ci_lower": 0.05552691672814984,
+            "ci_upper": 0.07206036619591341
+          },
+          "gate_checks": {
+            "minimum_independent_clusters": true,
+            "paired_cluster_bootstrap_ci_lower_strictly_positive": true,
+            "mean_non_negative": true,
+            "minimum_intervention_coverage": true,
+            "no_production_cases": true,
+            "no_promoted_memories": true
+          },
+          "gate_pass": true
+        },
+        {
+          "run_number": 3,
+          "artifact": {
+            "path": "benchmarks/scientific_mab_v31_run3_results.json",
+            "bytes": 3498,
+            "sha256": "345b144a940b299968eb9bf24e3fdeaa23b37a485fa773e8f289bdf6c4481d37"
+          },
+          "raw": {
+            "path": "benchmarks/scientific_mab_v31_run3_raw.jsonl",
+            "bytes": 601635,
+            "sha256": "340f8ebfb24c3da054e5dffa92c85cca47bc5494c8c68c6d2f55d85b1ecfd9c0"
+          },
+          "case_count": 10,
+          "intervention_coverage": 1.0,
+          "statistics": {
+            "paired": true,
+            "cluster_key": "cluster",
+            "cluster_count": 10,
+            "row_count": 10,
+            "repeats": 2000,
+            "seed": 17,
+            "confidence_level": 0.95,
+            "mean_difference": 0.06415060446156325,
+            "ci_lower": 0.05552691672814984,
+            "ci_upper": 0.07206036619591341
+          },
+          "gate_checks": {
+            "minimum_independent_clusters": true,
+            "paired_cluster_bootstrap_ci_lower_strictly_positive": true,
+            "mean_non_negative": true,
+            "minimum_intervention_coverage": true,
+            "no_production_cases": true,
+            "no_promoted_memories": true
+          },
+          "gate_pass": true
+        }
+      ]
+    },
+    "memops_longitudinal_operation": {
+      "required_runs": 3,
+      "passing_runs": 3,
+      "all_runs_pass": true,
+      "runs": [
+        {
+          "run_number": 1,
+          "artifact": {
+            "path": "benchmarks/scientific_memops_v31_longitudinal_run1_results.json",
+            "bytes": 4158,
+            "sha256": "0288ae94f98232172e96150d0dabc38247e58fbf99cff1a0f66a499d95f2ae34"
+          },
+          "raw": {
+            "path": "benchmarks/scientific_memops_v31_longitudinal_run1/raw_pairs.jsonl",
+            "bytes": 940481,
+            "sha256": "ee045c52d2ff084c0bc38839528fb7ed87a5986494ff1fabb8cc817078192df5"
+          },
+          "case_count": 42,
+          "intervention_coverage": 0.9523809523809523,
+          "statistics": {
+            "paired": true,
+            "cluster_key": "subject_id",
+            "cluster_count": 10,
+            "row_count": 42,
+            "repeats": 2000,
+            "seed": 17,
+            "confidence_level": 0.95,
+            "mean_difference": 0.21000000000000002,
+            "ci_lower": 0.11499999999999999,
+            "ci_upper": 0.30500000000000005
+          },
+          "gate_checks": {
+            "minimum_independent_subject_clusters": true,
+            "paired_subject_cluster_bootstrap_ci_lower_strictly_positive": true,
+            "mean_non_negative": true,
+            "minimum_intervention_coverage": true,
+            "no_production_cases": true,
+            "no_promoted_memories": true
+          },
+          "gate_pass": true
+        },
+        {
+          "run_number": 2,
+          "artifact": {
+            "path": "benchmarks/scientific_memops_v31_longitudinal_run2_results.json",
+            "bytes": 4158,
+            "sha256": "4ed7fa9f3cb861e74cdb117c200dc8f2c8c79524419412ec7aaf19e8cd333a68"
+          },
+          "raw": {
+            "path": "benchmarks/scientific_memops_v31_longitudinal_run2/raw_pairs.jsonl",
+            "bytes": 940441,
+            "sha256": "110762f05e4f78778d1f8798afe2addf07892feac589778ebd98959e3e56740f"
+          },
+          "case_count": 42,
+          "intervention_coverage": 0.9523809523809523,
+          "statistics": {
+            "paired": true,
+            "cluster_key": "subject_id",
+            "cluster_count": 10,
+            "row_count": 42,
+            "repeats": 2000,
+            "seed": 17,
+            "confidence_level": 0.95,
+            "mean_difference": 0.21000000000000002,
+            "ci_lower": 0.11499999999999999,
+            "ci_upper": 0.30500000000000005
+          },
+          "gate_checks": {
+            "minimum_independent_subject_clusters": true,
+            "paired_subject_cluster_bootstrap_ci_lower_strictly_positive": true,
+            "mean_non_negative": true,
+            "minimum_intervention_coverage": true,
+            "no_production_cases": true,
+            "no_promoted_memories": true
+          },
+          "gate_pass": true
+        },
+        {
+          "run_number": 3,
+          "artifact": {
+            "path": "benchmarks/scientific_memops_v31_longitudinal_run3_results.json",
+            "bytes": 4158,
+            "sha256": "3e3b3dfd49d0024b368fd90ddba9d2f5f9272634ee1cc7b51032a9b4eb3d1d3f"
+          },
+          "raw": {
+            "path": "benchmarks/scientific_memops_v31_longitudinal_run3/raw_pairs.jsonl",
+            "bytes": 940441,
+            "sha256": "efc11057f28f6a73d2ae7755e5938a438ee14163d22edfa5be278f0f32d440df"
+          },
+          "case_count": 42,
+          "intervention_coverage": 0.9523809523809523,
+          "statistics": {
+            "paired": true,
+            "cluster_key": "subject_id",
+            "cluster_count": 10,
+            "row_count": 42,
+            "repeats": 2000,
+            "seed": 17,
+            "confidence_level": 0.95,
+            "mean_difference": 0.21000000000000002,
+            "ci_lower": 0.11499999999999999,
+            "ci_upper": 0.30500000000000005
+          },
+          "gate_checks": {
+            "minimum_independent_subject_clusters": true,
+            "paired_subject_cluster_bootstrap_ci_lower_strictly_positive": true,
+            "mean_non_negative": true,
+            "minimum_intervention_coverage": true,
+            "no_production_cases": true,
+            "no_promoted_memories": true
+          },
+          "gate_pass": true
+        }
+      ]
+    }
+  },
+  "final_split_touched": false,
+  "admission_arms_executed": [],
+  "admission_permitted_next": true,
+  "claim_boundary": "Development-only evidence passed on six exact-SHA runs. No held-out, SOTA, universal, production, 100%-pass, or revolutionary claim is permitted until the same exact candidate SHA passes every frozen admission arm.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "69f6fcb21f1e49b3c93db8120fde417990477d328c635356303a4c3edcb0187d"
+  }
+}

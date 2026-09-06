@@ -1,0 +1,75 @@
+{
+  "schema": "wavemind.scientific_v31_longmem_loopback_probe.v1",
+  "status": "passed_synthetic_loopback_transport_probe",
+  "probe_scope": "infrastructure_only_synthetic_text",
+  "model": "mistral:7b",
+  "model_digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+  "observed_transport_contrast": {
+    "inherited_httpx_trust_env_true": {
+      "status": 503,
+      "elapsed_seconds": 0.539653,
+      "response_bytes": 0
+    },
+    "explicit_httpx_trust_env_false": {
+      "status": 200,
+      "elapsed_seconds": 0.362014,
+      "response_bytes": 288
+    },
+    "diagnosis": "On this Windows host, inherited httpx transport reached a system proxy and returned an empty HTTP 503 for loopback, while trust_env=False reached the local Ollama endpoint and returned HTTP 200."
+  },
+  "no_proxy_concurrent_openai_sdk": {
+    "no_proxy": "127.0.0.1,localhost",
+    "request_count": 4,
+    "total_elapsed_seconds": 18.867775,
+    "results": [
+      {
+        "index": 0,
+        "synthetic_input_chars": 65023,
+        "status": 200,
+        "elapsed_seconds": 16.222927,
+        "completion_tokens": 3,
+        "response_chars": 4
+      },
+      {
+        "index": 1,
+        "synthetic_input_chars": 70023,
+        "status": 200,
+        "elapsed_seconds": 12.331307,
+        "completion_tokens": 3,
+        "response_chars": 4
+      },
+      {
+        "index": 2,
+        "synthetic_input_chars": 75023,
+        "status": 200,
+        "elapsed_seconds": 18.179057,
+        "completion_tokens": 3,
+        "response_chars": 4
+      },
+      {
+        "index": 3,
+        "synthetic_input_chars": 80023,
+        "status": 200,
+        "elapsed_seconds": 15.005966,
+        "completion_tokens": 3,
+        "response_chars": 4
+      }
+    ],
+    "all_status_200": true
+  },
+  "scientific_boundary": {
+    "benchmark_prompt_read": false,
+    "benchmark_answer_read": false,
+    "gold_read": false,
+    "score_read": false,
+    "synthetic_model_calls_only": true,
+    "model_or_digest_changed": false,
+    "threshold_changed": false
+  },
+  "claim_boundary": "This synthetic transport probe is not a benchmark outcome and authorizes no pass, 100%-pass, SOTA, or revolutionary claim.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "d9fb10f224cd2399a20e6b8babf7920b395478b1febd81f38ac3ba4f9f4dabc2"
+  }
+}

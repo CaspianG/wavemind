@@ -1,0 +1,93 @@
+{
+  "schema": "wavemind.scientific_v31_longmem_infrastructure_failure.v2",
+  "status": "infrastructure_failed_before_outcomes",
+  "logical_run": "longmemeval_v2_small_full_v31",
+  "logical_full_run_count": 1,
+  "infrastructure_failure_sequence": 2,
+  "candidate_source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+  "protocol_digest": "bc1f895bdf8bd30027bcc17f1c3a375099c8ee442681382c56ba57fa7580793b",
+  "fixed_harness_commit": "303d06138fd205a36ea15473c13d0aa71fe4b150",
+  "continuation_plan_commit": "30ceb43dfb241843c67960cb9ff5f172018ca6f2",
+  "failure": {
+    "stage": "candidate_web_small_prompt_truncation_image_loader",
+    "type": "RuntimeError",
+    "outer_message": "Prompt building failed for question e83245c5",
+    "cause_type": "ModuleNotFoundError",
+    "cause_message": "No module named 'PIL'",
+    "causal_diagnosis": "The synchronization fix completed one-time compilation and returned memory context. The official harness then imported its declared Pillow dependency while truncating that context, but Pillow was absent from the scientific environment.",
+    "candidate_or_threshold_failure": false,
+    "scientific_gate_evaluated": false
+  },
+  "observed_state": {
+    "completed_official_arms": [],
+    "partial_arm": "candidate_web_small",
+    "one_time_compilation_completed": true,
+    "answers_generated": false,
+    "outcome_scores_opened": false,
+    "per_question_files": 0,
+    "aggregated_metrics_files": 0,
+    "marker_completed": false,
+    "marker": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/full_run_marker.json",
+      "bytes": 1460,
+      "sha256": "9872e1d94096e7c8fa0a9b4b592f64312d7902e4a74326907c765a034c7a4355"
+    },
+    "run_args": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/candidate_web_small/run_args.json",
+      "bytes": 1873,
+      "sha256": "100e7949df1d796250ae169424e09fe9d17cbd0b4ea7490e479204f468093634"
+    },
+    "console_log": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/continuation_console.log",
+      "bytes": 3326,
+      "sha256": "418d63c80c742f49513d9e1f6cde5da7669a432b0f3a50fb3e6dd19ea5ae1189"
+    }
+  },
+  "official_dependency_evidence": {
+    "repository_sha": "2cc8c540bdb87fe6761629b585e727e1c4704520",
+    "requirements": {
+      "repository_relative_path": "requirements.txt",
+      "bytes": 75,
+      "sha256": "54edace25e2c9a2a86e035090c74217d3d1e97a1be00bedfd3e77f6be88c6220"
+    },
+    "pyproject": {
+      "repository_relative_path": "pyproject.toml",
+      "bytes": 670,
+      "sha256": "efd5a1e217e946ad48723381e956bb37c09f9f18c5178dcfafd1dd39076d36d0"
+    },
+    "dependency_name": "pillow",
+    "declared_by_official_repository": true,
+    "module_import_name": "PIL",
+    "module_available_at_failure": false
+  },
+  "frozen_execution_parameters": {
+    "model": "mistral:7b",
+    "evaluator_model": "mistral:7b",
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "top_k": 20,
+    "shuffle_questions_seed": 17,
+    "prompt_build_max_workers": 4,
+    "reader_max_concurrent_requests": 4
+  },
+  "continuation_policy": {
+    "same_logical_run_required": true,
+    "partial_retained_verbatim_required": true,
+    "candidate_unchanged_required": true,
+    "data_unchanged_required": true,
+    "harness_unchanged_required": true,
+    "prompts_unchanged_required": true,
+    "model_unchanged_required": true,
+    "thresholds_unchanged_required": true,
+    "order_unchanged_required": true,
+    "deterministic_parameters_unchanged_required": true,
+    "permitted_environment_change": "Install only the official repository's declared Pillow runtime dependency and record the resolved version before continuation.",
+    "attempts_count_as_scientific_runs": 1
+  },
+  "claim_boundary": "No LongMemEval outcome exists. This second infrastructure failure is neither a pass nor a scientific gate failure and authorizes no 100%-pass, SOTA, production, universal, or revolutionary claim.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "bcfcf1d4ba26c600496dc667a1fc0821d2497277dfd403da6b89c5ab0dc2b11a"
+  }
+}

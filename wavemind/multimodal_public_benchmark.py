@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.metadata
 import json
 import math
 import os
@@ -1530,9 +1531,21 @@ def _dependency_lock_sha256() -> str:
         text=True,
         encoding="utf-8",
         capture_output=True,
-        check=True,
+        check=False,
     )
-    normalized = "\n".join(sorted(completed.stdout.splitlines())) + "\n"
+    if completed.returncode == 0:
+        lines = completed.stdout.splitlines()
+    else:
+        lines = []
+        for distribution in importlib.metadata.distributions():
+            name = distribution.metadata.get("Name")
+            if name:
+                lines.append(f"{name}=={distribution.version}")
+        if not lines:
+            raise RuntimeError(
+                "Could not fingerprint dependencies with pip or importlib.metadata."
+            )
+    normalized = "\n".join(sorted(lines, key=str.casefold)) + "\n"
     return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
 

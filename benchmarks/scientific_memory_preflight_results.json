@@ -1,0 +1,222 @@
+{
+  "schema": "wavemind.scientific_memory_preflight.v1",
+  "status": "action_required",
+  "ready": false,
+  "source_sha": "3dd0870a226b521868bf4250f10b568bf5f7776b",
+  "protocol_digest": "489d3ff6fca733340b65b26c52ccb5533b19ad14fef66b1d2d912691dac22d59",
+  "checks": {
+    "protocol": {
+      "ready": true,
+      "issues": []
+    },
+    "dataset_manifest": {
+      "ready": true,
+      "issues": []
+    },
+    "official_runner_manifest": {
+      "ready": true,
+      "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\work\\wavemind-scientific-core\\benchmarks\\scientific_official_runner_manifest_v1.json",
+      "issues": []
+    },
+    "clean_exact_sha": {
+      "ready": true,
+      "source_sha": "3dd0870a226b521868bf4250f10b568bf5f7776b",
+      "clean": true,
+      "issue": ""
+    },
+    "real_baseline_packages": {
+      "ready": true,
+      "packages": {
+        "mem0-oss": {
+          "package": "mem0ai",
+          "version": "2.0.18",
+          "source_revision_environment_variable": "WAVEMIND_MEM0_SOURCE_REVISION",
+          "source_revision": "c427a453a89c5a3fee73cdb2e4c4df6a651e1692",
+          "ready": true
+        },
+        "langgraph": {
+          "package": "langgraph",
+          "version": "1.2.11",
+          "source_revision_environment_variable": "WAVEMIND_LANGGRAPH_SOURCE_REVISION",
+          "source_revision": "644815f9e5bc52ad8f7a5227a456227e9c3e639b",
+          "ready": true
+        },
+        "chroma": {
+          "package": "chromadb",
+          "version": "1.5.9",
+          "source_revision_environment_variable": null,
+          "source_revision": null,
+          "ready": true
+        },
+        "qdrant-local": {
+          "package": "qdrant-client",
+          "version": "1.19.0",
+          "source_revision_environment_variable": null,
+          "source_revision": null,
+          "ready": true
+        }
+      }
+    },
+    "official_datasets": {
+      "ready": true,
+      "datasets": {
+        "memory-agent-bench": {
+          "ready": true,
+          "root": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\upstreams\\memory-agent-bench",
+          "expected_revision": "7ea066982b140a19337e17e60d45d4076e042faf",
+          "observed_revision": "7ea066982b140a19337e17e60d45d4076e042faf",
+          "issues": [],
+          "environment_variable": "WAVEMIND_MEMORYAGENTBENCH_ROOT"
+        },
+        "state-bench": {
+          "ready": true,
+          "root": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\upstreams\\state-bench",
+          "expected_revision": "5644b1838d96bc4483da29642d058ecaa6f80f7f",
+          "observed_revision": "5644b1838d96bc4483da29642d058ecaa6f80f7f",
+          "issues": [],
+          "environment_variable": "WAVEMIND_STATE_BENCH_ROOT"
+        },
+        "memops": {
+          "ready": true,
+          "root": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\upstreams\\memops",
+          "expected_revision": "312af65e2c7b6d1b70f062ffa8b4cde32aaf6f35",
+          "observed_revision": "312af65e2c7b6d1b70f062ffa8b4cde32aaf6f35",
+          "issues": [],
+          "environment_variable": "WAVEMIND_MEMOPS_ROOT"
+        },
+        "longmemeval-v2": {
+          "ready": true,
+          "root": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\upstreams\\longmemeval-v2",
+          "expected_revision": "2cc8c540bdb87fe6761629b585e727e1c4704520",
+          "observed_revision": "2cc8c540bdb87fe6761629b585e727e1c4704520",
+          "issues": [],
+          "environment_variable": "WAVEMIND_LONGMEMEVAL_V2_ROOT"
+        }
+      }
+    },
+    "official_runners": {
+      "ready": true,
+      "runners": {
+        "memoryagentbench": {
+          "environment_variable": "WAVEMIND_MEMORYAGENTBENCH_RUNNER",
+          "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\upstreams\\memory-agent-bench-code\\main.py",
+          "repository_root": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\upstreams\\memory-agent-bench-code",
+          "expected_revision": "fe1735de8cf8b9908e1e3d3b5612afc815698062",
+          "observed_revision": "fe1735de8cf8b9908e1e3d3b5612afc815698062",
+          "selected_entrypoint": "main.py",
+          "verified_entrypoints": [
+            {
+              "path": "main.py",
+              "sha256": "809c44650730ad64cc93757f56980330c5db4de19c2abde5a2aef059210e7677",
+              "hash_matches": true
+            }
+          ],
+          "ready": true,
+          "issues": [],
+          "issue": ""
+        },
+        "state-bench-agent-learning": {
+          "environment_variable": "WAVEMIND_STATE_BENCH_RUNNER",
+          "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\upstreams\\state-bench\\state_bench\\scripts\\run_batch.py",
+          "repository_root": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\upstreams\\state-bench",
+          "expected_revision": "5644b1838d96bc4483da29642d058ecaa6f80f7f",
+          "observed_revision": "5644b1838d96bc4483da29642d058ecaa6f80f7f",
+          "selected_entrypoint": "state_bench/scripts/run_batch.py",
+          "verified_entrypoints": [
+            {
+              "path": "state_bench/scripts/run_batch.py",
+              "sha256": "1836e7396107d4ef4b00a34f844f2297b9bb5a0932392bd086b98c3c74c4d14e",
+              "hash_matches": true
+            }
+          ],
+          "ready": true,
+          "issues": [],
+          "issue": ""
+        },
+        "memops": {
+          "environment_variable": "WAVEMIND_MEMOPS_RUNNER",
+          "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\upstreams\\memops\\5-test_operation_metrics.py",
+          "repository_root": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\upstreams\\memops",
+          "expected_revision": "312af65e2c7b6d1b70f062ffa8b4cde32aaf6f35",
+          "observed_revision": "312af65e2c7b6d1b70f062ffa8b4cde32aaf6f35",
+          "selected_entrypoint": "5-test_operation_metrics.py",
+          "verified_entrypoints": [
+            {
+              "path": "5-test_operation_metrics.py",
+              "sha256": "1291341f9816998e8076188d3ed1ba85692eb3861a2e32cd2716ecb794852516",
+              "hash_matches": true
+            },
+            {
+              "path": "5.5-evaluate_operation_metrics.py",
+              "sha256": "4026e580bbcdbe9a92f942b9e02c991e050138ebe45138595727e8c77b626ab5",
+              "hash_matches": true
+            }
+          ],
+          "ready": true,
+          "issues": [],
+          "issue": ""
+        },
+        "longmemeval-v2": {
+          "environment_variable": "WAVEMIND_LONGMEMEVAL_V2_RUNNER",
+          "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\upstreams\\longmemeval-v2\\evaluation\\run_eval.py",
+          "repository_root": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\upstreams\\longmemeval-v2",
+          "expected_revision": "2cc8c540bdb87fe6761629b585e727e1c4704520",
+          "observed_revision": "2cc8c540bdb87fe6761629b585e727e1c4704520",
+          "selected_entrypoint": "evaluation/run_eval.py",
+          "verified_entrypoints": [
+            {
+              "path": "evaluation/run_eval.py",
+              "sha256": "1da698028d8a5d68f88e5449aacae89cab8b4b0a5bf77eb8e0724e738c744f4b",
+              "hash_matches": true
+            }
+          ],
+          "ready": true,
+          "issues": [],
+          "issue": ""
+        }
+      }
+    },
+    "official_credentials": {
+      "ready": false,
+      "credentials": {
+        "official-judge-api-key": {
+          "accepted_environment_variables": [
+            "WAVEMIND_OFFICIAL_JUDGE_API_KEY",
+            "OPENAI_API_KEY"
+          ],
+          "present_environment_variables": [],
+          "ready": false,
+          "issue": "required credential or endpoint is missing"
+        },
+        "longmemeval-v2-reader-endpoint": {
+          "accepted_environment_variables": [
+            "WAVEMIND_LONGMEMEVAL_READER_BASE_URL"
+          ],
+          "present_environment_variables": [],
+          "ready": false,
+          "issue": "required credential or endpoint is missing"
+        },
+        "longmemeval-v2-embedding-endpoint": {
+          "accepted_environment_variables": [
+            "WAVEMIND_LONGMEMEVAL_EMBEDDING_BASE_URL"
+          ],
+          "present_environment_variables": [],
+          "ready": false,
+          "issue": "required credential or endpoint is missing"
+        }
+      },
+      "secret_values_recorded": false
+    },
+    "longmemeval_v2_one_shot_unconsumed": {
+      "ready": true,
+      "observed_full_runs": 0,
+      "maximum_before_admission": 0
+    }
+  },
+  "claim_boundary": "Preflight only. It does not execute held-out cases and is not scientific admission evidence.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "cfc7925b4f92bea890b40de5f81ec166a396f3e75d27c11aecbfd7e2d16eca55"
+  }
+}

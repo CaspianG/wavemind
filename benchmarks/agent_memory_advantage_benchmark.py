@@ -411,7 +411,8 @@ def _optional_competitors() -> list[dict[str, Any]]:
                 "module": module,
                 "installed": installed,
                 "reason": (
-                    "package_detected_but_no_verified_same-protocol_adapter"
+                    "package_detected_but_no_verified_same-protocol_adapter; "
+                    "no imitation substituted"
                     if installed
                     else "package_not_installed; no imitation substituted"
                 ),

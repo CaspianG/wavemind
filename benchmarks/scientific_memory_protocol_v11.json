@@ -1,0 +1,163 @@
+{
+  "schema": "wavemind.scientific_memory_protocol.v11",
+  "protocol_id": "scientific-core-evidence-contracted-query-2026-08-25-v11",
+  "status": "preregistered",
+  "preregistered_at": "2026-08-25",
+  "implementation_prototype_sha": "22e5c99e449b8156050975babb37ed8258701699",
+  "supersedes_protocol_digest": "d522705fdc9d49ed97874b6ce09c6372d7189673945b894856805be625d21b50",
+  "immutable_negative_evidence": {
+    "v10_status": "failed_admission_v10",
+    "v10_outcome_path": "benchmarks/scientific_v10_admission_outcome.json",
+    "v10_outcome_file_sha256": "5f676941866959361e4faf276db9464ccc99ef50db4c2bb9769dae37b0e453f6",
+    "v10_outcome_payload_sha256": "80dae752b754cd5ffb8a08c557e9ddf76395c173de33a79bec52dc3c27b201e4",
+    "permitted_v10_fact": "Only the aggregate fact that two of five MAB final clusters improved while the positive-uplift CI lower bound remained zero may motivate a broader development gate.",
+    "opened_v10_final_cases_may_inform_v11_tuning": false,
+    "opened_v10_final_unit_ids": [
+      "Accurate_Retrieval:0007:aea0f2d603e1c8a3",
+      "Accurate_Retrieval:0009:153a2cce98f93cb3",
+      "Conflict_Resolution:0001:2a44d6ad3264a775",
+      "Long_Range_Understanding:0002:4fb345e28ef3ce1a",
+      "Test_Time_Learning:0002:36d1c3fde8d8fb21"
+    ],
+    "all_later_v10_held_out_arms_remain_unopened": true,
+    "may_be_overwritten": false
+  },
+  "opened_development_diagnostics": {
+    "detective": {
+      "path": "benchmarks/scientific_mab_v11_opened_diagnostic_results.json",
+      "file_sha256": "472bf75923d4bdbeb29b4f108843581008f5154e696018b605227d55b03f34dd",
+      "payload_sha256": "4b8f27addde0d0308bb6512e7451e88bbec0c44df1680faa499c8ed6af5e92ce",
+      "paired_effect_values": [0.0, 1.0, 0.0, 1.0, 0.0]
+    },
+    "retrieval": {
+      "path": "benchmarks/scientific_mab_v11_opened_retrieval_results.json",
+      "file_sha256": "ffbf6a2fb411bf4a2c244faefd91f9197685a6c59a778bd22b5cdd8f22a5a468",
+      "payload_sha256": "05401b1e31f2517e86add7ddec1d718a4683f76798376b554c438a1ca6db46c7",
+      "paired_effect_values": [1.0, 1.0, 1.0, 0.0, 0.0],
+      "ci95_lower": 0.2
+    },
+    "fresh_gate_units_reused": false
+  },
+  "candidate": {
+    "id": "evidence-contracted-query-agent-v11",
+    "frozen_before_first_fresh_v11_outcome": true,
+    "hypothesis": "A gold-free query contract that first decodes explicit A-D JSON, then accepts a uniquely evidenced exact list option, and otherwise uses conservative paraphrase projection will remove exact-match regressions without changing retrieval, production eligibility, or control outputs.",
+    "implementation_boundary": [
+      "wavemind.scientific_answer_transducer.canonicalize_evidence_contracted_answer",
+      "wavemind.scientific_runtime.ScientificCandidateMode.EVIDENCE_CONTRACTED_QUERY_AGENT",
+      "wavemind.scientific_memoryagentbench.run_scientific_candidate_development"
+    ],
+    "contract_order": [
+      "strict A-D answer from valid JSON or direct label using only options after the final question marker",
+      "unique exact normalized list-option occurrence in treatment-retrieved evidence",
+      "frozen conservative query-option paraphrase projection",
+      "unchanged raw treatment output when no contract is decisive"
+    ],
+    "inputs_permitted": [
+      "query text",
+      "raw treatment model output",
+      "treatment-retrieved evidence contents"
+    ],
+    "inputs_forbidden": [
+      "gold answer",
+      "expected answer",
+      "scorer fields or outputs",
+      "control output",
+      "held-out split metadata"
+    ],
+    "retrieval": "Unchanged v10 query-sliced, phrase-aligned, operation-aware shadow retrieval with mandatory tombstones, zero source-recency weight, at most twenty candidates, atomic event batches, and no production promotion."
+  },
+  "frozen_parameters": {
+    "seed": 17,
+    "bootstrap_repeats": 2000,
+    "confidence_level": 0.95,
+    "maximum_retrieval_candidates": 20,
+    "token_budget": 8192,
+    "latency_budget_ms": 1000.0,
+    "top_k_context": 10,
+    "source_recency_weight": 0.0,
+    "answer_model": "mistral:7b",
+    "judge_model": "mistral:7b",
+    "model_digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768
+  },
+  "development_firewall": {
+    "allowed": "Opened development diagnostics and only previously unopened units or subjects labelled development by the pinned manifests.",
+    "forbidden": [
+      "all MAB validation units",
+      "all MAB final units including the five already opened by v10",
+      "all MemOps validation and final subjects",
+      "all LongMemEval-V2 examples",
+      "all v6 validation per-case evidence"
+    ]
+  },
+  "frozen_development_gate": {
+    "families": {
+      "memoryagentbench_cross_family": {
+        "unit_ids": [
+          "Accurate_Retrieval:0000:d6d85ecc896724ed",
+          "Accurate_Retrieval:0001:0ee60a212be86fb2",
+          "Accurate_Retrieval:0002:dd607ab7b24b686d",
+          "Conflict_Resolution:0002:e2789821b46e6626",
+          "Long_Range_Understanding:0000:e7a33ddaf53de51d",
+          "Long_Range_Understanding:0001:1856d77efc6efe18",
+          "Long_Range_Understanding:0004:effac601d0406239",
+          "Test_Time_Learning:0000:32e5ed9216af6ce8",
+          "Test_Time_Learning:0001:a4c204d5682e17c8",
+          "Test_Time_Learning:0004:39146950180e7cff"
+        ],
+        "selection_provenance": "The untouched v7 preregistered diagnostic sample, selected before v11 existed.",
+        "cluster": "whole context_sha256",
+        "queries_per_context": 1
+      },
+      "memops_longitudinal_operation": {
+        "subjects": ["A04", "A06", "A07", "A13", "A14"],
+        "selection_provenance": "The untouched v7 preregistered diagnostic subjects, selected before v11 existed.",
+        "evaluation_setting": "longitudinal_operation",
+        "questions_per_operation_file": 1,
+        "cluster": "subject_id"
+      }
+    },
+    "required_reproducible_runs": 3,
+    "required_independent_families": 2,
+    "minimum_independent_clusters_per_family": 5,
+    "paired_cluster_bootstrap_ci_lower_strictly_greater_than": 0.0,
+    "minimum_intervention_coverage": 0.8,
+    "all_family_means_non_negative": true,
+    "false_verified_promotions_maximum": 0,
+    "production_case_count_maximum": 0,
+    "raw_per_case_evidence_required": true,
+    "stop_on_first_failed_required_run": true
+  },
+  "frozen_admission": {
+    "memoryagentbench_fresh_final_unit_ids": [
+      "Accurate_Retrieval:0010:ec65b7cb50d7280b",
+      "Accurate_Retrieval:0017:61ec3a9b2a2e3e8d",
+      "Accurate_Retrieval:0019:c2e1809c93430d92",
+      "Conflict_Resolution:0003:9c8ce1ed911d25a3",
+      "Long_Range_Understanding:0010:5f579da48d431ff2",
+      "Long_Range_Understanding:0011:b721d0a06ba3ad39",
+      "Long_Range_Understanding:0017:e0c3f4d1eab833c9",
+      "Long_Range_Understanding:0028:1f0d367470ebb847",
+      "Long_Range_Understanding:0034:3e3a1a2dbd3bc870",
+      "Long_Range_Understanding:0052:cb1104516284ee52"
+    ],
+    "memoryagentbench_selection": "All three untouched Accurate Retrieval final contexts, the first untouched unique Conflict Resolution context, and the first six untouched Long Range contexts in manifest order; ten unique context hashes total.",
+    "memops_final_subjects": ["A05", "A11", "A20", "B03", "B04"],
+    "longmemeval_v2_dataset_revision": "f152293e235517d504809563c833d7190b8c713b",
+    "longmemeval_v2_tier": "small",
+    "longmemeval_v2_question_count": 451,
+    "maximum_longmemeval_v2_logical_full_runs": 1,
+    "independent_families_with_positive_uplift_lcb": 2,
+    "longmemeval_v2_uplift_minimum": 0.01,
+    "longmemeval_v2_improved_categories_minimum": 4,
+    "repeated_error_reduction_minimum": 0.5,
+    "stale_or_contradiction_error_rate_maximum": 0.02,
+    "context_reduction_vs_full_context_minimum": 0.3,
+    "runtime_p95_must_be_within_frozen_budget": true,
+    "ablation_required_for_every_improvement": true
+  },
+  "terminal_rule": "Any failed development or admission gate is retained as failed_experiment_v11 or failed_admission_v11. Thresholds may not be relaxed and opened held-out evidence may never become tuning data.",
+  "claim_boundary": "Only a full exact-SHA admission pass permits a bounded benchmark claim. SOTA, universal superiority, production promotion, replacement, 100%-pass, and revolutionary claims remain forbidden without separate external evidence.",
+  "protocol_digest": "0acb2b82a16b6eb87437c9b489775f48910b0bf14969b277096e961ac9e30df3"
+}

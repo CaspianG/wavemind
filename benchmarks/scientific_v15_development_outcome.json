@@ -1,0 +1,48 @@
+{
+  "schema": "wavemind.scientific_v15_development_outcome.v1",
+  "status": "invalid_harness_after_complete_memops_raw",
+  "candidate_source_sha": "755d7b9988905660cad8f7bea4918e7792de66f9",
+  "protocol_digest": "eb768a3140a895a64b4de1ec903e692892cbfad56b52c49ffa7b3a2d29537ba3",
+  "completed_official_runs": {
+    "memoryagentbench_summarization": 0,
+    "memops_longitudinal_operation": 0
+  },
+  "invalid_attempt": {
+    "family": "memops_longitudinal_operation",
+    "run_number": 1,
+    "raw_case_count": 19,
+    "raw": {
+      "path": "benchmarks/scientific_memops_v15_longitudinal_run1/raw_pairs.jsonl",
+      "bytes": 435518,
+      "sha256": "6ba588022e02385ead68ee9ca129d6a140587c845180722a4844287b51f43eba"
+    },
+    "failure": "KeyError: paired_subject_cluster_bootstrap_ci_lower_strictly_greater_than",
+    "cause": "The v15 wrapper repaired the inherited v10 cluster-count key but the base runner contained a second direct legacy CI-threshold key that could not be rebound by the wrapper.",
+    "protocol_key_present": "paired_cluster_bootstrap_ci_lower_strictly_greater_than",
+    "official_artifact_emitted": false,
+    "official_gate_decision": false
+  },
+  "posthoc_diagnostic_only": {
+    "official_gate_decision": false,
+    "cluster_count": 5,
+    "row_count": 19,
+    "mean_difference": 0.16666666666666666,
+    "ci_lower": 0.0,
+    "ci_upper": 0.36666666666666664,
+    "interpretation": "Even absent the harness exception, the opened diagnostic lower bound is not strictly positive. These subjects are permanently ineligible for a future official gate."
+  },
+  "next_iteration_constraints": {
+    "v15_memops_subjects_may_be_reused": false,
+    "v15_mab_units_were_opened": false,
+    "v15_mab_units_may_remain_fresh": true,
+    "thresholds_may_be_relaxed": false,
+    "candidate_may_be_tuned_on_v15_raw": true,
+    "future_official_memops_gate_requires_fresh_subjects": true
+  },
+  "claim_boundary": "v15 is invalid as a complete development gate and its opened diagnostic CI is not strictly positive. No admission, 100%-pass, superiority, production, or revolutionary claim is permitted.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "7e02c55c8c2a15d6d87e5ae2335c9f87be4525c5519d2ecdb68722d2008517d8"
+  }
+}

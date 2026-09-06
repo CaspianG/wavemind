@@ -1,0 +1,113 @@
+{
+  "schema": "wavemind.scientific_memops_v31_final.v1",
+  "phase": "final",
+  "admission_eligible": true,
+  "status": "pass",
+  "source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+  "protocol_digest": "bc1f895bdf8bd30027bcc17f1c3a375099c8ee442681382c56ba57fa7580793b",
+  "candidate_id": "operation-routed-target-state-agent-v31",
+  "candidate_mode_by_operation": {
+    "TrajectoryOps": "target-scoped-operation-agent-v16"
+  },
+  "family": "memops_longitudinal_operation",
+  "evaluation_setting": "longitudinal_operation",
+  "run_number": 1,
+  "official_upstream": {
+    "repository": "MemTensor/MemOps",
+    "sha": "312af65e2c7b6d1b70f062ffa8b4cde32aaf6f35",
+    "runners": [
+      "5-test_operation_metrics.py:run_gpt_rag",
+      "5.5-evaluate_operation_metrics.py:evaluate_entry"
+    ],
+    "upstream_modified": false
+  },
+  "model": {
+    "answer": "mistral:7b",
+    "judge": "mistral:7b",
+    "digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768
+  },
+  "subjects": [
+    "B23",
+    "C11",
+    "D20",
+    "E08",
+    "E11"
+  ],
+  "case_ids": [
+    "B23_forget_q8",
+    "B23_reflect_q8",
+    "B23_remember_q8",
+    "B23_trajectory_ops_q2",
+    "B23_update_q8",
+    "C11_forget_q8",
+    "C11_reflect_q8",
+    "C11_remember_q8",
+    "C11_trajectory_ops_q2",
+    "C11_update_q8",
+    "D20_forget_q8",
+    "D20_reflect_q8",
+    "D20_remember_q8",
+    "D20_trajectory_ops_q2",
+    "D20_update_q8",
+    "E08_forget_q8",
+    "E08_reflect_q8",
+    "E08_remember_q8",
+    "E08_trajectory_ops_q2",
+    "E08_update_q8",
+    "E11_forget_q8",
+    "E11_reflect_q8",
+    "E11_remember_q8",
+    "E11_trajectory_ops_q2",
+    "E11_update_q8"
+  ],
+  "question_selection": "operation-adaptive-v7",
+  "trajectory_sequence_coverage": false,
+  "trajectory_operation_only_sequence_coverage": false,
+  "update_sequence_coverage": false,
+  "operation_trace_sequence_coverage": true,
+  "operation_trace_operation_only_sequence_coverage": true,
+  "candidate_disambiguation_query_options": true,
+  "candidate_disambiguation_sequence_coverage": false,
+  "candidate_disambiguation_operation_only_sequence_coverage": false,
+  "case_count": 25,
+  "intervention_coverage": 0.96,
+  "statistics": {
+    "paired": true,
+    "cluster_key": "subject_id",
+    "cluster_count": 5,
+    "row_count": 25,
+    "repeats": 2000,
+    "seed": 17,
+    "confidence_level": 0.95,
+    "mean_difference": 0.31999999999999995,
+    "ci_lower": 0.24,
+    "ci_upper": 0.4
+  },
+  "production_case_count": 0,
+  "promoted_memory_ids": [],
+  "false_verified_promotions": 0,
+  "gate_checks": {
+    "minimum_independent_subject_clusters": true,
+    "paired_subject_cluster_bootstrap_ci_lower_strictly_positive": true,
+    "mean_non_negative": true,
+    "minimum_intervention_coverage": true,
+    "no_production_cases": true,
+    "no_promoted_memories": true
+  },
+  "diagnostic_gate_pass": null,
+  "gate_pass": true,
+  "final_split_touched": true,
+  "raw_output": {
+    "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\work\\wavemind-scientific-core\\benchmarks\\scientific_memops_v31_final\\raw_pairs.jsonl",
+    "bytes": 518050,
+    "sha256": "77c9eb05c46d5766f5f01c501cb722ab236b0d6c1e96fed2ec7c9e542b2ef50d"
+  },
+  "claim_boundary": "MemOps final arm only; full v31 admission remains incomplete until every later frozen arm passes.",
+  "source_split": "final",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "6d19b108804e3038ebb2c4bbf72e6dc60524afea3c3eb89bbbab2caef37fc780"
+  }
+}

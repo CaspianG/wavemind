@@ -1,0 +1,90 @@
+{
+  "schema": "wavemind.memoryagentbench_final.v31",
+  "phase": "final",
+  "status": "pass",
+  "candidate_id": "operation-routed-target-state-agent-v31",
+  "candidate_source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+  "protocol_digest": "bc1f895bdf8bd30027bcc17f1c3a375099c8ee442681382c56ba57fa7580793b",
+  "model": {
+    "id": "mistral:7b",
+    "digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768
+  },
+  "official_repository_sha": "fe1735de8cf8b9908e1e3d3b5612afc815698062",
+  "dataset_revision": "7ea066982b140a19337e17e60d45d4076e042faf",
+  "source_split": "final",
+  "unit_ids": [
+    "Long_Range_Understanding:0069:c7f1535f7238600e",
+    "Long_Range_Understanding:0070:8a93d4cd5cbd681e",
+    "Long_Range_Understanding:0072:893a573e50a0f0ec",
+    "Long_Range_Understanding:0076:3448e84ad791bded",
+    "Long_Range_Understanding:0077:d3fa1ef5e2ffc10b",
+    "Long_Range_Understanding:0078:ef8ee769eeaaf621",
+    "Long_Range_Understanding:0083:db96042a8a5aa313",
+    "Long_Range_Understanding:0085:a348120f6cdda6a0",
+    "Long_Range_Understanding:0088:4f8eeff8019e736b",
+    "Long_Range_Understanding:0098:b8164c32e0eba3df"
+  ],
+  "context_sha256": [
+    "3448e84ad791bded66313ad1d840008238be55d824812c8422dd15167848cf89",
+    "4f8eeff8019e736bd48b7689e42da3a9236c4b44703107cfe411edb37cafa9d4",
+    "893a573e50a0f0ec75ec2305b04f8ca5ae63013f0f0210e02539779b4b01e7b4",
+    "8a93d4cd5cbd681e16d446e2e69d8586045dd43e3621f113d0fb137b52019a2c",
+    "a348120f6cdda6a000248dd03492d4d5fbb21601c98293733c991b9a1c3163ad",
+    "b8164c32e0eba3dfa34f4045dd48857f442c8c169ec2f862f2d1a302134bf3b8",
+    "c7f1535f7238600e45611e78fa9e4fe27c15fa23f9e90886606a29ddb77971c2",
+    "d3fa1ef5e2ffc10becdfc8114abdecef784a6f354ea62d987b39065d7bb36b50",
+    "db96042a8a5aa3132add3cd113697c3a43d03b0d31dd8aeb5604fc4a3ddadb01",
+    "ef8ee769eeaaf621170a5615e7f200deb5fc9b576f6745e831881297b356c15f"
+  ],
+  "case_count": 10,
+  "paired_effect_values": [
+    0.06211180124223602,
+    0.11985018726591759,
+    0.016272189349112426,
+    0.11893203883495146,
+    0.10634328358208955,
+    0.06466302367941712,
+    0.04675324675324674,
+    0.008830022075055191,
+    0.024769305488101023,
+    0.07538280329799764
+  ],
+  "paired_cluster_bootstrap": {
+    "paired": true,
+    "cluster_key": "cluster",
+    "cluster_count": 10,
+    "row_count": 10,
+    "repeats": 2000,
+    "seed": 17,
+    "confidence_level": 0.95,
+    "mean_difference": 0.06439079015681247,
+    "ci_lower": 0.04074446399032748,
+    "ci_upper": 0.08802698571888758
+  },
+  "intervention_coverage": 1.0,
+  "production_case_count": 0,
+  "promoted_memory_ids": [],
+  "false_verified_promotions": 0,
+  "gate_checks": {
+    "ten_independent_clusters": true,
+    "paired_cluster_bootstrap_ci_lower_strictly_positive": true,
+    "mean_non_negative": true,
+    "minimum_intervention_coverage": true,
+    "no_production_cases": true,
+    "no_promoted_memories": true
+  },
+  "gate_pass": true,
+  "raw_output": {
+    "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\work\\wavemind-scientific-core\\benchmarks\\scientific_mab_v31_final_raw.jsonl",
+    "bytes": 602766,
+    "sha256": "0b40e6e9cbf852d12b6ab0d8e275025816f19b7688c9e9a77046da822fe2c3a0"
+  },
+  "final_split_touched": true,
+  "claim_boundary": "MAB final arm only; full v31 admission remains incomplete until every later frozen arm passes.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "b0ed7cd4ca01e2807685f3ab5f174558ecd438a70e17f863abc69f4100ac03df"
+  }
+}

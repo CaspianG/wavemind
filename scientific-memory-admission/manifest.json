@@ -1,0 +1,162 @@
+{
+  "schema": "wavemind.scientific_memory_admission_package.v1",
+  "source_sha": "ec10061b948f60f22cf15f6840e741c643446282",
+  "protocol_digest": "489d3ff6fca733340b65b26c52ccb5533b19ad14fef66b1d2d912691dac22d59",
+  "status": "failed_experiment",
+  "admitted": false,
+  "candidate_results": {
+    "causal-utility-controller-v1": {
+      "status": "failed_experiment",
+      "advance_to_validation": false,
+      "memoryagentbench_paired_uplift": {
+        "paired": true,
+        "cluster_key": "context",
+        "cluster_count": 2,
+        "row_count": 6,
+        "repeats": 2000,
+        "seed": 17,
+        "confidence_level": 0.95,
+        "mean_difference": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0
+      },
+      "memops_observed_mean_effect": -0.4,
+      "memops_confidence_interval_status": "insufficient_independent_clusters",
+      "production_case_count": 0,
+      "promoted_memory_ids": [],
+      "false_verified_promotions": 0
+    },
+    "evidence-constrained-associative-graph-v1": {
+      "status": "failed_experiment",
+      "advance_to_validation": false,
+      "memoryagentbench_paired_uplift": {
+        "paired": true,
+        "cluster_key": "context",
+        "cluster_count": 2,
+        "row_count": 6,
+        "repeats": 2000,
+        "seed": 17,
+        "confidence_level": 0.95,
+        "mean_difference": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0
+      },
+      "memops_observed_mean_effect": -0.4,
+      "memops_confidence_interval_status": "insufficient_independent_clusters",
+      "production_case_count": 0,
+      "promoted_memory_ids": [],
+      "false_verified_promotions": 0
+    }
+  },
+  "official_upstreams": {
+    "memoryagentbench": "fe1735de8cf8b9908e1e3d3b5612afc815698062",
+    "memops": "312af65e2c7b6d1b70f062ffa8b4cde32aaf6f35",
+    "state-bench": "5644b1838d96bc4483da29642d058ecaa6f80f7f",
+    "longmemeval-v2": "2cc8c540bdb87fe6761629b585e727e1c4704520"
+  },
+  "held_out_execution": {
+    "three_reproducible_runs_completed": false,
+    "state_bench_official_execution_completed": false,
+    "longmemeval_v2_full_451_completed": false,
+    "validation_or_final_rows_touched": false,
+    "reason": "Both preregistered candidates failed bounded development; no passed development gate exists, so held-out execution is forbidden rather than missing-at-random."
+  },
+  "evidence_files": [
+    {
+      "path": "benchmarks/scientific_memory_protocol_v1.json",
+      "bytes": 8724,
+      "sha256": "854e7ace96aa1944d6a5d4a9818bc0b161d1c74380dcfcfd35c9c4029d4e0f8a"
+    },
+    {
+      "path": "benchmarks/scientific_official_runner_manifest_v1.json",
+      "bytes": 2066,
+      "sha256": "8710de6df1de6182ef99ee2f8198552375fc2e34f51df8c2222328960706951d"
+    },
+    {
+      "path": "benchmarks/scientific_memoryagentbench_baseline_dev_raw.jsonl",
+      "bytes": 942646,
+      "sha256": "ffd36889cb758f70ed20b6719b7eb078b4860aff1fa24e1a8588ae75f5890904"
+    },
+    {
+      "path": "benchmarks/scientific_memoryagentbench_baseline_dev_results.json",
+      "bytes": 12987,
+      "sha256": "d6e014f6ea2bfc62bf83bef0a4ef32802796359d6de18c2db699be34997ca224"
+    },
+    {
+      "path": "benchmarks/scientific_memoryagentbench_causal_multicluster_dev_raw.jsonl",
+      "bytes": 21084,
+      "sha256": "1740889575d0d490df4023a01250347bd0843a47cc612f1d3835921533a84d4c"
+    },
+    {
+      "path": "benchmarks/scientific_memoryagentbench_causal_multicluster_dev_results.json",
+      "bytes": 2801,
+      "sha256": "be25aad04489ed4abecfd65d8421ca69d3bb5bdd47ad96670167d10a0d9bc88d"
+    },
+    {
+      "path": "benchmarks/scientific_memoryagentbench_graph_multicluster_dev_raw.jsonl",
+      "bytes": 21796,
+      "sha256": "4b4d0d71e74382d402bc7ef7b43c166855576ab0520b25fd5d3e7d52e00c318f"
+    },
+    {
+      "path": "benchmarks/scientific_memoryagentbench_graph_multicluster_dev_results.json",
+      "bytes": 2813,
+      "sha256": "0e0202e7e0cf61ec30e730c6def7f635575a769c177b57f592577e831acd80ea"
+    },
+    {
+      "path": "benchmarks/scientific_memops_candidate_dev_results.json",
+      "bytes": 1929,
+      "sha256": "3f1b633fc318fc783e75e4327bbd2e6120bff839613a86afa1d2e55902fbddd6"
+    },
+    {
+      "path": "benchmarks/scientific_memops_graph_candidate_dev_results.json",
+      "bytes": 1941,
+      "sha256": "98976fe74ae5c32063f1bd1ba19aefd6e74f0fff2c0bea92a16c654af9e26f62"
+    },
+    {
+      "path": "benchmarks/scientific_state_bench_prepared_dev_results.json",
+      "bytes": 15731,
+      "sha256": "cabbe4e17a1a463cf33cfb84fcde74611ee90ca259591f532be4c48361acec95"
+    },
+    {
+      "path": "benchmarks/scientific_development_evidence_results.json",
+      "bytes": 5786,
+      "sha256": "6f703e5fa82263854cee161844bcc64b3764c46eb1e5046d21a6f07d7dd4c7a9"
+    },
+    {
+      "path": "benchmarks/scientific_memoryagentbench_candidate_failed_attempts.jsonl",
+      "bytes": 767,
+      "sha256": "0c24600721f85722d68257f0c1b59803a3a904ecf756f7aa87a56298533142f9"
+    },
+    {
+      "path": "benchmarks/scientific_memoryagentbench_baseline_failed_attempts.jsonl",
+      "bytes": 944,
+      "sha256": "fe507f9cc8b1631b8c34b40e04dec8bbe7fa2a746c2c003c6e9ac2c2c172ad42"
+    }
+  ],
+  "external_retained_raw_files": [
+    {
+      "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-causal-dev-95d24e8\\raw_pairs.jsonl",
+      "bytes": 88621,
+      "sha256": "55bba3273fafeeb5b472f79743dd8767885c3c600ed2c97d0a5b618cf110d634"
+    },
+    {
+      "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-graph-dev-94fe6ab\\raw_pairs.jsonl",
+      "bytes": 88560,
+      "sha256": "e33018932d79996625029459f6de23a904d1d98da3bb8d16aedb08c19ee12a76"
+    }
+  ],
+  "reproduction": {
+    "python": "scientific-env/Scripts/python.exe",
+    "commands": [
+      "python -m pytest tests/test_scientific_*.py -q",
+      "python benchmarks/scientific_development_evidence.py --output <fresh-output.json>",
+      "python benchmarks/scientific_memory_admission_package.py --output-dir <fresh-directory>"
+    ]
+  },
+  "claim_boundary": "The frozen scientific candidates are not admitted. Public WaveField descriptions and WaveMind Connect remain unchanged; no SOTA or revolutionary claim is allowed.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "b00219af02da9ef40bf452c820170b81f670bf4d8f491b21e2f8c0dd31ebd711"
+  }
+}

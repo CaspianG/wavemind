@@ -1,0 +1,1034 @@
+{
+  "schema": "wavemind.memops_bounded_development.v1",
+  "phase": "bounded-development",
+  "admission_eligible": false,
+  "reason_not_admission_eligible": "local Ollama transport and development split; official held-out credentials and locked admission models were not used",
+  "source_sha": "824639415845c6912bbed9745bf7ef4151f89b9c",
+  "official_upstream": {
+    "repository": "MemTensor/MemOps",
+    "sha": "312af65e2c7b6d1b70f062ffa8b4cde32aaf6f35",
+    "runners": [
+      "5-test_operation_metrics.py:run_pipeline",
+      "5.5-evaluate_operation_metrics.py:run_pipeline"
+    ],
+    "upstream_modified": false
+  },
+  "model": {
+    "id": "mistral:7b",
+    "digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768
+  },
+  "transport": "ollama-native-api/local-development-only",
+  "split_unit_ids": [
+    "A04_forget",
+    "A04_reflect",
+    "A04_remember"
+  ],
+  "case_ids": [
+    "A04_forget_q2",
+    "A04_forget_q4",
+    "A04_forget_q6",
+    "A04_forget_q8",
+    "A04_forget_q10",
+    "A04_reflect_q2",
+    "A04_reflect_q4",
+    "A04_reflect_q6",
+    "A04_reflect_q8",
+    "A04_reflect_q10",
+    "A04_remember_q2",
+    "A04_remember_q4",
+    "A04_remember_q6",
+    "A04_remember_q8",
+    "A04_remember_q10",
+    "A04_remember_q12"
+  ],
+  "case_count": 16,
+  "final_split_touched": false,
+  "failed_attempts_retained": [
+    {
+      "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-bounded-dev-4fb5f81\\answers-turn-top1\\operation_metrics_all_methods.jsonl",
+      "bytes": 42263,
+      "sha256": "6d60aaafe4e3ba1468cd0c5f958e9ab021eea4f3f26e88c41fc3bea69be149fa"
+    },
+    {
+      "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-bounded-dev-4fb5f81\\answers-turn-top1\\summary.json",
+      "bytes": 2710,
+      "sha256": "dddc4b1290ab69f60e3fe818b0130e142f924cc34ad143d26142da8b97621a56"
+    },
+    {
+      "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-bounded-dev-4fb5f81\\answers\\operation_metrics_all_methods.jsonl",
+      "bytes": 83815,
+      "sha256": "16bed114579d5da0d830037a9496fb6f256b3b99b2409bfab55b50bcac187f56"
+    },
+    {
+      "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-bounded-dev-4fb5f81\\answers\\summary.json",
+      "bytes": 2904,
+      "sha256": "6c6f317260b9b2022e5e0fe2be7378955b0470672105268530613a62a77e4855"
+    },
+    {
+      "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-bounded-dev-4fb5f81\\failed-attempt-1-dependency.json",
+      "bytes": 297,
+      "sha256": "9f69ed072c7ebc6a922fc04ff9d55a1daf17fc28cf7eee475909f94b9c6c8b4b"
+    },
+    {
+      "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-bounded-dev-4fb5f81\\failed-attempt-2-model-loading\\operation_metrics_all_methods.jsonl",
+      "bytes": 83815,
+      "sha256": "16bed114579d5da0d830037a9496fb6f256b3b99b2409bfab55b50bcac187f56"
+    },
+    {
+      "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-bounded-dev-4fb5f81\\failed-attempt-2-model-loading\\summary.json",
+      "bytes": 2904,
+      "sha256": "6c6f317260b9b2022e5e0fe2be7378955b0470672105268530613a62a77e4855"
+    },
+    {
+      "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-bounded-dev-4fb5f81\\failed-attempt-5-judge-context.json",
+      "bytes": 770,
+      "sha256": "03336c10639c96571ae429a2ffc0077e90236b426e82a1149f071be43631da1b"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-bounded-dev-4fb5f81\\answers-native-scored-32k-all16\\evaluation\\operation_metrics_all_methods_operation_metrics_eval.jsonl",
+      "bytes": 238980,
+      "sha256": "33fb4954069ac498d8f668928dc7f51a448ae5a737141a269d2d6b537a9f7f4b"
+    },
+    {
+      "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-bounded-dev-4fb5f81\\answers-native-scored-32k-all16\\evaluation\\summary.json",
+      "bytes": 21894,
+      "sha256": "483b24aa0fdce29d6dc94310a6fe445a5ab2ece229a527bef8e4b43f44e9b142"
+    },
+    {
+      "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-bounded-dev-4fb5f81\\answers-native-scored-32k-all16\\operation_metrics_all_methods.jsonl",
+      "bytes": 141808,
+      "sha256": "03bef9c10e353edbb583fc3d65716e0c06c13076cdec64db69bf8eb35dbbe2b7"
+    },
+    {
+      "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-bounded-dev-4fb5f81\\answers-native-scored-32k-all16\\retrieval_flat-bm25_rag_vanilla_turn.jsonl",
+      "bytes": 211301,
+      "sha256": "c3866d87276dfc176811589e44fbc82ff68f82ea6d46614cabd2e012608f2a74"
+    },
+    {
+      "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-bounded-dev-4fb5f81\\answers-native-scored-32k-all16\\summary.json",
+      "bytes": 2828,
+      "sha256": "898c3d4fc014037d12330ab54eb6f60ad407d9d86e37fcf97ca9c1ba3aaa2314"
+    }
+  ],
+  "official_summary": {
+    "generation": {
+      "adjacent_input_dir": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-bounded-dev-4fb5f81\\input-adjacent",
+      "longitudinal_input_dir": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-bounded-dev-4fb5f81\\input-longitudinal",
+      "output_dir": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-bounded-dev-4fb5f81\\answers-native-scored-32k-all16",
+      "adjacent_input_files": 3,
+      "longitudinal_input_files": 3,
+      "retrieval_entries": 16,
+      "adjacent_entries": 0,
+      "longitudinal_entries": 16,
+      "longitudinal_question_entries": 16,
+      "longitudinal_entries_by_method": {
+        "rag_vanilla_turn": 16
+      },
+      "available_retrieval_entries": 16,
+      "max_questions": 0,
+      "question_offset": 0,
+      "rag_entries": 16,
+      "retriever": "adjacent-context+multi-method",
+      "model": "mistral:7b",
+      "rag_methods": [
+        "rag_vanilla"
+      ],
+      "rag_retrieval_units": [
+        "turn"
+      ],
+      "adjacent_models": [],
+      "long_context_models": [],
+      "no_context_models": [],
+      "top_k": 3,
+      "top_k_context": 1,
+      "rag_workers": 1,
+      "streaming_parser_model": "gpt-4o-mini",
+      "streaming_mutation_model": "gpt-4o-mini",
+      "streaming_parser_workers": 8,
+      "streaming_mutation_workers": 8,
+      "streaming_mutation_top_m": 10,
+      "retrieval_output": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-bounded-dev-4fb5f81\\answers-native-scored-32k-all16\\retrieval_flat-bm25.jsonl",
+      "retrieval_outputs": {
+        "rag_vanilla_turn": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-bounded-dev-4fb5f81\\answers-native-scored-32k-all16\\retrieval_flat-bm25_rag_vanilla_turn.jsonl"
+      },
+      "adjacent_output": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-bounded-dev-4fb5f81\\answers-native-scored-32k-all16\\mistral:7b_adjacent_operation.jsonl",
+      "longitudinal_output": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-bounded-dev-4fb5f81\\answers-native-scored-32k-all16\\mistral:7b_longitudinal_operation.jsonl",
+      "longitudinal_outputs": {
+        "rag_vanilla_turn": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-bounded-dev-4fb5f81\\answers-native-scored-32k-all16\\mistral:7b_longitudinal_operation_rag_vanilla_turn.jsonl"
+      },
+      "rag_output": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-bounded-dev-4fb5f81\\answers-native-scored-32k-all16\\mistral:7b_operation_metrics.jsonl",
+      "all_methods_output": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-bounded-dev-4fb5f81\\answers-native-scored-32k-all16\\operation_metrics_all_methods.jsonl"
+    },
+    "evaluation": {
+      "input_file": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-bounded-dev-4fb5f81\\answers-native-scored-32k-all16\\operation_metrics_all_methods.jsonl",
+      "output_file": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-bounded-dev-4fb5f81\\answers-native-scored-32k-all16\\evaluation\\operation_metrics_all_methods_operation_metrics_eval.jsonl",
+      "judge_model": "mistral:7b",
+      "total": 16,
+      "answer_correct": 15,
+      "answer_incorrect": 1,
+      "answer_accuracy": 0.9375,
+      "operation_detection": {
+        "tp": 16,
+        "fp": 0,
+        "fn": 3,
+        "precision": 1.0,
+        "recall": 0.8421052631578947,
+        "f1": 0.9142857142857143
+      },
+      "metrics": {
+        "reflection_precision": 1.0,
+        "reflection_recall": 1.0,
+        "provenance_support_rate": 0.9375
+      },
+      "eval_workers": 1,
+      "by_setting": {
+        "all": {
+          "total": 16,
+          "answer_correct": 15,
+          "answer_incorrect": 1,
+          "answer_accuracy": 0.9375,
+          "operation_detection": {
+            "tp": 16,
+            "fp": 0,
+            "fn": 3,
+            "precision": 1.0,
+            "recall": 0.8421052631578947,
+            "f1": 0.9142857142857143
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 0.9375
+        },
+        "longitudinal_operation": {
+          "total": 16,
+          "answer_correct": 15,
+          "answer_incorrect": 1,
+          "answer_accuracy": 0.9375,
+          "operation_detection": {
+            "tp": 16,
+            "fp": 0,
+            "fn": 3,
+            "precision": 1.0,
+            "recall": 0.8421052631578947,
+            "f1": 0.9142857142857143
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 0.9375
+        }
+      },
+      "by_evaluation_method": {
+        "all": {
+          "total": 16,
+          "answer_correct": 15,
+          "answer_incorrect": 1,
+          "answer_accuracy": 0.9375,
+          "operation_detection": {
+            "tp": 16,
+            "fp": 0,
+            "fn": 3,
+            "precision": 1.0,
+            "recall": 0.8421052631578947,
+            "f1": 0.9142857142857143
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 0.9375
+        },
+        "rag_vanilla_turn": {
+          "total": 16,
+          "answer_correct": 15,
+          "answer_incorrect": 1,
+          "answer_accuracy": 0.9375,
+          "operation_detection": {
+            "tp": 16,
+            "fp": 0,
+            "fn": 3,
+            "precision": 1.0,
+            "recall": 0.8421052631578947,
+            "f1": 0.9142857142857143
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 0.9375
+        }
+      },
+      "by_context_mode": {
+        "all": {
+          "total": 16,
+          "answer_correct": 15,
+          "answer_incorrect": 1,
+          "answer_accuracy": 0.9375,
+          "operation_detection": {
+            "tp": 16,
+            "fp": 0,
+            "fn": 3,
+            "precision": 1.0,
+            "recall": 0.8421052631578947,
+            "f1": 0.9142857142857143
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 0.9375
+        },
+        "rag": {
+          "total": 16,
+          "answer_correct": 15,
+          "answer_incorrect": 1,
+          "answer_accuracy": 0.9375,
+          "operation_detection": {
+            "tp": 16,
+            "fp": 0,
+            "fn": 3,
+            "precision": 1.0,
+            "recall": 0.8421052631578947,
+            "f1": 0.9142857142857143
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 0.9375
+        }
+      },
+      "by_retrieval_mode": {
+        "all": {
+          "total": 16,
+          "answer_correct": 15,
+          "answer_incorrect": 1,
+          "answer_accuracy": 0.9375,
+          "operation_detection": {
+            "tp": 16,
+            "fp": 0,
+            "fn": 3,
+            "precision": 1.0,
+            "recall": 0.8421052631578947,
+            "f1": 0.9142857142857143
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 0.9375
+        },
+        "vanilla": {
+          "total": 16,
+          "answer_correct": 15,
+          "answer_incorrect": 1,
+          "answer_accuracy": 0.9375,
+          "operation_detection": {
+            "tp": 16,
+            "fp": 0,
+            "fn": 3,
+            "precision": 1.0,
+            "recall": 0.8421052631578947,
+            "f1": 0.9142857142857143
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 0.9375
+        }
+      },
+      "by_retrieval_unit": {
+        "all": {
+          "total": 16,
+          "answer_correct": 15,
+          "answer_incorrect": 1,
+          "answer_accuracy": 0.9375,
+          "operation_detection": {
+            "tp": 16,
+            "fp": 0,
+            "fn": 3,
+            "precision": 1.0,
+            "recall": 0.8421052631578947,
+            "f1": 0.9142857142857143
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 0.9375
+        },
+        "turn": {
+          "total": 16,
+          "answer_correct": 15,
+          "answer_incorrect": 1,
+          "answer_accuracy": 0.9375,
+          "operation_detection": {
+            "tp": 16,
+            "fp": 0,
+            "fn": 3,
+            "precision": 1.0,
+            "recall": 0.8421052631578947,
+            "f1": 0.9142857142857143
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 0.9375
+        }
+      },
+      "by_answer_model": {
+        "all": {
+          "total": 16,
+          "answer_correct": 15,
+          "answer_incorrect": 1,
+          "answer_accuracy": 0.9375,
+          "operation_detection": {
+            "tp": 16,
+            "fp": 0,
+            "fn": 3,
+            "precision": 1.0,
+            "recall": 0.8421052631578947,
+            "f1": 0.9142857142857143
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 0.9375
+        },
+        "mistral:7b": {
+          "total": 16,
+          "answer_correct": 15,
+          "answer_incorrect": 1,
+          "answer_accuracy": 0.9375,
+          "operation_detection": {
+            "tp": 16,
+            "fp": 0,
+            "fn": 3,
+            "precision": 1.0,
+            "recall": 0.8421052631578947,
+            "f1": 0.9142857142857143
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 0.9375
+        }
+      },
+      "by_operation_type": {
+        "all": {
+          "total": 16,
+          "answer_correct": 15,
+          "answer_incorrect": 1,
+          "answer_accuracy": 0.9375,
+          "operation_detection": {
+            "tp": 16,
+            "fp": 0,
+            "fn": 3,
+            "precision": 1.0,
+            "recall": 0.8421052631578947,
+            "f1": 0.9142857142857143
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 0.9375
+        },
+        "Forget": {
+          "total": 5,
+          "answer_correct": 5,
+          "answer_incorrect": 0,
+          "answer_accuracy": 1.0,
+          "operation_detection": {
+            "tp": 8,
+            "fp": 0,
+            "fn": 1,
+            "precision": 1.0,
+            "recall": 0.8888888888888888,
+            "f1": 0.9411764705882353
+          },
+          "provenance_support_rate": 1.0
+        },
+        "Reflect": {
+          "total": 5,
+          "answer_correct": 4,
+          "answer_incorrect": 1,
+          "answer_accuracy": 0.8,
+          "operation_detection": {
+            "tp": 4,
+            "fp": 0,
+            "fn": 1,
+            "precision": 1.0,
+            "recall": 0.8,
+            "f1": 0.888888888888889
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 0.8
+        },
+        "Remember": {
+          "total": 6,
+          "answer_correct": 6,
+          "answer_incorrect": 0,
+          "answer_accuracy": 1.0,
+          "operation_detection": {
+            "tp": 4,
+            "fp": 0,
+            "fn": 1,
+            "precision": 1.0,
+            "recall": 0.8,
+            "f1": 0.888888888888889
+          },
+          "provenance_support_rate": 1.0
+        }
+      },
+      "by_evaluation_type": {
+        "all": {
+          "total": 16,
+          "answer_correct": 15,
+          "answer_incorrect": 1,
+          "answer_accuracy": 0.9375,
+          "operation_detection": {
+            "tp": 16,
+            "fp": 0,
+            "fn": 3,
+            "precision": 1.0,
+            "recall": 0.8421052631578947,
+            "f1": 0.9142857142857143
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 0.9375
+        },
+        "OperationTrace": {
+          "total": 3,
+          "answer_correct": 3,
+          "answer_incorrect": 0,
+          "answer_accuracy": 1.0,
+          "operation_detection": {
+            "tp": 6,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 1.0
+        },
+        "TargetBinding": {
+          "total": 3,
+          "answer_correct": 3,
+          "answer_incorrect": 0,
+          "answer_accuracy": 1.0,
+          "operation_detection": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 1.0
+        },
+        "StateTransition": {
+          "total": 4,
+          "answer_correct": 4,
+          "answer_incorrect": 0,
+          "answer_accuracy": 1.0,
+          "operation_detection": {
+            "tp": 2,
+            "fp": 0,
+            "fn": 1,
+            "precision": 1.0,
+            "recall": 0.6666666666666666,
+            "f1": 0.8
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 1.0
+        },
+        "CandidateDisambiguation": {
+          "total": 3,
+          "answer_correct": 2,
+          "answer_incorrect": 1,
+          "answer_accuracy": 0.6666666666666666,
+          "operation_detection": {
+            "tp": 1,
+            "fp": 0,
+            "fn": 2,
+            "precision": 1.0,
+            "recall": 0.3333333333333333,
+            "f1": 0.5
+          },
+          "provenance_support_rate": 0.6666666666666666
+        },
+        "OperationApplication": {
+          "total": 3,
+          "answer_correct": 3,
+          "answer_incorrect": 0,
+          "answer_accuracy": 1.0,
+          "operation_detection": {
+            "tp": 7,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 1.0
+        }
+      },
+      "by_evaluation_category": {
+        "all": {
+          "total": 16,
+          "answer_correct": 15,
+          "answer_incorrect": 1,
+          "answer_accuracy": 0.9375,
+          "operation_detection": {
+            "tp": 16,
+            "fp": 0,
+            "fn": 3,
+            "precision": 1.0,
+            "recall": 0.8421052631578947,
+            "f1": 0.9142857142857143
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 0.9375
+        },
+        "operation_trace": {
+          "total": 3,
+          "answer_correct": 3,
+          "answer_incorrect": 0,
+          "answer_accuracy": 1.0,
+          "operation_detection": {
+            "tp": 6,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 1.0
+        },
+        "target_binding": {
+          "total": 3,
+          "answer_correct": 3,
+          "answer_incorrect": 0,
+          "answer_accuracy": 1.0,
+          "operation_detection": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 1.0
+        },
+        "state_reasoning": {
+          "total": 4,
+          "answer_correct": 4,
+          "answer_incorrect": 0,
+          "answer_accuracy": 1.0,
+          "operation_detection": {
+            "tp": 2,
+            "fp": 0,
+            "fn": 1,
+            "precision": 1.0,
+            "recall": 0.6666666666666666,
+            "f1": 0.8
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 1.0
+        },
+        "distractor_control": {
+          "total": 3,
+          "answer_correct": 2,
+          "answer_incorrect": 1,
+          "answer_accuracy": 0.6666666666666666,
+          "operation_detection": {
+            "tp": 1,
+            "fp": 0,
+            "fn": 2,
+            "precision": 1.0,
+            "recall": 0.3333333333333333,
+            "f1": 0.5
+          },
+          "provenance_support_rate": 0.6666666666666666
+        },
+        "downstream_application": {
+          "total": 3,
+          "answer_correct": 3,
+          "answer_incorrect": 0,
+          "answer_accuracy": 1.0,
+          "operation_detection": {
+            "tp": 7,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 1.0
+        }
+      },
+      "by_difficulty": {
+        "all": {
+          "total": 16,
+          "answer_correct": 15,
+          "answer_incorrect": 1,
+          "answer_accuracy": 0.9375,
+          "operation_detection": {
+            "tp": 16,
+            "fp": 0,
+            "fn": 3,
+            "precision": 1.0,
+            "recall": 0.8421052631578947,
+            "f1": 0.9142857142857143
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 0.9375
+        },
+        "medium": {
+          "total": 11,
+          "answer_correct": 11,
+          "answer_incorrect": 0,
+          "answer_accuracy": 1.0,
+          "operation_detection": {
+            "tp": 9,
+            "fp": 0,
+            "fn": 2,
+            "precision": 1.0,
+            "recall": 0.8181818181818182,
+            "f1": 0.9
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 1.0
+        },
+        "hard": {
+          "total": 5,
+          "answer_correct": 4,
+          "answer_incorrect": 1,
+          "answer_accuracy": 0.8,
+          "operation_detection": {
+            "tp": 7,
+            "fp": 0,
+            "fn": 1,
+            "precision": 1.0,
+            "recall": 0.875,
+            "f1": 0.9333333333333333
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 0.8
+        }
+      },
+      "by_difficulty_knob": {
+        "all": {
+          "total": 16,
+          "answer_correct": 15,
+          "answer_incorrect": 1,
+          "answer_accuracy": 0.9375,
+          "operation_detection": {
+            "tp": 16,
+            "fp": 0,
+            "fn": 3,
+            "precision": 1.0,
+            "recall": 0.8421052631578947,
+            "f1": 0.9142857142857143
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 0.9375
+        }
+      },
+      "by_validity": {
+        "all": {
+          "total": 16,
+          "answer_correct": 15,
+          "answer_incorrect": 1,
+          "answer_accuracy": 0.9375,
+          "operation_detection": {
+            "tp": 16,
+            "fp": 0,
+            "fn": 3,
+            "precision": 1.0,
+            "recall": 0.8421052631578947,
+            "f1": 0.9142857142857143
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 0.9375
+        },
+        "confirmed": {
+          "total": 16,
+          "answer_correct": 15,
+          "answer_incorrect": 1,
+          "answer_accuracy": 0.9375,
+          "operation_detection": {
+            "tp": 16,
+            "fp": 0,
+            "fn": 3,
+            "precision": 1.0,
+            "recall": 0.8421052631578947,
+            "f1": 0.9142857142857143
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 0.9375
+        },
+        "tentative": {
+          "total": 5,
+          "answer_correct": 4,
+          "answer_incorrect": 1,
+          "answer_accuracy": 0.8,
+          "operation_detection": {
+            "tp": 4,
+            "fp": 0,
+            "fn": 1,
+            "precision": 1.0,
+            "recall": 0.8,
+            "f1": 0.888888888888889
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 0.8
+        }
+      },
+      "by_chain_length": {
+        "all": {
+          "total": 16,
+          "answer_correct": 15,
+          "answer_incorrect": 1,
+          "answer_accuracy": 0.9375,
+          "operation_detection": {
+            "tp": 16,
+            "fp": 0,
+            "fn": 3,
+            "precision": 1.0,
+            "recall": 0.8421052631578947,
+            "f1": 0.9142857142857143
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 0.9375
+        },
+        "1": {
+          "total": 16,
+          "answer_correct": 15,
+          "answer_incorrect": 1,
+          "answer_accuracy": 0.9375,
+          "operation_detection": {
+            "tp": 16,
+            "fp": 0,
+            "fn": 3,
+            "precision": 1.0,
+            "recall": 0.8421052631578947,
+            "f1": 0.9142857142857143
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 0.9375
+        }
+      },
+      "by_state_transition_probe_type": {
+        "all": {
+          "total": 16,
+          "answer_correct": 15,
+          "answer_incorrect": 1,
+          "answer_accuracy": 0.9375,
+          "operation_detection": {
+            "tp": 16,
+            "fp": 0,
+            "fn": 3,
+            "precision": 1.0,
+            "recall": 0.8421052631578947,
+            "f1": 0.9142857142857143
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 0.9375
+        },
+        "forget_retained_neighbor": {
+          "total": 1,
+          "answer_correct": 1,
+          "answer_incorrect": 0,
+          "answer_accuracy": 1.0,
+          "operation_detection": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "provenance_support_rate": 1.0
+        },
+        "reflect_counterfactual": {
+          "total": 1,
+          "answer_correct": 1,
+          "answer_incorrect": 0,
+          "answer_accuracy": 1.0,
+          "operation_detection": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 1.0
+        },
+        "remember_association": {
+          "total": 1,
+          "answer_correct": 1,
+          "answer_incorrect": 0,
+          "answer_accuracy": 1.0,
+          "operation_detection": {
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "provenance_support_rate": 1.0
+        },
+        "remember_negative_probe": {
+          "total": 1,
+          "answer_correct": 1,
+          "answer_incorrect": 0,
+          "answer_accuracy": 1.0,
+          "operation_detection": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 1,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "provenance_support_rate": 1.0
+        }
+      },
+      "by_application_probe_type": {
+        "all": {
+          "total": 16,
+          "answer_correct": 15,
+          "answer_incorrect": 1,
+          "answer_accuracy": 0.9375,
+          "operation_detection": {
+            "tp": 16,
+            "fp": 0,
+            "fn": 3,
+            "precision": 1.0,
+            "recall": 0.8421052631578947,
+            "f1": 0.9142857142857143
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 0.9375
+        },
+        "multi_hop_derivation": {
+          "total": 3,
+          "answer_correct": 3,
+          "answer_incorrect": 0,
+          "answer_accuracy": 1.0,
+          "operation_detection": {
+            "tp": 7,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 1.0
+        }
+      },
+      "by_trajectory_pattern": {
+        "all": {
+          "total": 16,
+          "answer_correct": 15,
+          "answer_incorrect": 1,
+          "answer_accuracy": 0.9375,
+          "operation_detection": {
+            "tp": 16,
+            "fp": 0,
+            "fn": 3,
+            "precision": 1.0,
+            "recall": 0.8421052631578947,
+            "f1": 0.9142857142857143
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 0.9375
+        }
+      },
+      "by_trajectory_granularity": {
+        "all": {
+          "total": 16,
+          "answer_correct": 15,
+          "answer_incorrect": 1,
+          "answer_accuracy": 0.9375,
+          "operation_detection": {
+            "tp": 16,
+            "fp": 0,
+            "fn": 3,
+            "precision": 1.0,
+            "recall": 0.8421052631578947,
+            "f1": 0.9142857142857143
+          },
+          "reflection_precision": 1.0,
+          "reflection_recall": 1.0,
+          "provenance_support_rate": 0.9375
+        }
+      },
+      "matched_pair_delta": {
+        "all": {
+          "paired_total": 0,
+          "adjacent_accuracy": 0.0,
+          "longitudinal_accuracy": 0.0,
+          "delta": 0.0
+        },
+        "by_evaluation_type": {},
+        "by_evaluation_category": {},
+        "by_operation_type": {}
+      },
+      "matched_pair_delta_by_method": {
+        "rag_vanilla_turn": {
+          "all": {
+            "paired_total": 0,
+            "adjacent_accuracy": 0.0,
+            "longitudinal_accuracy": 0.0,
+            "delta": 0.0
+          },
+          "by_evaluation_type": {},
+          "by_evaluation_category": {},
+          "by_operation_type": {}
+        }
+      },
+      "postcheck_summary": {
+        "extra_detail_audit_count": 0,
+        "answer_score_changed": 0,
+        "changed_rows": []
+      },
+      "paired_flip_audit": {
+        "paired_total": 0,
+        "both_correct": 0,
+        "both_wrong": 0,
+        "adjacent_only": 0,
+        "longitudinal_only": 0,
+        "flip_total": 0,
+        "flip_rows": []
+      }
+    }
+  },
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "8893038b321e56662d7ff4966fe5c3dca690e4a046c310797c364dca50604a12"
+  }
+}

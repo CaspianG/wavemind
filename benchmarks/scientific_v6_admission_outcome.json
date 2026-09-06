@@ -1,0 +1,57 @@
+{
+  "schema": "wavemind.scientific_admission_outcome.v6",
+  "status": "failed_admission_v6",
+  "candidate_id": "operation-aware-tombstone-reconciler-v6",
+  "candidate_source_sha": "a8240fe6bd9a79aec3d524b1cbbbdb4b907f8d97",
+  "admission_plan_digest": "101b9535f054694b46781f338616550f0f0df0d456a4e3dd4c5a5e68cf5766e9",
+  "failed_gate": "memoryagentbench_validation_positive_uplift_lcb",
+  "memoryagentbench_validation": {
+    "status": "failed_validation",
+    "case_count": 5,
+    "independent_cluster_count": 5,
+    "intervention_coverage": 1.0,
+    "paired_effect_values": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "mean_difference": 0.0,
+    "ci95_lower": 0.0,
+    "ci95_upper": 0.0,
+    "required_ci95_lower_strictly_greater_than": 0.0,
+    "production_case_count": 0,
+    "false_verified_promotions": 0,
+    "promoted_memory_ids": [],
+    "artifact": {
+      "path": "benchmarks/scientific_mab_v6_validation_results.json",
+      "bytes": 4507,
+      "sha256": "230f74b25bcd49e4067ecc91e9c8be79ef26f3665c0bc2c6e4058ee81aacd34d"
+    },
+    "raw": {
+      "path": "benchmarks/scientific_mab_v6_validation_raw.jsonl",
+      "bytes": 50045,
+      "sha256": "9e619f4ae9289a539d0bbb4ca59f9688b074f86b0921a0e359a5bece8c926b69"
+    }
+  },
+  "unopened_held_out_evidence": {
+    "memops_validation_executed": false,
+    "longmemeval_v2_examples_downloaded": false,
+    "longmemeval_v2_full_run_executed": false,
+    "reason": "The preregistered decision rule already failed. Opening more held-out evidence cannot rescue v6 and would only spend independent evidence."
+  },
+  "post_outcome_policy": {
+    "v6_candidate_changes_forbidden": true,
+    "validation_cases_may_be_used_for_future_tuning": false,
+    "thresholds_may_be_relaxed": false,
+    "next_protocol_must_use_development_only": true,
+    "memoryagentbench_final_split_remains_untouched": true
+  },
+  "claim_boundary": "v6 passed the bounded development gate but failed the first preregistered held-out validation gate. No admission, superiority, SOTA, production promotion, or revolutionary claim is permitted.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "27e2ed52e3cd89b3773aed879bb2ec6d4360e2cbeb0c2125d322834a7fed97fa"
+  }
+}

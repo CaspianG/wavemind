@@ -43,6 +43,36 @@ def file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def recorded_file_matches(
+    path: Path,
+    *,
+    sha256: str,
+    size: int | None = None,
+) -> bool:
+    """Match frozen text evidence across LF and CRLF Git checkouts.
+
+    Historical evidence records bind exact bytes from the machine that produced
+    them. Git may materialize those text blobs with different line endings on a
+    clean checkout, so compare the raw bytes plus the two lossless newline
+    representations. Binary files are compared only as raw bytes.
+    """
+    raw = Path(path).read_bytes()
+    candidates = [raw]
+    if b"\x00" not in raw:
+        try:
+            raw.decode("utf-8")
+        except UnicodeDecodeError:
+            pass
+        else:
+            lf = raw.replace(b"\r\n", b"\n")
+            candidates.extend((lf, lf.replace(b"\n", b"\r\n")))
+    return any(
+        (size is None or len(candidate) == size)
+        and sha256_bytes(candidate) == sha256
+        for candidate in candidates
+    )
+
+
 def source_file_sha256(path: Path) -> str:
     """Hash source bytes consistently across Git LF/CRLF checkouts."""
     content = Path(path).read_bytes()

@@ -1,0 +1,47 @@
+Shuffled question stream with seed 17.
+All questions share the same haystack, building shared memory once for all questions.
+
+Building memory:   0%|          | 0/100 [00:00<?, ?traj/s]
+Building memory: 100%|##########| 100/100 [00:00<00:00, 103896.56traj/s]
+Building prompts in parallel across shared memory with 4 workers.
+
+Building prompts:   0%|          | 0/240 [00:00<?, ?q/s]
+Building prompts:   0%|          | 0/240 [00:53<?, ?q/s]
+Traceback (most recent call last):
+  File "C:\Users\LEO\Documents\Codex\2026-08-16\ct\scientific-evidence\upstreams\longmemeval-v2\evaluation\harness.py", line 1261, in main
+    prompt_rows.append(future.result())
+                       ^^^^^^^^^^^^^^^
+  File "C:\Users\LEO\AppData\Local\Programs\Python\Python311\Lib\concurrent\futures\_base.py", line 449, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LEO\AppData\Local\Programs\Python\Python311\Lib\concurrent\futures\_base.py", line 401, in __get_result
+    raise self._exception
+  File "C:\Users\LEO\AppData\Local\Programs\Python\Python311\Lib\concurrent\futures\thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LEO\Documents\Codex\2026-08-16\ct\scientific-evidence\upstreams\longmemeval-v2\evaluation\harness.py", line 583, in build_prompt_row
+    memory_context, original_memory_token_count, truncated_memory_token_count = truncate_memory_context(
+                                                                                ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LEO\Documents\Codex\2026-08-16\ct\scientific-evidence\upstreams\longmemeval-v2\evaluation\harness.py", line 415, in truncate_memory_context
+    loaded_images = load_memory_context_images(memory_context)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LEO\Documents\Codex\2026-08-16\ct\scientific-evidence\upstreams\longmemeval-v2\evaluation\harness.py", line 361, in load_memory_context_images
+    from PIL import Image
+ModuleNotFoundError: No module named 'PIL'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\LEO\Documents\Codex\2026-08-16\ct\work\wavemind-scientific-v31-longmem-continuation-exact\benchmarks\scientific_longmemeval_v2_run_v31.py", line 48, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "C:\Users\LEO\Documents\Codex\2026-08-16\ct\work\wavemind-scientific-v31-longmem-continuation-exact\benchmarks\scientific_longmemeval_v2_run_v31.py", line 37, in main
+    marker = runner.run(args)
+             ^^^^^^^^^^^^^^^^
+  File "C:\Users\LEO\Documents\Codex\2026-08-16\ct\work\wavemind-scientific-v31-longmem-continuation-exact\benchmarks\scientific_longmemeval_v2_run.py", line 285, in run
+    _run_harness(
+  File "C:\Users\LEO\Documents\Codex\2026-08-16\ct\work\wavemind-scientific-v31-longmem-continuation-exact\benchmarks\scientific_longmemeval_v2_run.py", line 181, in _run_harness
+    harness_main()
+  File "C:\Users\LEO\Documents\Codex\2026-08-16\ct\scientific-evidence\upstreams\longmemeval-v2\evaluation\harness.py", line 1266, in main
+    raise RuntimeError(
+RuntimeError: Prompt building failed for question e83245c5

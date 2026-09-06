@@ -1,0 +1,122 @@
+{
+  "schema": "wavemind.scientific_memory_admission.v1",
+  "protocol_id": "scientific-core-reset-2026-08-23-v1",
+  "protocol_digest": "489d3ff6fca733340b65b26c52ccb5533b19ad14fef66b1d2d912691dac22d59",
+  "baseline_source_sha": "c30205ed389057bc695488655a3f8650ba8e5277",
+  "source_sha": "b1c446adf792b194a6880ec65fafd864d8f9198a",
+  "status": "failed_experiment",
+  "admitted": false,
+  "admitted_candidates": [],
+  "candidate_results": {
+    "evidence-constrained-associative-graph-v1": {
+      "status": "failed_experiment",
+      "admitted": false,
+      "checks": [
+        {
+          "id": "three-reproducible-runs",
+          "passed": false,
+          "status": "fail",
+          "evidence": {
+            "runs": 0,
+            "run_ids": [],
+            "seeds": []
+          },
+          "target": 3,
+          "issue": "candidate does not have exactly three unique reproducible runs"
+        },
+        {
+          "id": "valid-run-evidence",
+          "passed": false,
+          "status": "fail",
+          "evidence": {
+            "protocol_errors": [],
+            "run_errors": {}
+          },
+          "target": "all preregistered run artifacts valid",
+          "issue": "candidate run evidence is missing or invalid"
+        }
+      ],
+      "metrics": {},
+      "issues": [
+        "candidate does not have exactly three unique reproducible runs",
+        "candidate run evidence is missing or invalid"
+      ]
+    },
+    "causal-utility-controller-v1": {
+      "status": "failed_experiment",
+      "admitted": false,
+      "checks": [
+        {
+          "id": "three-reproducible-runs",
+          "passed": false,
+          "status": "fail",
+          "evidence": {
+            "runs": 0,
+            "run_ids": [],
+            "seeds": []
+          },
+          "target": 3,
+          "issue": "candidate does not have exactly three unique reproducible runs"
+        },
+        {
+          "id": "valid-run-evidence",
+          "passed": false,
+          "status": "fail",
+          "evidence": {
+            "protocol_errors": [],
+            "run_errors": {}
+          },
+          "target": "all preregistered run artifacts valid",
+          "issue": "candidate run evidence is missing or invalid"
+        }
+      ],
+      "metrics": {},
+      "issues": [
+        "candidate does not have exactly three unique reproducible runs",
+        "candidate run evidence is missing or invalid"
+      ]
+    },
+    "hybrid-graph-causal-v1": {
+      "status": "failed_experiment",
+      "admitted": false,
+      "checks": [
+        {
+          "id": "three-reproducible-runs",
+          "passed": false,
+          "status": "fail",
+          "evidence": {
+            "runs": 0,
+            "run_ids": [],
+            "seeds": []
+          },
+          "target": 3,
+          "issue": "candidate does not have exactly three unique reproducible runs"
+        },
+        {
+          "id": "valid-run-evidence",
+          "passed": false,
+          "status": "fail",
+          "evidence": {
+            "protocol_errors": [],
+            "run_errors": {}
+          },
+          "target": "all preregistered run artifacts valid",
+          "issue": "candidate run evidence is missing or invalid"
+        }
+      ],
+      "metrics": {},
+      "issues": [
+        "candidate does not have exactly three unique reproducible runs",
+        "candidate run evidence is missing or invalid"
+      ]
+    }
+  },
+  "protocol_errors": [],
+  "run_errors": {},
+  "claim_boundary": "Public WaveField descriptions and WaveMind Connect remain unchanged unless this exact-SHA artifact is admitted.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "a770b887466224005da3456aaaa8151780c19db3d5e44098b3a8e976cf7a29b0"
+  }
+}

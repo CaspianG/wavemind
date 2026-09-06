@@ -1,0 +1,90 @@
+{
+  "schema": "wavemind.memoryagentbench_development.v7",
+  "phase": "bounded-development",
+  "run_number": 1,
+  "status": "failed_development_gate",
+  "candidate_id": "query-sliced-operation-aware-reconciler-v7",
+  "candidate_source_sha": "7a239cd6564920d758d0099a0e24922dc222c642",
+  "protocol_digest": "898de5766fcf7d509218c28966a950db9dda8ee21795e2faf17d08247c7ba73e",
+  "model": {
+    "id": "mistral:7b",
+    "digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768
+  },
+  "source_split": "development",
+  "unit_ids": [
+    "Accurate_Retrieval:0003:b783c42e93add9bc",
+    "Accurate_Retrieval:0005:74109788618f5270",
+    "Accurate_Retrieval:0006:6d16dca33a0ca72f",
+    "Accurate_Retrieval:0008:7e4f8ba209e49061",
+    "Accurate_Retrieval:0011:365235d948f3d1d5",
+    "Long_Range_Understanding:0005:5fc70bfc05d63845",
+    "Long_Range_Understanding:0006:9b3d2c1a81d97d1b",
+    "Long_Range_Understanding:0013:9bcb4a030c28a1d4",
+    "Long_Range_Understanding:0016:a6e45acb324d6790",
+    "Long_Range_Understanding:0018:76b38920faf9cc22",
+    "Test_Time_Learning:0005:2e7266dd630c22aa"
+  ],
+  "context_sha256": [
+    "2e7266dd630c22aaca87697a45dda44f6e895fc662a23f5ef2bb1b78f817b778",
+    "365235d948f3d1d5b6404e2f3b4943fdeb0e61e5afef2fe04d577dcd72532cd9",
+    "5fc70bfc05d63845e5f43a1b4eaaad415a1f6f851956684a1ca2ee42ebfc0620",
+    "6d16dca33a0ca72f8b89e451cbff1dc645da83d365190da55a7d3fa50b758212",
+    "74109788618f5270d7b83af2f0dd0cf8b4a151ed15d39f5e5bb827e2e58f4966",
+    "76b38920faf9cc22d1688c810f33a4a35ebe1610878f0f0055707f6c62dbc208",
+    "7e4f8ba209e49061bbaa68059121722b537bdf4024dba63c033fe39d895a6387",
+    "9b3d2c1a81d97d1b6927a1cc6bcac97414b4e8c04aef81eb3468ddefe8b2f800",
+    "9bcb4a030c28a1d44c274b84614653465b8361b66d7e4747743a9e50427faacd",
+    "a6e45acb324d67901b8af1733fda1f58d4b20e203a4246ccfce9a7c56ca2a9b0",
+    "b783c42e93add9bc38ddd7a617dc7cb4e7cd1c35bf87cd603ac83a23ca83f325"
+  ],
+  "case_count": 11,
+  "cluster_count": 11,
+  "paired_effect": {
+    "values": [
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "positive_count": 2,
+    "zero_count": 9,
+    "negative_count": 0
+  },
+  "paired_cluster_bootstrap": {
+    "paired": true,
+    "cluster_key": "cluster",
+    "cluster_count": 11,
+    "row_count": 11,
+    "repeats": 2000,
+    "seed": 17,
+    "confidence_level": 0.95,
+    "mean_difference": 0.18181818181818182,
+    "ci_lower": 0.0,
+    "ci_upper": 0.45454545454545453
+  },
+  "intervention_coverage": 1.0,
+  "production_case_count": 0,
+  "promoted_memory_ids": [],
+  "false_verified_promotions": 0,
+  "raw_output": {
+    "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\mab-v7-gate-run1-7a239cd\\raw.jsonl",
+    "bytes": 191425,
+    "sha256": "f3c9874966a4c37244d799e847377ccc4e78e5780ac669532d4734940ac0d874"
+  },
+  "final_split_touched": false,
+  "validation_split_touched": false,
+  "claim_boundary": "Development evidence only; not validation or admission.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "d5f1877a97372e78808262f6eea2f995da930c133b2e717143b961b91b0a0f7f"
+  }
+}

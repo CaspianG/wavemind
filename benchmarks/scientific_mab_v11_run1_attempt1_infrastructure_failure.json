@@ -1,0 +1,47 @@
+{
+  "schema": "wavemind.scientific_v11_infrastructure_continuation.v1",
+  "status": "infrastructure_failed_no_gate_decision",
+  "logical_run": "memoryagentbench_cross_family_run_1",
+  "candidate_source_sha": "c7857539f686abd717e897315026afb836fd18f4",
+  "protocol_digest": "0acb2b82a16b6eb87437c9b489775f48910b0bf14969b277096e961ac9e30df3",
+  "attempt": 1,
+  "completed_clusters_before_failure": 7,
+  "partial_raw": {
+    "path": "benchmarks/scientific_mab_v11_run1_attempt1_partial_raw.jsonl",
+    "bytes": 114438,
+    "sha256": "fcd9823bef35db965cb9c4d291bad44adc98774c9101be2eda7f85ee0675b9d5"
+  },
+  "failure": {
+    "type": "FileNotFoundError",
+    "missing_relative_path": "./processed_data/Recsys_Redial/entity2id.json",
+    "stage": "pinned official MemoryAgentBench Recsys scorer",
+    "scientific_gate_evaluated": false,
+    "candidate_or_threshold_failure": false
+  },
+  "official_runtime_asset": {
+    "repository": "ai-hyz/MemoryAgentBench",
+    "repository_type": "dataset",
+    "revision": "7ea066982b140a19337e17e60d45d4076e042faf",
+    "filename": "entity2id.json",
+    "bytes": 1758081,
+    "sha256": "63353aca481bc9558b502f91cb98f6fa26438796fdd7e0bc06b5a1532126e8b5",
+    "required_by_pinned_readme": true
+  },
+  "continuation_policy": {
+    "same_logical_run": true,
+    "candidate_unchanged": true,
+    "cases_unchanged": true,
+    "model_unchanged": true,
+    "thresholds_unchanged": true,
+    "deterministic_parameters_unchanged": true,
+    "attempt1_retained_verbatim": true,
+    "restart_cwd_only": "runtime directory containing the pinned official relative-path asset",
+    "attempts_count_as_scientific_runs": 1
+  },
+  "claim_boundary": "No complete development result exists and no pass or failure claim is permitted from this partial attempt.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "3ba3635216d955ba5d476cf47ae244d3723e02b611c4701b7d1bb64ee1e1204a"
+  }
+}

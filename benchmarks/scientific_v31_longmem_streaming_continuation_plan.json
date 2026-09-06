@@ -1,0 +1,128 @@
+{
+  "schema": "wavemind.scientific_v31_longmem_streaming_continuation.v1",
+  "status": "preregistered_streaming_continuation_before_outcome",
+  "preregistered_at": "2026-08-26",
+  "logical_run": "longmemeval_v2_small_full_v31",
+  "logical_full_run_count": 1,
+  "candidate_source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+  "safety_abort": {
+    "path": "benchmarks/scientific_v31_longmem_infrastructure_failure_4.json",
+    "bytes": 5094,
+    "sha256": "e411e82c90f0a248bf794043d062941427bbffcaee5d41a36b37d8cde4c2f4c4",
+    "commit": "06aec6f0722b44c78be9f41e691a459629e0f60a",
+    "payload_sha256": "f2c6010735185d2ee6d60770f70f37c3a1e1a031785c639f349760efba62429c",
+    "outcome_scores_opened": false,
+    "scientific_gate_evaluated": false
+  },
+  "streaming_probe": {
+    "path": "benchmarks/scientific_v31_longmem_streaming_probe_results.json",
+    "bytes": 2929,
+    "sha256": "8f8e40c74fd0e4718a5f3346592e7cc22d7b658ab8677fab876f2cc8434317cc",
+    "commit": "e291423f6b78197b941cd9ea14e09c6ceb619c08",
+    "payload_sha256": "9e84566dc2d63e0b111240b855f18bd3b17cb9ca7191cd57e3ded29e1166f9d0",
+    "query_kind": "synthetic_non_held_out",
+    "model_calls_made": 0,
+    "scores_opened": false,
+    "private_gib": 0.877922,
+    "recall_seconds": 5.359686,
+    "chain_errors": []
+  },
+  "harness_change": {
+    "previous_commit": "627f7b054229f1f33f04fe35464b4fd77add65ee",
+    "streaming_commit": "404c6b127e580d8531176d9e79cd1782bbacc79b",
+    "changed_frozen_harness_files": [
+      "benchmarks/scientific_longmemeval_v2_backend_v31.py"
+    ],
+    "changed_file_count": 1,
+    "previous_file": {
+      "path": "benchmarks/scientific_longmemeval_v2_backend_v31.py",
+      "bytes": 3215,
+      "sha256": "9835bd0a2753d17f38b2a27e056bdb172cee0f7ec75ecefd0e790fa974465e9b"
+    },
+    "streaming_file": {
+      "path": "benchmarks/scientific_longmemeval_v2_backend_v31.py",
+      "bytes": 7732,
+      "sha256": "aba0f5e17f81902ec5838d302005e768f2843d8ef085ea657b8b9fc44c3f2fcc"
+    },
+    "all_streaming_harness_files": [
+      {
+        "path": "benchmarks/scientific_mab_v19_final.py",
+        "bytes": 9644,
+        "sha256": "3409f4e645d2c9a37874eb1f044a98b5e5a682c30b8a1afc271d9451e124c7f8"
+      },
+      {
+        "path": "benchmarks/scientific_mab_v31_final.py",
+        "bytes": 3331,
+        "sha256": "f6d9f995f188d12889740d4ead0f1503c9f2451cebe3f393c0f97fe22668a10c"
+      },
+      {
+        "path": "benchmarks/scientific_memops_v31_final.py",
+        "bytes": 9764,
+        "sha256": "1072978bd36a6fe7524754f9d9740ae0cd6dfdb1552eae77a3648aa717ac13ba"
+      },
+      {
+        "path": "benchmarks/scientific_longmemeval_v2_backend.py",
+        "bytes": 11532,
+        "sha256": "f59733a2d26f673c0a7f532653398379ad6d90f68175ae7d4c1e855e7ef70bc6"
+      },
+      {
+        "path": "benchmarks/scientific_longmemeval_v2_backend_v31.py",
+        "bytes": 7732,
+        "sha256": "aba0f5e17f81902ec5838d302005e768f2843d8ef085ea657b8b9fc44c3f2fcc"
+      },
+      {
+        "path": "benchmarks/scientific_longmemeval_v2_run.py",
+        "bytes": 10537,
+        "sha256": "5c2355a3f64e87d50f133cfa8db95e7a6b7f49b036069fc1c69c0893a507f12e"
+      },
+      {
+        "path": "benchmarks/scientific_longmemeval_v2_run_v31.py",
+        "bytes": 1460,
+        "sha256": "424b561f62a8b255ecc07f4d88a46c7156aec4da1142bbb5b7c7ce9af4049ae7"
+      }
+    ]
+  },
+  "semantic_equivalence_contract": {
+    "original_formula": "Build a full token set per definition, then intersect each set with query tokens.",
+    "streaming_formula": "Build one definition token set at a time and retain only its intersection with query tokens.",
+    "query_token_intersections_identical": true,
+    "document_frequency_identical": true,
+    "lexical_weights_identical": true,
+    "ranking_tuples_identical": true,
+    "budget_fit_identical": true,
+    "selection_relevance_reason_exactly_equal_in_tests": true,
+    "configurations_tested": 4,
+    "definitions_in_equivalence_test": 600,
+    "original_simultaneous_document_token_sets_minimum": 101,
+    "streaming_simultaneous_document_token_sets_maximum": 2
+  },
+  "frozen_invariants": {
+    "candidate_source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+    "official_prompt_build_max_workers": 4,
+    "reader_max_concurrent_requests": 4,
+    "model": "mistral:7b",
+    "evaluator_model": "mistral:7b",
+    "shuffle_questions_seed": 17,
+    "prompts_unchanged": true,
+    "token_counts_unchanged": true,
+    "models_unchanged": true,
+    "thresholds_unchanged": true,
+    "question_order_unchanged": true,
+    "scoring_unchanged": true
+  },
+  "continuation_execution": {
+    "same_output_root_required": "benchmarks/scientific_longmemeval_v31_final",
+    "same_marker_required": true,
+    "logical_full_run_count_must_remain": 1,
+    "controlled_abort_partial_must_be_retained": true,
+    "restart_first_incomplete_arm": "candidate_web_small",
+    "streaming_harness_commit_required": "404c6b127e580d8531176d9e79cd1782bbacc79b",
+    "fresh_scientific_run_forbidden": true
+  },
+  "claim_boundary": "This plan and synthetic probe are not benchmark outcomes and authorize no pass, 100%-pass, SOTA, or revolutionary claim.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "aa0c18b0e43029f6b2801dcf122659b06dbd0f986e9a95e9919c7fe386aff499"
+  }
+}

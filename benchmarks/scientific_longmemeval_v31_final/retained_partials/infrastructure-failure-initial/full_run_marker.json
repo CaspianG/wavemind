@@ -1,0 +1,28 @@
+{
+  "schema": "wavemind.longmemeval_v2_full_run_marker.v6",
+  "logical_full_run_count": 1,
+  "started_at": "2026-08-26T15:37:11Z",
+  "candidate_source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+  "official_repository_sha": "2cc8c540bdb87fe6761629b585e727e1c4704520",
+  "protocol_digest": "bc1f895bdf8bd30027bcc17f1c3a375099c8ee442681382c56ba57fa7580793b",
+  "tier": "small",
+  "adapter_sha256": "8a188e10c6fc4a3fb849d401888ee785078e49ef322fef89353f2c8c39fc40f1",
+  "dataset_files": [
+    {
+      "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\longmemeval-v31-f152293e\\questions.jsonl",
+      "bytes": 286186,
+      "sha256": "0a3ae5ebea938c24d7800e1e0b0828e08ae1646f939a53853b2b8cdc08e292b7"
+    },
+    {
+      "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\longmemeval-v31-f152293e\\trajectories.jsonl",
+      "bytes": 1195604539,
+      "sha256": "363cec9a8e87aa8d9101ce4e600aadbf7031d674056ebe4f969e8424abc5f3c6"
+    },
+    {
+      "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\longmemeval-v31-f152293e\\haystacks\\lme_v2_small.json",
+      "bytes": 822632,
+      "sha256": "9b5301defb23a088a5f06e45ff8d5f35e569d78305a66d492046a9fff9b46593"
+    }
+  ],
+  "continuation_policy": "Infrastructure partials are retained and the unchanged deterministic arm may continue inside this single logical full run."
+}

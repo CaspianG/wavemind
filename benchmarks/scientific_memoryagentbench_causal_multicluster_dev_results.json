@@ -1,0 +1,75 @@
+{
+  "schema": "wavemind.memoryagentbench_candidate_development.v1",
+  "phase": "bounded-development",
+  "admission_eligible": false,
+  "reason_not_admission_eligible": "single development context, local Ollama answer transport, and shadow-only scientific candidate evaluation",
+  "source_sha": "d023ed651c64cc306d66f6805c71022a17eef4da",
+  "protocol_digest": "489d3ff6fca733340b65b26c52ccb5533b19ad14fef66b1d2d912691dac22d59",
+  "official_upstream": {
+    "repository": "HUST-AI-HYZ/MemoryAgentBench",
+    "sha": "fe1735de8cf8b9908e1e3d3b5612afc815698062",
+    "scorer": "utils.eval_other_utils.metrics_summarization",
+    "upstream_modified": false
+  },
+  "dataset": {
+    "repository": "ai-hyz/MemoryAgentBench",
+    "revision": "7ea066982b140a19337e17e60d45d4076e042faf",
+    "root": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\upstreams\\memory-agent-bench"
+  },
+  "candidate_id": "causal-utility-controller-v1",
+  "control_id": "no-memory",
+  "model": {
+    "id": "mistral:7b",
+    "digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768
+  },
+  "transport": "ollama-native-api/local-development-only",
+  "token_budget": 8192,
+  "gold_fields_exposed_to_answer_agent": [],
+  "split_unit_ids": [
+    "Conflict_Resolution:0002:e2789821b46e6626",
+    "Conflict_Resolution:0006:e2789821b46e6626"
+  ],
+  "case_ids": [
+    "Conflict_Resolution:0002:e2789821b46e6626:q0000",
+    "Conflict_Resolution:0002:e2789821b46e6626:q0001",
+    "Conflict_Resolution:0002:e2789821b46e6626:q0002",
+    "Conflict_Resolution:0006:e2789821b46e6626:q0000",
+    "Conflict_Resolution:0006:e2789821b46e6626:q0001",
+    "Conflict_Resolution:0006:e2789821b46e6626:q0002"
+  ],
+  "case_count": 6,
+  "validation_split_touched": false,
+  "final_split_touched": false,
+  "paired_effect": {
+    "metric": "substring_exact_match",
+    "values": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "mean": 0.0,
+    "positive_count": 0,
+    "zero_count": 6,
+    "negative_count": 0
+  },
+  "verified_receipt_count": 0,
+  "production_case_count": 0,
+  "selected_memory_ids": [],
+  "promoted_memory_ids": [],
+  "false_verified_promotions": 0,
+  "failed_attempts_retained": [],
+  "raw_results": {
+    "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\work\\wavemind-scientific-core\\benchmarks\\scientific_memoryagentbench_causal_multicluster_dev_raw.jsonl",
+    "bytes": 21084,
+    "sha256": "1740889575d0d490df4023a01250347bd0843a47cc612f1d3835921533a84d4c"
+  },
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "fa8e41a68dc3aabb07c2114c1107dd739d63567283af08517d212fb893a68217"
+  }
+}

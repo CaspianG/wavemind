@@ -1,0 +1,94 @@
+{
+  "schema": "wavemind.scientific_memops_v10_development.v1",
+  "phase": "bounded-development",
+  "admission_eligible": false,
+  "source_sha": "47b68e366aab9ce07b659c61a51c81d634b3fff2",
+  "protocol_digest": "d522705fdc9d49ed97874b6ce09c6372d7189673945b894856805be625d21b50",
+  "candidate_id": "operation-trace-strict-output-agent-v10",
+  "family": "memops_adjacent_operation",
+  "evaluation_setting": "adjacent_operation",
+  "run_number": 2,
+  "official_upstream": {
+    "repository": "MemTensor/MemOps",
+    "sha": "312af65e2c7b6d1b70f062ffa8b4cde32aaf6f35",
+    "runners": [
+      "5-test_operation_metrics.py:run_gpt_rag",
+      "5.5-evaluate_operation_metrics.py:evaluate_entry"
+    ],
+    "upstream_modified": false
+  },
+  "model": {
+    "answer": "mistral:7b",
+    "judge": "mistral:7b",
+    "digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768
+  },
+  "subjects": [
+    "A28",
+    "A30",
+    "A31",
+    "B02",
+    "B05"
+  ],
+  "case_ids": [
+    "A28_forget_q1",
+    "A28_reflect_q1",
+    "A28_remember_q1",
+    "A28_trajectory_ops_q1",
+    "A28_update_q1",
+    "A30_forget_q1",
+    "A30_reflect_q1",
+    "A30_update_q1",
+    "A31_forget_q1",
+    "A31_reflect_q1",
+    "A31_remember_q1",
+    "A31_trajectory_ops_q1",
+    "A31_update_q1",
+    "B02_reflect_q1",
+    "B02_remember_q1",
+    "B02_trajectory_ops_q1",
+    "B02_update_q1",
+    "B05_forget_q1",
+    "B05_reflect_q1",
+    "B05_remember_q1",
+    "B05_trajectory_ops_q1",
+    "B05_update_q1"
+  ],
+  "case_count": 22,
+  "intervention_coverage": 0.8636363636363636,
+  "statistics": {
+    "paired": true,
+    "cluster_key": "subject_id",
+    "cluster_count": 5,
+    "row_count": 22,
+    "repeats": 2000,
+    "seed": 17,
+    "confidence_level": 0.95,
+    "mean_difference": 0.27666666666666667,
+    "ci_lower": 0.13,
+    "ci_upper": 0.3866666666666666
+  },
+  "production_case_count": 0,
+  "promoted_memory_ids": [],
+  "false_verified_promotions": 0,
+  "gate_checks": {
+    "minimum_independent_subject_clusters": true,
+    "paired_subject_cluster_bootstrap_ci_lower_strictly_positive": true,
+    "mean_non_negative": true,
+    "minimum_intervention_coverage": true,
+    "no_production_cases": true,
+    "no_promoted_memories": true
+  },
+  "gate_pass": true,
+  "final_split_touched": false,
+  "raw_output": {
+    "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\work\\wavemind-scientific-core\\benchmarks\\scientific_memops_v10_adjacent_run2\\raw_pairs.jsonl",
+    "bytes": 513623,
+    "sha256": "bb178c03c0eb6d6cdcaa13a6d75a25613ae264d8435cbf092829422572ed7b1c"
+  },
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "0cbf65188953904f28e7a437636bcc048718f083f75cc9ab4dce99dc566f0d0c"
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "schema": "wavemind.scientific_v31_longmem_infrastructure_failure.v4",
+  "status": "safety_aborted_before_outcomes",
+  "logical_run": "longmemeval_v2_small_full_v31",
+  "logical_full_run_count": 1,
+  "infrastructure_failure_sequence": 4,
+  "candidate_source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+  "resource_harness_commit": "627f7b054229f1f33f04fe35464b4fd77add65ee",
+  "resource_continuation_plan_commit": "9cebc2e733e38dd9b862a946bff9bc27fc084e7d",
+  "failure": {
+    "stage": "candidate_web_small_first_query_selection",
+    "type": "ControlledMemorySafetyAbort",
+    "causal_diagnosis": "Serializing shared queries removed concurrency but private bytes still grew monotonically inside the first query. The frozen v6 operation selector retained a full token set for each of 28,768 definitions, expanding 97 MB of serialized event JSON into many gigabytes of Python token objects.",
+    "operator_interrupt_sent": true,
+    "reason_for_interrupt": "Prevent recurrence of the already proven Windows resource exhaustion and collateral Codex/application crashes.",
+    "python_traceback_emitted": false,
+    "candidate_or_threshold_failure": false,
+    "scientific_gate_evaluated": false
+  },
+  "resource_telemetry": {
+    "samples": [
+      {
+        "elapsed_minutes": 5.6,
+        "cpu_seconds": 329.84,
+        "private_gib": 6.17,
+        "free_virtual_gib": 21.6
+      },
+      {
+        "elapsed_minutes": 10.8,
+        "cpu_seconds": 645.61,
+        "private_gib": 9.43,
+        "free_virtual_gib": 18.4
+      },
+      {
+        "elapsed_minutes": 15.2,
+        "cpu_seconds": 907.02,
+        "private_gib": 11.99,
+        "free_virtual_gib": 15.8
+      }
+    ],
+    "private_memory_growth_gib": 5.82,
+    "growth_plateau_observed": false,
+    "previous_oom_peak_bytes": 29787037696
+  },
+  "scratch_evidence": {
+    "database": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/candidate-scratch/wavemind-lme-v6-d98_k2l4/candidate.sqlite3.scientific-events.sqlite3",
+      "bytes": 120520704,
+      "sha256": "713db06777004e1d7e9e8db64d9006895f9c07f7816986f1dd49c84ffa39a244"
+    },
+    "database_wal": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/candidate-scratch/wavemind-lme-v6-d98_k2l4/candidate.sqlite3.scientific-events.sqlite3-wal",
+      "bytes": 121239272,
+      "sha256": "406476c4bf8067df5a46e3abd6712945b3c804b53cdbc8f3a7a59daf2936c114"
+    },
+    "database_shm": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/candidate-scratch/wavemind-lme-v6-d98_k2l4/candidate.sqlite3.scientific-events.sqlite3-shm",
+      "bytes": 262144,
+      "sha256": "35230670c666b5667dadf6b5336901fe128eb657744c68861d36309f167f6877"
+    },
+    "event_count": 28768,
+    "event_json_bytes": 97046543,
+    "max_sequence": 28768,
+    "all_definitions_registered_before_selection": true
+  },
+  "observed_state": {
+    "completed_official_arms": [],
+    "partial_arm": "candidate_web_small",
+    "completed_prompt_rows": 0,
+    "answers_generated": false,
+    "outcome_scores_opened": false,
+    "per_question_files": 0,
+    "aggregated_metrics_files": 0,
+    "marker_completed": false,
+    "marker": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/full_run_marker.json",
+      "bytes": 1460,
+      "sha256": "9872e1d94096e7c8fa0a9b4b592f64312d7902e4a74326907c765a034c7a4355"
+    },
+    "run_args": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/candidate_web_small/run_args.json",
+      "bytes": 1873,
+      "sha256": "52539ea052f22941a973325338f885f8cdd18562636f87e27e50de7367abd660"
+    },
+    "console_log": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/continuation4_console.log",
+      "bytes": 575,
+      "sha256": "cbbd2d00b6b0d88527d45e013062569e82aa3a04bd7e308139619adcd0cfc534"
+    }
+  },
+  "frozen_execution_parameters": {
+    "model": "mistral:7b",
+    "evaluator_model": "mistral:7b",
+    "shuffle_questions_seed": 17,
+    "prompt_build_max_workers": 4,
+    "reader_max_concurrent_requests": 4
+  },
+  "continuation_policy": {
+    "same_logical_run_required": true,
+    "partial_retained_verbatim_required": true,
+    "candidate_unchanged_required": true,
+    "data_unchanged_required": true,
+    "prompts_unchanged_required": true,
+    "models_unchanged_required": true,
+    "thresholds_unchanged_required": true,
+    "worker_counts_unchanged_required": true,
+    "permitted_harness_change": "Replace the v6 selector's retained full-token-set mapping with streaming computation of the exact same query-token intersections. Require exact selection, relevance, and reason equivalence tests.",
+    "attempts_count_as_scientific_runs": 1
+  },
+  "claim_boundary": "The controlled safety abort produced no benchmark outcome and authorizes no pass, 100%-pass, SOTA, or revolutionary claim.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "f2c6010735185d2ee6d60770f70f37c3a1e1a031785c639f349760efba62429c"
+  }
+}

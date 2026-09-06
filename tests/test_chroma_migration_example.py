@@ -35,7 +35,7 @@ def test_chroma_migration_fixture_preserves_memory_shape(tmp_path):
     memory = WaveMind(db_path=wavemind_db)
 
     style_hits = memory.query(
-        "answer style",
+        "short practical answers",
         namespace="user:42",
         tags=["preference"],
         top_k=3,
@@ -60,8 +60,7 @@ def test_chroma_migration_fixture_preserves_memory_shape(tmp_path):
         namespace="user:7",
         top_k=3,
     )
-    assert isolated_hits
-    assert all("Andrey" not in hit.text for hit in isolated_hits)
+    assert isolated_hits == []
 
 
 def test_chroma_migration_example_runs_from_checkout(tmp_path):

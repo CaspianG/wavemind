@@ -1,0 +1,61 @@
+{
+  "schema": "wavemind.scientific_v24_candidate_freeze.v1",
+  "status": "frozen_before_fresh_development",
+  "candidate_id": "targeted-operation-application-agent-v24",
+  "candidate_source_sha": "a8fb7c9a899d08e99ac436eba9dfd66611dcdae0",
+  "protocol_digest": "a072744892d9d314ef92993f98cad148234211755df7ed168e3d97ae3e1165f2",
+  "files": [
+    {
+      "path": "wavemind/scientific_answer_transducer.py",
+      "sha256": "17d7b2a496539dd4089910633b5583035f83cedec6ab130ce6c08bbc0ba3ef09"
+    },
+    {
+      "path": "wavemind/scientific_runtime.py",
+      "sha256": "742d2a7e67e29d5011edd5b326f45f7c33db6014d0cf52893d13ede64583ef42"
+    },
+    {
+      "path": "wavemind/scientific_memops.py",
+      "sha256": "0ae1646f1b40da3bba69dd1f0def9f39ac976936c020b63e6167db70844c7b18"
+    },
+    {
+      "path": "wavemind/scientific_memoryagentbench.py",
+      "sha256": "b655a6dbb00494e1ad3a99d708802c5c83e9418bb9502f953625ba94b2257b6f"
+    },
+    {
+      "path": "wavemind/scientific_reconciliation.py",
+      "sha256": "c19a20cc26c3ef39c054ad77d4620d454a762c4396f33896f94c400b2f3b145d"
+    },
+    {
+      "path": "benchmarks/scientific_mab_v11_development.py",
+      "sha256": "e738ec73c1098816242bd520e433e8d8b481ba930cf792c221fe840674c76878"
+    },
+    {
+      "path": "benchmarks/scientific_memops_v10_development.py",
+      "sha256": "b44a6df5cbe3e6286794fd3dc76040d8ae0b40ae00ec57501b37195482f1574d"
+    },
+    {
+      "path": "benchmarks/scientific_memory_protocol_v24.json",
+      "sha256": "7589452a1b847f2a995d17c5b185bf33aa4cb1b0608dc94f3d3b09e8abcea7d6"
+    },
+    {
+      "path": "benchmarks/scientific_mab_v24_development.py",
+      "sha256": "c7895c2e2871b6e15cdf1b11df8c84100b8b9280f92d5a54a7d642a49d52a5e5"
+    },
+    {
+      "path": "benchmarks/scientific_memops_v24_development.py",
+      "sha256": "c165ea542c8e74ef654411dfcfd49207299fee3410808483b1119830c5142e0b"
+    }
+  ],
+  "verification_before_freeze": {
+    "passed": 179,
+    "failed": 0,
+    "deselected": 1134
+  },
+  "fresh_v24_development_runs_executed": 0,
+  "post_outcome_source_changes_forbidden": true,
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "000f4ef6fd9a2f179fa6c8cc1c9c9fb135b0184241e5c4735f6859ff7767ff05"
+  }
+}

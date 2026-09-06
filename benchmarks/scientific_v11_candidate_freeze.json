@@ -1,0 +1,57 @@
+{
+  "schema": "wavemind.scientific_v11_candidate_freeze.v1",
+  "status": "frozen_before_fresh_development",
+  "candidate_id": "evidence-contracted-query-agent-v11",
+  "candidate_source_sha": "c7857539f686abd717e897315026afb836fd18f4",
+  "checkout_policy": "clean detached worktree at the exact candidate source SHA",
+  "protocol_digest": "0acb2b82a16b6eb87437c9b489775f48910b0bf14969b277096e961ac9e30df3",
+  "files": [
+    {
+      "path": "wavemind/scientific_answer_transducer.py",
+      "sha256": "17d7b2a496539dd4089910633b5583035f83cedec6ab130ce6c08bbc0ba3ef09"
+    },
+    {
+      "path": "wavemind/scientific_runtime.py",
+      "sha256": "23872fb64138447ee19465a2d699759e728813686e9f888f2eb8415e9d6d51de"
+    },
+    {
+      "path": "wavemind/scientific_memops.py",
+      "sha256": "95ceff049766e1f3d2ca1954e39380fc5169b57ce19817db85a73bc71ba75bd2"
+    },
+    {
+      "path": "wavemind/scientific_memoryagentbench.py",
+      "sha256": "6931ec609394159c9d4cdd559196ce0f029e96903c07d6b4e078ec82d7a4039c"
+    },
+    {
+      "path": "benchmarks/scientific_memory_protocol_v11.json",
+      "sha256": "205940aec9b7fef15e3865b7bce1c5d6dc246621b5c0cfb55443785328390eb2"
+    },
+    {
+      "path": "benchmarks/scientific_mab_v11_development.py",
+      "sha256": "6b24ffbf319fa171a58cb59c00c80d1274bb4cdc9dc8f5bc0d6c4018998f06b7"
+    },
+    {
+      "path": "benchmarks/scientific_memops_v11_development.py",
+      "sha256": "4fb161038420c3576df689930c95389c69277e6c0f84a55f4015f029935269b6"
+    }
+  ],
+  "verification_before_freeze": {
+    "command": "python -m pytest -q -k scientific",
+    "passed": 118,
+    "failed": 0,
+    "deselected": 1134
+  },
+  "evidence_state": {
+    "fresh_v11_development_runs_executed": 0,
+    "fresh_v11_mab_final_executed": false,
+    "memops_final_executed": false,
+    "longmemeval_v2_examples_downloaded": false,
+    "longmemeval_v2_full_runs": 0
+  },
+  "post_outcome_source_changes_forbidden": true,
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "6496305fb8bd79afde9e286acfdd20c83526ebde9e9cd93d79f23d848a7fb3c7"
+  }
+}

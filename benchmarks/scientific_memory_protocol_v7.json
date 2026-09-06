@@ -1,0 +1,148 @@
+{
+  "schema": "wavemind.scientific_memory_protocol.v7",
+  "protocol_id": "scientific-core-query-sliced-2026-08-25-v7",
+  "status": "preregistered",
+  "preregistered_at": "2026-08-25",
+  "baseline_source_sha": "70ab758e97e57d11b69783c7fc2313156ad34822",
+  "supersedes_protocol_digest": "d140bd10012dc698656b211621be1fb851ae511294114a4b3d5cd73cbdfd2ebc",
+  "immutable_negative_evidence": {
+    "v6_status": "failed_admission_v6",
+    "v6_outcome_sha256": "1f82d6d8b9a9800b8b1c6b0649216f5fedb2acfb9c254fa8a926e3914c5778da",
+    "v6_opened_validation_unit_ids_may_be_used_for_tuning": false,
+    "v6_unopened_memops_validation_preserved": true,
+    "v6_unopened_longmemeval_v2_preserved": true,
+    "may_be_overwritten": false
+  },
+  "candidate": {
+    "id": "query-sliced-operation-aware-reconciler-v7",
+    "frozen_before_first_v7_outcome": true,
+    "hypothesis": "Deterministic overlapping evidence slices reduce irrelevant prompt mass and allow lexical retrieval to select local answer-bearing evidence while preserving provenance, tombstones, atomic batches, and fail-closed production behavior.",
+    "implementation_boundary": [
+      "wavemind.scientific_memoryagentbench.compile_candidate_units",
+      "wavemind.scientific_memops.ScientificMemOpsRetriever._register_corpus",
+      "wavemind.scientific_reconciliation.ProofCarryingStateReconciler.select",
+      "wavemind.scientific_runtime.ScientificMemoryRuntime.evaluation_recall"
+    ],
+    "slicing": {
+      "maximum_characters": 1024,
+      "overlap_characters": 256,
+      "stride_characters": 768,
+      "boundary_policy": "normalize whitespace, prefer the last whitespace in the final 128 characters of a slice when present, and retain deterministic source offsets",
+      "minimum_non_whitespace_characters": 1,
+      "gold_or_answer_fields_permitted": false
+    },
+    "ranking": "Query-token IDF over slices, descending lexical score then source order then memory ID. Source-recency weight is exactly zero. Operation-bearing MemOps slices retain tombstone-first ordering.",
+    "storage": "One atomic scientific-event batch per benchmark context; evaluation-only shadow storage; production index count remains zero.",
+    "production_promotion": "No promotion is permitted during development or admission."
+  },
+  "frozen_parameters": {
+    "seed": 17,
+    "bootstrap_repeats": 2000,
+    "confidence_level": 0.95,
+    "maximum_graph_hops": 4,
+    "maximum_retrieval_candidates": 20,
+    "token_budget": 8192,
+    "latency_budget_ms": 1000.0,
+    "maximum_safety_risk": 0.0,
+    "top_k_context": 10,
+    "source_recency_weight": 0.0,
+    "answer_model": "mistral:7b",
+    "answer_model_digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768
+  },
+  "development_firewall": {
+    "allowed": "Only units and subjects whose frozen manifests label them development.",
+    "forbidden": [
+      "all MemoryAgentBench validation and final units",
+      "all MemOps validation and final subjects",
+      "all LongMemEval-V2 examples",
+      "all v6 validation answers, per-case outputs, gold values, selected memories, and error descriptions"
+    ],
+    "permitted_v6_fact": "Only the aggregate preregistered decision that v6 failed with mean and CI equal to zero may be retained for audit; it may not guide v7 mechanism selection or tuning."
+  },
+  "frozen_development_diagnostic": {
+    "memoryagentbench_unit_ids": [
+      "Accurate_Retrieval:0000:d6d85ecc896724ed",
+      "Accurate_Retrieval:0001:0ee60a212be86fb2",
+      "Accurate_Retrieval:0002:dd607ab7b24b686d",
+      "Conflict_Resolution:0002:e2789821b46e6626",
+      "Long_Range_Understanding:0000:e7a33ddaf53de51d",
+      "Long_Range_Understanding:0001:1856d77efc6efe18",
+      "Long_Range_Understanding:0004:effac601d0406239",
+      "Test_Time_Learning:0000:32e5ed9216af6ce8",
+      "Test_Time_Learning:0001:a4c204d5682e17c8",
+      "Test_Time_Learning:0004:39146950180e7cff"
+    ],
+    "memops_subjects": [
+      "A04",
+      "A06",
+      "A07",
+      "A13",
+      "A14"
+    ],
+    "outcomes_may_change_v7": false
+  },
+  "frozen_development_gate": {
+    "memoryagentbench_unit_ids": [
+      "Accurate_Retrieval:0003:b783c42e93add9bc",
+      "Accurate_Retrieval:0005:74109788618f5270",
+      "Accurate_Retrieval:0006:6d16dca33a0ca72f",
+      "Accurate_Retrieval:0008:7e4f8ba209e49061",
+      "Accurate_Retrieval:0011:365235d948f3d1d5",
+      "Long_Range_Understanding:0005:5fc70bfc05d63845",
+      "Long_Range_Understanding:0006:9b3d2c1a81d97d1b",
+      "Long_Range_Understanding:0013:9bcb4a030c28a1d4",
+      "Long_Range_Understanding:0016:a6e45acb324d6790",
+      "Long_Range_Understanding:0018:76b38920faf9cc22",
+      "Test_Time_Learning:0005:2e7266dd630c22aa"
+    ],
+    "memops_subjects": [
+      "A16",
+      "A19",
+      "A22",
+      "A26",
+      "A27"
+    ],
+    "queries_per_memoryagentbench_context": 1,
+    "memops_questions_per_operation_file": 1,
+    "required_reproducible_runs": 3,
+    "required_independent_families": 2,
+    "minimum_independent_clusters_per_family": 5,
+    "paired_cluster_bootstrap_ci_lower_strictly_greater_than": 0.0,
+    "minimum_intervention_coverage": 0.8,
+    "all_family_means_non_negative": true,
+    "false_verified_promotions_maximum": 0,
+    "raw_per_case_evidence_required": true
+  },
+  "frozen_admission": {
+    "memoryagentbench_final_unit_ids": [
+      "Accurate_Retrieval:0007:aea0f2d603e1c8a3",
+      "Accurate_Retrieval:0009:153a2cce98f93cb3",
+      "Conflict_Resolution:0001:2a44d6ad3264a775",
+      "Long_Range_Understanding:0002:4fb345e28ef3ce1a",
+      "Test_Time_Learning:0002:36d1c3fde8d8fb21"
+    ],
+    "memops_final_subjects": [
+      "A05",
+      "A11",
+      "A20",
+      "B03",
+      "B04"
+    ],
+    "longmemeval_v2_dataset_revision": "f152293e235517d504809563c833d7190b8c713b",
+    "longmemeval_v2_tier": "small",
+    "longmemeval_v2_question_count": 451,
+    "maximum_longmemeval_v2_logical_full_runs": 1,
+    "independent_families_with_positive_uplift_lcb": 2,
+    "longmemeval_v2_uplift_minimum": 0.01,
+    "longmemeval_v2_improved_categories_minimum": 4,
+    "repeated_error_reduction_minimum": 0.5,
+    "stale_or_contradiction_error_rate_maximum": 0.02,
+    "context_reduction_vs_full_context_minimum": 0.3,
+    "runtime_p95_must_be_within_frozen_budget": true,
+    "ablation_required_for_every_improvement": true
+  },
+  "terminal_rule": "Any failed development or admission gate is retained as failed_experiment_v7 or failed_admission_v7. Thresholds may not be relaxed and opened held-out evidence may never become tuning data.",
+  "claim_boundary": "Only a full exact-SHA admission pass permits a bounded benchmark claim. SOTA, universal superiority, production promotion, replacement, and revolutionary claims remain forbidden without separate external evidence.",
+  "protocol_digest": "898de5766fcf7d509218c28966a950db9dda8ee21795e2faf17d08247c7ba73e"
+}

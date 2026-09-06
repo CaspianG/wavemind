@@ -1,0 +1,75 @@
+{
+  "schema": "wavemind.memoryagentbench_development.v9",
+  "phase": "bounded-development",
+  "run_number": 1,
+  "status": "failed_development_gate",
+  "candidate_id": "evidence-grounded-answer-transducer-v9",
+  "candidate_source_sha": "84315a585f5b482ce39cb0d2bfd884ede4f28581",
+  "protocol_digest": "adced0fd1642ca4639e2902792197ebec947a562ad4746d3fe1256eff5d0e180",
+  "model": {
+    "id": "mistral:7b",
+    "digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768
+  },
+  "source_split": "development",
+  "metric_family": "Long_Range_Understanding/detective_qa",
+  "primary_metric": "exact_match",
+  "generation_max_length": 2000,
+  "unit_ids": [
+    "Long_Range_Understanding:0100:cd66eabd2f070a38",
+    "Long_Range_Understanding:0102:951f75cd34e22188",
+    "Long_Range_Understanding:0103:0f57134e5ed36d75",
+    "Long_Range_Understanding:0104:720f3ad635ebebf1",
+    "Long_Range_Understanding:0106:9132aca9b3be661d"
+  ],
+  "context_sha256": [
+    "0f57134e5ed36d75aa128101b93b8947cd4452f377d6c8bf55f15bf7cedbf658",
+    "720f3ad635ebebf1dda9fa52d252d7831adea96f1060a0359425de49cd569e8f",
+    "9132aca9b3be661d7c2a6c37a06ae0e2dc9c0ca92122fc0514e4be010e81af92",
+    "951f75cd34e2218805961c257d1a75c8b9ce9d74c4f3db7c2d1d9f6f3b1a0de4",
+    "cd66eabd2f070a3893d685ddfadfbd749c5d65115a27afc5fb7296ba5728a1e3"
+  ],
+  "case_count": 5,
+  "cluster_count": 5,
+  "paired_effect": {
+    "values": [
+      0.0,
+      0.0,
+      -1.0,
+      0.0,
+      0.0
+    ],
+    "positive_count": 0,
+    "zero_count": 4,
+    "negative_count": 1
+  },
+  "paired_cluster_bootstrap": {
+    "paired": true,
+    "cluster_key": "cluster",
+    "cluster_count": 5,
+    "row_count": 5,
+    "repeats": 2000,
+    "seed": 17,
+    "confidence_level": 0.95,
+    "mean_difference": -0.2,
+    "ci_lower": -0.6,
+    "ci_upper": 0.0
+  },
+  "intervention_coverage": 1.0,
+  "production_case_count": 0,
+  "promoted_memory_ids": [],
+  "false_verified_promotions": 0,
+  "raw_output": {
+    "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\mab-v9-gate-run1-84315a5\\raw.jsonl",
+    "bytes": 38529,
+    "sha256": "c92f3794427c0e3d8dff8eaf1f4168353a434c42e0c433e53df691f9c2392285"
+  },
+  "final_split_touched": false,
+  "validation_split_touched": false,
+  "claim_boundary": "Development evidence only; not validation or admission.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "8a3b3293794d17c47da461a32bb8915f29d3263c3ba67cc7dad6f9768367937e"
+  }
+}

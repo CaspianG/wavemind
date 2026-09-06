@@ -1,0 +1,35 @@
+{
+  "schema": "wavemind.scientific_v14_prototype_diagnostic_outcome.v1",
+  "status": "prototype_falsified_on_opened_development_diagnostic",
+  "prototype_source_sha": "47facd46c58906593034dac84c1d85b21d665b95",
+  "source_protocol_digest": "da5273cd618e9d6207f47ce6841cb300c914d90949a45ea0ae7df4e20aa8db8d",
+  "admission_eligible": false,
+  "official_gate_decision": false,
+  "opened_contexts_only": true,
+  "raw": {
+    "path": "benchmarks/scientific_mab_v14_opened_diagnostic_raw.jsonl",
+    "bytes": 124853,
+    "sha256": "15acee6441e52d145e5951d1b136577c519a2ef49f61ed2d78a81896227816b3"
+  },
+  "observed_cases": 3,
+  "planned_cases": 10,
+  "stopped_early": true,
+  "paired_effect_values": [-0.015109890109890112, -0.0008064516129032277, -0.003676470588235294],
+  "mean_difference": -0.006530937437009545,
+  "output_token_pairs": [
+    {"control": 545, "treatment": 369},
+    {"control": 600, "treatment": 462},
+    {"control": 638, "treatment": 463}
+  ],
+  "causal_diagnosis": {
+    "improved": "Chronological target evidence prevented the first case from summarizing a demonstration book and correctly identified the Aeneid.",
+    "remaining_failure": "All three treatments under-generated relative to control and lost official ROUGE-L recall despite improved target identification.",
+    "next_required_change": "Build an explicit chronological plot plan and enforce task-requested long-form expansion without changing the official scorer, budget, or gate."
+  },
+  "claim_boundary": "Opened development diagnostic only. It falsifies this prototype and cannot pass any development or admission gate.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "474f514e812aa7ab4620ccd660cbc41fd99a7c2bc6fc0c247f1ddecbd1503488"
+  }
+}

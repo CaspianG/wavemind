@@ -1,0 +1,37 @@
+{
+  "schema": "wavemind.scientific_v11_infrastructure_continuation.v1",
+  "status": "frozen_harness_invalid_no_gate_decision",
+  "logical_run": "memoryagentbench_cross_family_run_1",
+  "candidate_source_sha": "c7857539f686abd717e897315026afb836fd18f4",
+  "protocol_digest": "0acb2b82a16b6eb87437c9b489775f48910b0bf14969b277096e961ac9e30df3",
+  "attempt": 3,
+  "completed_clusters_before_failure": 7,
+  "eighth_cluster_opened_but_not_recorded": true,
+  "partial_raw": {
+    "path": "benchmarks/scientific_mab_v11_run1_attempt3_partial_raw.jsonl",
+    "bytes": 114427,
+    "sha256": "5b3384ffe4245d25bb263cb89af4e97966a5842c13c110ca22c83ea5f2ae5fba"
+  },
+  "failure": {
+    "type": "KeyError",
+    "missing_metric": "substring_exact_match",
+    "official_available_metric_family": "recsys_recall@1, recsys_recall@5, recsys_recall@10",
+    "stage": "frozen candidate harness selecting the official primary metric",
+    "scientific_gate_evaluated": false,
+    "candidate_or_threshold_failure": false
+  },
+  "terminal_policy": {
+    "v11_exact_sha_may_be_changed": false,
+    "v11_run_may_continue": false,
+    "all_three_attempts_retained": true,
+    "opened_v11_development_contexts_may_be_reused": false,
+    "new_protocol_and_fresh_development_contexts_required": true,
+    "metric_routing_fix_must_be_frozen_before_new_outcomes": true
+  },
+  "claim_boundary": "v11 produced no complete development gate. It is infrastructure-invalid, not passed and not a scientific candidate failure.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "6dfbb39c32c4cb45f61d508476271ea91848c876067513944c856b4d847dcead"
+  }
+}

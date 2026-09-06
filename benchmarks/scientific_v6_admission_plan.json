@@ -1,0 +1,181 @@
+{
+  "schema": "wavemind.scientific_admission_plan.v6",
+  "status": "preregistered",
+  "preregistered_at": "2026-08-25",
+  "candidate": {
+    "id": "operation-aware-tombstone-reconciler-v6",
+    "source_sha": "a8240fe6bd9a79aec3d524b1cbbbdb4b907f8d97",
+    "checkout_policy": "clean detached worktree at the exact source SHA",
+    "post_outcome_changes_forbidden": true
+  },
+  "authorization_evidence": {
+    "development_gate_status": "pass",
+    "development_gate_commit": "b8d2c78736f92023a481238cd49f885b9a6e6bd8",
+    "development_gate_sha256": "741966944c84e07c1b8a2b88a3df5b00cdfe37de6e943ec53e18e4960e844c13",
+    "development_protocol_digest": "d140bd10012dc698656b211621be1fb851ae511294114a4b3d5cd73cbdfd2ebc"
+  },
+  "execution_harness": {
+    "source_commit": "f4e5822c069b9f3b68af58da1585d81b96e61aba",
+    "files": [
+      {
+        "path": "benchmarks/scientific_longmemeval_v2_backend.py",
+        "sha256": "f59733a2d26f673c0a7f532653398379ad6d90f68175ae7d4c1e855e7ef70bc6"
+      },
+      {
+        "path": "benchmarks/scientific_longmemeval_v2_run.py",
+        "sha256": "5c2355a3f64e87d50f133cfa8db95e7a6b7f49b036069fc1c69c0893a507f12e"
+      },
+      {
+        "path": "benchmarks/scientific_mab_v6_validation.py",
+        "sha256": "2f50a6fbade39a35a2719d5ca8dfb761be719cc091871933a85fe386d188ec38"
+      },
+      {
+        "path": "benchmarks/scientific_memops_v6_validation.py",
+        "sha256": "44b237278e30fdcf628bd19f0d70b6106a5ebf6a25b83b41781a3006e8122835"
+      }
+    ],
+    "infrastructure_continuation": "A crashed partial arm is retained verbatim and may continue with identical candidate, data revision, prompts, model, thresholds, and deterministic parameters inside the same logical run. It is never discarded or counted as a new scientific outcome."
+  },
+  "official_sources": {
+    "memoryagentbench": {
+      "code_sha": "fe1735de8cf8b9908e1e3d3b5612afc815698062",
+      "dataset_revision": "7ea066982b140a19337e17e60d45d4076e042faf",
+      "split_manifest_sha256": "750a025a5c51d97fbff78df77d734a1086558f3b4ad5cdffee66704e08612adc"
+    },
+    "memops": {
+      "code_and_data_sha": "312af65e2c7b6d1b70f062ffa8b4cde32aaf6f35",
+      "split_manifest_sha256": "0ed183e2ddf198efa101d2e94e8bbfb4290cdabf225fb8720e156b916935dc0a"
+    },
+    "longmemeval_v2": {
+      "code_sha": "2cc8c540bdb87fe6761629b585e727e1c4704520",
+      "dataset_revision": "f152293e235517d504809563c833d7190b8c713b",
+      "tier": "small",
+      "question_count": 451,
+      "domains": [
+        "web",
+        "enterprise"
+      ]
+    }
+  },
+  "frozen_validation_samples": {
+    "memoryagentbench": {
+      "selection": "first five lexicographic validation units after deduplicating by context_sha256",
+      "queries_per_context": 1,
+      "unit_ids": [
+        "Accurate_Retrieval:0004:4a190b7aec81123d",
+        "Accurate_Retrieval:0012:2bc8ffde99c2c47b",
+        "Accurate_Retrieval:0013:6dc878c847d183ff",
+        "Conflict_Resolution:0000:e46cb14b53eedd71",
+        "Long_Range_Understanding:0003:f186cd415885b43b"
+      ],
+      "cluster": "whole context_sha256",
+      "required_clusters": 5
+    },
+    "memops": {
+      "selection": "first five lexicographic validation subjects; all 23 operation files present in both official input directories; first official question per operation file",
+      "subjects": [
+        "A01",
+        "A02",
+        "A29",
+        "A32",
+        "A33"
+      ],
+      "cluster": "subject_id",
+      "required_clusters": 5,
+      "arms": [
+        "operation-aware-tombstone-reconciler-v6",
+        "atomic-batch-hierarchical-proof-state-reconciler-v5",
+        "no-memory"
+      ]
+    }
+  },
+  "longmemeval_v2_execution": {
+    "maximum_logical_full_runs": 1,
+    "arms": [
+      "operation-aware-tombstone-reconciler-v6",
+      "no_retrieval"
+    ],
+    "arm_order": {
+      "web": [
+        "candidate",
+        "no_retrieval"
+      ],
+      "enterprise": [
+        "no_retrieval",
+        "candidate"
+      ]
+    },
+    "question_shuffle_seed": 17,
+    "reader": {
+      "model": "mistral:7b",
+      "digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+      "context_window": 32768,
+      "temperature": 0.0,
+      "top_p": 1.0,
+      "top_k": 20,
+      "max_completion_tokens": 512
+    },
+    "evaluator": {
+      "official_scorer_functions_only": true,
+      "llm_judge_model": "mistral:7b",
+      "llm_judge_digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091"
+    },
+    "memory_context_max_tokens": 8192,
+    "candidate_slice_characters": 2048,
+    "production_index_count_required": 0,
+    "event_chain_required_valid": true,
+    "gold_fields_exposed_to_candidate": []
+  },
+  "frozen_metrics": {
+    "family_validation": {
+      "required_independent_families": 2,
+      "paired_cluster_bootstrap_repeats": 2000,
+      "seed": 17,
+      "confidence_level": 0.95,
+      "ci_lower_strictly_greater_than": 0.0,
+      "minimum_intervention_coverage": 0.8,
+      "all_family_means_non_negative": true
+    },
+    "longmemeval_v2": {
+      "uplift": "candidate overall_full_set minus no_retrieval overall_full_set",
+      "uplift_minimum": 0.01,
+      "category_values": [
+        "combined_static",
+        "combined_dynamic",
+        "combined_procedure",
+        "non_abstention_gotchas"
+      ],
+      "improved_categories_minimum": 4,
+      "category_improvement": "candidate pct_correct strictly greater than no_retrieval pct_correct",
+      "repeated_error_cluster": "domain + environment + official category with at least two no_retrieval errors",
+      "repeated_error_reduction": "1 - candidate errors / no_retrieval errors over all preregistered repeated-error clusters",
+      "repeated_error_reduction_minimum": 0.5,
+      "stale_or_contradiction_error": "candidate incorrect on a question where no_retrieval is correct",
+      "stale_or_contradiction_denominator": "all questions with a non-empty candidate intervention",
+      "stale_or_contradiction_error_rate_maximum": 0.02,
+      "context_reduction": "1 - sum candidate selected_estimated_tokens / sum candidate full_context_estimated_tokens",
+      "context_reduction_minimum": 0.3,
+      "memory_query_p95_seconds_maximum": 1.0
+    },
+    "safety": {
+      "false_verified_promotions_maximum": 0,
+      "production_index_count_maximum": 0,
+      "raw_per_case_evidence_required": true,
+      "failed_and_partial_attempts_retained": true
+    }
+  },
+  "ablations": {
+    "memops_v5": "The exact pre-v6 atomic-batch reconciler is evaluated on the same validation cases, model, prompts, and scorer.",
+    "longmemeval_no_retrieval": "The official no_retrieval arm is the required removal ablation for any retrieval uplift.",
+    "longmemeval_v5_equivalence": "Because LongMemEval trajectory units contain no memory-operation provenance marker, exact code-path inspection and synthetic tests must confirm v6 delegates to the unchanged v5 ranked selector. No outcome-dependent ablation is permitted."
+  },
+  "decision_rule": "Admission passes only if both new validation families pass, the complete 451-question LongMemEval-V2 run passes every frozen LongMemEval metric, all safety controls pass, every raw row and partial is retained, and artifact integrity validates. Otherwise status is failed_admission_v6.",
+  "claim_boundary": "A pass authorizes only a bounded exact-SHA scientific admission claim for these pinned benchmarks. It does not by itself establish SOTA, universal superiority, production promotion, or a revolutionary claim.",
+  "held_out_state_at_preregistration": {
+    "memoryagentbench_validation_outcomes_opened": false,
+    "memops_validation_outcomes_opened": false,
+    "longmemeval_v2_examples_downloaded": false,
+    "longmemeval_v2_full_runs": 0
+  },
+  "plan_digest": "101b9535f054694b46781f338616550f0f0df0d456a4e3dd4c5a5e68cf5766e9"
+}

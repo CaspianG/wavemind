@@ -758,7 +758,7 @@ def _invalidate_cache(app: FastAPI, namespace: str | None) -> int:
             return size
         return cache.invalidate_namespace(namespace)
     except Exception:
-        logger.warning("failed to invalidate API cache namespace=%s", namespace, exc_info=True)
+        logger.warning("failed to invalidate API cache", exc_info=True)
         return 0
 
 
@@ -767,12 +767,13 @@ def _metric_key(value: str) -> str:
 
 
 def _rate_limit_key(request: Request) -> str:
-    authorization = request.headers.get("authorization", "")
-    if authorization.lower().startswith("bearer "):
-        return f"key:{authorization[7:].strip()}"
-    api_key = request.headers.get("x-api-key")
-    if api_key:
-        return f"key:{api_key}"
+    app = getattr(request, "app", None)
+    state = getattr(app, "state", None)
+    auth = getattr(state, "auth", None)
+    if isinstance(auth, APIAuth):
+        principal = auth.principal_for_request(request)
+        if principal is not None:
+            return f"principal:{principal.identity}"
     client = request.client.host if request.client else "unknown"
     return f"ip:{client}"
 
@@ -1749,8 +1750,8 @@ def create_app(
             manager = WorkspaceExperienceManager.open(root)
         except (OSError, ValueError) as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
-        app.state.auth.check_namespaces(principal, {manager.identity.namespace})
         try:
+            app.state.auth.check_namespaces(principal, {manager.identity.namespace})
             yield manager
         finally:
             manager.close()
@@ -1951,9 +1952,8 @@ def create_app(
                 raise HTTPException(status_code=404, detail="Memory not found")
             invalidated = _invalidate_cache(app, record.namespace)
         logger.info(
-            "feedback id=%s namespace=%s useful=%s cache_invalidated=%s",
+            "feedback id=%s useful=%s cache_invalidated=%s",
             request.id,
-            record.namespace,
             request.useful,
             invalidated,
         )
@@ -2007,7 +2007,7 @@ def create_app(
         with _api_operation(app, "remember"):
             id, replay = _remember_idempotently(request)
             invalidated = _invalidate_cache(app, request.namespace)
-        logger.info("remembered id=%s namespace=%s cache_invalidated=%s", id, request.namespace, invalidated)
+        logger.info("remembered id=%s cache_invalidated=%s", id, invalidated)
         return RememberResponse(id=id, idempotent_replay=replay)
 
     @app.post(
@@ -3036,8 +3036,7 @@ def create_app(
                 request.namespace or str(request.delta.get("namespace") or "default"),
             )
         logger.info(
-            "imported namespace delta namespace=%s imported=%s tombstones=%s cache_invalidated=%s",
-            getattr(report, "namespace", request.namespace),
+            "imported namespace delta imported=%s tombstones=%s cache_invalidated=%s",
             getattr(report, "imported_records", 0),
             getattr(report, "imported_tombstones", 0),
             invalidated,

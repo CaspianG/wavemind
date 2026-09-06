@@ -1,0 +1,74 @@
+{
+  "schema": "wavemind.memoryagentbench_final.v10",
+  "phase": "final",
+  "status": "failed_final",
+  "candidate_id": "operation-trace-strict-output-agent-v10",
+  "candidate_source_sha": "47b68e366aab9ce07b659c61a51c81d634b3fff2",
+  "protocol_digest": "d522705fdc9d49ed97874b6ce09c6372d7189673945b894856805be625d21b50",
+  "model": {
+    "id": "mistral:7b",
+    "digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768
+  },
+  "official_repository_sha": "fe1735de8cf8b9908e1e3d3b5612afc815698062",
+  "dataset_revision": "7ea066982b140a19337e17e60d45d4076e042faf",
+  "source_split": "final",
+  "unit_ids": [
+    "Accurate_Retrieval:0007:aea0f2d603e1c8a3",
+    "Accurate_Retrieval:0009:153a2cce98f93cb3",
+    "Conflict_Resolution:0001:2a44d6ad3264a775",
+    "Long_Range_Understanding:0002:4fb345e28ef3ce1a",
+    "Test_Time_Learning:0002:36d1c3fde8d8fb21"
+  ],
+  "context_sha256": [
+    "153a2cce98f93cb34447b24bf0423bb283438d7082b670b8cfb2ea78328a4180",
+    "2a44d6ad3264a775596fe6de01994d6b348280303fdd964f82288e2c476a7409",
+    "36d1c3fde8d8fb214807824aa6beef6c1059e2187afb68d9f214faec137a7aad",
+    "4fb345e28ef3ce1ad2c45d9defbe93651ab89fc912c0603f13af22e47ab47563",
+    "aea0f2d603e1c8a3afbccc92a6ea3116692155bc3f48aa8ee28144ce8f010c81"
+  ],
+  "case_count": 5,
+  "paired_effect_values": [
+    1.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "paired_cluster_bootstrap": {
+    "paired": true,
+    "cluster_key": "cluster",
+    "cluster_count": 5,
+    "row_count": 5,
+    "repeats": 2000,
+    "seed": 17,
+    "confidence_level": 0.95,
+    "mean_difference": 0.4,
+    "ci_lower": 0.0,
+    "ci_upper": 0.8
+  },
+  "intervention_coverage": 1.0,
+  "production_case_count": 0,
+  "promoted_memory_ids": [],
+  "false_verified_promotions": 0,
+  "gate_checks": {
+    "five_independent_clusters": true,
+    "paired_cluster_bootstrap_ci_lower_strictly_positive": false,
+    "mean_non_negative": true,
+    "minimum_intervention_coverage": true,
+    "no_production_cases": true,
+    "no_promoted_memories": true
+  },
+  "raw_output": {
+    "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\work\\wavemind-scientific-core\\benchmarks\\scientific_mab_v10_final_raw.jsonl",
+    "bytes": 55092,
+    "sha256": "0517479e417440a58aeb9315abd61bd2bbb780aa7330381dcd51d100340b6f93"
+  },
+  "final_split_touched": true,
+  "claim_boundary": "MAB final arm only; full v10 admission remains incomplete.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "c182a30e8ad5f41fbf880d959a7c90d2b7b6569ea797d635348d5c9a493a69d1"
+  }
+}

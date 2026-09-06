@@ -115,6 +115,7 @@ dev = [
   "httpx2>=2",
   "langchain-classic>=1.0",
   "mcp>=1.28,<2",
+  "pyyaml>=6",
   "ruff==0.15.22",
   "tomli>=2.0.1; python_version < '3.11'",
 ]

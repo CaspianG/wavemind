@@ -1,0 +1,60 @@
+{
+  "schema": "wavemind.memops_candidate_development.v1",
+  "phase": "bounded-development",
+  "admission_eligible": false,
+  "reason_not_admission_eligible": "single development split, local answer model and local judge; held-out admission arms were not executed",
+  "source_sha": "94fe6ab21025ec60f25a3127647581946d3905d4",
+  "protocol_digest": "489d3ff6fca733340b65b26c52ccb5533b19ad14fef66b1d2d912691dac22d59",
+  "official_upstream": {
+    "repository": "MemTensor/MemOps",
+    "sha": "312af65e2c7b6d1b70f062ffa8b4cde32aaf6f35",
+    "runners": [
+      "5-test_operation_metrics.py:run_gpt_rag",
+      "5.5-evaluate_operation_metrics.py:evaluate_entry"
+    ],
+    "upstream_modified": false
+  },
+  "candidate_id": "evidence-constrained-associative-graph-v1",
+  "control_id": "no-memory",
+  "model": {
+    "id": "mistral:7b",
+    "digest": "f974a74358d62a017b37c6f424fcdf2744ca02926c4f952513ddf474b2fa5091",
+    "context_window": 32768
+  },
+  "case_ids": [
+    "A04_forget_q2",
+    "A04_forget_q4",
+    "A04_forget_q6",
+    "A04_forget_q8",
+    "A04_forget_q10"
+  ],
+  "case_count": 5,
+  "final_split_touched": false,
+  "paired_effect": {
+    "values": [
+      0.0,
+      0.0,
+      -1.0,
+      -1.0,
+      0.0
+    ],
+    "mean": -0.4,
+    "positive_count": 0,
+    "zero_count": 3,
+    "negative_count": 2
+  },
+  "verified_receipt_count": 5,
+  "false_verified_promotions": 0,
+  "production_case_count": 0,
+  "promoted_memory_ids": [],
+  "raw_output": {
+    "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\memops-graph-dev-94fe6ab\\raw_pairs.jsonl",
+    "bytes": 88560,
+    "sha256": "e33018932d79996625029459f6de23a904d1d98da3bb8d16aedb08c19ee12a76"
+  },
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "bffbc84a3c563908261d90ae279229d17925fa95d565652f67fc8de0d82b24b5"
+  }
+}

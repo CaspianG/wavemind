@@ -1,0 +1,27 @@
+{
+  "schema": "wavemind.scientific_v16_candidate_freeze.v1",
+  "status": "frozen_before_fresh_development",
+  "candidate_id": "target-scoped-state-verification-agent-v16",
+  "candidate_source_sha": "c68fd7ae36804b096c2c68560213de400c710cb5",
+  "protocol_digest": "ec2a8a3d80866cd314a341438291e2c027a1b88fede8996a6e09f034ab8ce6a8",
+  "files": [
+    {"path": "wavemind/scientific_answer_transducer.py", "sha256": "17d7b2a496539dd4089910633b5583035f83cedec6ab130ce6c08bbc0ba3ef09"},
+    {"path": "wavemind/scientific_runtime.py", "sha256": "a4c9a1f137f27626d0cb4505a6436a41dc5d99838f2b8189fe22d4660cc7973d"},
+    {"path": "wavemind/scientific_memops.py", "sha256": "cc0ae07c0afb2978311e1a2ee46aa4b2551a52335c1b0f28d2291e837d36b472"},
+    {"path": "wavemind/scientific_memoryagentbench.py", "sha256": "b655a6dbb00494e1ad3a99d708802c5c83e9418bb9502f953625ba94b2257b6f"},
+    {"path": "wavemind/scientific_reconciliation.py", "sha256": "c19a20cc26c3ef39c054ad77d4620d454a762c4396f33896f94c400b2f3b145d"},
+    {"path": "benchmarks/scientific_mab_v11_development.py", "sha256": "e738ec73c1098816242bd520e433e8d8b481ba930cf792c221fe840674c76878"},
+    {"path": "benchmarks/scientific_memops_v10_development.py", "sha256": "d0f55d6200946a8d981bdffe1f91d9b199194927c4127989dffd4a7e8f6bbdac"},
+    {"path": "benchmarks/scientific_memory_protocol_v16.json", "sha256": "8144e2b0c45e7b0e448ced29a94ffda9ceea2eb7d23ef27fbeb7e82ba61832fe"},
+    {"path": "benchmarks/scientific_mab_v16_development.py", "sha256": "1e8b36167ad483f63d16a2038a1a51e3a9f5689c9b39e21f9fa6066a5666cd23"},
+    {"path": "benchmarks/scientific_memops_v16_development.py", "sha256": "c81678a51070bb0f5837c2457787d05675940a2403d392b79849804eb64124d7"}
+  ],
+  "verification_before_freeze": {"passed": 150, "failed": 0, "deselected": 1134},
+  "fresh_v16_development_runs_executed": 0,
+  "post_outcome_source_changes_forbidden": true,
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "7ae00bec2770664dd84d49f70c9ffa66bd7f8818f92ff756672e2432e5bd799b"
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "schema": "wavemind.scientific_v31_longmem_streaming_probe.v1",
+  "status": "passed_synthetic_full_scratch_resource_probe",
+  "query_kind": "synthetic_non_held_out",
+  "query_sha256": "efb6432b0f769116dceb3076a5a4b46d425ac8b46ad36ff142de9213a83b281b",
+  "candidate_source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+  "streaming_harness_commit": "404c6b127e580d8531176d9e79cd1782bbacc79b",
+  "streaming_wrapper": {
+    "path": "benchmarks/scientific_longmemeval_v2_backend_v31.py",
+    "bytes": 7732,
+    "sha256": "aba0f5e17f81902ec5838d302005e768f2843d8ef085ea657b8b9fc44c3f2fcc"
+  },
+  "scratch": {
+    "base_database": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/candidate-scratch/wavemind-lme-v6-d98_k2l4/candidate.sqlite3",
+      "bytes": 45056,
+      "sha256": "167e44146ec4294609d20fb426aa71efe3784fa0402155b5b36ecb37e0920868"
+    },
+    "event_database": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/candidate-scratch/wavemind-lme-v6-d98_k2l4/candidate.sqlite3.scientific-events.sqlite3",
+      "bytes": 120520704,
+      "sha256": "713db06777004e1d7e9e8db64d9006895f9c07f7816986f1dd49c84ffa39a244"
+    },
+    "event_database_wal": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/candidate-scratch/wavemind-lme-v6-d98_k2l4/candidate.sqlite3.scientific-events.sqlite3-wal",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "event_database_shm": {
+      "path": "benchmarks/scientific_longmemeval_v31_final/candidate-scratch/wavemind-lme-v6-d98_k2l4/candidate.sqlite3.scientific-events.sqlite3-shm",
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "event_count": 28768,
+    "event_json_bytes": 97046543
+  },
+  "measurements": {
+    "open_seconds": 2.637809,
+    "recall_seconds": 5.359686,
+    "chain_validation_seconds": 1.755413,
+    "selected_count": 12,
+    "estimated_tokens": 7670,
+    "chain_errors": [],
+    "process_memory_after_validation": {
+      "rss_gib": 0.287418,
+      "vms_gib": 0.877922,
+      "private_gib": 0.877922
+    }
+  },
+  "scientific_boundary": {
+    "held_out_question_text_used": false,
+    "model_calls_made": 0,
+    "answers_generated": 0,
+    "scores_opened": false,
+    "gate_evaluated": false
+  },
+  "decision_rule": "The streaming implementation is resource-viable only if the full scratch opens, synthetic recall completes, chain validation has no errors, and private memory remains below 2 GiB.",
+  "claim_boundary": "A synthetic infrastructure probe is not a held-out benchmark outcome and authorizes no scientific pass or revolutionary claim.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "9e84566dc2d63e0b111240b855f18bd3b17cb9ca7191cd57e3ded29e1166f9d0"
+  }
+}

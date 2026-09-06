@@ -1,0 +1,119 @@
+{
+  "schema": "wavemind.scientific_v31_longmem_dependency_continuation.v1",
+  "status": "preregistered_dependency_continuation_before_outcome",
+  "preregistered_at": "2026-08-26",
+  "logical_run": "longmemeval_v2_small_full_v31",
+  "logical_full_run_count": 1,
+  "candidate_source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+  "fixed_harness_commit": "303d06138fd205a36ea15473c13d0aa71fe4b150",
+  "prior_continuation_plan": {
+    "path": "benchmarks/scientific_v31_longmem_continuation_plan.json",
+    "bytes": 6552,
+    "sha256": "0a12915e121eea0bae882a2fdaccdecc0d756dc577681bbcfa047a94e45125b6",
+    "commit": "30ceb43dfb241843c67960cb9ff5f172018ca6f2",
+    "payload_sha256": "f01630d7ecc33bfb9487ef793a60911a38d0548e56aaa1a41a1236059d460f11"
+  },
+  "second_infrastructure_failure": {
+    "path": "benchmarks/scientific_v31_longmem_infrastructure_failure_2.json",
+    "bytes": 4190,
+    "sha256": "f9fcf110490a0f62a6b575b25c4c3474962beb4f0ae28ce651819c954cd3366f",
+    "commit": "15e5e42c26dcb1bcf2a1d49c16e556e57f003264",
+    "payload_sha256": "bcfcf1d4ba26c600496dc667a1fc0821d2497277dfd403da6b89c5ab0dc2b11a",
+    "outcome_scores_opened": false,
+    "scientific_gate_evaluated": false
+  },
+  "environment_change": {
+    "package": "pillow",
+    "resolved_version": "12.3.0",
+    "official_dependency_declared": true,
+    "installed_package_count": 1,
+    "import_name": "PIL",
+    "import_verified": true,
+    "distribution_files": [
+      {
+        "environment_relative_path": "Lib/site-packages/pillow-12.3.0.dist-info/METADATA",
+        "bytes": 9273,
+        "sha256": "2c4378001803cfac65809a50722d46e0da4ce8061e717f103e5d52734bab30f5"
+      },
+      {
+        "environment_relative_path": "Lib/site-packages/pillow-12.3.0.dist-info/WHEEL",
+        "bytes": 101,
+        "sha256": "5c75cc289537ca8561d596a70574c9e5b0c66faee8118b45d52e9b77c6b88b32"
+      },
+      {
+        "environment_relative_path": "Lib/site-packages/pillow-12.3.0.dist-info/RECORD",
+        "bytes": 9552,
+        "sha256": "46233d6f1f283d8e32aa3a015fe06505ab916a852fc4731044810374b5fcd87e"
+      }
+    ],
+    "candidate_files_changed": 0,
+    "harness_files_changed": 0
+  },
+  "semantic_invariants": {
+    "candidate_source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+    "official_repository_sha": "2cc8c540bdb87fe6761629b585e727e1c4704520",
+    "dataset_files": [
+      {
+        "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\longmemeval-v31-f152293e\\questions.jsonl",
+        "bytes": 286186,
+        "sha256": "0a3ae5ebea938c24d7800e1e0b0828e08ae1646f939a53853b2b8cdc08e292b7"
+      },
+      {
+        "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\longmemeval-v31-f152293e\\trajectories.jsonl",
+        "bytes": 1195604539,
+        "sha256": "363cec9a8e87aa8d9101ce4e600aadbf7031d674056ebe4f969e8424abc5f3c6"
+      },
+      {
+        "path": "C:\\Users\\LEO\\Documents\\Codex\\2026-08-16\\ct\\scientific-evidence\\runs\\longmemeval-v31-f152293e\\haystacks\\lme_v2_small.json",
+        "bytes": 822632,
+        "sha256": "9b5301defb23a088a5f06e45ff8d5f35e569d78305a66d492046a9fff9b46593"
+      }
+    ],
+    "dataset_revision": "f152293e235517d504809563c833d7190b8c713b",
+    "tier": "small",
+    "question_count": 451,
+    "arm_order": [
+      "candidate_web_small",
+      "no_retrieval_web_small",
+      "candidate_enterprise_small",
+      "no_retrieval_enterprise_small"
+    ],
+    "model": "mistral:7b",
+    "evaluator_model": "mistral:7b",
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "top_k": 20,
+    "shuffle_questions_seed": 17,
+    "prompt_build_max_workers": 4,
+    "reader_max_concurrent_requests": 4,
+    "memory_context_max_tokens": 8192,
+    "prompts_unchanged": true,
+    "thresholds": {
+      "uplift_minimum": 0.01,
+      "improved_categories_minimum": 4,
+      "repeated_error_reduction_minimum": 0.5,
+      "stale_or_contradiction_error_rate_maximum": 0.02,
+      "context_reduction_vs_full_context_minimum": 0.3,
+      "runtime_p95_must_be_within_frozen_budget": true,
+      "ablation_required_for_every_improvement": true
+    },
+    "thresholds_unchanged": true
+  },
+  "continuation_execution": {
+    "same_output_root_required": "benchmarks/scientific_longmemeval_v31_final",
+    "same_marker_required": true,
+    "logical_full_run_count_must_remain": 1,
+    "second_partial_must_be_retained": true,
+    "restart_first_incomplete_arm": "candidate_web_small",
+    "fixed_harness_commit_required": "303d06138fd205a36ea15473c13d0aa71fe4b150",
+    "candidate_source_sha_required": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+    "fresh_scientific_run_forbidden": true
+  },
+  "decision_rule": "Continuation may resume only after Pillow 12.3.0 import succeeds, from the unchanged fixed harness and candidate worktrees, inside the existing logical full run.",
+  "claim_boundary": "Installing a missing official dependency is not a benchmark outcome and authorizes no pass or revolutionary claim.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "8ff04edc64fceebe43a99b65d6a55afaa4fafa6b9921b76d9f8521733f21b928"
+  }
+}

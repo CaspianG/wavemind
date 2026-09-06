@@ -1,0 +1,69 @@
+{
+  "schema": "wavemind.scientific_v31_candidate_freeze.v1",
+  "status": "frozen_before_fresh_development",
+  "candidate_id": "operation-routed-target-state-agent-v31",
+  "candidate_source_sha": "2a55c83ef3d3e4a3c5d9dff4418258eacb378127",
+  "protocol_digest": "bc1f895bdf8bd30027bcc17f1c3a375099c8ee442681382c56ba57fa7580793b",
+  "files": [
+    {
+      "path": "wavemind/scientific_answer_transducer.py",
+      "sha256": "17d7b2a496539dd4089910633b5583035f83cedec6ab130ce6c08bbc0ba3ef09"
+    },
+    {
+      "path": "wavemind/scientific_runtime.py",
+      "sha256": "47da2b4945058d8d8338f09bb74932e3590d8fd554d9f5b1e83fcaab9a3ef0a0"
+    },
+    {
+      "path": "wavemind/scientific_memops.py",
+      "sha256": "f9333567ca7c8768abeed8825a95688d06e5e57107b674b6583ca1ae3f7db3bf"
+    },
+    {
+      "path": "wavemind/scientific_memoryagentbench.py",
+      "sha256": "b655a6dbb00494e1ad3a99d708802c5c83e9418bb9502f953625ba94b2257b6f"
+    },
+    {
+      "path": "wavemind/scientific_reconciliation.py",
+      "sha256": "4cf277ecb75b1ca72b93b15bacf488f9870fd433ec618d23de0ecac0597968eb"
+    },
+    {
+      "path": "wavemind/scientific_query_phrases.py",
+      "sha256": "ec6b8b4dfd011f9658718a5d98dd9a516e0051382b5693e1b7a58b14e4dba5d6"
+    },
+    {
+      "path": "wavemind/scientific_slicing.py",
+      "sha256": "c5195fe48d549cbc0d1f2e436808619b206cbedfaef30d5bf19f5841df76e6d7"
+    },
+    {
+      "path": "benchmarks/scientific_mab_v11_development.py",
+      "sha256": "e738ec73c1098816242bd520e433e8d8b481ba930cf792c221fe840674c76878"
+    },
+    {
+      "path": "benchmarks/scientific_memops_v10_development.py",
+      "sha256": "904efb0434cfa5d3bcceab3f6af650c879b9cd01b5774a0546830773af46a7da"
+    },
+    {
+      "path": "benchmarks/scientific_memory_protocol_v31.json",
+      "sha256": "576c0c576fe45b92bd198595353d20c61c927116fddca22b67a552a1b63b5e9d"
+    },
+    {
+      "path": "benchmarks/scientific_mab_v31_development.py",
+      "sha256": "de95038966529a71fe704ec5949eea79c2cdfa8110c6bc4a4f1f2c3787810abb"
+    },
+    {
+      "path": "benchmarks/scientific_memops_v31_development.py",
+      "sha256": "fde0993f7f2e6cb4a51e24f0f6f5448d5db5c1d1d852bc390e54b557617078a3"
+    }
+  ],
+  "verification_before_freeze": {
+    "passed": 202,
+    "failed": 0,
+    "deselected": 1134
+  },
+  "fresh_v31_development_runs_executed": 0,
+  "post_outcome_source_changes_forbidden": true,
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "2a03b9ad4b34c4a2756072cd622c67acb4f6106d8add26807bdf929eb6ee98b7"
+  }
+}

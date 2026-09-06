@@ -1,0 +1,93 @@
+{
+  "schema": "wavemind.scientific_v19_admission_outcome.v1",
+  "status": "failed_admission_v19",
+  "candidate_id": "targeted-dual-coverage-agent-v19",
+  "candidate_source_sha": "c509511f09dbcd3b4206ec1b74a7abc9510d9e73",
+  "protocol_digest": "443d8a461b10969756579eb6af3e05d7b909d30369fb286b2a582aa8efaef684",
+  "admission_plan": {
+    "path": "benchmarks/scientific_v19_admission_plan.json",
+    "bytes": 9537,
+    "sha256": "9dccf2412db8b8a2595bab70a240c1d6c8553f3df8467f53c179ebc60927e41a",
+    "payload_sha256": "75d770a345cef7205a3d32e9423d1fc566dab96d0ebd00f7dc1ab16acf31f12e"
+  },
+  "development_gate": {
+    "status": "passed_development_gate_v19",
+    "required_runs_passed": 6,
+    "required_runs_total": 6
+  },
+  "memoryagentbench_final": {
+    "status": "pass",
+    "case_count": 10,
+    "independent_cluster_count": 10,
+    "mean_difference": 0.1264499832552561,
+    "ci95_lower": 0.015719089630187373,
+    "ci95_upper": 0.32591295881348703,
+    "intervention_coverage": 1.0,
+    "gate_checks": {
+      "ten_independent_clusters": true,
+      "paired_cluster_bootstrap_ci_lower_strictly_positive": true,
+      "mean_non_negative": true,
+      "minimum_intervention_coverage": true,
+      "no_production_cases": true,
+      "no_promoted_memories": true
+    },
+    "artifact": {
+      "path": "benchmarks/scientific_mab_v19_final_results.json",
+      "bytes": 3483,
+      "sha256": "73eb291f5ad0b09762dc76744cf272181feb8ae284afd23d10fe1b5cb59c5322"
+    },
+    "raw": {
+      "path": "benchmarks/scientific_mab_v19_final_raw.jsonl",
+      "bytes": 286519,
+      "sha256": "a2e496e03ce7501829ccfa1c90b4060b9d470468aa817cb349f98aefd54a24ba"
+    }
+  },
+  "memops_final": {
+    "status": "failed_final",
+    "case_count": 19,
+    "independent_subject_cluster_count": 5,
+    "mean_difference": 0.15,
+    "ci95_lower": 0.0,
+    "ci95_upper": 0.45,
+    "required_ci95_lower_strictly_greater_than": 0.0,
+    "intervention_coverage": 1.0,
+    "failed_gate": "paired_subject_cluster_bootstrap_ci_lower_strictly_positive",
+    "gate_checks": {
+      "minimum_independent_subject_clusters": true,
+      "paired_subject_cluster_bootstrap_ci_lower_strictly_positive": false,
+      "mean_non_negative": true,
+      "minimum_intervention_coverage": true,
+      "no_production_cases": true,
+      "no_promoted_memories": true
+    },
+    "artifact": {
+      "path": "benchmarks/scientific_memops_v19_final_results.json",
+      "bytes": 3127,
+      "sha256": "4d0bf842df38aadbbe2bcc18b53474f8f4344f58dccd588e9c37676112573d90"
+    },
+    "raw": {
+      "path": "benchmarks/scientific_memops_v19_final/raw_pairs.jsonl",
+      "bytes": 405206,
+      "sha256": "d1de8afa4eba86d295b16704b58a788f0c52ad85e7e6be4cbd2226853cf5ba84"
+    }
+  },
+  "unopened_held_out_evidence": {
+    "longmemeval_v2_examples_downloaded": false,
+    "longmemeval_v2_full_run_executed": false,
+    "reason": "The preregistered MemOps final gate failed. Opening the later one-shot LongMemEval-V2 arm cannot rescue v19 and would spend independent evidence."
+  },
+  "post_outcome_policy": {
+    "v19_candidate_changes_forbidden": true,
+    "v19_final_cases_may_be_used_for_future_tuning": false,
+    "thresholds_may_be_relaxed": false,
+    "repeat_v19_final_runs_forbidden": true,
+    "future_candidates_require_new_preregistration": true,
+    "future_gates_require_unopened_development_and_final_evidence": true
+  },
+  "claim_boundary": "v19 passed six exact-SHA development runs and the MAB final arm, but failed the MemOps final positive-LCB gate. No full admission, 100%-pass, SOTA, production, universal, or revolutionary claim is permitted.",
+  "integrity": {
+    "schema": "wavemind.artifact_integrity.v1",
+    "algorithm": "sha256",
+    "payload_sha256": "b24e08562fbbf5e7d3e2ec2595d6fca0d1afeccb9fea8b16f9a6064fc9a49e84"
+  }
+}

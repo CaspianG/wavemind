@@ -1,14 +1,29 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import os
 import sys
+import types
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
+
+package = types.ModuleType("wavemind")
+package.__path__ = [str(PROJECT_ROOT / "wavemind")]
+sys.modules["wavemind"] = package
+spec = importlib.util.spec_from_file_location(
+    "wavemind.remote_lab",
+    PROJECT_ROOT / "wavemind" / "remote_lab.py",
+)
+if spec is None or spec.loader is None:
+    raise RuntimeError("could not load the remote lab module")
+remote_lab = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = remote_lab
+spec.loader.exec_module(remote_lab)
 
 from wavemind.remote_lab import (  # noqa: E402
     RemoteLabError,
