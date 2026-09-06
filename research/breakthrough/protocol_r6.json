@@ -1,0 +1,30 @@
+{
+  "protocol_id": "polynomial-lc-stitching-falsifier-r6-20260906",
+  "status": "registered_before_corpus_generation_or_sweep",
+  "candidate": "LC_STITCHING.md theorem; lc_stitching.py; frozen R5 helpers; no residual affine enumeration",
+  "seed": 2026090606,
+  "families": {
+    "graph_states": "every labelled simple graph on n=1..6; 33867 instances; exact local-complementation orbit with bipartite membership as independent oracle",
+    "proper_random_codes": "24 seeded random Clifford encodings for each n in [4,5,6,8,12,20], random initial rank 0..n, then local frame, qubit permutation and generator mixing; 144 instances",
+    "toric": "periodic square L in [3,4,5], four seeded local frames/permutations/generator mixes each; 12 known-positive instances",
+    "bell_products": "10,20,40,80 Bell pairs, three seeded local frames/permutations/generator mixes each; 12 known-positive high-affine-dimension instances",
+    "five_qubit_with_spectators": "known non-CSS five-qubit code tensored with 0,8,24,48 unconstrained spectator qubits, three frames each; 12 known-negative instances"
+  },
+  "records_total": 34047,
+  "predictions": [
+    "Zero disagreement with exact graph-orbit classification and direct 6^n enumeration on the 48 random n<=5 instances; zero invalid certificate among all records.",
+    "All 34047 cases resolved within the 600-second sweep budget, with at most affine_dimension+1 candidate maps after linear elimination.",
+    "At least 12 cases unresolved by frozen R5's dimension limit become independently certified by R6.",
+    "The trace-one-linear-feasibility-only ablation falsely accepts at least one known-negative case; linear consistency is not CSS equivalence."
+  ],
+  "comparators": [
+    "independently implemented complete graph-local-complementation orbit oracle, not the projector method",
+    "direct local 6^n Clifford enumeration for random codes with n<=5",
+    "frozen R5 bounded affine enumeration on identical inputs; this is an internal comparator, not the best external package"
+  ],
+  "resource_limits": {"sweep_seconds": 600, "candidate_seconds_per_instance": 5, "r5_seconds_per_instance": 5},
+  "statistics": "Finite exhaustive graph-state universe plus seeded generated controls; no independent investigator or physical/task data. One runtime per case/method, not a general 10x speedup claim.",
+  "stop_rules": ["preserve all partial evidence and stop at first invalid certificate or oracle disagreement", "timeouts mean unresolved, never negative", "do not tune solver or corpus on sweep results without a separately recorded amendment", "never overwrite outputs"],
+  "known_overlap": "Projection invariance and conjugation already known; Bouchet/Van den Nest already give polynomial equivalence for two specified graph states. Novelty of arbitrary-stabilizer CSS recognition by mask stitching is not cleared.",
+  "mission_boundary": "Both scientific-breakthrough and mass-indispensability gates remain false; no runtime product change, paid call, hardware call, new public dataset download or GitHub mutation."
+}
