@@ -1,0 +1,17 @@
+{
+  "id": "prior-art-applicability-audit-20260906",
+  "status": "frozen_before_source_example_execution",
+  "purpose": "Check exact task distinctions; not a discovery benchmark or independent replication",
+  "source_examples": [
+    {"name": "XYZ-example-2", "source": "https://arxiv.org/html/2607.14988v1#S3.SS3", "equation": "60", "paulis": ["XIIX", "YIYY", "ZZIZ"], "expected_local_css": true, "expected_uniform_css": false},
+    {"name": "XYZ-example-3", "source": "https://arxiv.org/html/2607.14988v1#S3.SS3", "equation": "61", "paulis": ["XIXX", "YYIY", "ZZZI"], "expected_local_css": false, "expected_uniform_css": false}
+  ],
+  "comparison": "All 6^4 local Clifford assignments, all six uniform assignments, unchanged R6 and independent certificate check",
+  "algebra_control": "F4 embedded in M2(F2) is unital and has a nonzero idempotent, but has no rank-one idempotent; this refutes only an attempted reduction from any-idempotent existence to the required local-rank condition, not an external theorem",
+  "limitations": ["Expected source answers are visible, not held out", "Only two paper examples; not an independent representative corpus", "No generic finite-algebra package executed", "No speedup or novelty claim", "No product evidence"],
+  "wall_seconds": 30,
+  "on_failure": "preserve receipt and failed result; never edit frozen R6 or source expectations",
+  "paid_calls": 0,
+  "scientific_breakthrough_gate": false,
+  "mass_indispensability_gate": false
+}
