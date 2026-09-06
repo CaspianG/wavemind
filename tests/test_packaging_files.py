@@ -16,8 +16,7 @@ def test_project_metadata_exposes_product_and_support_links():
     pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
 
     assert (
-        'description = "Adaptive, local-first memory infrastructure '
-        'for agents and applications"'
+        'description = "Verified, scoped, and reversible experience for AI agents"'
     ) in pyproject
     assert '{ name = "CaspianG" }' in pyproject
     for keyword in ("agent-memory", "long-term-memory", "vector-search"):

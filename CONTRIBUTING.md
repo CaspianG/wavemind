@@ -1,8 +1,8 @@
 # Contributing To WaveMind
 
-WaveMind is an early dynamic-memory engine. Contributions are welcome, but the
-project has one strict rule: benchmark and production claims must be
-reproducible.
+WaveMind is a trust layer for agent memory and verified experience.
+Contributions are welcome, but the project has one strict rule: benchmark and
+production claims must be reproducible.
 
 By participating, you agree to follow the
 [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
@@ -14,6 +14,7 @@ git clone https://github.com/CaspianG/wavemind.git
 cd wavemind
 python -m pip install -e ".[dev]"
 pytest -q
+ruff check .
 ```
 
 Optional extras:
@@ -105,6 +106,10 @@ Current scale roadmap:
 - Observability through metrics, traces, and audit logs.
 
 See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the full roadmap.
+See [`docs/REPOSITORY_GUIDE.md`](docs/REPOSITORY_GUIDE.md) for the source,
+test, documentation, workflow, and generated-artifact map.
+See [`benchmarks/README.md`](benchmarks/README.md) before adding or updating
+benchmark evidence.
 See [`docs/RELEASE.md`](docs/RELEASE.md) for release mechanics.
 See [`docs/LAUNCH_KIT.md`](docs/LAUNCH_KIT.md) for public positioning,
 benchmark-claim guardrails, and community launch drafts.

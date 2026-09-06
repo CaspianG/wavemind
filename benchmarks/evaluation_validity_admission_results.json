@@ -1,8 +1,8 @@
 {
   "schema": "wavemind.evaluation_validity_admission.v1",
-  "generated_at": "2026-09-06T14:33:59Z",
-  "source_sha": "e93954d4028561944937f70754d5928229930cb4",
-  "expected_source_sha": "e93954d4028561944937f70754d5928229930cb4",
+  "generated_at": "2026-09-06T15:56:41Z",
+  "source_sha": "1e162b516c611ee9973617954acda7628639bdc9",
+  "expected_source_sha": "1e162b516c611ee9973617954acda7628639bdc9",
   "status": "blocked",
   "admitted": false,
   "implemented_rows": 15,
@@ -269,8 +269,8 @@
       "status": "implemented",
       "requirement": "Admission is tied to the exact source SHA and a current source manifest.",
       "evidence": {
-        "source_sha": "e93954d4028561944937f70754d5928229930cb4",
-        "expected_source_sha": "e93954d4028561944937f70754d5928229930cb4",
+        "source_sha": "1e162b516c611ee9973617954acda7628639bdc9",
+        "expected_source_sha": "1e162b516c611ee9973617954acda7628639bdc9",
         "source_manifest": {
           "schema": "wavemind.source_manifest.v1",
           "algorithm": "sha256",
@@ -282,7 +282,7 @@
             },
             {
               "path": "README.md",
-              "sha256": "5e1620fcbb5d8b660071521d17434eabeba08fb5e4a9ef7e1957a62f12442f93"
+              "sha256": "a7b8f120215c9c44e7beec3bfd9b685bf9a1c92c2fb4b2169f7385c50b61f2bc"
             },
             {
               "path": "benchmarks/evaluation_dataset_manifest_v1.json",
@@ -369,7 +369,7 @@
               "sha256": "4bd3ee49396e05e0380b19889dda10d553fec9a90b5debed217311a416f4bba4"
             }
           ],
-          "digest": "b9cd3a6aaf53fd7a01177ebb893dbdf6200e1bc05718b38f736302bd05e31d56"
+          "digest": "45ee6b8be0d27c72670a087aeecf4aada0f904373ca3d5602434b5682cb957b6"
         }
       }
     },
@@ -408,6 +408,6 @@
   "integrity": {
     "schema": "wavemind.artifact_integrity.v1",
     "algorithm": "sha256",
-    "payload_sha256": "de5b726031a47f5a5f000cf7640a0129cfbd4366520638645450c5f756d178b5"
+    "payload_sha256": "b5781f0638abc0e28e0d5cd937fe0a2a77f5698948656a39bffc5eeee41e0d1c"
   }
 }

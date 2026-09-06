@@ -9,6 +9,15 @@ authoritative release sources.
 - Hardened replicated snapshot extraction against unsafe tar entry types,
   tightened sample-host parsing and API audit logging, and removed a
   potentially super-linear trailing-slash expression from the TypeScript SDK.
+- Clarified the core product breakthrough as governed, proof-carrying agent
+  experience; added plain-language English and Russian explanations, a
+  repository map, and a benchmark artifact map.
+- Aligned README, demo, package, website, and launch positioning around
+  independently verified outcomes, explicit scope, provenance, correction,
+  and rollback.
+- Constrained automated dependency proposals to supported toolchain and
+  runtime lines so incompatible major migrations do not create recurring red
+  pull requests.
 
 ## [2.14.0] - 2026-09-06
 

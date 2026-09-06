@@ -1,8 +1,7 @@
 # WaveMind Launch Kit
 
-This document is the working launch package for WaveMind. It keeps public
-positioning, channel drafts, objections, and execution steps in one place so
-every post points to the same honest story.
+This is the canonical public-message kit. It keeps the explanation, proof, and
+claim boundaries consistent across GitHub, the product site, demos, and posts.
 
 <!-- product-status:start -->
 > WaveMind is the trust layer that lets agents learn from completed work without silently learning incorrect behavior.
@@ -22,390 +21,207 @@ every post points to the same honest story.
 
 ## Positioning
 
+### Category
+
+Verified experience infrastructure for AI agents.
+
 ### One Sentence
 
-WaveMind is adaptive memory infrastructure for agents and applications that
-need to learn from experience, not just retrieve the nearest text.
+WaveMind lets agents learn from independently verified work through compact,
+cited Experience Packets with scope, correction, and rollback.
 
-### Short Pitch
+### Plain-Language Explanation
 
-Most vector stores return nearest neighbors. WaveMind adds a durable memory
-lifecycle around retrieval: reinforcement, decay, TTL, corrections,
-consolidation, provenance, namespaces, and deliberate forgetting. SQLite or
-PostgreSQL remains the source of truth; FAISS, pgvector, Qdrant, Annoy, or
-NumPy can provide candidate search; WaveMind turns those candidates into a
-small, inspectable context for the agent.
+Most agent memory saves what the agent saw. WaveMind carries forward what
+independent evidence says worked. A test, tool, operator, or downstream system
+verifies the outcome before a procedure can be promoted. The next run gets the
+useful procedure with its source and boundaries, not a dump of old context.
 
-### What To Say Clearly
+### The Breakthrough
 
-- WaveMind is the memory policy and lifecycle above or beside a vector index,
-  not a claim that one database should replace every storage system.
-- A historical Production Memory OS snapshot passed 13/13, including a six-hour
-  remote Redis/worker soak with no state corruption. A current release claim
-  still requires an exact-SHA Safe Product workflow artifact.
-- The strongest checked-in proof is adaptive-memory behavior: stale suppression,
-  corrections, TTL, namespace isolation, repeated recall, consolidation, and
-  safe background maintenance.
-- Public benchmark evidence exists for retrieval on LoCoMo, LongMemEval, and
-  BEIR/SciFact, but answer-generation leaderboards are still future work.
-- The project is local-first by default, MIT licensed, and has documented
-  PostgreSQL, Redis, service-index, Kubernetes, and observability paths.
+The shift is from **memory as accumulated context** to **memory as governed,
+proof-carrying experience**.
 
-### What Not To Claim
+```text
+trace -> independent verification -> shadow candidate
+      -> cited Experience Packet -> better next run
+      -> explainable diff -> correction or rollback
+```
 
-- Do not claim "continuous physics field" or "human-level memory".
-- Do not claim official VectorDBBench, MTEB, MIRACL, LMEB, or RAGBench results
-  until those runs are checked in.
-- Do not claim WaveMind is faster than Chroma in static retrieval. It is not.
-- Do not hide limitations. The honest limitation section is a feature for
-  serious developers.
+This is not a claim that a model can verify itself. Verification must come from
+outside the generating model: tests, tool state, operators, or downstream
+effects.
 
-## Audience
+## Message Hierarchy
 
-| audience | Pain | Hook |
-|---|---|---|
-| Agent builders | Agent forgets preferences, corrections, and old context. | Memory that changes importance over time. |
-| Local-first AI users | They want private memory without a hosted vector DB. | SQLite source of truth, offline demo, CLI, Python API. |
-| RAG engineers | Vector search returns stale or irrelevant records. | TTL, priority, namespaces, audit, explicit forget. |
-| Framework users | They need integration points, not a new stack. | LangChain, LangGraph, LlamaIndex, CrewAI, AutoGen adapters. |
-| OSS contributors | They want clear technical work. | Benchmarks, FAISS/pgvector/Qdrant, graph memory, observability. |
+Use these points in this order:
 
-## Primary Message
+1. Agents repeat costly tool-work mistakes because raw context does not prove
+   what worked.
+2. WaveMind verifies outcomes before promoting reusable experience.
+3. Every packet carries provenance, scope, corrections, and rollback.
+4. The product is local-first and works across Python, HTTP, MCP, TypeScript,
+   and common agent frameworks.
+5. Public claims are tied to checked artifacts, including failed experiments.
 
-Vector search answers "what is similar?" Agent memory also needs to answer
-"what still matters?" WaveMind is an open-source attempt to make that second
-question first-class.
+Adaptive recall, TTL, hotness, graph signals, and vector backends are important
+capabilities, but they support the verified-experience story rather than replace
+it.
 
 ## Proof Points
 
-- `pip install wavemind`
-- CLI, Python API, FastAPI server.
-- SQLite persistence by default.
-- Optional sentence-transformers, FAISS, pgvector, Qdrant, Annoy.
-- Namespaces, tags, TTL, score thresholds, audit log, backup/restore.
-- Prometheus-compatible metrics and optional OpenTelemetry traces.
-- Benchmarks checked into the repository with commands and JSON results.
-- Public benchmark post draft: `docs/BENCHMARK_BRIEF.md`.
-- Offline demos: `examples/demo.py`, `examples/dynamic_memory_demo.py`,
-  `examples/customer_support_memory.py`, and
-  `examples/research_notebook_memory.py`.
-- Use-case gallery: `docs/USE_CASES.md`.
+| Proof | Result | Boundary |
+|---|---|---|
+| Verified Experience Runtime | Success `20% -> 100%`, repeated errors `-100%`, context `-39.2%` | Frozen local 150-task, three-domain slice |
+| Memory safety | 375 attacks contained; zero cross-namespace leakage; benign acceptance `100%` | Frozen attack suite |
+| v32 exact selector | 240/240 exact matches across three repeats; p95 speedup `9.72-10.09x` | Disk-backed synthetic, performance-only protocol |
+| v31 LongMemEval | Failed quality admission remains published | No generalized quality-uplift claim |
+| Distribution | PyPI, GitHub Release, and public GHCR image verified for `v2.14.0` | Release source `e93954d40285` |
 
-## GitHub Page Checklist
+Evidence links:
 
-- README explains the problem in the first viewport.
-- README has a terminal demo and a visual card.
-- Dynamic demo script is documented in `docs/DEMO_SCRIPT.md`.
-- Use-case gallery is linked from README.
-- Badges point to `CaspianG/wavemind`.
-- Topics include: `ai-agents`, `memory`, `vector-search`, `llm`, `rag`,
-  `python`, `sqlite`, `langchain`.
-- Release exists with clear notes.
-- PyPI page works with the same Quick Start.
-- Issues include `good first issue`, `benchmark`, `integration`, `production`,
-  and `documentation`.
-- Roadmap has short-term, medium-term, and research tracks.
+- [Why WaveMind](WHY_WAVEMIND.md)
+- Public methodology and launch evidence: `docs/BENCHMARK_BRIEF.md`
+- [Verified Experience admission](../benchmarks/VERIFIED_EXPERIENCE_ADMISSION.md)
+- [Memory safety admission](../benchmarks/MEMORY_SAFETY_ADMISSION.md)
+- [v32 selector validation](../benchmarks/scientific_performance_v32_validation_results.json)
+- [v31 failed scientific admission](../benchmarks/scientific_v31_admission_outcome.json)
+- [Known limitations](KNOWN_LIMITATIONS.md)
 
-## Launch Sequence
+## What To Say Clearly
 
-### Day 0: Preflight
+- WaveMind complements vector indexes; it governs memory and experience around
+  candidate retrieval.
+- Independently verified outcomes, not model confidence, control promotion.
+- An admitted result applies only to its declared protocol, source, and scope.
+- Failed and blocked experiments remain visible.
+- SQLite is the default local source of truth; production integrations are
+  optional and explicitly configured.
 
-1. Run `pytest -q`.
-2. Run `python -m build`.
-3. Run `python -m twine check dist\*`.
-4. Verify GitHub Actions are green.
-5. Verify PyPI install in a clean venv:
+## What Not To Claim
+
+- Do not claim universal agent improvement or human-level memory.
+- Do not describe the v32 selector result as LongMemEval quality evidence.
+- Do not describe a historical artifact as proof for the current source SHA.
+- Do not claim remote multi-region, managed-serverless, or 100M-scale admission
+  without the required external evidence.
+- Do not claim that WaveMind replaces Chroma, Qdrant, pgvector, or every vector
+  database.
+- Do not describe a model's self-score as independent verification.
+
+## Audience Versions
+
+### Developer
+
+WaveMind stops an agent from blindly relearning the same tool workflow. It
+captures a trace, accepts an independent outcome, promotes a procedure only
+after evidence, and returns a cited packet on the next run. Start with:
 
 ```sh
-python -m venv .venv-check
-.venv-check\Scripts\python -m pip install wavemind
-.venv-check\Scripts\python -c "from wavemind import WaveMind; m=WaveMind(); m.remember('demo'); print(m.query('demo')[0].text)"
+python -m pip install wavemind
+python examples/verified_experience_runtime.py
 ```
 
-### Day 1: Developer Launch
+### Platform Team
 
-1. Post a technical X thread.
-2. Post a Show HN only if the repo is runnable and Actions are green.
-3. Reply to every comment with concrete benchmark links or commands.
-4. Do not argue. Treat criticism as issue discovery.
+WaveMind provides one provider-neutral contract for capture, verification,
+promotion, selective injection, audit, correction, deletion, and rollback
+across Python, HTTP, MCP, TypeScript, and agent frameworks.
 
-### Day 2-3: Community Launch
+### Operator Or Risk Owner
 
-1. Reddit: answer relevant memory/RAG/agent threads first.
-2. Then post in communities only where the rules allow project sharing.
-3. Use the "I built this, here is what it does, here are limitations" tone.
-4. Invite benchmark reproduction, not praise.
+WaveMind keeps learned procedures inspectable and reversible. It records who or
+what verified an outcome, where the procedure applies, what superseded it, and
+how it was removed or rolled back.
 
-### Day 4-7: Contributor Loop
+### Investor Or Design Partner
 
-1. Open 5 to 10 `good first issue` tasks.
-2. Open 3 benchmark issues with exact commands.
-3. Publish a short progress update with the first feedback incorporated.
+WaveMind is an open-source experience-governance layer between raw context and
+agent action. The wedge is repeated consequential tool work where a verified
+procedure can improve the next run without creating opaque, irreversible
+behavior.
 
-## Channel Drafts
+## Ready-To-Use Copy
 
 ### GitHub Description
 
-Adaptive memory for agents: durable local-first state, scoped recall,
-reinforcement, forgetting, consolidation, and reproducible benchmarks.
+Verified experience for AI agents: independently checked, scoped, cited, and
+reversible.
 
 ### Show HN Title
 
-Show HN: WaveMind, a local-first dynamic memory layer for agents and apps
+Show HN: WaveMind – agents learn from verified work, not raw history
 
-### Show HN Text
+### Short Launch Post
 
-I built WaveMind because vector search alone felt too static for long-running
-software.
+I built WaveMind because agent memory usually preserves what happened, not what
+was proven to work.
 
-Most vector stores answer: "what text is closest to this query?" WaveMind tries
-to answer a second question: "what information still matters right now?"
+WaveMind captures tool work, waits for an independent test, operator, tool, or
+downstream state to verify the outcome, and promotes only a bounded procedure.
+The next run receives a compact Experience Packet with provenance, scope,
+corrections, and rollback.
 
-It stores memories in SQLite by default, supports namespaces/tags/TTL/forget,
-and re-ranks vector candidates with memory state such as hotness, priority,
-decay, and optional graph dynamics. It can run as a Python library, CLI, or
-FastAPI service. Optional backends include sentence-transformers, FAISS,
-pgvector, Qdrant, and Annoy.
-
-The repo includes benchmarks and checked-in result JSON for dynamic memory
-policy, LoCoMo retrieval, LongMemEval retrieval, BEIR/SciFact, and local ANN
-curves. The honest limitation: static vector search is still faster. The goal is
-not to replace vector databases, but to add a memory layer where stale facts,
-corrections, TTL, namespaces, and repeated recall matter.
-
-Install:
+The v2.14 release also adds a proof-carrying scientific memory core and frozen
+experimental records. The v32 selector matched the reference on 240/240 frozen
+synthetic queries across three repeats with a `9.72-10.09x` p95 speedup. The
+official v31 LongMemEval quality experiment failed, and that result remains
+public; v32 is performance evidence only.
 
 ```sh
 python -m pip install wavemind
-wavemind remember "Andrey is a trader" --namespace demo
-wavemind query "trader" --namespace demo
+python examples/verified_experience_runtime.py
 ```
 
-I would especially like feedback on the memory model, benchmarks, and where the
-API feels wrong for real agent systems.
+Repository: https://github.com/CaspianG/wavemind
 
-### Reddit Post
+### 30-Second Spoken Version
 
-Title:
+> Ordinary agent memory saves similar text. WaveMind saves verified experience.
+> It waits for an independent outcome, promotes only a scoped procedure, and
+> gives the next run a cited packet with a rollback path. That lets an agent
+> improve from completed work without quietly turning its own mistakes into
+> rules.
 
-I built an open-source local-first memory layer for agents: SQLite + vector
-search + hotness/decay/TTL
+## Objection Handling
 
-Body:
+### Is This Just A Vector Database?
 
-I have been working on WaveMind, an MIT-licensed Python library for dynamic
-long-term memory.
+No. A vector index can find candidates. WaveMind governs whether a memory or
+procedure is eligible for reuse, including evidence, scope, corrections,
+freshness, namespace isolation, deletion, and rollback.
 
-The idea is simple: vector databases are good at "nearest text", but agent
-memory also needs "what still matters?" A preference repeated many times should
-become stronger. A corrected fact should suppress the stale version. Temporary
-context should expire. Different users/projects should not leak into each
-other.
+### Does The Agent Verify Itself?
 
-WaveMind keeps the durable state in SQLite by default and can use NumPy, FAISS,
-Annoy, pgvector, or Qdrant for candidate search. Then it applies memory state:
-hotness, priority, TTL, namespaces, tags, audit events, and optional graph
-dynamics.
+No. A candidate can be recorded from the agent trace, but promotion requires an
+independent verifier such as a test, tool result, operator, or downstream state.
 
-It is early, and I am not claiming it replaces Chroma/Qdrant/Pinecone. Static
-vector search is still faster. The point is dynamic memory behavior, not raw
-vector DB scale.
+### Does The Benchmark Prove General Intelligence?
 
-Quick start:
+No. Each result applies to the named frozen workload. The repository publishes
+claim boundaries and failed outcomes precisely to prevent that extrapolation.
 
-```sh
-python -m pip install wavemind
-wavemind remember "The user prefers short answers" --namespace demo
-wavemind query "answer style" --namespace demo
-```
+### Is It Production Ready?
 
-I would appreciate feedback from people building long-running agents, local AI
-tools, or RAG systems where stale memory is a real problem.
+The local-first core, public package, container, API, safety controls, and
+upgrade path have automated evidence. Remote multi-region, managed-serverless,
+and 100M service claims remain gated until external evidence exists.
 
-### X Thread
+Additional offline examples remain available at
+`examples/customer_support_memory.py` and
+`examples/research_notebook_memory.py`.
 
-1. I am building WaveMind: open-source dynamic memory for software that needs
-to remember what still matters, not just what text is nearest.
+## Publication Checklist
 
-Vector search answers similarity. Memory also needs priority, decay, TTL,
-corrections, and scope.
+Before publishing or updating public copy:
 
-2. The core idea:
+1. Confirm the latest release and source SHA.
+2. Run `python scripts/sync_product_status.py --check`.
+3. Link every number to its exact JSON or admission report.
+4. State whether evidence is local, synthetic, remote, historical, or current.
+5. Keep failed and blocked outcomes in view.
+6. Test the install and differentiated demo from a clean environment.
+7. Confirm the required GitHub check and security scans are green.
 
-SQLite/Postgres = source of truth
-Vector index = candidate search
-WaveMind = dynamic memory state over the result
-
-Hot memories rise. Stale memories fade. Temporary facts expire. Namespaces stop
-cross-user leakage.
-
-3. This is not "another vector DB".
-
-WaveMind can sit above NumPy, FAISS, Annoy, pgvector, or Qdrant. The goal is to
-make agent memory behave less like a flat list and more like state that evolves.
-
-4. It already has:
-
-- Python API
-- CLI
-- FastAPI server
-- SQLite persistence
-- TTL / tags / namespaces
-- audit log
-- backup / restore
-- LangChain, LangGraph, LlamaIndex, CrewAI, AutoGen adapters
-
-5. Benchmarks are checked into the repo.
-
-The strongest current signal is dynamic memory behavior: corrections, TTL,
-namespace isolation, stale suppression, and repeated recall.
-
-Static vector search is still faster. That is written honestly in the README.
-
-6. New production-load check:
-
-100k Qdrant service:
-recall@10 1.000
-avg 10.28 ms
-p99 21.26 ms
-
-1M persisted FAISS:
-recall@10 1.000
-avg 39.12 ms
-p99 57.71 ms
-
-1M Qdrant service tuned:
-recall@10 0.984
-avg 82.57 ms
-p99 137.86 ms
-
-1M Qdrant EF sweep:
-recall@10 0.977
-avg 64.76 ms
-p99 103.77 ms
-
-100k Qdrant is production-ready on the tested machine. 1M persisted FAISS now
-passes recall and p99. 1M Qdrant is recall-credible, but still needs p99
-tuning before the same claim.
-
-7. Quick start:
-
-python -m pip install wavemind
-wavemind remember "The user prefers short answers" --namespace demo
-wavemind query "answer style" --namespace demo
-
-8. The research direction is a stronger memory field:
-
-related memories excite each other,
-conflicting memories inhibit stale facts,
-low-value memory decays,
-clusters can form higher-level concepts.
-
-9. I am looking for feedback from people building long-running agents, local AI
-apps, RAG systems, and personal assistants.
-
-Repo: https://github.com/CaspianG/wavemind
-
-### LinkedIn Post
-
-I am building WaveMind, an open-source dynamic memory layer for software that
-needs long-term memory.
-
-The problem: most retrieval systems answer "what is semantically close?" That
-is useful, but long-running agents and applications also need "what still
-matters?"
-
-WaveMind stores memory locally in SQLite by default, then combines vector
-candidate search with dynamic memory signals: hotness, decay, TTL, namespaces,
-tags, priority, audit events, and optional graph dynamics.
-
-It is not meant to replace vector databases. It is designed to sit above or
-beside them, especially when stale facts, corrections, user preferences,
-temporary context, or scoped recall matter.
-
-The project is MIT licensed, installable from PyPI, and includes a CLI, Python
-API, FastAPI server, integrations, and reproducible benchmark artifacts.
-
-I am looking for feedback from developers building agentic systems, RAG
-products, support copilots, personal AI tools, and local-first AI workflows.
-
-GitHub: https://github.com/CaspianG/wavemind
-
-## Tough Questions
-
-### Why not just use Chroma or Qdrant metadata?
-
-You can implement some of this in application code on top of Chroma or Qdrant.
-WaveMind packages that policy into the memory layer: TTL, priority, hotness,
-forgetting, audit events, source-of-truth storage, and benchmarks. It can also
-use Qdrant or pgvector as candidate indexes.
-
-### Is this actually a mathematical field?
-
-Today it is a practical dynamic-memory model with a wave-field projection and a
-discrete memory graph. It is not a continuous physical field. The roadmap is to
-make graph dynamics, consolidation, excitation, inhibition, and decay more
-explicit and measurable.
-
-### Is it faster than Chroma?
-
-Not for static vector retrieval. Chroma is faster in static cases. WaveMind's
-bet is dynamic memory behavior: corrections, TTL, stale suppression, namespace
-isolation, auditability, and local-first state.
-
-### Is this production ready?
-
-It has practical production hooks: FastAPI, auth keys, rate limits, audit log,
-metrics, OpenTelemetry, backups, index health, and optional external indexes.
-It is still early for large-scale HA deployments. The README says that clearly.
-
-### What would make this convincing?
-
-Full answer-quality runs on LoCoMo/LongMemEval, service-mode FAISS/Qdrant/
-pgvector latency curves, and real app integrations where stale memory causes
-observable failures.
-
-## 14-Day Content Plan
-
-| day | action | goal |
-|---:|---|---|
-| 1 | X thread + GitHub release post | First developer attention. |
-| 2 | Show HN | High-signal technical feedback. |
-| 3 | Write "Why vector DBs are not enough for agent memory" | Explain category. |
-| 4 | Reddit comments in relevant threads | Participate before posting. |
-| 5 | Reddit project post where allowed | Reach local AI/RAG builders. |
-| 6 | Short benchmark post | Show evidence, not hype. |
-| 7 | Open good-first-issue batch | Convert attention into contributors. |
-| 8 | Publish integration demo video/GIF | Make it visually understandable. |
-| 9 | LangChain/LlamaIndex integration post | Reach framework users. |
-| 10 | "Limitations" post | Build trust with serious developers. |
-| 11 | Roadmap post | Show direction and seriousness. |
-| 12 | Ask for benchmark datasets | Involve community. |
-| 13 | Publish first feedback-driven patch | Show responsiveness. |
-| 14 | Weekly recap | Close the loop and ask for stars/contributors. |
-
-## Success Metrics
-
-Track weekly:
-
-- GitHub stars.
-- PyPI downloads.
-- README click-through from social posts.
-- Issues opened by non-maintainers.
-- Benchmark reproductions.
-- Integration requests.
-- Time-to-first-response on comments and issues.
-
-## Source Notes
-
-- Hacker News Show HN is for things people can run or try:
-  <https://news.ycombinator.com/showhn.html>
-- Hacker News Launch HN writing guidance is useful even outside YC:
-  <https://news.ycombinator.com/yli.html>
-- Reddit self-promotion guidance: be a real participant, disclose clearly, and
-  check each community's own rules before posting:
-  <https://www.reddit.com/r/reddit.com/wiki/selfpromotion/>
-- GitHub Topics help repositories become discoverable by subject:
-  <https://docs.github.com/articles/classifying-your-repository-with-topics>
-- X normal posts should fit the 280-character path unless using Premium long
-  posts. Keep launch posts short enough to work on a normal account.
+For Russian copy, use [RU Launch Posts](RU_LAUNCH_POSTS.md). For the runnable
+walkthrough, use [Demo Script](DEMO_SCRIPT.md).

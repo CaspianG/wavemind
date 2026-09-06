@@ -11,10 +11,11 @@ opaque history dump.
 
 <p><a href="https://pypi.org/project/wavemind/"><strong>PyPI</strong></a> &middot; <a href="https://github.com/CaspianG/wavemind/actions/workflows/full-check.yml">Build status</a> &middot; <a href="https://github.com/CaspianG/wavemind/releases/latest">Latest release</a> &middot; <a href="https://github.com/CaspianG/wavemind/blob/main/pyproject.toml">Python &gt;=3.10</a> &middot; <a href="LICENSE">MIT</a></p>
 
-<img src="https://raw.githubusercontent.com/CaspianG/wavemind/main/docs/assets/wavemind-social-card.svg" alt="WaveMind dynamic memory overview" width="820">
+<img src="https://raw.githubusercontent.com/CaspianG/wavemind/main/docs/assets/wavemind-social-card.svg" alt="WaveMind verified experience loop: capture, verify, promote, and reuse" width="820">
 
 <p>
   <a href="#quick-start"><strong>Quick Start</strong></a> &middot;
+  <a href="docs/WHY_WAVEMIND.md"><strong>Why WaveMind</strong></a> &middot;
   <a href="docs/README.md">Documentation</a> &middot;
   <a href="#wavemind-studio">Studio</a> &middot;
   <a href="https://caspiang.github.io/wavemind/"><strong>Product site</strong></a> &middot; <a href="https://caspiang.github.io/wavemind/evidence/">Evidence</a> &middot;
@@ -23,6 +24,24 @@ opaque history dump.
 </p>
 
 </div>
+
+## The Breakthrough, In Plain English
+
+Most agent memory stores what an agent **saw**. WaveMind carries forward what
+independent evidence says **worked**. A test, operator, tool, or downstream
+state verifies the outcome before a bounded procedure is promoted. The next
+agent gets a compact Experience Packet with its source, scope, corrections,
+and rollback path; without valid evidence, WaveMind can stay silent.
+
+| Raw agent history | WaveMind verified experience |
+|---|---|
+| Stores text because it occurred | Promotes a procedure because its outcome was independently verified |
+| Retrieves a similar fragment | Returns a small cited packet for the current task and environment |
+| Lets corrections coexist as ambiguity | Reconciles conflicts and preserves what superseded what |
+| Makes learned behavior hard to inspect | Keeps provenance, applicability, deletion, and rollback explicit |
+
+The shift is from **accumulated context** to **governed, proof-carrying
+experience**. Read the [plain-language explanation and evidence boundaries](docs/WHY_WAVEMIND.md).
 
 ## Built For Repeated Agent Work
 
@@ -106,12 +125,6 @@ The shortest path from install to first recall:
 python -m pip install wavemind
 wavemind remember "Andrey is a trader" --namespace demo
 wavemind query "What does Andrey do?" --namespace demo
-```
-
-Need a reminder after install?
-
-```sh
-wavemind quickstart
 ```
 
 Want to see and manage memory in a browser?
@@ -433,9 +446,9 @@ memories should still matter.
 | consolidation | Active clusters can become durable concept memories. | Turns repeated patterns into inspectable higher-level memories with provenance. |
 
 Technically, the current `MemoryFieldGraph` is a discrete graph over stored
-memories, not a continuous mathematical physics field. That honesty matters:
-WaveMind is useful today as a dynamic memory engine, while the research path is
-to make the field dynamics more explicit, measurable, and scalable.
+memories, not a continuous mathematical physics field. It supports adaptive
+recall inside the broader verified-experience lifecycle; the research path is
+to make its dynamics more explicit, measurable, and scalable.
 
 Self-organization is now part of the core surface. `consolidate_concepts()`,
 `wavemind consolidate`, and `POST /consolidate` can turn an active graph cluster
@@ -571,12 +584,6 @@ memory API as the CLI and HTTP service.
 See [Framework Integrations](docs/INTEGRATIONS.md) for complete examples,
 OpenClaw/Hermes guidance, and custom agent loops.
 
-## Research Branches
-
-Experimental work stays isolated from release claims. In particular,
-`research/crypto-pattern-memory` is an evidence-gated research branch and is
-not part of the stable package or current production claims.
-
 ## Benchmark
 
 WaveMind publishes checked-in JSON and Markdown artifacts for dynamic-memory,
@@ -587,6 +594,7 @@ loopback, and production evidence.
 | Evidence | Current checked result |
 |---|---|
 | Verified Agent Experience Runtime | `admitted`; 150 frozen tasks, 5 repeats, 95% CIs, success `0.20 -> 1.00`, context `-39.2%`, p95 `6.12 ms` |
+| Proof-carrying scientific selector | v32 performance validation matched the reference on 240/240 frozen synthetic queries across three repeats; p95 speedup `9.72-10.09x`; v31 quality admission remains failed |
 | STATE-Bench Agent Learning adapter | `runner_ready`; official `100 x 3` train split validated at an exact upstream SHA; official paid evaluation not run |
 | Memory OS admission | `admitted`, 13/13 requirements |
 | Agent-memory advantage admission | Controlled adaptive slice passes; composite public gate blocked on strict LongMemEval-V2 |
@@ -603,25 +611,18 @@ remote 100M/multi-region proof. See the full [Benchmark Guide](docs/BENCHMARKS.m
 [real public memory-system report](benchmarks/PUBLIC_MEMORY_COMPETITORS.md),
 [public evidence ledger](https://caspiang.github.io/wavemind/evidence/), and
 [Benchmark Brief](docs/BENCHMARK_BRIEF.md) for methods, commands, limitations,
-and machine-readable artifacts.
+and machine-readable artifacts. Contributors can use the
+[benchmark directory map](benchmarks/README.md) to distinguish source,
+protocols, raw records, results, and admission verdicts.
 
 ## Comparison
 
-| feature | WaveMind | Chroma | Qdrant |
-|---|---|---|---|
-| Primary role | Dynamic memory engine | Embedding database | Production vector database |
-| Local SQLite persistence | Yes | Yes | No, separate service/storage |
-| HTTP API | FastAPI included | Included | Included |
-| Audit log / metrics | SQLite audit events plus `/metrics` | App-layer only | App-layer / service metrics |
-| Dynamic memory priority | Wave-field hotness, TTL, priority | Metadata/filter driven | Payload/filter driven |
-| Built-in forgetting | TTL and explicit forget | Manual delete/filtering | Manual delete/filtering |
-| Best fit | Small to medium memory streams with dynamic recall | Local RAG apps and prototypes | Large-scale vector search |
-| Scale target today | Local exact mode for small streams; FAISS/Qdrant/pgvector plus replicated namespaces for production paths | Larger than WaveMind local exact mode | Production vector scale |
-
-WaveMind is not trying to replace dedicated vector databases at scale. The intended product gap is dynamic priority: frequently used memories can become hotter while old or low-priority memories fade. For static RAG over large document collections, use a mature vector database. For memory that needs persistence, scoped recall, TTL, forgetting, and reinforcement, WaveMind is designed to sit above or beside the vector index.
-
-If you already use Chroma for local memory, see the practical migration guide:
-[`docs/CHROMA_MIGRATION.md`](docs/CHROMA_MIGRATION.md).
+WaveMind governs verified experience and memory around candidate retrieval; it
+does not replace dedicated vector databases. Keep Chroma, Qdrant, pgvector, or
+FAISS where they fit, and add WaveMind when reuse needs evidence, scope,
+correction, forgetting, and rollback. See the practical
+[Chroma migration guide](docs/CHROMA_MIGRATION.md) and
+[index backend guide](docs/INDEX_BACKENDS.md).
 
 ## Known Limitations
 
@@ -671,10 +672,10 @@ Near-term priorities:
 
 Longer-term direction:
 
-Make adaptive memory improve real workflows, then carry verified experience
-across agents through one provenance-aware lifecycle that scales without
-changing the application-level contract. Every public capability remains tied
-to an artifact, gate, or locked claim boundary.
+Make verified experience improve real workflows without losing provenance,
+scope, safety, correction, or rollback. Scale the lifecycle without changing
+the application-level contract, and keep every public capability tied to an
+artifact, gate, or locked claim boundary.
 
 ## Contributing
 
