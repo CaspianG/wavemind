@@ -53,7 +53,7 @@ ml = [
   "sentence-transformers>=3",
 ]
 multimodal = [
-  "sentence-transformers[image]>=5.1,<6",
+  "sentence-transformers[image]>=5.1,<7",
   "transformers>=4.57,<6",
   "huggingface-hub>=0.34,<2",
   "torch>=2.1",
