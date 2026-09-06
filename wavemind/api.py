@@ -767,7 +767,9 @@ def _metric_key(value: str) -> str:
 
 
 def _rate_limit_key(request: Request) -> str:
-    auth = getattr(request.app.state, "auth", None)
+    app = getattr(request, "app", None)
+    state = getattr(app, "state", None)
+    auth = getattr(state, "auth", None)
     if isinstance(auth, APIAuth):
         principal = auth.principal_for_request(request)
         if principal is not None:
