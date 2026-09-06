@@ -1952,9 +1952,7 @@ def create_app(
                 raise HTTPException(status_code=404, detail="Memory not found")
             invalidated = _invalidate_cache(app, record.namespace)
         logger.info(
-            "feedback id=%s useful=%s cache_invalidated=%s",
-            request.id,
-            request.useful,
+            "feedback accepted cache_invalidated=%s",
             invalidated,
         )
         return FeedbackResponse(

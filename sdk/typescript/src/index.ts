@@ -239,7 +239,12 @@ export class WaveMindClient {
   private readonly retryStatuses: ReadonlySet<number>;
 
   constructor(options: WaveMindClientOptions) {
-    const baseUrl = options.baseUrl.trim().replace(/\/+$/, "");
+    let baseUrl = options.baseUrl.trim();
+    let end = baseUrl.length;
+    while (end > 0 && baseUrl.charCodeAt(end - 1) === 47) {
+      end -= 1;
+    }
+    baseUrl = baseUrl.slice(0, end);
     if (!baseUrl) {
       throw new Error("baseUrl must not be empty");
     }

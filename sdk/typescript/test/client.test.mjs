@@ -4,6 +4,16 @@ import test from "node:test";
 import { WaveMindClient, WaveMindHTTPError } from "../dist/index.js";
 
 
+test("client strips trailing slashes in linear time without changing the origin", () => {
+  const client = new WaveMindClient({
+    baseUrl: `https://memory.example.test${"/".repeat(100_000)}`,
+    fetch: async () => new Response("{}"),
+  });
+
+  assert.equal(client.baseUrl, "https://memory.example.test");
+});
+
+
 test("client sends typed memory and experience requests", async () => {
   const requests = [];
   const fetch = async (url, init) => {

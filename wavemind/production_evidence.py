@@ -145,14 +145,16 @@ def _split_env_list(value: str) -> list[str]:
 
 
 def _is_sample_url(value: str) -> bool:
-    lowered = value.lower()
-    return (
-        "example.com" in lowered
-        or "example.test" in lowered
-        or lowered.startswith("http://localhost")
-        or lowered.startswith("https://localhost")
-        or lowered.startswith("http://127.0.0.1")
-        or lowered.startswith("https://127.0.0.1")
+    hostname = (urlparse(value).hostname or "").lower().rstrip(".")
+    return hostname in {
+        "example.com",
+        "example.test",
+        "localhost",
+        "127.0.0.1",
+        "::1",
+    } or any(
+        hostname.endswith(f".{suffix}")
+        for suffix in ("example.com", "example.test")
     )
 
 
