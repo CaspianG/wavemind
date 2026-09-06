@@ -95,7 +95,7 @@ langchain = [
   "langchain-classic>=1.0",
 ]
 providers = [
-  "anthropic>=0.120,<1",
+  "anthropic>=0.120,<2",
   "langgraph>=1.2,<2",
   "openai-agents>=0.19,<1",
 ]
