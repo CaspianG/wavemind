@@ -171,3 +171,18 @@ on every site. Next compare R6's actual input/output and complexity with
 Bouchet/Van den Nest and general finite-algebra idempotent methods; reject or
 narrow novelty if it follows from them. An implemented ablation is not a
 substitute for an executed strong external comparator on the same task.
+
+## Theorem-level follow-up and review packet
+
+The [applicability audit](PRIOR_ART_THEOREM_AUDIT.md) adds a directly matching
+open-complexity statement from *Quantum XYZ Stabilizer Codes*, and separates
+it from the known pairwise, uniform-frame and generic-idempotent problems.
+Two source examples were exhaustively reproduced, with their expected
+answers already visible; an exact F4 counterexample refutes the shortcut from
+arbitrary nonzero idempotents to the required rank-one witness. Neither check
+refutes the cited external theorems or establishes novelty.
+
+The generic finite-algebra reduction remains unresolved. The proof and
+specific requests for criticism are assembled in an
+[unsent independent-review packet](EXPERT_REVIEW_PACKET.md). No investigator
+has reviewed or received it. Scientific and workflow gates remain false.

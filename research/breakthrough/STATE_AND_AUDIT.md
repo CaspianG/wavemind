@@ -1,5 +1,11 @@
 # Starting state and targeted instruction audit
 
+Post-R7 prior-art audit: `PRIOR_ART_THEOREM_AUDIT.md` records exact theorem
+scope, two reproduced source examples and a counterexample to an invalid
+generic-idempotent shortcut. `EXPERT_REVIEW_PACKET.md` is prepared but unsent.
+The generic-algebra reduction and real-workflow bridge remain unresolved;
+neither mission gate is admitted. Source examples are not blind evaluation.
+
 Update after R7: the multi-piece positive branch now has a frozen 384-case
 constructed-frame experiment and full replay in `LC_ADVERSARIAL_R7_RESULTS.md`.
 All 96 hard cases required the registered number of pieces; the original R6

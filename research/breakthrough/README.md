@@ -24,6 +24,8 @@ either gate.
 - [R6 34,047-case falsifier, limitations and plain Russian report](LC_STITCHING_R6_RESULTS.md)
 - [R7 adversarial affine-frame protocol and assumptions](LC_ADVERSARIAL_FRAMES.md)
 - [R7 384-case multi-piece audit, ablations and limits](LC_ADVERSARIAL_R7_RESULTS.md)
+- [Theorem-level prior-art applicability audit and refuted shortcut](PRIOR_ART_THEOREM_AUDIT.md)
+- [Independent review request — unsent draft](EXPERT_REVIEW_PACKET.md)
 
 Results are recorded after execution, including rejection. No released runtime
 is changed by this experiment. No paid API, judge, simulator, quantum hardware,
@@ -39,6 +41,7 @@ python research/breakthrough/verify_r4.py
 python research/breakthrough/verify_r5.py
 python research/breakthrough/verify_r6.py
 python research/breakthrough/verify_r7.py
+python research/breakthrough/verify_prior_art_applicability.py
 ```
 
 For reproduction, create a clean detached checkout at the run's source SHA

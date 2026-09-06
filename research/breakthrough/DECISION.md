@@ -123,6 +123,15 @@ product targets below have not been linked to the QEC mechanism. Treat that
 missing consumer/enterprise capability bridge as an open requirement, not as
 a product gate satisfied by additional algebraic test counts.
 
+The subsequent [theorem-applicability audit](PRIOR_ART_THEOREM_AUDIT.md)
+distinguishes the exact question from pairwise graph equivalence, uniform
+relabeling and arbitrary-idempotent construction. The latter shortcut has
+an exact F4 counterexample; this is not a refutation of generic algebra
+algorithms or proof that no reduction exists. Two paper examples agree with
+full local enumeration and unchanged R6. The candidate remains pending
+generic-algebra reduction analysis and independent expert scrutiny; the
+[review packet](EXPERT_REVIEW_PACKET.md) has not been sent.
+
 ## Earlier Diagnostic Research Decision (superseded as the immediate next step)
 
 The following diagnostic direction was proposed after R3. R4 and its prior-art
