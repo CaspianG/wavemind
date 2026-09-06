@@ -89,12 +89,11 @@ def write_experience_bundle(
 
 
 def load_experience_bundle(
-    source: str | Path | Mapping[str, Any],
+    source: Mapping[str, Any],
 ) -> dict[str, Any]:
-    if isinstance(source, Mapping):
-        payload = dict(source)
-    else:
-        payload = json.loads(Path(source).read_text(encoding="utf-8"))
+    if not isinstance(source, Mapping):
+        raise TypeError("portable experience bundle must be an already parsed mapping")
+    payload = dict(source)
     if payload.get("schema") != PORTABLE_EXPERIENCE_SCHEMA:
         raise ValueError("unsupported portable experience bundle schema")
     expected = str(payload.get("content_sha256") or "")
@@ -113,7 +112,7 @@ def load_experience_bundle(
 
 def import_experience_bundle(
     store: SQLiteExperienceStore,
-    source: str | Path | Mapping[str, Any],
+    source: Mapping[str, Any],
 ) -> PortableImportReport:
     payload = load_experience_bundle(source)
     inserted_records = 0

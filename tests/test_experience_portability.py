@@ -84,7 +84,8 @@ def test_portable_bundle_round_trip_has_exact_semantic_parity(tmp_path) -> None:
 
         path = tmp_path / "portable.json"
         written = write_experience_bundle(source, path, namespace="agent-a")
-        report = import_experience_bundle(target, path)
+        loaded = load_experience_bundle(json.loads(path.read_text(encoding="utf-8")))
+        report = import_experience_bundle(target, loaded)
 
         assert written["schema"] == PORTABLE_EXPERIENCE_SCHEMA
         assert report.exact
@@ -98,11 +99,13 @@ def test_portable_bundle_round_trip_has_exact_semantic_parity(tmp_path) -> None:
             "evidence_id"
         ] == "evaluation-1"
 
-        second = import_experience_bundle(target, path)
+        second = import_experience_bundle(target, loaded)
         assert second.exact
         assert second.inserted_records == 0
         assert second.inserted_trajectories == 0
         assert len(target.candidate_validations(experience_id=record.id)) == 1
+        with pytest.raises(TypeError, match="already parsed mapping"):
+            load_experience_bundle(path)  # type: ignore[arg-type]
     finally:
         source.close()
         target.close()

@@ -2100,3 +2100,69 @@ def test_fastapi_rate_limit_can_use_shared_redis_from_env(tmp_path, monkeypatch)
     finally:
         mind_a.close()
         mind_b.close()
+
+
+def test_shared_rate_limit_uses_principal_identity_without_storing_api_keys(
+    tmp_path, monkeypatch
+):
+    class FakeRedisClient:
+        values = {}
+
+        @classmethod
+        def from_url(cls, url, decode_responses=True):
+            assert decode_responses is True
+            return cls()
+
+        def incr(self, key):
+            self.values[key] = int(self.values.get(key, 0)) + 1
+            return self.values[key]
+
+        def expire(self, key, seconds):
+            return seconds == 120
+
+    monkeypatch.setitem(
+        sys.modules,
+        "redis",
+        types.SimpleNamespace(Redis=FakeRedisClient),
+    )
+    monkeypatch.setenv(
+        "WAVEMIND_API_PRINCIPALS",
+        json.dumps(
+            {
+                "first-secret-key": {
+                    "identity": "shared-agent",
+                    "role": "read",
+                    "namespace_prefixes": ["*"],
+                },
+                "second-secret-key": {
+                    "identity": "shared-agent",
+                    "role": "read",
+                    "namespace_prefixes": ["*"],
+                },
+            }
+        ),
+    )
+    monkeypatch.setenv("WAVEMIND_RATE_LIMIT_PER_MINUTE", "2")
+    monkeypatch.setenv("WAVEMIND_RATE_LIMIT_REDIS_URL", "redis://rate.test/0")
+
+    mind = WaveMind(
+        db_path=tmp_path / "principal-rate.sqlite3",
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=16),
+    )
+    try:
+        with TestClient(create_app(mind=mind)) as client:
+            first = {"Authorization": "Bearer first-secret-key"}
+            second = {"Authorization": "Bearer second-secret-key"}
+            assert client.get("/stats", headers=first).status_code == 200
+            assert client.get("/stats", headers=second).status_code == 200
+            assert client.get("/stats", headers=first).status_code == 429
+
+        keys = list(FakeRedisClient.values)
+        assert len(keys) == 1
+        assert "first-secret-key" not in keys[0]
+        assert "second-secret-key" not in keys[0]
+    finally:
+        mind.close()
