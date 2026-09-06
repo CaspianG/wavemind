@@ -180,6 +180,7 @@ Release: [WaveMind v2.6.3](https://github.com/CaspianG/wavemind/releases/tag/v2.
 
 | Version | Published | Notes |
 |---|---|---|
+| [v2.14.0](https://github.com/CaspianG/wavemind/releases/tag/v2.14.0) | 2026-09-06 | Proof-carrying scientific core, exact selector, and API security hardening |
 | [v2.13.0](https://github.com/CaspianG/wavemind/releases/tag/v2.13.0) | 2026-08-17 | Verified one-command Python and Docker Compose upgrades with rollback |
 | [v2.12.1](https://github.com/CaspianG/wavemind/releases/tag/v2.12.1) | 2026-08-10 | Exact-current Workspace Experience admission and release evidence |
 | [v2.12.0](https://github.com/CaspianG/wavemind/releases/tag/v2.12.0) | 2026-08-10 | Verified Workspace Experience and secure workspace HTTP isolation |

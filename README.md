@@ -64,8 +64,8 @@ claim that one vector database should replace every other system.
 
 | Product truth | Status | Evidence |
 |---|---|---|
-| Public release | `v2.13.0`; runtime source `a23283123eb3` | PyPI package `wavemind` and `ghcr.io/caspiang/wavemind:2.13.0` |
-| Release candidate | `v2.14.0` at `27de55195fbd`; `blocked` until its tag exists | Upgrade admission `pending_exact_sha_ci`; tag-only release workflow |
+| Public release | `v2.14.0`; runtime source `e93954d40285` | PyPI package `wavemind` and `ghcr.io/caspiang/wavemind:2.14.0` |
+| Current release | `v2.14.0` at `e93954d40285`; `published` | Upgrade admission `admitted_19_of_19`; GitHub Release, PyPI, and GHCR verified |
 | Safe Product snapshot | `historical`, 18/18 checks at `92c539d0a069` | [`benchmarks/safe_product_admission_results.json`](benchmarks/safe_product_admission_results.json) |
 | Current-source admission | Required per exact source SHA | [`.github/workflows/safe-product.yml`](.github/workflows/safe-product.yml) |
 | TypeScript SDK | `@wavemind/http`, repository-local; npm claim disabled | Repository package only |
@@ -91,7 +91,7 @@ because the repository moved forward.
 | LongMemEval-V2 protocol | Goal 4 completed a strict frozen 451-question experiment; it passed execution/context/latency controls but failed quality uplift, so no admission claim is made | [`failed experiment`](benchmarks/goal4_quality_experiment_results.json) / [`Memory OS run`](benchmarks/longmemeval_v2_small_memory_os_results.json) / [`strict smoke`](benchmarks/longmemeval_v2_frozen20_protocol_results.json) |
 | Proof-carrying scientific selector | v32 performance-only validation passed exact selection on 240/240 frozen synthetic queries across three repeats; indexed p95 `0.151-0.156 s`, p95 speedup `9.72-10.09x` | [`v32 validation`](benchmarks/scientific_performance_v32_validation_results.json) / [`v31 failed admission`](benchmarks/scientific_v31_admission_outcome.json) |
 | Core production readiness | `pass`, 39/39 criteria | [`production_readiness_results.json`](benchmarks/production_readiness_results.json) |
-| Public package | PyPI and GitHub release `v2.13.0` | [PyPI](https://pypi.org/project/wavemind/) / [release](https://github.com/CaspianG/wavemind/releases/latest) |
+| Public package | PyPI and GitHub release `v2.14.0` | [PyPI](https://pypi.org/project/wavemind/) / [release](https://github.com/CaspianG/wavemind/releases/latest) |
 
 Remote multi-region, managed serverless, 100M service evidence, and universal
 multimodal admission remain explicitly gated. See

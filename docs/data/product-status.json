@@ -3,25 +3,25 @@
   "category_statement": "WaveMind is the trust layer that lets agents learn from completed work without silently learning incorrect behavior.",
   "stable_release": {
     "version": "2.14.0",
-    "source_sha": "27de55195fbd629904bebca87097641aef44b709",
-    "publication_status": "unpublished_candidate",
+    "source_sha": "e93954d4028561944937f70754d5928229930cb4",
+    "publication_status": "published",
     "python_package": "wavemind",
     "container": "ghcr.io/caspiang/wavemind:2.14.0"
   },
   "public_release": {
-    "version": "2.13.0",
-    "source_sha": "a23283123eb37b187a755db7ab4c4776555198d8",
+    "version": "2.14.0",
+    "source_sha": "e93954d4028561944937f70754d5928229930cb4",
     "python_package": "wavemind",
-    "container": "ghcr.io/caspiang/wavemind:2.13.0",
-    "verified_at": "2026-08-17",
-    "release_url": "https://github.com/CaspianG/wavemind/releases/tag/v2.13.0"
+    "container": "ghcr.io/caspiang/wavemind:2.14.0",
+    "verified_at": "2026-09-06",
+    "release_url": "https://github.com/CaspianG/wavemind/releases/tag/v2.14.0"
   },
   "release_candidate": {
     "version": "2.14.0",
-    "source_sha": "27de55195fbd629904bebca87097641aef44b709",
-    "upgrade_admission": "pending_exact_sha_ci",
-    "publication_status": "blocked",
-    "blocker": "tag v2.14.0 has not been created"
+    "source_sha": "e93954d4028561944937f70754d5928229930cb4",
+    "upgrade_admission": "admitted_19_of_19",
+    "publication_status": "published",
+    "blocker": null
   },
   "safe_product": {
     "checked_in_status": "historical",
