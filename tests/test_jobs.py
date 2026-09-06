@@ -1788,3 +1788,18 @@ def test_replicated_snapshot_archive_rejects_path_traversal(tmp_path):
         assert "Unsafe archive path" in str(exc)
     else:
         raise AssertionError("unsafe archive was accepted")
+
+
+def test_replicated_snapshot_archive_rejects_special_file_entries(tmp_path):
+    archive_path = tmp_path / "special.tar.gz"
+    with tarfile.open(archive_path, "w:gz") as archive:
+        entry = tarfile.TarInfo("snapshot/device")
+        entry.type = tarfile.CHRTYPE
+        archive.addfile(entry)
+
+    try:
+        ReplicatedWaveMind._extract_snapshot_archive(archive_path, tmp_path / "restore")
+    except Exception as exc:
+        assert "Unsupported archive entry type" in str(exc)
+    else:
+        raise AssertionError("special archive entry was accepted")

@@ -1498,10 +1498,23 @@ class ReplicatedWaveMind:
                     raise ReplicationError(
                         f"Archive entry escapes destination: {member.name}"
                     )
-            try:
-                archive.extractall(destination, filter="data")
-            except TypeError:  # pragma: no cover - Python < 3.12 compatibility
-                archive.extractall(destination)
+                if not member.isdir() and not member.isfile():
+                    raise ReplicationError(
+                        f"Unsupported archive entry type: {member.name}"
+                    )
+            for member in members:
+                target = (destination / member.name).resolve()
+                if member.isdir():
+                    target.mkdir(parents=True, exist_ok=True)
+                    continue
+                target.parent.mkdir(parents=True, exist_ok=True)
+                source = archive.extractfile(member)
+                if source is None:
+                    raise ReplicationError(
+                        f"Unable to read snapshot archive entry: {member.name}"
+                    )
+                with source, target.open("wb") as output:
+                    shutil.copyfileobj(source, output)
 
         candidates = [
             path

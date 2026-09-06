@@ -4,6 +4,12 @@ Notable user-facing and operational changes are recorded here. Git tags,
 GitHub Releases, checked evidence artifacts, and package versions remain the
 authoritative release sources.
 
+## Unreleased
+
+- Hardened replicated snapshot extraction against unsafe tar entry types,
+  tightened sample-host parsing and API audit logging, and removed a
+  potentially super-linear trailing-slash expression from the TypeScript SDK.
+
 ## [2.14.0] - 2026-09-06
 
 - Added a proof-carrying scientific memory core with typed memory definitions,
@@ -25,7 +31,7 @@ authoritative release sources.
   admission remains failed; v32 is performance-only; remote multi-region,
   managed-serverless, and 100M production claims remain locked.
 
-Candidate source: `27de55195fbd629904bebca87097641aef44b709`.
+Release source: `e93954d4028561944937f70754d5928229930cb4`.
 
 Release: [WaveMind v2.14.0](https://github.com/CaspianG/wavemind/releases/tag/v2.14.0)
 

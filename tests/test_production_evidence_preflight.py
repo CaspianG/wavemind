@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 from wavemind.production_evidence import (
+    _is_sample_url,
     evaluate_production_evidence_preflight,
     render_preflight_markdown,
 )
@@ -92,6 +93,15 @@ def _remote_scale_inventory():
             for index in range(8)
         ],
     }
+
+
+def test_sample_url_detection_checks_the_hostname_boundary():
+    assert _is_sample_url("https://example.com/path") is True
+    assert _is_sample_url("https://worker.example.test/path") is True
+    assert _is_sample_url("http://127.0.0.1:8000") is True
+    assert _is_sample_url("http://[::1]:8000") is True
+    assert _is_sample_url("https://example.com.attacker.invalid") is False
+    assert _is_sample_url("https://real.invalid/path/example.com") is False
 
 
 def test_production_evidence_preflight_reports_missing_env():
