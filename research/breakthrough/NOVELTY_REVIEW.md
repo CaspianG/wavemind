@@ -124,3 +124,28 @@ Next: check equivalence with existing algebraic recognition methods, then
 preregister a different-family stress test and compare against an executed
 strong general solver. Do not present the familiar projection construction,
 a one-corpus success, or an unexecuted upstream package as a scientific gate.
+
+## R6: determinant-mask stitching candidate
+
+[The R6 derivation](LC_STITCHING.md) proposes using the central mask
+I+T^2+T for trace-one local maps T. A cover of sites by at most d+1 candidates
+is partitioned inside the preserving algebra to produce a rank-one projector.
+This gives a candidate polynomial-time recognition algorithm, not just a
+small residual-enumeration trick. Its complete proof and assumptions are
+available for scrutiny; no independent expert has reviewed them.
+
+An essential additional comparator is [Van den Nest et al. / Bouchet](https://arxiv.org/pdf/quant-ph/0405023):
+polynomial-time local Clifford equivalence of two specified stabilizer states
+already exists, with linear equations plus a polynomial-size search for the
+quadratic constraints. Our target is arbitrary-rank stabilizers and existence
+of any CSS frame. The distinction must be assessed against the actual older
+theorems, not used to assume novelty. The brief primary paper was read,
+including its stated O(n^4) algorithm and its attribution to Bouchet.
+
+R6 passed its 34,047-instance finite test, but the result is narrower than
+"every part of the construction is exercised": the initial particular map
+already worked in every positive main-corpus instance. The multi-mask branch
+only has a small unit control. The next adversarial-affine-frame falsifier
+is therefore necessary; see [the evidence and gap](LC_STITCHING_R6_RESULTS.md).
+Neither passing the finite test nor giving the proposed lemma a new name
+establishes priority, a quantum hardware gain or mass indispensability.

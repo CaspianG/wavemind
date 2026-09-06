@@ -87,6 +87,27 @@ limits. The existing diagnostic negatives remain intact. The next local step
 is R5 prior-art resolution and a preregistered independent-family falsifier,
 not a product relaunch or a claim of invented quantum error correction.
 
+## R6: Polynomial Candidate, With A Specific Remaining Falsifier
+
+The next derivation uses closure of the local endomorphism algebra: for a
+trace-one map T, I+T^2+T is a central mask selecting its rank-one sites.
+A cover by at most dimension+1 such maps can be partitioned and stitched.
+This removes R5's residual enumeration in the candidate theorem and implementation;
+it is not an independent expert endorsement or novelty clearance.
+
+The preregistered run at `90579911ad56ae2ef85e0c6f96c5c86d98cec178` completed
+34,047 cases, including all labelled graph states through six qubits and 180
+other constructed codes. All certificates and source hashes were audited;
+33,951 exact-oracle/known-construction comparisons and 48 proper-code direct
+Clifford enumerations had no disagreement. R6 resolved 29 cases left unresolved
+by our old R5 limit; no external best-solver superiority follows from that.
+
+Crucially, every positive case in the main corpus already had a good initial
+particular solution. The multi-mask stitching branch only has a small unit
+control. The immediate next falsifier must exercise adversarial affine frames
+on nontrivial positive codes. Preserve this coverage gap rather than quietly
+counting it as tested. See [the full R6 report](LC_STITCHING_R6_RESULTS.md).
+
 ## Earlier Diagnostic Research Decision (superseded as the immediate next step)
 
 The following diagnostic direction was proposed after R3. R4 and its prior-art

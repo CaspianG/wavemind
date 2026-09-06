@@ -1,12 +1,17 @@
 # Starting state and targeted instruction audit
 
-Update after R5: the current state is summarized in `mission_status.json` and
-`LC_PROJECTOR_R5_RESULTS.md`. A cached, SHA-pinned public QEC catalog has now
+Update after R6: the current state is summarized in `mission_status.json`,
+`LC_PROJECTOR_R5_RESULTS.md` and `LC_STITCHING_R6_RESULTS.md`. A cached, SHA-pinned public QEC catalog has now
 been audited algebraically with 368 full-LC certificates; this is external
 source data but not an externally executed baseline, lab measurement, or
 independent investigator. Chrome access to GitHub was explicitly denied in
 the latest product-publishing attempt; that denial was not bypassed. This
 local research used the earlier cached catalog and public arXiv papers only.
+R6 additionally tested 34,047 locally generated finite cases against graph
+orbits, direct Clifford enumeration and independently checked certificates.
+Its main corpus did not exercise multi-piece positive stitching; the next
+registered experiment must target that gap. No additional dependencies,
+external code execution, paid calls or physical experiments were introduced.
 The historical starting-state notes below are retained as an audit trail.
 
 Date: 2026-09-06. Product base: `a465ac0e3a5610cadcf07320fcd08bf6873158f3`.

@@ -1,0 +1,23 @@
+{
+  "source_sha": "90579911ad56ae2ef85e0c6f96c5c86d98cec178",
+  "started_unix_ns": 1788724704543958100,
+  "hashes": {
+    "protocol_r6.json": "409e34209f6e9955eccd6f4d33ee8b7a7f2b3f3b7a27a98195a0661882d84a9b",
+    "LC_STITCHING.md": "997dd9b59209c53e1b9925d85350cb29dd4070178452d21c4335c7f3d240bd77",
+    "lc_stitching.py": "7bc4ffeca106b2e444cda6fb3b9d1a9250f4add6d87d828860b4aaee632f57a7",
+    "lc_stitching_check.py": "ef59bc55bf0b0b191a36f122301e151da279ae6ee4e0d4c20923a667e0d9f7d8",
+    "lc_graph_oracle.py": "4a32680e2035b92ad80d4ab4f4e82d451098d9f06c2673f3ef1cc0739d1eba09",
+    "lc_r6_corpus.py": "c1b24c1fc3fa0b7d3e3f3030520c1e5c971d680490518e08451c808209952d26",
+    "experiment_r6.py": "bb953e8d5ac2c4279e116f9cfc5926c1fa035879b2c9bbabdf346393c001623e",
+    "test_lc_stitching.py": "31e938520944465ebbb71b1c1039cf836c3c5256422770eb7f19b0a644896b71",
+    "lc_projector.py": "a496cb034e87f593f9c06b21871a2d00ae6583b397d7d3cef76f2e323fbd1798",
+    "lc_certificate_check.py": "60cf8c29494657efed736b46082302e4d491b06f023ad4c0a011f122764b72ba",
+    "experiment_r1.py": "a08971e9bf15ab9ad4959194455ebb8ff6b7fa792f63897a1336d04d02b200fc"
+  },
+  "python": "3.13.2",
+  "numpy": "2.5.2",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "evidence_class": "exhaustive_small_graph_orbits_and_seeded_constructed_codes",
+  "scientific_breakthrough_gate": false,
+  "mass_indispensability_gate": false
+}
