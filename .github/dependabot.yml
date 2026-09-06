@@ -16,6 +16,13 @@ updates:
         update-types:
           - minor
           - patch
+    ignore:
+      # MCP 2 changes the integration contract and needs a deliberate migration.
+      - dependency-name: mcp
+        versions: [">=2"]
+      # Ruff 0.16 enables a large new rule surface and needs a dedicated cleanup.
+      - dependency-name: ruff
+        versions: [">=0.16"]
 
   - package-ecosystem: github-actions
     directory: /
@@ -29,6 +36,11 @@ updates:
       github-actions:
         patterns:
           - "*"
+    ignore:
+      # Action majors are reviewed as explicit infrastructure migrations.
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
 
   - package-ecosystem: npm
     directory: /sdk/typescript
@@ -45,6 +57,10 @@ updates:
         update-types:
           - minor
           - patch
+    ignore:
+      # The SDK currently supports the TypeScript 5 toolchain.
+      - dependency-name: typescript
+        versions: [">=6"]
 
   - package-ecosystem: docker
     directory: /
@@ -61,4 +77,7 @@ updates:
         update-types:
           - minor
           - patch
-
+    ignore:
+      # The published image deliberately uses the Python 3.11 runtime line.
+      - dependency-name: python
+        versions: [">=3.12"]

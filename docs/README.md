@@ -8,6 +8,7 @@ benchmarks only when the deployment requires them.
 
 | Goal | Guide |
 |---|---|
+| Understand the breakthrough without reading the code | [Why WaveMind](WHY_WAVEMIND.md) |
 | Install and recall the first memory | [Quick Start](../README.md#quick-start) |
 | Generate a Python, TypeScript, MCP, or Docker starter | `wavemind init` in the [Quick Start](../README.md#quick-start) |
 | Diagnose the local runtime and project | `wavemind doctor --project <path>` |
@@ -16,6 +17,7 @@ benchmarks only when the deployment requires them.
 | Choose a real application pattern | [Use Cases](USE_CASES.md) |
 | Migrate local Chroma memory | [Chroma Migration](CHROMA_MIGRATION.md) |
 | Safely upgrade Python or Docker Compose state | [Safe Upgrade Guide](UPGRADE.md) |
+| Find the right source, test, workflow, or generated artifact | [Repository Guide](REPOSITORY_GUIDE.md) |
 
 ## Build With WaveMind
 
@@ -43,6 +45,7 @@ benchmarks only when the deployment requires them.
 | Evidence | Guide |
 |---|---|
 | Current methods, artifacts, and interpretation rules | [Benchmark Guide](BENCHMARKS.md) |
+| Navigate benchmark source, results, admissions, and preserved failures | [Benchmark Directory Map](../benchmarks/README.md) |
 | Short public methodology | [Benchmark Brief](BENCHMARK_BRIEF.md) |
 | Adaptive agent-memory admission | [Current Admission Report](../benchmarks/AGENT_MEMORY_ADVANTAGE_ADMISSION.md) |
 | Verified agent-experience admission | [Verified Experience Admission](../benchmarks/VERIFIED_EXPERIENCE_ADMISSION.md) |

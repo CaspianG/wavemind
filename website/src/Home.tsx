@@ -74,7 +74,7 @@ const content = {
     },
     roadmap: { kicker: "06 / THE BUILD", title: <>Proof before <em>surface area.</em></>, body: "Publish the safe upgrade, prove independent task lift against real alternatives, then expand only where pilot usage validates demand.", years: ["NOW", "0–6M", "6–18M"], items: [["Ship truthfully", "Operate and monitor the published 2.14.0 release; keep exact-current competitive evidence public."], ["Prove the flagship", "Admit one cold-run to verified packet to better next-run workflow with paired outcome, context, cost and rollback evidence."], ["Follow observed demand", "Add review inbox, policy-as-code or cross-client experience only after design partners use and value them."]] },
     closing: { eyebrow: "THE NEXT CHAPTER", title: <>Let’s make agent learning <em>responsible by design.</em></>, body: "For investors and design partners building systems that have to become more useful over time — without becoming less trustworthy.", primary: "Open a working conversation", secondary: "Inspect the repository" },
-    footer: "WaveMind · Adaptive memory, with a trail you can inspect.",
+    footer: "WaveMind · Verified experience, with a trail you can inspect.",
   },
   ru: {
     nav: ["Зачем WaveMind", "Цикл опыта", "Доказательства", "План"],
@@ -132,7 +132,7 @@ const content = {
     },
     roadmap: { kicker: "06 / СОЗДАЁМ", title: <>Сначала proof, затем <em>новые поверхности.</em></>, body: "Публикуем безопасное обновление, доказываем task lift против реальных альтернатив и расширяемся только по подтверждённому pilot demand.", years: ["СЕЙЧАС", "0–6М", "6–18М"], items: [["Публиковать честно", "Эксплуатировать и наблюдать за опубликованным релизом 2.14.0; держать exact-current competitive evidence публичным."], ["Доказать flagship", "Допустить workflow от cold run до verified packet и лучшего next run с paired outcome, context, cost и rollback evidence."], ["Следовать спросу", "Добавлять review inbox, policy-as-code или cross-client experience только после реального использования design partners."]] },
     closing: { eyebrow: "СЛЕДУЮЩАЯ ГЛАВА", title: <>Давайте сделаем обучение агентов <em>ответственным по умолчанию.</em></>, body: "Для инвесторов и design partners, которые создают системы, обязанные становиться полезнее со временем — не теряя доверия.", primary: "Начать предметный разговор", secondary: "Изучить репозиторий" },
-    footer: "WaveMind · Адаптивная память с историей, которую можно проверить.",
+    footer: "WaveMind · Проверенный опыт с историей, которую можно проверить.",
   },
 } as const;
 
