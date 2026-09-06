@@ -20,12 +20,30 @@ updates:
           - minor
           - patch
     ignore:
+      # Every major dependency line has an explicit compatibility migration.
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
+      - dependency-name: fastapi
+        versions: [">=0.142"]
       # MCP 2 changes the integration contract and needs a deliberate migration.
       - dependency-name: mcp
         versions: [">=2"]
       # Ruff 0.16 enables a large new rule surface and needs a dedicated cleanup.
       - dependency-name: ruff
         versions: [">=0.16"]
+      - dependency-name: sentence-transformers
+        versions: [">=6"]
+      - dependency-name: transformers
+        versions: [">=6"]
+      - dependency-name: huggingface-hub
+        versions: [">=2"]
+      - dependency-name: anthropic
+        versions: [">=1"]
+      - dependency-name: langgraph
+        versions: [">=2"]
+      - dependency-name: openai-agents
+        versions: [">=1"]
 
   - package-ecosystem: github-actions
     directory: /
