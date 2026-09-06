@@ -10,6 +10,7 @@ real consumer and enterprise workflows. External expert scrutiny is required
 before calling any result a breakthrough. A local experiment cannot close
 either gate.
 
+- [Что сделано и почему это ещё не доказанный прорыв — без жаргона](PLAIN_LANGUAGE_RU.md)
 - [Starting state and instruction audit](STATE_AND_AUDIT.md)
 - [Primary-source novelty map and decision matrix](NOVELTY_REVIEW.md)
 - [Frozen first experiment](protocol_r1.json)
