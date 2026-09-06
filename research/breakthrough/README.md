@@ -22,6 +22,8 @@ either gate.
 - [R5 complete 368-code audit, results and plain Russian explanation](LC_PROJECTOR_R5_RESULTS.md)
 - [R6 polynomial stitching candidate and proof](LC_STITCHING.md)
 - [R6 34,047-case falsifier, limitations and plain Russian report](LC_STITCHING_R6_RESULTS.md)
+- [R7 adversarial affine-frame protocol and assumptions](LC_ADVERSARIAL_FRAMES.md)
+- [R7 384-case multi-piece audit, ablations and limits](LC_ADVERSARIAL_R7_RESULTS.md)
 
 Results are recorded after execution, including rejection. No released runtime
 is changed by this experiment. No paid API, judge, simulator, quantum hardware,
@@ -36,11 +38,12 @@ python research/breakthrough/verify_evidence.py
 python research/breakthrough/verify_r4.py
 python research/breakthrough/verify_r5.py
 python research/breakthrough/verify_r6.py
+python research/breakthrough/verify_r7.py
 ```
 
 For reproduction, create a clean detached checkout at the run's source SHA
-in `DECISION.md` (or the linked R5/R6 reports), then invoke its `experiment_r1.py`,
-`experiment_r2.py`, `experiment_r3.py`, `experiment_r4.py`, `experiment_r5.py` or `experiment_r6.py`
+in `DECISION.md` (or the linked R5/R6/R7 reports), then invoke its `experiment_r1.py`,
+`experiment_r2.py`, `experiment_r3.py`, `experiment_r4.py`, `experiment_r5.py`, `experiment_r6.py` or `experiment_r7.py`
 with `--output` pointing to a new directory. Runners reject
 existing output directories and tracked uncommitted changes. Preserve original
 outcomes and record the reproducer's own environment and timing uncertainty.

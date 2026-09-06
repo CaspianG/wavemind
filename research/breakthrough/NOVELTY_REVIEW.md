@@ -149,3 +149,25 @@ only has a small unit control. The next adversarial-affine-frame falsifier
 is therefore necessary; see [the evidence and gap](LC_STITCHING_R6_RESULTS.md).
 Neither passing the finite test nor giving the proposed lemma a new name
 establishes priority, a quantum hardware gain or mass indispensability.
+
+## After R7: branch tested; classical algebra overlap still a live falsifier
+
+[R7](LC_ADVERSARIAL_R7_RESULTS.md) now tests the multi-mask positive branch
+on 384 constructed frames, including 96 guaranteed hard cases. It leaves
+the historical R6 coverage statement unchanged and gives no novelty clearance.
+
+The primary [Rains preprint, *Nonbinary quantum codes*](https://arxiv.org/pdf/quant-ph/9703048)
+was inspected at the "Linear codes" section, printed pp. 5–7, including
+Theorems 4 and 6. It uses a common coordinate transformation and relates a
+split algebra's idempotents to the CSS decomposition. This confirms that
+algebraic invariance and splitting by complementary projectors are prior art.
+The inspected statement is not the site-dependent recognition algorithm
+claimed in R6. That distinction is an unresolved comparison, not proof of
+priority; the whole literature and all later implications were not checked.
+
+The rechecked [Dasu–Burton §4](https://arxiv.org/html/2507.10519v1#S4)
+explicitly restricts its classification to the same single-qubit Clifford
+on every site. Next compare R6's actual input/output and complexity with
+Bouchet/Van den Nest and general finite-algebra idempotent methods; reject or
+narrow novelty if it follows from them. An implemented ablation is not a
+substitute for an executed strong external comparator on the same task.

@@ -1,0 +1,18 @@
+{
+  "status": "omitting_algebra_closure_refuted",
+  "span_size": 8,
+  "affine_points": 4,
+  "no_global_projector": true,
+  "per_site_feasible": true,
+  "stitched_output_outside_span": true,
+  "pieces": [
+    {
+      "candidate_index": 0,
+      "sites_hex": "0x1"
+    },
+    {
+      "candidate_index": 2,
+      "sites_hex": "0x2"
+    }
+  ]
+}

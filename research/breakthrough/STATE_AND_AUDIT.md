@@ -1,6 +1,15 @@
 # Starting state and targeted instruction audit
 
-Update after R6: the current state is summarized in `mission_status.json`,
+Update after R7: the multi-piece positive branch now has a frozen 384-case
+constructed-frame experiment and full replay in `LC_ADVERSARIAL_R7_RESULTS.md`.
+All 96 hard cases required the registered number of pieces; the original R6
+sources and outcomes remain unchanged. Both mission gates remain false.
+No external investigator or real consumer/enterprise outcome is added by R7.
+The immediate next step is prior-art resolution and a same-task strong baseline,
+not another count of convenient synthetic passes. The earlier R6 note below
+records why this experiment was required.
+
+Update after R6: the state then was summarized in `mission_status.json`,
 `LC_PROJECTOR_R5_RESULTS.md` and `LC_STITCHING_R6_RESULTS.md`. A cached, SHA-pinned public QEC catalog has now
 been audited algebraically with 368 full-LC certificates; this is external
 source data but not an externally executed baseline, lab measurement, or

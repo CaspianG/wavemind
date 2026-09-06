@@ -108,6 +108,21 @@ control. The immediate next falsifier must exercise adversarial affine frames
 on nontrivial positive codes. Preserve this coverage gap rather than quietly
 counting it as tested. See [the full R6 report](LC_STITCHING_R6_RESULTS.md).
 
+## R7: Positive Branch Verified On Constructed Frames
+
+Update after R7: the required positive-branch falsifier is now complete; see
+[R7 results](LC_ADVERSARIAL_R7_RESULTS.md). All 384 seeded constructed frames
+passed dense intermediate checks. All 96 preregistered hard cases needed B
+pieces with no globally good single candidate; 372 unpartitioned-sum ablations
+failed. Frozen R6 was unchanged. This exercises the missing branch on known
+elementary codes, not all possible inputs or a new external benchmark.
+
+The immediate action is now theorem-level prior-art comparison and an
+independently reproducible same-task general baseline. The old diagnostic
+product targets below have not been linked to the QEC mechanism. Treat that
+missing consumer/enterprise capability bridge as an open requirement, not as
+a product gate satisfied by additional algebraic test counts.
+
 ## Earlier Diagnostic Research Decision (superseded as the immediate next step)
 
 The following diagnostic direction was proposed after R3. R4 and its prior-art
