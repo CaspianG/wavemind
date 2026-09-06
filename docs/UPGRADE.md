@@ -44,7 +44,7 @@ Choose an exact version and explicit database locations:
 ```sh
 wavemind --db ./state/wavemind.sqlite3 upgrade \
   --experience-db ./state/wavemind-experience.sqlite3 \
-  --to 2.13.0 \
+  --to 2.14.0 \
   --config ./config/wavemind.json \
   --object-store-manifest ./state/objects.json \
   --json
@@ -54,7 +54,7 @@ Downgrades fail closed. A deliberate downgrade must name the target and include
 `--allow-downgrade`:
 
 ```sh
-wavemind upgrade --to 2.12.1 --allow-downgrade --json
+wavemind upgrade --to 2.13.0 --allow-downgrade --json
 ```
 
 ## Fully offline wheel upgrade
@@ -65,7 +65,7 @@ environment. For example:
 
 ```sh
 python -m pip download --only-binary=:all: --no-deps \
-  wavemind==2.13.0 wavemind==2.12.1 --dest ./upgrade-artifacts
+  wavemind==2.14.0 wavemind==2.13.0 --dest ./upgrade-artifacts
 sha256sum ./upgrade-artifacts/wavemind-*.whl
 ```
 
@@ -73,9 +73,9 @@ Then run without a package-index request:
 
 ```sh
 wavemind upgrade \
-  --artifact ./upgrade-artifacts/wavemind-2.13.0-py3-none-any.whl \
+  --artifact ./upgrade-artifacts/wavemind-2.14.0-py3-none-any.whl \
   --expected-sha256 <target-wheel-sha256> \
-  --current-artifact ./upgrade-artifacts/wavemind-2.12.1-py3-none-any.whl \
+  --current-artifact ./upgrade-artifacts/wavemind-2.13.0-py3-none-any.whl \
   --current-expected-sha256 <current-wheel-sha256> \
   --json
 ```
@@ -89,7 +89,7 @@ Run the command from a directory whose `docker-compose.yml` defines the
 `wavemind` service. Auto mode selects Docker Compose and preserves `.env`:
 
 ```sh
-wavemind upgrade --to 2.13.0 --json
+wavemind upgrade --to 2.14.0 --json
 ```
 
 For a non-default file or service, be explicit:
@@ -100,7 +100,7 @@ wavemind upgrade \
   --compose-file ./deploy/docker-compose.yml \
   --compose-env-file ./deploy/.env \
   --compose-service wavemind \
-  --to 2.13.0 \
+  --to 2.14.0 \
   --expected-image-digest sha256:<digest> \
   --json
 ```

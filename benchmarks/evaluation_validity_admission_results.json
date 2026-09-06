@@ -1,8 +1,8 @@
 {
   "schema": "wavemind.evaluation_validity_admission.v1",
-  "generated_at": "2026-08-16T10:49:23Z",
-  "source_sha": "a55af19470264f371535229f163121ffeb711120",
-  "expected_source_sha": "a55af19470264f371535229f163121ffeb711120",
+  "generated_at": "2026-09-06T13:29:43Z",
+  "source_sha": "27de55195fbd629904bebca87097641aef44b709",
+  "expected_source_sha": "27de55195fbd629904bebca87097641aef44b709",
   "status": "blocked",
   "admitted": false,
   "implemented_rows": 15,
@@ -269,8 +269,8 @@
       "status": "implemented",
       "requirement": "Admission is tied to the exact source SHA and a current source manifest.",
       "evidence": {
-        "source_sha": "a55af19470264f371535229f163121ffeb711120",
-        "expected_source_sha": "a55af19470264f371535229f163121ffeb711120",
+        "source_sha": "27de55195fbd629904bebca87097641aef44b709",
+        "expected_source_sha": "27de55195fbd629904bebca87097641aef44b709",
         "source_manifest": {
           "schema": "wavemind.source_manifest.v1",
           "algorithm": "sha256",
@@ -282,7 +282,7 @@
             },
             {
               "path": "README.md",
-              "sha256": "3ad5cfd33ad0dfe2579aa8f05b8a9bfdd43f26f8dae02dd543be64dc28c6c151"
+              "sha256": "b1c48d74b909c85ad7b183344a991ac34a2d8a44fc90c88a746cbf93dc8bbbdd"
             },
             {
               "path": "benchmarks/evaluation_dataset_manifest_v1.json",
@@ -310,7 +310,7 @@
             },
             {
               "path": "docs/ROADMAP.md",
-              "sha256": "ac767141f64d565c9a980ee00d3a740119b0e68f1a3492887db379c60cd70cc5"
+              "sha256": "0e8817e7cae4dc6755ecf10895ce05a8cd0dbe4940af201118cae1bcd05fd716"
             },
             {
               "path": "docs/adr/0001-task-native-evaluation-science.md",
@@ -369,7 +369,7 @@
               "sha256": "4bd3ee49396e05e0380b19889dda10d553fec9a90b5debed217311a416f4bba4"
             }
           ],
-          "digest": "117ac6a15f282a80afd0bb6e703c630b9134832a72f678a9b165c747e17a1540"
+          "digest": "988affd1f7c56639e314a9e09fe593e9f11f59053db0ca7c616dbe2280babaff"
         }
       }
     },
@@ -397,7 +397,7 @@
   ],
   "environment": {
     "profile": "evaluation-validity-local",
-    "python": "3.13.3",
+    "python": "3.13.2",
     "implementation": "CPython",
     "platform": "Windows-11-10.0.26200-SP0",
     "executable": "python.exe",
@@ -408,6 +408,6 @@
   "integrity": {
     "schema": "wavemind.artifact_integrity.v1",
     "algorithm": "sha256",
-    "payload_sha256": "d39c135de62ec2ea150a6b66eb49b8d8e3066285ac77c77b3c8acac7b7eb7285"
+    "payload_sha256": "bfdebd02777b0e5fdb3f745ca1d98ff61bcb2f5e96e8ddec84440b02bd038bed"
   }
 }
