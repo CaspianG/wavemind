@@ -13,6 +13,17 @@ single-qubit Cliffords. We would appreciate an attempt to find an error or
 identify an existing result that implies it. We are not claiming novelty or
 independent validation.
 
+**Updated after R8:** the simpler route is in
+[the scalar-component proof](LC_SCALAR_COMPONENTS.md). Let
+B={m in F2^n: diag(m_i I2) preserves S}. Decompose B by its disjoint indicator
+basis, explicitly crediting Mirandola-Zemor section 2.3, Lemma 2.7. On each
+resulting support the scalar algebra is {0,1}. If a trace-one preserving map
+T is rank one at a chosen anchor, I+T^2+T is a scalar mask nonzero there,
+hence identity on the whole component. Enumerating six rank-one anchor
+blocks reduces recognition to six linear systems per component. Is this
+consequence correct, and is it already implied by an existing result?
+We no longer suggest that the R6 cover combines coupled indecomposable parts.
+
 Let E be the full algebra of block-diagonal 2x2 binary linear maps preserving
 S. Let A be its affine slice with trace one on every block, written
 T_i=[[a_i,b_i],[c_i,1+a_i]]. The proposed criterion is: a rank-one projector
@@ -50,6 +61,11 @@ Could you assess the following?
   `f7726d79f2db3b57d24eca12f8973a70170b7484`: 96 guaranteed hard cases within
   384 constructed frames; dense checks of intermediate maps and witnesses.
 - [Precise source comparison and failed shortcut](PRIOR_ART_THEOREM_AUDIT.md).
+- [R8 structural comparator](LC_SCALAR_R8_RESULTS.md), source SHA
+  `fff2c991506344b7f69be6c4357bd52c1f91eb8b`: all 2897 small linear subspaces,
+  612642 exact local assignments and 96 reused R7 inputs. All 549 physical
+  stabilizer subspaces in the small domain are positive; its 216 negatives
+  are non-isotropic. No large indecomposable performance claim is supported.
 - [Reproduction and read-only audit commands](README.md#reproduce-or-audit).
 
 Independent checking programs here were written and run in the same project.

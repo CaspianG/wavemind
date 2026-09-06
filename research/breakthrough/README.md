@@ -26,6 +26,8 @@ either gate.
 - [R7 384-case multi-piece audit, ablations and limits](LC_ADVERSARIAL_R7_RESULTS.md)
 - [Theorem-level prior-art applicability audit and refuted shortcut](PRIOR_ART_THEOREM_AUDIT.md)
 - [Independent review request — unsent draft](EXPERT_REVIEW_PACKET.md)
+- [R8 scalar-component simplification and known foundation](LC_SCALAR_COMPONENTS.md)
+- [R8 complete small-subspace falsifier and narrowed novelty boundary](LC_SCALAR_R8_RESULTS.md)
 
 Results are recorded after execution, including rejection. No released runtime
 is changed by this experiment. No paid API, judge, simulator, quantum hardware,
@@ -42,11 +44,12 @@ python research/breakthrough/verify_r5.py
 python research/breakthrough/verify_r6.py
 python research/breakthrough/verify_r7.py
 python research/breakthrough/verify_prior_art_applicability.py
+python research/breakthrough/verify_r8.py
 ```
 
 For reproduction, create a clean detached checkout at the run's source SHA
-in `DECISION.md` (or the linked R5/R6/R7 reports), then invoke its `experiment_r1.py`,
-`experiment_r2.py`, `experiment_r3.py`, `experiment_r4.py`, `experiment_r5.py`, `experiment_r6.py` or `experiment_r7.py`
+in `DECISION.md` (or the linked R5/R6/R7/R8 reports), then invoke its `experiment_r1.py`,
+`experiment_r2.py`, `experiment_r3.py`, `experiment_r4.py`, `experiment_r5.py`, `experiment_r6.py`, `experiment_r7.py` or `experiment_r8.py`
 with `--output` pointing to a new directory. Runners reject
 existing output directories and tracked uncommitted changes. Preserve original
 outcomes and record the reproducer's own environment and timing uncertainty.
