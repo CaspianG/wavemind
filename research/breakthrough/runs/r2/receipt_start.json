@@ -1,0 +1,14 @@
+{
+  "source_sha": "831c7d6ee26ae4507a821c3048ad56b1ddefa718",
+  "started_unix_ns": 1788718722173983500,
+  "hashes": {
+    "protocol_r2.json": "3bffdbf26ad19833499bb380e1859f57704aa989a969587c228eeba0e7c61510",
+    "experiment_r1.py": "a08971e9bf15ab9ad4959194455ebb8ff6b7fa792f63897a1336d04d02b200fc",
+    "experiment_r2.py": "cfe4d9daafc488a6a4d12902d7b01c4ceb124224b1cb9029c87be10b679fdbb9"
+  },
+  "numpy": "2.5.2",
+  "evidence_class": "local_generated_model_falsifier",
+  "external_data_used": false,
+  "longmemeval_runs": 0,
+  "paid_calls": 0
+}
