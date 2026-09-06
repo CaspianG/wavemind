@@ -7,7 +7,11 @@ from pathlib import Path
 
 import pytest
 
-from wavemind.evidence import file_sha256, sha256_bytes, validate_artifact_integrity
+from wavemind.evidence import (
+    recorded_file_matches,
+    sha256_bytes,
+    validate_artifact_integrity,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -170,8 +174,9 @@ def test_v31_admission_outcome_retains_exact_failed_evidence():
         for label in ("artifact", "raw"):
             record = payload[section][label]
             path = ROOT / record["path"]
-            assert path.stat().st_size == record["bytes"]
-            assert file_sha256(path) == record["sha256"]
+            assert recorded_file_matches(
+                path, size=record["bytes"], sha256=record["sha256"]
+            )
     marker = longmem["marker"]
     marker_path = ROOT / marker["path"]
     marker_content = marker_path.read_bytes().replace(b"\r\n", b"\n")

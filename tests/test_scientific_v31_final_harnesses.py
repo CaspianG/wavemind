@@ -8,6 +8,8 @@ import importlib.util
 import json
 from pathlib import Path
 import threading
+
+import pytest
 import time
 import types
 from types import SimpleNamespace
@@ -87,6 +89,10 @@ def test_v31_longmemeval_runner_matches_frozen_revision_and_protocol():
     ]
 
 
+@pytest.mark.skipif(
+    not OFFICIAL_LONGMEM.is_dir(),
+    reason="official LongMemEval v2 upstream is not included in this repository",
+)
 def test_v31_longmemeval_backend_registers_exact_candidate_without_gold(tmp_path):
     path = ROOT / "benchmarks" / "scientific_longmemeval_v2_backend_v31.py"
     spec = importlib.util.spec_from_file_location("scientific_lme_v31_backend_test", path)
@@ -138,6 +144,10 @@ def test_v31_longmemeval_backend_registers_exact_candidate_without_gold(tmp_path
     assert metadata["intervention_present"] is True
 
 
+@pytest.mark.skipif(
+    not OFFICIAL_LONGMEM.is_dir(),
+    reason="official LongMemEval v2 upstream is not included in this repository",
+)
 def test_v31_longmemeval_backend_serializes_shared_queries_and_keeps_metadata_local(
     tmp_path,
 ):

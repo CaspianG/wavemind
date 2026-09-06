@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from wavemind.evidence import file_sha256, validate_artifact_integrity
+from wavemind.evidence import recorded_file_matches, validate_artifact_integrity
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -46,5 +46,6 @@ def test_v19_development_outcome_binds_six_exact_sha_passing_runs():
             assert all(run["gate_checks"].values())
             for evidence in (run["artifact"], run["raw"]):
                 path = ROOT / evidence["path"]
-                assert path.stat().st_size == evidence["bytes"]
-                assert file_sha256(path) == evidence["sha256"]
+                assert recorded_file_matches(
+                    path, size=evidence["bytes"], sha256=evidence["sha256"]
+                )

@@ -4,7 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from wavemind.evidence import file_sha256, validate_artifact_integrity
+from wavemind.evidence import recorded_file_matches, validate_artifact_integrity
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,17 +39,21 @@ def test_v10_mab_final_plan_is_frozen_before_final_execution():
     assert outcome["integrity"]["payload_sha256"] == payload[
         "authorization_evidence"
     ]["development_outcome_payload_sha256"]
-    assert file_sha256(
-        ROOT / payload["authorization_evidence"]["development_outcome_path"]
-    ) == payload["authorization_evidence"]["development_outcome_file_sha256"]
-    assert file_sha256(ROOT / payload["execution_harness"]["path"]) == payload[
-        "execution_harness"
-    ]["sha256"]
-    assert file_sha256(ROOT / payload["protocol"]["path"]) == payload["protocol"][
-        "file_sha256"
-    ]
-    assert file_sha256(ROOT / payload["official_source"]["split_manifest_path"]) == (
-        payload["official_source"]["split_manifest_file_sha256"]
+    assert recorded_file_matches(
+        ROOT / payload["authorization_evidence"]["development_outcome_path"],
+        sha256=payload["authorization_evidence"]["development_outcome_file_sha256"],
+    )
+    assert recorded_file_matches(
+        ROOT / payload["execution_harness"]["path"],
+        sha256=payload["execution_harness"]["sha256"],
+    )
+    assert recorded_file_matches(
+        ROOT / payload["protocol"]["path"],
+        sha256=payload["protocol"]["file_sha256"],
+    )
+    assert recorded_file_matches(
+        ROOT / payload["official_source"]["split_manifest_path"],
+        sha256=payload["official_source"]["split_manifest_file_sha256"],
     )
     assert payload["frozen_sample"]["required_independent_clusters"] == 5
     assert len(payload["frozen_sample"]["unit_ids"]) == 5

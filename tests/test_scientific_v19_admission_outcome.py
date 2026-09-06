@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from wavemind.evidence import file_sha256, validate_artifact_integrity
+from wavemind.evidence import recorded_file_matches, validate_artifact_integrity
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -38,5 +38,6 @@ def test_v19_admission_outcome_preserves_mab_pass_and_memops_failure():
         for label in ("artifact", "raw"):
             record = payload[arm][label]
             path = ROOT / record["path"]
-            assert path.stat().st_size == record["bytes"]
-            assert file_sha256(path) == record["sha256"]
+            assert recorded_file_matches(
+                path, size=record["bytes"], sha256=record["sha256"]
+            )

@@ -5,7 +5,7 @@ import json
 import subprocess
 from pathlib import Path
 
-from wavemind.evidence import file_sha256, validate_artifact_integrity
+from wavemind.evidence import recorded_file_matches, validate_artifact_integrity
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -29,8 +29,9 @@ def test_v31_longmem_continuation_is_preregistered_without_outcomes():
     for key in ("original_admission_plan", "infrastructure_failure"):
         record = payload[key]
         path = ROOT / record["path"]
-        assert path.stat().st_size == record["bytes"]
-        assert file_sha256(path) == record["sha256"]
+        assert recorded_file_matches(
+            path, size=record["bytes"], sha256=record["sha256"]
+        )
 
 
 def test_v31_longmem_continuation_changes_only_synchronization_adapter():

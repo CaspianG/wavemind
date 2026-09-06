@@ -4,7 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from wavemind.evidence import file_sha256, validate_artifact_integrity
+from wavemind.evidence import recorded_file_matches, validate_artifact_integrity
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -30,7 +30,7 @@ def test_v19_protocol_binds_failed_and_positive_evidence_and_fresh_subjects():
         path = ROOT / record["outcome_path"]
         artifact = json.loads(path.read_text(encoding="utf-8"))
         assert validate_artifact_integrity(artifact) == []
-        assert file_sha256(path) == record["outcome_file_sha256"]
+        assert recorded_file_matches(path, sha256=record["outcome_file_sha256"])
     assert payload["failed_v18_opened_diagnostic"]["ci_lower"] <= 0.0
     assert payload["opened_diagnostic_evidence"]["ci_lower"] > 0.0
     assert payload["opened_diagnostic_evidence"]["official_gate_decision"] is False

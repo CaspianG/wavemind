@@ -9,7 +9,7 @@ import sys
 import pytest
 
 from benchmarks.scientific_frozen_lexical_index import FrozenLexicalIndex
-from wavemind.evidence import file_sha256, validate_artifact_integrity
+from wavemind.evidence import recorded_file_matches, validate_artifact_integrity
 from wavemind.scientific_memory import MemoryDefinition, MemoryKind
 from wavemind.scientific_reconciliation import ProofCarryingStateReconciler
 
@@ -186,8 +186,9 @@ def test_frozen_index_probe_is_reproducible_synthetic_evidence():
     assert payload["index"]["retains_per_document_token_sets_in_python"] is False
     for source in payload["sources"]:
         path = ROOT / source["path"]
-        assert path.stat().st_size == source["bytes"]
-        assert file_sha256(path) == source["sha256"]
+        assert recorded_file_matches(
+            path, size=source["bytes"], sha256=source["sha256"]
+        )
     assert not PROBE_INDEX.exists()
 
 
@@ -222,6 +223,10 @@ def _synthetic_trajectory() -> dict[str, object]:
     }
 
 
+@pytest.mark.skipif(
+    not OFFICIAL_LONGMEM.is_dir(),
+    reason="official LongMemEval v2 upstream is not included in this repository",
+)
 def test_indexed_prototype_matches_v31_backend_across_worker_threads(tmp_path: Path):
     reference_module = _load_backend_module(
         "scientific_lme_v31_reference_for_index_test",

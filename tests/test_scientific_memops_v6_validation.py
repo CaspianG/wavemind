@@ -4,6 +4,8 @@ import importlib.util
 import json
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 MEMOPS = ROOT.parents[1] / "scientific-evidence" / "upstreams" / "memops"
@@ -20,6 +22,10 @@ def _module():
     return module
 
 
+@pytest.mark.skipif(
+    not MEMOPS.is_dir(),
+    reason="official MemOps upstream is not included in this repository",
+)
 def test_frozen_memops_validation_subjects_and_operation_matrix_are_untouched():
     module = _module()
     manifest = json.loads(

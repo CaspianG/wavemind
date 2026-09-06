@@ -5,6 +5,8 @@ import importlib.util
 import json
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = json.loads(
@@ -60,6 +62,10 @@ def test_v19_longmemeval_runner_matches_frozen_revision_and_protocol():
     ]
 
 
+@pytest.mark.skipif(
+    not OFFICIAL_LONGMEM.is_dir(),
+    reason="official LongMemEval v2 upstream is not included in this repository",
+)
 def test_v19_longmemeval_backend_registers_exact_candidate_without_gold(tmp_path):
     path = ROOT / "benchmarks" / "scientific_longmemeval_v2_backend_v19.py"
     spec = importlib.util.spec_from_file_location("scientific_lme_v19_backend_test", path)

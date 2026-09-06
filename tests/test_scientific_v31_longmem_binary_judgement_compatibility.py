@@ -104,6 +104,10 @@ def test_binary_compatibility_install_is_idempotent():
     assert metrics._parse_llm_binary_judgement is installed
 
 
+@pytest.mark.skipif(
+    not OFFICIAL_LONGMEM.is_dir(),
+    reason="official LongMemEval v2 upstream is not included in this repository",
+)
 def test_binary_compatibility_wraps_exact_official_parser_without_changing_existing_forms():
     runner = _load_runner()
     sys.path.insert(0, str(OFFICIAL_LONGMEM))

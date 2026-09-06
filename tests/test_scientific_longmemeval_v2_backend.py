@@ -3,6 +3,8 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 OFFICIAL = (
@@ -49,6 +51,10 @@ def test_state_slices_are_deterministic_and_bounded():
     assert all(len(row["text"]) < module.STATE_SLICE_CHARACTERS + 300 for row in first)
 
 
+@pytest.mark.skipif(
+    not OFFICIAL.is_dir(),
+    reason="official LongMemEval v2 upstream is not included in this repository",
+)
 def test_registered_backend_is_gold_blind_atomic_and_production_empty(tmp_path):
     module = _module()
     backend_class = module.register_backend(
