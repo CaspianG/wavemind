@@ -29,6 +29,7 @@ either gate.
 - [R8 scalar-component simplification and known foundation](LC_SCALAR_COMPONENTS.md)
 - [R8 complete small-subspace falsifier and narrowed novelty boundary](LC_SCALAR_R8_RESULTS.md)
 - [Workflow bridge audit: correct CSS conversion can worsen fixed-noise protection](WORKFLOW_BRIDGE_AUDIT.md)
+- [Safe-transfer prior-art audit: known mechanisms and incompatible guarantee targets](SAFE_TRANSPORT_PRIOR_ART_AUDIT.md)
 
 Results are recorded after execution, including rejection. No released runtime
 is changed by this experiment. No paid API, judge, simulator, quantum hardware,

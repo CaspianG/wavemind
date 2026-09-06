@@ -186,3 +186,19 @@ The generic finite-algebra reduction remains unresolved. The proof and
 specific requests for criticism are assembled in an
 [unsent independent-review packet](EXPERT_REVIEW_PACKET.md). No investigator
 has reviewed or received it. Scientific and workflow gates remain false.
+
+## After the adverse QEC workflow control: safe-transfer literature boundary
+
+The [new applicability review](SAFE_TRANSPORT_PRIOR_ART_AUDIT.md) examines
+SPIBB, factored SPIBB, tighter SPI bounds, conformal risk control, adaptive
+conformal inference, time-uniform confidence sequences and causal transport.
+It rejects “verified memory + uncertainty certificate + baseline fallback”
+as an unqualified novelty claim. The reviewed guarantees have distinct
+estimands; none of these readings licenses arbitrary-hidden-change
+next-action safety. No external package or workflow was executed.
+
+The practical track has no selected novel mechanism at this point. Learning
+change/transport structure is an unresolved question, not a demonstrated gap
+or a replacement name for the rejected diagnostic reduction. Concrete owner
+tasks, observation/intervention access and costs must precede a new discovery
+experiment. The QEC theorem candidate remains separate and pending review.
