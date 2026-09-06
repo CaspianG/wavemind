@@ -82,7 +82,7 @@ s3 = [
 otel = [
   "opentelemetry-api>=1.25",
   "opentelemetry-sdk>=1.25",
-  "opentelemetry-exporter-otlp>=1.25",
+  "opentelemetry-exporter-otlp>=1.44.0",
   "opentelemetry-instrumentation-fastapi>=0.46b0",
 ]
 bench = [
@@ -108,7 +108,7 @@ production = [
   "boto3>=1.34",
   "opentelemetry-api>=1.25",
   "opentelemetry-sdk>=1.25",
-  "opentelemetry-exporter-otlp>=1.25",
+  "opentelemetry-exporter-otlp>=1.44.0",
   "opentelemetry-instrumentation-fastapi>=0.46b0",
 ]
 dev = [
