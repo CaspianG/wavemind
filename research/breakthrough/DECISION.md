@@ -10,6 +10,7 @@ expensive experiment. This is a negative research result, not a breakthrough.
 | H4-R1 posterior certificate | `5ee82f8ef4b5087e0c8a1a35ded6b3701a9ae9bd` | 3,456 decisions; zero disagreements; every decision recomputed |
 | H4-R2 equivalent-channel quotient | `831c7d6ee26ae4507a821c3048ad56b1ddefa718` | 3,456 new decisions; zero disagreements; every decision recomputed |
 | H1-R3 hidden sign change | `b12df277a475134249ce81451976dd1c80d411bd` | Exact two-world counterexample refutes scope-alone universal transfer |
+| R4 optimal diagnostic baseline | `1428e8c6f7de4c899d2fec4fc67b4363fce14a79` | 315 exact rows; 45 depth-two comparisons with exhaustive policy enumeration; known baseline, not a novel mechanism |
 
 R1 mean paired seed p95 speedups: x 0.470 [0.462, 0.477], z 0.487
 [0.470, 0.512], tilted 0.467 [0.460, 0.473]. R2: 0.445 [0.430, 0.457],
@@ -34,7 +35,7 @@ known identifiability, not new physics or failure of all useful memory.
 
 ## Boundaries and integrity
 
-All three are generated mathematical-model evaluations. There is no physical
+All four are generated mathematical-model evaluations. There is no physical
 or public held-out data result. X and z are symmetry-related and do not count
 as independent task domains. Each family has 24 seed histories, not thousands
 of independent physical experiments. R2 was explicitly informed by R1.
@@ -51,7 +52,29 @@ timing samples and receipts are in `runs/`. Each protocol and implementation
 was committed before execution. Outcomes have not been replaced or retuned.
 Protected v31 raw data and paid endpoints were untouched. Each run took seconds.
 
-## Next decision
+## R4: A Stronger Baseline, Not A Breakthrough
+
+The diagnostic-witness idea overlaps established decision-region determination;
+see [the reduction and primary sources](DIAGNOSTIC_REDUCTION.md). R4 implements
+the exact finite-horizon Bayesian diagnostic policy with rational arithmetic.
+It charges for every probe and uses the same calibrated model and prior for
+all policies. In 15 of 45 parameter scenarios, allowing up to six adaptive
+probes improves expected loss relative to an optimal at-most-one-probe policy.
+The largest ratio is about 16.84, but this is an advantage of a known optimal
+algorithm over a restricted baseline, not a new scientific result or product
+speedup. The model is stationary, conditionally independent and generated;
+there is no external task evidence or quantum hardware result.
+
+The original receipt, 315 rows, and result remain unchanged in `runs/r4/`.
+`verify_r4.py` checks their hashes against the preregistered source, replays
+every exact result, independently enumerates all depth-two policies, and checks
+the reported gains. No rerun overwrites the original evidence.
+
+## Next Research Decision
+
+The following diagnostic direction was proposed after R3. R4 and its prior-art
+review now establish the required baseline; they do not establish a new mechanism.
+Do not relabel the diagnostic reduction or its 16.84x toy-model ratio as novelty.
 
 Stop tuning H4 on these histories. Investigate whether a small set of fresh
 diagnostic interventions can certify transport of a learned procedure under

@@ -1,0 +1,142 @@
+{
+  "source_sha": "1428e8c6f7de4c899d2fec4fc67b4363fce14a79",
+  "started_unix_ns": 1788719672375619500,
+  "hashes": {
+    "protocol_r4.json": "befcfb135b4c62e32c3354313e33d762b270f27463f0038c05816ea22bbed359",
+    "diagnostic_oracle.py": "64f4f8e4263d00625b6c345bd25fb18da150c1b0aa8c5afda3d4fc4ebc4927a3",
+    "experiment_r4.py": "08b18dacb2c3bb390f101a3ca7b5e33fb7b2731900c8861dfccf3650b7cac7f6",
+    "experiment_r1.py": "a08971e9bf15ab9ad4959194455ebb8ff6b7fa792f63897a1336d04d02b200fc"
+  },
+  "evidence_class": "exact_generated_model_baseline",
+  "external_data_used": false,
+  "scientific_breakthrough_gate": false,
+  "mass_indispensability_gate": false,
+  "status": "optimal_baseline_verified",
+  "rows": 315,
+  "depth_two_scenarios_verified": 45,
+  "one_probe_suboptimal_scenarios": 15,
+  "gains": [
+    {
+      "noise": "1/50",
+      "cost": "1/1000",
+      "prior": "1/2",
+      "one_probe_risk": "21/1000",
+      "adaptive_risk": "3947421/1562500000",
+      "risk_ratio": "10937500/1315807"
+    },
+    {
+      "noise": "1/50",
+      "cost": "1/1000",
+      "prior": "9/10",
+      "one_probe_risk": "21/1000",
+      "adaptive_risk": "877024293/390625000000",
+      "risk_ratio": "2734375000/292341431"
+    },
+    {
+      "noise": "1/50",
+      "cost": "1/1000",
+      "prior": "99/100",
+      "one_probe_risk": "1/100",
+      "adaptive_risk": "2489804577/1953125000000",
+      "risk_ratio": "19531250000/2489804577"
+    },
+    {
+      "noise": "1/50",
+      "cost": "1/100",
+      "prior": "1/2",
+      "one_probe_risk": "3/100",
+      "adaptive_risk": "3319653/156250000",
+      "risk_ratio": "1562500/1106551"
+    },
+    {
+      "noise": "1/50",
+      "cost": "1/100",
+      "prior": "9/10",
+      "one_probe_risk": "3/100",
+      "adaptive_risk": "2154834187/156250000000",
+      "risk_ratio": "4687500000/2154834187"
+    },
+    {
+      "noise": "1/10",
+      "cost": "1/1000",
+      "prior": "1/2",
+      "one_probe_risk": "101/1000",
+      "adaptive_risk": "59393/5000000",
+      "risk_ratio": "505000/59393"
+    },
+    {
+      "noise": "1/10",
+      "cost": "1/1000",
+      "prior": "9/10",
+      "one_probe_risk": "1/10",
+      "adaptive_risk": "2968611/500000000",
+      "risk_ratio": "50000000/2968611"
+    },
+    {
+      "noise": "1/10",
+      "cost": "1/1000",
+      "prior": "99/100",
+      "one_probe_risk": "1/100",
+      "adaptive_risk": "1898063/625000000",
+      "risk_ratio": "6250000/1898063"
+    },
+    {
+      "noise": "1/10",
+      "cost": "1/100",
+      "prior": "1/2",
+      "one_probe_risk": "11/100",
+      "adaptive_risk": "9741/250000",
+      "risk_ratio": "27500/9741"
+    },
+    {
+      "noise": "1/10",
+      "cost": "1/100",
+      "prior": "9/10",
+      "one_probe_risk": "1/10",
+      "adaptive_risk": "337669/12500000",
+      "risk_ratio": "1250000/337669"
+    },
+    {
+      "noise": "1/4",
+      "cost": "1/1000",
+      "prior": "1/2",
+      "one_probe_risk": "251/1000",
+      "adaptive_risk": "13733/128000",
+      "risk_ratio": "32128/13733"
+    },
+    {
+      "noise": "1/4",
+      "cost": "1/1000",
+      "prior": "9/10",
+      "one_probe_risk": "1/10",
+      "adaptive_risk": "3429/64000",
+      "risk_ratio": "6400/3429"
+    },
+    {
+      "noise": "1/4",
+      "cost": "1/1000",
+      "prior": "99/100",
+      "one_probe_risk": "1/100",
+      "adaptive_risk": "502501/51200000",
+      "risk_ratio": "512000/502501"
+    },
+    {
+      "noise": "1/4",
+      "cost": "1/100",
+      "prior": "1/2",
+      "one_probe_risk": "13/50",
+      "adaptive_risk": "113/800",
+      "risk_ratio": "208/113"
+    },
+    {
+      "noise": "1/4",
+      "cost": "1/100",
+      "prior": "9/10",
+      "one_probe_risk": "1/10",
+      "adaptive_risk": "119/1600",
+      "risk_ratio": "160/119"
+    }
+  ],
+  "raw_sha256": "011d9daa0f0ae9441cf01177a407cea2167fbb0684c767bf689b6d5c290cd15b",
+  "elapsed_seconds": 0.2650558000896126
+}
