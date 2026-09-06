@@ -1,0 +1,22 @@
+{
+  "date": "2026-09-07",
+  "kind": "predeclared_known_analytical_boundary_control_not_novel_discovery",
+  "question": "Does the frozen R8 CSS witness guarantee no worse logical error under a fixed physical noise channel?",
+  "source_r8": "fff2c991506344b7f69be6c4357bd52c1f91eb8b",
+  "cases": [
+    {"id": "phase_repetition", "generators": ["XXI", "IXX"], "pure_z_before": "149/500000", "pure_z_after": "7351/250000"},
+    {"id": "bit_repetition", "generators": ["ZZI", "IZZ"], "pure_z_before": "7351/250000", "pure_z_after": "149/500000"}
+  ],
+  "local_pauli_order": ["I", "X", "Z", "Y"],
+  "pure_z_channel": ["99/100", "0", "1/100", "0"],
+  "depolarizing_channel": ["99/100", "1/300", "1/300", "1/300"],
+  "predicted_gate_each_site": [0, 1, 1, 0],
+  "predicted_parameters_each_code": {"n": 3, "k": 1, "d": 1},
+  "decoder": "Exact maximum-probability stabilizer coset per perfect syndrome, enumerating all 64 Pauli errors; phases ignored for stochastic Pauli errors",
+  "baseline": "Keep the already-CSS input code unchanged and use the same optimal decoder class",
+  "comparisons": ["fixed_pure_z_before_after", "fixed_depolarizing_before_after", "pure_z_with_code_and_channel_co_transformed"],
+  "predictions": ["Both returned witnesses are CSS", "n,k,d unchanged", "Fixed pure Z worsens phase input by 14702/149", "Reverse input improves by the reciprocal", "Depolarizing failures agree exactly", "Co-transformed channel and code preserve failure exactly"],
+  "scope": "Known repetition-code algebra; exact ideal code-capacity calculation, not a device, circuit, consumer task, enterprise workflow or new quantum theorem",
+  "stop_rule": "Preserve the failed check and all completed records; do not change protocol, noise or decoder after observing main results",
+  "decision_if_confirmed": "Reject automatic noise-quality transfer from CSS recognition; preserve the mathematical recognition candidate separately; require an actual workflow and cost/noise-aware objective before claiming practical gain"
+}
