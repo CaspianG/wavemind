@@ -132,6 +132,27 @@ full local enumeration and unchanged R6. The candidate remains pending
 generic-algebra reduction analysis and independent expert scrutiny; the
 [review packet](EXPERT_REVIEW_PACKET.md) has not been sent.
 
+## R8 and the workflow bridge: narrowed candidate, rejected automatic transfer
+
+[R8](LC_SCALAR_R8_RESULTS.md) replaces the stitched representation with known
+scalar-support decomposition and at most six anchored linear systems per
+component. Its recognition consequence remains a candidate, not independently
+cleared novelty. R7 hard frames reflect direct-sum representation choices.
+
+The [workflow bridge audit](WORKFLOW_BRIDGE_AUDIT.md), frozen at
+`496c7573140eb312384a7464d219345622932911`, rejects automatic noise-quality
+transfer. On the predeclared known phase-repetition control, frozen R8's valid
+CSS witness worsens exact fixed-Z logical failure by 14702/149; the reverse
+control improves, and depolarizing/co-transformed-channel controls are invariant.
+These are known ideal-model effects, not a new mechanism or real workflow win.
+
+Retain the theorem for independent review, but stop treating more algebraic
+cases as a path to mass/enterprise indispensability. Next practical-mechanism
+work must start from a concrete causal task link and prior-art distinction;
+actual workflow owners/data remain absent. The old diagnostic direction below
+is a possible subject for a fresh literature boundary audit, **not** a selected
+novel survivor to rerun on the failed R1/R2 or R4 outcomes.
+
 ## Earlier Diagnostic Research Decision (superseded as the immediate next step)
 
 The following diagnostic direction was proposed after R3. R4 and its prior-art

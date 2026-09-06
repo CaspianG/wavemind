@@ -67,6 +67,9 @@ Could you assess the following?
   stabilizer subspaces in the small domain are positive; its 216 negatives
   are non-isotropic. No large indecomposable performance claim is supported.
 - [Reproduction and read-only audit commands](README.md#reproduce-or-audit).
+- [Practical boundary control](WORKFLOW_BRIDGE_AUDIT.md): correct CSS recognition
+  does not guarantee preserved fixed-noise protection; no device/workflow gain
+  is claimed. This is known repetition-code algebra, not part of claimed novelty.
 
 Independent checking programs here were written and run in the same project.
 They are not independent investigator replications. There is no claim of

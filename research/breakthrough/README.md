@@ -28,6 +28,7 @@ either gate.
 - [Independent review request — unsent draft](EXPERT_REVIEW_PACKET.md)
 - [R8 scalar-component simplification and known foundation](LC_SCALAR_COMPONENTS.md)
 - [R8 complete small-subspace falsifier and narrowed novelty boundary](LC_SCALAR_R8_RESULTS.md)
+- [Workflow bridge audit: correct CSS conversion can worsen fixed-noise protection](WORKFLOW_BRIDGE_AUDIT.md)
 
 Results are recorded after execution, including rejection. No released runtime
 is changed by this experiment. No paid API, judge, simulator, quantum hardware,
@@ -45,6 +46,7 @@ python research/breakthrough/verify_r6.py
 python research/breakthrough/verify_r7.py
 python research/breakthrough/verify_prior_art_applicability.py
 python research/breakthrough/verify_r8.py
+python research/breakthrough/verify_workflow_bridge.py
 ```
 
 For reproduction, create a clean detached checkout at the run's source SHA
