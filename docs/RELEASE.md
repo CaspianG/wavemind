@@ -8,7 +8,8 @@ WaveMind uses Git tags for releases.
 2. Update the version in `pyproject.toml`, `wavemind/__init__.py`,
    both `version` and `appVersion` in `deploy/helm/wavemind/Chart.yaml`,
    `deploy/helm/wavemind/values.yaml`,
-   `docker-compose.yml`, `deploy/remote/inventory.example.json`,
+   `docker-compose.yml`, `deploy/operator/wavemindcluster.sample.json`,
+   `deploy/remote/inventory.example.json`,
    `deploy/serverless/wavemind-serverless.sample.json`, and
    `deploy/cloud/gcp-remote-active-active/terraform.tfvars.example`.
 3. Run local checks:

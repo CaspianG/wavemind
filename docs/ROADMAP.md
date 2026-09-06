@@ -18,7 +18,7 @@ or large-scale infrastructure work.
 | Product truth | Status | Evidence |
 |---|---|---|
 | Public release | `v2.13.0`; runtime source `a23283123eb3` | PyPI package `wavemind` and `ghcr.io/caspiang/wavemind:2.13.0` |
-| Current release | `v2.13.0` at `a23283123eb3`; `published` | Upgrade admission `admitted_19_of_19`; GitHub Release, PyPI, and GHCR verified |
+| Release candidate | `v2.14.0` at `27de55195fbd`; `blocked` until its tag exists | Upgrade admission `pending_exact_sha_ci`; tag-only release workflow |
 | Safe Product snapshot | `historical`, 18/18 checks at `92c539d0a069` | [`benchmarks/safe_product_admission_results.json`](../benchmarks/safe_product_admission_results.json) |
 | Current-source admission | Required per exact source SHA | [`.github/workflows/safe-product.yml`](../.github/workflows/safe-product.yml) |
 | TypeScript SDK | `@wavemind/http`, repository-local; npm claim disabled | Repository package only |
@@ -107,13 +107,13 @@ verified agent-work memory layer on the declared public scenarios and sits on
 their task-success, context, safety, and latency Pareto frontier. It is not a
 universal "fastest database" claim.
 
-### Phase B: Safe One-Command Upgrade (Implemented Candidate)
+### Phase B: Safe One-Command Upgrade (Published)
 
-The `wavemind upgrade` candidate is implemented and merged at
+The `wavemind upgrade` implementation was released as `v2.13.0` from
 `a23283123eb37b187a755db7ab4c4776555198d8`. Exact-SHA admission passed all
 19/19 rows across real N-2/N-1 package upgrades, Docker Compose recreate and
-rollback, both databases, and the failure matrix. It is not a public release
-until tag `v2.13.0` triggers publication and clean wheel/container verification.
+rollback, both databases, and the failure matrix; its GitHub Release, PyPI
+package, and GHCR image are published.
 
 The implemented user entrypoint is `wavemind upgrade`. It provides:
 
@@ -1043,8 +1043,8 @@ Enterprise requirements:
 
 ### Short Term: 1 To 3 Months
 
-- Validate adoption and upgrade telemetry for the published `v2.13.0` exact
-  candidate while preserving the admitted source and rollback evidence.
+- Validate adoption and upgrade telemetry for published `v2.13.0` while
+  preserving its admitted source and rollback evidence.
 - Complete the exact-current competitive P0 with real Mem0 OSS and LangGraph
   BaseStore under the frozen task-native protocol. A true LangMem formation
   row is separate and cannot be imitated by renaming BaseStore.

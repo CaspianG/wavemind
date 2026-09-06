@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.evaluation_judge_policy.v1",
-  "generated_at": "2026-08-12T12:30:55Z",
-  "source_sha": "dc15179004b0ef889fad0f9ea760457b5d7228e7",
+  "generated_at": "2026-09-06T13:29:42Z",
+  "source_sha": "27de55195fbd629904bebca87097641aef44b709",
   "active_primary_scorers": [
     {
       "family": "state-bench-agent-learning",
@@ -88,7 +88,7 @@
   },
   "environment": {
     "profile": "evaluation-judge-policy",
-    "python": "3.13.3",
+    "python": "3.13.2",
     "implementation": "CPython",
     "platform": "Windows-11-10.0.26200-SP0",
     "executable": "python.exe",
@@ -99,6 +99,6 @@
   "integrity": {
     "schema": "wavemind.artifact_integrity.v1",
     "algorithm": "sha256",
-    "payload_sha256": "89ebf6d33b48ba4c464444391e119e99eb7420fc1697fe2970613890a40f4c90"
+    "payload_sha256": "842e99fbb699bf63bc094ac3e05c5b54ffbc44cde5c3dd6bf863ed2ea512b07f"
   }
 }

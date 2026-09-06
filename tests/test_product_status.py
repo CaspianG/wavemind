@@ -11,10 +11,13 @@ def test_canonical_product_status_matches_packages_and_public_docs():
     assert status["schema"] == "wavemind.product_status.v1"
     assert consistency_errors(status) == []
     assert status["safe_product"]["checked_in_status"] == "historical"
-    assert status["stable_release"]["publication_status"] == "published"
+    assert status["stable_release"]["publication_status"] == "unpublished_candidate"
     assert status["public_release"]["version"] == "2.13.0"
-    assert status["public_release"]["source_sha"] == status["stable_release"]["source_sha"]
-    assert status["release_candidate"]["blocker"] is None
+    assert status["public_release"]["source_sha"] != status["stable_release"]["source_sha"]
+    assert status["release_candidate"]["version"] == "2.14.0"
+    assert status["release_candidate"]["blocker"] == (
+        "tag v2.14.0 has not been created"
+    )
     assert status["typescript"]["package_name"] == "@wavemind/http"
     assert status["typescript"]["npm_published"] is False
 

@@ -4,6 +4,31 @@ Notable user-facing and operational changes are recorded here. Git tags,
 GitHub Releases, checked evidence artifacts, and package versions remain the
 authoritative release sources.
 
+## [2.14.0] - 2026-09-06
+
+- Added a proof-carrying scientific memory core with typed memory definitions,
+  deterministic reconciliation, provenance, conflict handling, and bounded
+  exact-selection adapters.
+- Added frozen scientific protocols, execution receipts, integrity manifests,
+  and preserved failed outcomes so later improvements cannot rewrite the
+  experimental history.
+- Added the disk-backed v32 performance validation: all 240 validation queries
+  matched the reference selector exactly across three repeats, with indexed
+  p95 `0.151-0.156 s` and p95 speedup `9.72-10.09x` on the frozen synthetic
+  workload.
+- Hardened API rate-limit identity, experience-bundle imports, audit logging,
+  and cross-platform evidence verification without retaining raw API keys or
+  accepting arbitrary import paths.
+- Updated the product site to Vite `7.3.6`, clearing all six open Dependabot
+  advisories and producing a zero-vulnerability npm audit.
+- Kept the scientific claim boundary explicit: the official v31 LongMemEval
+  admission remains failed; v32 is performance-only; remote multi-region,
+  managed-serverless, and 100M production claims remain locked.
+
+Candidate source: `27de55195fbd629904bebca87097641aef44b709`.
+
+Release: [WaveMind v2.14.0](https://github.com/CaspianG/wavemind/releases/tag/v2.14.0)
+
 ## [2.13.0] - 2026-08-17
 
 - Added the `wavemind upgrade` command for verified one-command Python and
@@ -172,6 +197,7 @@ Release: [WaveMind v2.6.3](https://github.com/CaspianG/wavemind/releases/tag/v2.
 See the complete [release archive](https://github.com/CaspianG/wavemind/releases)
 for earlier versions and attached evidence bundles.
 
+[2.14.0]: https://github.com/CaspianG/wavemind/compare/v2.13.0...v2.14.0
 [2.13.0]: https://github.com/CaspianG/wavemind/compare/v2.12.1...v2.13.0
 [2.12.1]: https://github.com/CaspianG/wavemind/compare/v2.12.0...v2.12.1
 [2.12.0]: https://github.com/CaspianG/wavemind/compare/v2.11.0...v2.12.0

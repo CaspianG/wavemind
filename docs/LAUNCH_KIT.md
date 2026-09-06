@@ -12,7 +12,7 @@ every post points to the same honest story.
 | Product truth | Status | Evidence |
 |---|---|---|
 | Public release | `v2.13.0`; runtime source `a23283123eb3` | PyPI package `wavemind` and `ghcr.io/caspiang/wavemind:2.13.0` |
-| Current release | `v2.13.0` at `a23283123eb3`; `published` | Upgrade admission `admitted_19_of_19`; GitHub Release, PyPI, and GHCR verified |
+| Release candidate | `v2.14.0` at `27de55195fbd`; `blocked` until its tag exists | Upgrade admission `pending_exact_sha_ci`; tag-only release workflow |
 | Safe Product snapshot | `historical`, 18/18 checks at `92c539d0a069` | [`benchmarks/safe_product_admission_results.json`](../benchmarks/safe_product_admission_results.json) |
 | Current-source admission | Required per exact source SHA | [`.github/workflows/safe-product.yml`](../.github/workflows/safe-product.yml) |
 | TypeScript SDK | `@wavemind/http`, repository-local; npm claim disabled | Repository package only |

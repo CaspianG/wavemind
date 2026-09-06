@@ -378,8 +378,8 @@
     ]
   },
   "schema": "wavemind.evaluation_validity_controls.v1",
-  "generated_at": "2026-08-12T12:30:51Z",
-  "source_sha": "dc15179004b0ef889fad0f9ea760457b5d7228e7",
+  "generated_at": "2026-09-06T13:29:30Z",
+  "source_sha": "27de55195fbd629904bebca87097641aef44b709",
   "source_manifest": {
     "schema": "wavemind.source_manifest.v1",
     "algorithm": "sha256",
@@ -410,7 +410,7 @@
   },
   "environment": {
     "profile": "evaluation-validity-controls",
-    "python": "3.13.3",
+    "python": "3.13.2",
     "implementation": "CPython",
     "platform": "Windows-11-10.0.26200-SP0",
     "executable": "python.exe",
@@ -420,6 +420,6 @@
   "integrity": {
     "schema": "wavemind.artifact_integrity.v1",
     "algorithm": "sha256",
-    "payload_sha256": "fd48ec96c4ae64a9434db928a87a26f549c62a3e619860ed7fbb2f804046d802"
+    "payload_sha256": "642d1d2d9a254aa13f73166f3c7bc759f04767f98769efce1dbebbde3931516e"
   }
 }

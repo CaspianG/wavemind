@@ -119,16 +119,16 @@
         "path": "benchmarks/release_claims_results.json",
         "schema": "wavemind.release_claims.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-27T10:53:29Z",
-        "age_days": 1.5689467592592592,
+        "timestamp": "2026-09-06T13:16:52Z",
+        "age_days": 0.0,
         "status": "pass"
       },
       {
         "path": "benchmarks/scale_gap_results.json",
         "schema": "wavemind.scale_gap.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-27T10:53:29Z",
-        "age_days": 1.5689467592592592,
+        "timestamp": "2026-09-06T13:16:53Z",
+        "age_days": 0.0,
         "status": "pass"
       },
       {
