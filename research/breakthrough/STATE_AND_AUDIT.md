@@ -33,6 +33,11 @@ failed on port 443 under this turn's network restrictions. Web research can
 read primary-source pages; a browser-readable page is not an executable,
 SHA-pinned external baseline or measured physical dataset.
 
+Follow-up: the read-only GitHub connector subsequently resolved QInfer and DAD
+commit pins (see `baseline_pins.json`) and returned the QInfer EIG source.
+Thus shell-network failure does not block source review. No external baseline
+package or laboratory data has been executed; that distinction still applies.
+
 No credentials were read or endpoints invoked. Physical device measurements,
 independent external reproduction, consumer participants and an enterprise
 pilot are absent from this phase. They become requirements for later gates,

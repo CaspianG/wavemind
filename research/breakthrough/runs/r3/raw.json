@@ -1,0 +1,277 @@
+{
+  "history": [
+    {
+      "time": 0.05,
+      "negative_world_p_x_plus": 0.9993751301974831,
+      "positive_world_p_x_plus": 0.9993751301974831
+    },
+    {
+      "time": 0.421875,
+      "negative_world_p_x_plus": 0.9561613924360588,
+      "positive_world_p_x_plus": 0.9561613924360588
+    },
+    {
+      "time": 0.7937500000000001,
+      "negative_world_p_x_plus": 0.8505882741087143,
+      "positive_world_p_x_plus": 0.8505882741087143
+    },
+    {
+      "time": 1.1656250000000001,
+      "negative_world_p_x_plus": 0.6970881107275535,
+      "positive_world_p_x_plus": 0.6970881107275535
+    },
+    {
+      "time": 1.5375,
+      "negative_world_p_x_plus": 0.5166450874163946,
+      "positive_world_p_x_plus": 0.5166450874163946
+    },
+    {
+      "time": 1.909375,
+      "negative_world_p_x_plus": 0.3339266033626927,
+      "positive_world_p_x_plus": 0.3339266033626927
+    },
+    {
+      "time": 2.28125,
+      "negative_world_p_x_plus": 0.17391112380368295,
+      "positive_world_p_x_plus": 0.17391112380368295
+    },
+    {
+      "time": 2.6531249999999997,
+      "negative_world_p_x_plus": 0.058473507839058136,
+      "positive_world_p_x_plus": 0.058473507839058136
+    },
+    {
+      "time": 3.025,
+      "negative_world_p_x_plus": 0.003394613614479569,
+      "positive_world_p_x_plus": 0.003394613614479569
+    },
+    {
+      "time": 3.396875,
+      "negative_world_p_x_plus": 0.016203981733455886,
+      "positive_world_p_x_plus": 0.016203981733455886
+    },
+    {
+      "time": 3.76875,
+      "negative_world_p_x_plus": 0.09515051209285408,
+      "positive_world_p_x_plus": 0.09515051209285408
+    },
+    {
+      "time": 4.140625,
+      "negative_world_p_x_plus": 0.2294418473983626,
+      "positive_world_p_x_plus": 0.2294418473983626
+    },
+    {
+      "time": 4.5125,
+      "negative_world_p_x_plus": 0.40071973852175036,
+      "positive_world_p_x_plus": 0.40071973852175036
+    },
+    {
+      "time": 4.884375,
+      "negative_world_p_x_plus": 0.5855697024046145,
+      "positive_world_p_x_plus": 0.5855697024046145
+    },
+    {
+      "time": 5.25625,
+      "negative_world_p_x_plus": 0.7587218906193856,
+      "positive_world_p_x_plus": 0.7587218906193856
+    },
+    {
+      "time": 5.628125,
+      "negative_world_p_x_plus": 0.8965055949918285,
+      "positive_world_p_x_plus": 0.8965055949918285
+    },
+    {
+      "time": 6.0,
+      "negative_world_p_x_plus": 0.9800851433251829,
+      "positive_world_p_x_plus": 0.9800851433251829
+    }
+  ],
+  "controls": [
+    {
+      "theta_pi_units": 0.3,
+      "world_sign": -1,
+      "control_sign": -1,
+      "fidelity": 0.9999999999999996,
+      "predicted_fidelity": 1.0
+    },
+    {
+      "theta_pi_units": 0.3,
+      "world_sign": -1,
+      "control_sign": 1,
+      "fidelity": 0.3454915028125263,
+      "predicted_fidelity": 0.3454915028125263
+    },
+    {
+      "theta_pi_units": 0.3,
+      "world_sign": 1,
+      "control_sign": -1,
+      "fidelity": 0.3454915028125263,
+      "predicted_fidelity": 0.3454915028125263
+    },
+    {
+      "theta_pi_units": 0.3,
+      "world_sign": 1,
+      "control_sign": 1,
+      "fidelity": 0.9999999999999996,
+      "predicted_fidelity": 1.0
+    },
+    {
+      "theta_pi_units": 0.5,
+      "world_sign": -1,
+      "control_sign": -1,
+      "fidelity": 1.0,
+      "predicted_fidelity": 1.0
+    },
+    {
+      "theta_pi_units": 0.5,
+      "world_sign": -1,
+      "control_sign": 1,
+      "fidelity": 0.0,
+      "predicted_fidelity": 3.749399456654644e-33
+    },
+    {
+      "theta_pi_units": 0.5,
+      "world_sign": 1,
+      "control_sign": -1,
+      "fidelity": 0.0,
+      "predicted_fidelity": 3.749399456654644e-33
+    },
+    {
+      "theta_pi_units": 0.5,
+      "world_sign": 1,
+      "control_sign": 1,
+      "fidelity": 1.0,
+      "predicted_fidelity": 1.0
+    },
+    {
+      "theta_pi_units": 0.7,
+      "world_sign": -1,
+      "control_sign": -1,
+      "fidelity": 0.9999999999999996,
+      "predicted_fidelity": 1.0
+    },
+    {
+      "theta_pi_units": 0.7,
+      "world_sign": -1,
+      "control_sign": 1,
+      "fidelity": 0.34549150281252616,
+      "predicted_fidelity": 0.34549150281252616
+    },
+    {
+      "theta_pi_units": 0.7,
+      "world_sign": 1,
+      "control_sign": -1,
+      "fidelity": 0.34549150281252616,
+      "predicted_fidelity": 0.34549150281252616
+    },
+    {
+      "theta_pi_units": 0.7,
+      "world_sign": 1,
+      "control_sign": 1,
+      "fidelity": 0.9999999999999996,
+      "predicted_fidelity": 1.0
+    }
+  ],
+  "fresh_probes": [
+    {
+      "readout_error": 0.0,
+      "world_sign": -1,
+      "p_y_plus": 0.0,
+      "noisy_p_y_plus": 0.0,
+      "correct_sign_probability": 1.0
+    },
+    {
+      "readout_error": 0.0,
+      "world_sign": 1,
+      "p_y_plus": 1.0,
+      "noisy_p_y_plus": 1.0,
+      "correct_sign_probability": 1.0
+    },
+    {
+      "readout_error": 0.02,
+      "world_sign": -1,
+      "p_y_plus": 0.0,
+      "noisy_p_y_plus": 0.02,
+      "correct_sign_probability": 0.98
+    },
+    {
+      "readout_error": 0.02,
+      "world_sign": 1,
+      "p_y_plus": 1.0,
+      "noisy_p_y_plus": 0.98,
+      "correct_sign_probability": 0.98
+    },
+    {
+      "readout_error": 0.1,
+      "world_sign": -1,
+      "p_y_plus": 0.0,
+      "noisy_p_y_plus": 0.1,
+      "correct_sign_probability": 0.9
+    },
+    {
+      "readout_error": 0.1,
+      "world_sign": 1,
+      "p_y_plus": 1.0,
+      "noisy_p_y_plus": 0.9,
+      "correct_sign_probability": 0.9
+    }
+  ],
+  "randomized_rules": [
+    {
+      "choose_positive_probability": 0.0,
+      "mean_success": 0.5
+    },
+    {
+      "choose_positive_probability": 0.1,
+      "mean_success": 0.5
+    },
+    {
+      "choose_positive_probability": 0.2,
+      "mean_success": 0.5
+    },
+    {
+      "choose_positive_probability": 0.30000000000000004,
+      "mean_success": 0.5
+    },
+    {
+      "choose_positive_probability": 0.4,
+      "mean_success": 0.5
+    },
+    {
+      "choose_positive_probability": 0.5,
+      "mean_success": 0.5
+    },
+    {
+      "choose_positive_probability": 0.6000000000000001,
+      "mean_success": 0.5
+    },
+    {
+      "choose_positive_probability": 0.7000000000000001,
+      "mean_success": 0.5
+    },
+    {
+      "choose_positive_probability": 0.8,
+      "mean_success": 0.5
+    },
+    {
+      "choose_positive_probability": 0.9,
+      "mean_success": 0.5
+    },
+    {
+      "choose_positive_probability": 1.0,
+      "mean_success": 0.5
+    }
+  ],
+  "classical_control": {
+    "hidden_bit_prior": [
+      0.5,
+      0.5
+    ],
+    "history_only_success": 0.5,
+    "diagnostic_success": [
+      1.0,
+      0.98,
+      0.9
+    ]
+  }
+}

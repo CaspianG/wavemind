@@ -40,8 +40,9 @@ Benchmark protocol references: [LongMemEval](https://github.com/xiaowu0162/LongM
 and [LongMemEval-V2](https://github.com/xiaowu0162/LongMemEval-V2) official pages.
 Neither was executed or mined for test cases. MemoryLACE's cited BEAM and
 StructMemEval are candidate *future* independent memory tasks, not evidence
-already obtained. QInfer and DAD source SHAs must be pinned before any external
-comparison. No fabricated pin or claimed external reproduction is provided.
+already obtained. QInfer and DAD source SHAs were subsequently pinned in
+`baseline_pins.json` through the GitHub connector before any external
+comparison. No external package execution or reproduction is claimed.
 
 ## Five competing hypotheses
 

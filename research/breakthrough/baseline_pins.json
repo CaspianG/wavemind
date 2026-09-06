@@ -1,0 +1,24 @@
+{
+  "retrieved_date": "2026-09-06",
+  "purpose": "source review and future reproducibility; not executed external baselines",
+  "repositories": [
+    {
+      "repository": "QInfer/python-qinfer",
+      "sha": "8170c84a0be1723f8c6b09e0d3c7a40a886f1fe3",
+      "tree_sha": "51e4ca38dbea45d20f61018d8c6b1d0e13ae0251",
+      "commit_date": "2018-08-17T20:03:00Z",
+      "url": "https://github.com/QInfer/python-qinfer/commit/8170c84a0be1723f8c6b09e0d3c7a40a886f1fe3",
+      "source": "GitHub connector GET",
+      "executed": false
+    },
+    {
+      "repository": "ae-foster/dad",
+      "sha": "4b1008174e1531d1f14601d83cef481c0f586f36",
+      "tree_sha": "fca8c1ccba4f90675680102d17e7b9c0e4fbc610",
+      "commit_date": "2021-06-14T15:04:05Z",
+      "url": "https://github.com/ae-foster/dad/commit/4b1008174e1531d1f14601d83cef481c0f586f36",
+      "source": "GitHub connector GET",
+      "executed": false
+    }
+  ]
+}
