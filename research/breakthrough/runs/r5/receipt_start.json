@@ -1,0 +1,22 @@
+{
+  "source_sha": "a15d6608e2375c1058f6eafa9994f77b34c8ed57",
+  "started_unix_ns": 1788723389054287000,
+  "hashes": {
+    "protocol_r5.json": "0184349a21133c3677427c4d464ae766827789b7e25e35540b2720ef6c60b4df",
+    "LC_PROJECTOR.md": "932553b6785dacca1686e84d47c426ffd020b7fd69160a1426f25d4b3b728c32",
+    "lc_projector.py": "a496cb034e87f593f9c06b21871a2d00ae6583b397d7d3cef76f2e323fbd1798",
+    "lc_certificate_check.py": "60cf8c29494657efed736b46082302e4d491b06f023ad4c0a011f122764b72ba",
+    "test_lc_projector.py": "6ce0f9d00d056a4d31e60a1d6161cba32d1f3a0199948ee383f86fbe62c41503",
+    "experiment_r5.py": "a0f4ba7e563bff9f662d414e49b3674e36009abf313de1b587ce2831d6bfa05d",
+    "experiment_r1.py": "a08971e9bf15ab9ad4959194455ebb8ff6b7fa792f63897a1336d04d02b200fc",
+    "external/qcode_catalog.jsonl": "c0197f0cb5e03bfc94215555ed0fbfefaa72d1c0e3fb89a31fc5045c5f7e25ba",
+    "external/qcode_source.json": "2e3b077b34e828b7066a317fa6f6ebd1097202a87caeab4e78d7c3e1875d82d4",
+    "external/QCODE_LICENSE.txt": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+  },
+  "python": "3.13.2",
+  "numpy": "2.5.2",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "evidence_class": "public_catalog_exact_algebraic_audit",
+  "scientific_breakthrough_gate": false,
+  "mass_indispensability_gate": false
+}

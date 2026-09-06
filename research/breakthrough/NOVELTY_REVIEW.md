@@ -96,3 +96,31 @@ at numerical zero; x/z had positive but small margins and still failed.
 R2 removes equivalent channels for both candidate and baseline and uses new
 seeds/grid/times. Its purpose is to rule out symmetry degeneracy as the sole
 explanation of R1 failure, not to reset the original failed result.
+
+## R5 follow-up: full-LC recognition audit, novelty still unresolved
+
+The [R5 proof](LC_PROJECTOR.md) reduces full local-Clifford-to-CSS recognition
+to site-dependent rank-one endomorphisms; inconsistent trace-one linear
+constraints give short impossibility certificates. This is not claimed as a
+polynomial-time complete method: consistent systems may require exponential
+residual enumeration.
+
+The [catalog audit](LC_PROJECTOR_R5_RESULTS.md) produced and independently
+checked 357 full-LC negative certificates and 11 witnesses. This strengthens
+the restricted-family accounting in [the PBB paper](https://arxiv.org/html/2606.02418v1#A6)
+on this fixed corpus, without discovering an additional CSS-equivalent code.
+
+The underlying algebraic ideas have close predecessors: the known CSS rank
+test in [Cross–Vandeth](https://arxiv.org/html/2501.17447v1#S7.SS2), projection
+invariance in [Dasu–Burton](https://arxiv.org/html/2507.10519v1#S3), and the
+conjugated, site-dependent idempotent in [Albert's Appendix F.2](https://arxiv.org/html/2608.05688v1#A6.SS2).
+The last source was examined in detail after R5 was frozen and is a material
+novelty warning, not an external validation. Its stated lemma starts with two
+CSS-form spaces; our experiment starts with an arbitrary stabilizer and asks
+if a CSS frame exists. Whether the certificate formulation or the completed
+catalog audit adds a publishable new result is still an open review question.
+
+Next: check equivalence with existing algebraic recognition methods, then
+preregister a different-family stress test and compare against an executed
+strong general solver. Do not present the familiar projection construction,
+a one-corpus success, or an unexecuted upstream package as a scientific gate.

@@ -1,7 +1,18 @@
 {
   "retrieved_date": "2026-09-06",
-  "purpose": "source review and future reproducibility; not executed external baselines",
+  "purpose": "source review and reproducibility; upstream packages not executed; the pinned qcode catalog was independently audited in R5",
   "repositories": [
+    {
+      "repository": "qiskit-community/qcode-discovery",
+      "sha": "b5b44b05b95d1e645814ff6446235b3ae6b736d6",
+      "tree_sha": "f572f817865c9ad5cc0f3057d18bc76d5dbc4895",
+      "commit_date": "2026-09-01T12:06:30Z",
+      "source": "public read-only connector retrieval cached before the Chrome access denial",
+      "executed": false,
+      "catalog_independently_audited": true,
+      "catalog_git_blob": "98e6e12abef0c561b8c35b399c0a1b7c5834c083",
+      "local_baseline": "36 uniform two-block Clifford rank tests independently implemented, not the full upstream pipeline"
+    },
     {
       "repository": "QInfer/python-qinfer",
       "sha": "8170c84a0be1723f8c6b09e0d3c7a40a886f1fe3",

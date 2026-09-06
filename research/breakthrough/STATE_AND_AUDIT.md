@@ -1,5 +1,14 @@
 # Starting state and targeted instruction audit
 
+Update after R5: the current state is summarized in `mission_status.json` and
+`LC_PROJECTOR_R5_RESULTS.md`. A cached, SHA-pinned public QEC catalog has now
+been audited algebraically with 368 full-LC certificates; this is external
+source data but not an externally executed baseline, lab measurement, or
+independent investigator. Chrome access to GitHub was explicitly denied in
+the latest product-publishing attempt; that denial was not bypassed. This
+local research used the earlier cached catalog and public arXiv papers only.
+The historical starting-state notes below are retained as an audit trail.
+
 Date: 2026-09-06. Product base: `a465ac0e3a5610cadcf07320fcd08bf6873158f3`.
 Work proceeds on `research/breakthrough-falsification-20260906` in an isolated
 worktree. The base checkout was clean. Earlier CI reported 7/7 successful

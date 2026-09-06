@@ -70,7 +70,24 @@ The original receipt, 315 rows, and result remain unchanged in `runs/r4/`.
 every exact result, independently enumerates all depth-two policies, and checks
 the reported gains. No rerun overwrites the original evidence.
 
-## Next Research Decision
+## R5: Full-LC Certificates For The Public PBB Catalog
+
+The subsequent QEC direction produced a bounded candidate result: 357 exact
+linear impossibility certificates and 11 explicit local-Clifford-to-CSS
+witnesses for all 368 records in a pinned public catalog. A separate dense
+implementation verified every certificate. Runtime for construction, search,
+verification and the restricted 36-pattern baseline was 19.7693 seconds.
+The prediction of additional hidden CSS codes was rejected; the prediction
+of at least 95% certified coverage was confirmed. Neither full-mission gate
+passes. The conjugated-projector idea has substantial prior-art overlap.
+
+See [the R5 report](LC_PROJECTOR_R5_RESULTS.md) for the preregistration, preserved
+metadata failure, source SHA, all raw certificates, primary sources and claim
+limits. The existing diagnostic negatives remain intact. The next local step
+is R5 prior-art resolution and a preregistered independent-family falsifier,
+not a product relaunch or a claim of invented quantum error correction.
+
+## Earlier Diagnostic Research Decision (superseded as the immediate next step)
 
 The following diagnostic direction was proposed after R3. R4 and its prior-art
 review now establish the required baseline; they do not establish a new mechanism.
