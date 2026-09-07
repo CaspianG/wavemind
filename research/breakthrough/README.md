@@ -11,6 +11,8 @@ before calling any result a breakthrough. A local experiment cannot close
 either gate.
 
 - [Что сделано и почему это ещё не доказанный прорыв — без жаргона](PLAIN_LANGUAGE_RU.md)
+- [Bounded QEC hypothesis selection: three candidates, none admitted](QUANTUM_HYPOTHESIS_SELECTION_RESULTS_20260907.md)
+- [Selection criteria frozen before the literature search](QUANTUM_HYPOTHESIS_SELECTION_GATE_20260907.md)
 - [Current scientific decision gate: exact residual claim, proof and falsifiers](SCIENTIFIC_DECISION_GATE.md)
 - [Decision-gate results: full replay, physical negatives, no novelty clearance](SCIENTIFIC_DECISION_RESULTS.md)
 - [Frozen public-workflow selection and measurement contract](PUBLIC_WORKFLOW_SELECTION_PROTOCOL.md)
