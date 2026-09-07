@@ -1,0 +1,411 @@
+{
+  "source_commit": "fdc1e5064221435eb47c1aba5d88baf687980b1b",
+  "original_source_commit": "ace8b6adee5ba26585c2db629a9cbbc368ccda08",
+  "original_checksums_sha256": "56007ae99f51ea2a981cc33fc17b21bdb68fca6d9e44e43f9c26da6d6144a68f",
+  "followup_protocol_sha256": "ada9fcf2662df3755c2964d8fca8dbcfdec3431b927f133e08e5f68f61626aba",
+  "followup_script_sha256": "10864defd4ed5d80930a2732f914314086a477323003b18fa05ec75aae59c014",
+  "posthoc_diagnostic": true,
+  "all_sign_change_intervals": 8,
+  "roots": [
+    {
+      "error_setting": [
+        -0.02,
+        -0.02
+      ],
+      "original_bracket": [
+        {
+          "cycles": 12.0,
+          "p": 0.03128264489220441,
+          "dp_db": -0.20154895517309757,
+          "fi_rate": 0.018114603702232304,
+          "state_qfi": 634.2609822104708,
+          "worst_input_leakage": 0.8264643156592758
+        },
+        {
+          "cycles": 12.00390625,
+          "p": 0.01071283233176308,
+          "dp_db": 1.1319549327798453,
+          "fi_rate": 1.633803678310213,
+          "state_qfi": 673.2029827453746,
+          "worst_input_leakage": 0.8161435533731485
+        }
+      ],
+      "localized_bracket": [
+        12.002034549645941,
+        12.00203454964685
+      ],
+      "root_approximation": {
+        "cycles": 12.002034549646396,
+        "p": 0.0009059682871138089,
+        "dp_db": -5.0186841822012875e-11,
+        "fi_rate": 3.760353330798925e-20,
+        "state_qfi": 638.320346165725,
+        "worst_input_leakage": 0.8267076743599941
+      }
+    },
+    {
+      "error_setting": [
+        -0.02,
+        0.0
+      ],
+      "original_bracket": [
+        {
+          "cycles": 12.0,
+          "p": 0.032204383631983045,
+          "dp_db": -0.4144874979080828,
+          "fi_rate": 0.07448906264718531,
+          "state_qfi": 622.7894797008039,
+          "worst_input_leakage": 0.8336719635061611
+        },
+        {
+          "cycles": 12.00390625,
+          "p": 0.009927095444633686,
+          "dp_db": 0.9230479945722572,
+          "fi_rate": 1.171460026108131,
+          "state_qfi": 657.9659318535917,
+          "worst_input_leakage": 0.8139072183936376
+        }
+      ],
+      "localized_bracket": [
+        12.002512777867196,
+        12.002512777868105
+      ],
+      "root_approximation": {
+        "cycles": 12.00251277786765,
+        "p": 6.577196576849422e-06,
+        "dp_db": -8.637479213136013e-11,
+        "fi_rate": 1.5328665424198058e-17,
+        "state_qfi": 630.5723428413543,
+        "worst_input_leakage": 0.8256080501208034
+      }
+    },
+    {
+      "error_setting": [
+        -0.02,
+        0.02
+      ],
+      "original_bracket": [
+        {
+          "cycles": 12.0,
+          "p": 0.03319723970674937,
+          "dp_db": -0.46307445885708626,
+          "fi_rate": 0.09028800978589588,
+          "state_qfi": 615.593952582546,
+          "worst_input_leakage": 0.8363873233168289
+        },
+        {
+          "cycles": 12.00390625,
+          "p": 0.009314084919371857,
+          "dp_db": 0.8562846956314742,
+          "fi_rate": 1.0738125179432934,
+          "state_qfi": 647.3882223300412,
+          "worst_input_leakage": 0.807189674541695
+        }
+      ],
+      "localized_bracket": [
+        12.002624423574161,
+        12.002624423575071
+      ],
+      "root_approximation": {
+        "cycles": 12.002624423574616,
+        "p": 6.368623180550933e-05,
+        "dp_db": -1.1416727315666409e-10,
+        "fi_rate": 2.76588196756237e-18,
+        "state_qfi": 622.7725523858028,
+        "worst_input_leakage": 0.8207264345422647
+      }
+    },
+    {
+      "error_setting": [
+        0.0,
+        -0.02
+      ],
+      "original_bracket": [
+        {
+          "cycles": 12.0,
+          "p": 0.006800692838335223,
+          "dp_db": -0.3019399317314622,
+          "fi_rate": 0.18239789314320556,
+          "state_qfi": 623.9339963592067,
+          "worst_input_leakage": 0.831882386475167
+        },
+        {
+          "cycles": 12.00390625,
+          "p": 0.03402507152217222,
+          "dp_db": 2.1433166820852163,
+          "fi_rate": 1.8887569148089138,
+          "state_qfi": 708.6285501596793,
+          "worst_input_leakage": 0.8091013284379591
+        }
+      ],
+      "localized_bracket": [
+        12.001022454582198,
+        12.001022454583108
+      ],
+      "root_approximation": {
+        "cycles": 12.001022454582653,
+        "p": 9.34054226792258e-05,
+        "dp_db": 1.8567469187639263e-10,
+        "fi_rate": 4.988180741965021e-18,
+        "state_qfi": 634.4476156592513,
+        "worst_input_leakage": 0.8299943464425524
+      }
+    },
+    {
+      "error_setting": [
+        0.0,
+        0.0
+      ],
+      "original_bracket": [
+        {
+          "cycles": 12.0,
+          "p": 0.007508009356325387,
+          "dp_db": -0.46920903935780855,
+          "fi_rate": 0.3992539347298078,
+          "state_qfi": 611.8620186987159,
+          "worst_input_leakage": 0.8343819473080681
+        },
+        {
+          "cycles": 12.00390625,
+          "p": 0.032486186151873674,
+          "dp_db": 1.965635919375397,
+          "fi_rate": 1.6611870492057599,
+          "state_qfi": 692.8998826770808,
+          "worst_input_leakage": 0.8046338469896626
+        }
+      ],
+      "localized_bracket": [
+        12.001385743311403,
+        12.001385743312312
+      ],
+      "root_approximation": {
+        "cycles": 12.001385743311857,
+        "p": 0.00017225970957118427,
+        "dp_db": 4.9483161492118584e-11,
+        "fi_rate": 1.9212074654405568e-19,
+        "state_qfi": 626.8351792532372,
+        "worst_input_leakage": 0.8279688398720808
+      }
+    },
+    {
+      "error_setting": [
+        0.0,
+        0.02
+      ],
+      "original_bracket": [
+        {
+          "cycles": 12.0,
+          "p": 0.008175042822712907,
+          "dp_db": -0.48187733206790306,
+          "fi_rate": 0.3870046704300538,
+          "state_qfi": 603.7719377098081,
+          "worst_input_leakage": 0.8327690869050115
+        },
+        {
+          "cycles": 12.00390625,
+          "p": 0.03112400551588037,
+          "dp_db": 1.9132480414665543,
+          "fi_rate": 1.64039016138937,
+          "state_qfi": 681.020108789566,
+          "worst_input_leakage": 0.7959173674565985
+        }
+      ],
+      "localized_bracket": [
+        12.001435122189832,
+        12.001435122190742
+      ],
+      "root_approximation": {
+        "cycles": 12.001435122190287,
+        "p": 0.00016684259459228066,
+        "dp_db": 1.502724684074475e-10,
+        "fi_rate": 1.8293325023333534e-18,
+        "state_qfi": 618.1733329124971,
+        "worst_input_leakage": 0.8228119386924143
+      }
+    },
+    {
+      "error_setting": [
+        0.02,
+        0.0
+      ],
+      "original_bracket": [
+        {
+          "cycles": 12.0,
+          "p": 3.589573461343506e-05,
+          "dp_db": -0.03174474236844327,
+          "fi_rate": 0.37938891526253404,
+          "state_qfi": 613.8322983971833,
+          "worst_input_leakage": 0.8294787203577176
+        },
+        {
+          "cycles": 12.00390625,
+          "p": 0.0632515047565212,
+          "dp_db": 3.2396283537685866,
+          "fi_rate": 2.3936728668477416,
+          "state_qfi": 733.7430244428235,
+          "worst_input_leakage": 0.7940566494779993
+        }
+      ],
+      "localized_bracket": [
+        12.000066595096541,
+        12.00006659509745
+      ],
+      "root_approximation": {
+        "cycles": 12.000066595096996,
+        "p": 0.00010298202733147141,
+        "dp_db": -2.382069038255029e-11,
+        "fi_rate": 7.446638277851788e-20,
+        "state_qfi": 614.9911756940774,
+        "worst_input_leakage": 0.8290834708337015
+      }
+    },
+    {
+      "error_setting": [
+        0.02,
+        0.02
+      ],
+      "original_bracket": [
+        {
+          "cycles": 12.0,
+          "p": 2.7476195329280337e-06,
+          "dp_db": -0.0299639360541971,
+          "fi_rate": 4.415812266654074,
+          "state_qfi": 604.4561698738625,
+          "worst_input_leakage": 0.8245974210486633
+        },
+        {
+          "cycles": 12.00390625,
+          "p": 0.0610629468478821,
+          "dp_db": 3.1896654772429014,
+          "fi_rate": 2.3979731666416013,
+          "state_qfi": 720.3902490012005,
+          "worst_input_leakage": 0.7844524872179695
+        }
+      ],
+      "localized_bracket": [
+        12.000064820153057,
+        12.000064820153966
+      ],
+      "root_approximation": {
+        "cycles": 12.000064820153511,
+        "p": 2.4457208630085192e-05,
+        "dp_db": 6.435578687339462e-11,
+        "fi_rate": 2.2884805373781907e-18,
+        "state_qfi": 605.5113709281152,
+        "worst_input_leakage": 0.8240942425750526
+      }
+    }
+  ],
+  "finite_signal_endpoint_checks": [
+    {
+      "slices": 128,
+      "finite_signal_slopes": [
+        -0.20154833964003413,
+        1.1319515363594768
+      ],
+      "exact_slopes": [
+        -0.20154895517309757,
+        1.1319549327798453
+      ],
+      "max_scaled_error": 1.593101390786929e-06,
+      "opposite_signs": true
+    },
+    {
+      "slices": 256,
+      "finite_signal_slopes": [
+        -0.20154861062326998,
+        1.1319541023235846
+      ],
+      "exact_slopes": [
+        -0.20154895517309757,
+        1.1319549327798453
+      ],
+      "max_scaled_error": 3.895280560948661e-07,
+      "opposite_signs": true
+    }
+  ],
+  "first_root_comparison": [
+    {
+      "protocol": "RS_prefix",
+      "cycles": 12.002034549646396,
+      "p": 0.0009059682871138089,
+      "dp_db": -5.0186841822012875e-11,
+      "fi_rate": 3.760353330798925e-20,
+      "state_qfi": 638.320346165725,
+      "worst_input_leakage": 0.8267076743599941
+    },
+    {
+      "protocol": "CP",
+      "cycles": 12.002034549646396,
+      "p": 0.4987276442456649,
+      "dp_db": -4.042973056761726,
+      "fi_rate": 0.8835533505647185,
+      "state_qfi": 115.4249759971937,
+      "worst_input_leakage": 0.022461250984050163
+    },
+    {
+      "protocol": "CPMG",
+      "cycles": 12.002034549646396,
+      "p": 0.49872764424566585,
+      "dp_db": -4.042973056761735,
+      "fi_rate": 0.8835533505647224,
+      "state_qfi": 66.56064223923048,
+      "worst_input_leakage": 0.02246125098405021
+    },
+    {
+      "protocol": "APCP",
+      "cycles": 12.002034549646396,
+      "p": 0.4760411690802256,
+      "dp_db": 11.661518889696636,
+      "fi_rate": 7.367783282354321,
+      "state_qfi": 710.7072802717739,
+      "worst_input_leakage": 0.0074989374604457065
+    },
+    {
+      "protocol": "XY8",
+      "cycles": 12.002034549646396,
+      "p": 0.3031026680863913,
+      "dp_db": 17.440874945302625,
+      "fi_rate": 19.46015322076789,
+      "state_qfi": 1490.6627748428284,
+      "worst_input_leakage": 0.04672692253743566
+    },
+    {
+      "protocol": "XY16",
+      "cycles": 12.002034549646396,
+      "p": 0.2691785407582834,
+      "dp_db": 17.103492076995227,
+      "fi_rate": 20.094913278075264,
+      "state_qfi": 1493.7650971581459,
+      "worst_input_leakage": 0.041072565350107275
+    },
+    {
+      "protocol": "MLEV8",
+      "cycles": 12.002034549646396,
+      "p": 0.3825707964664866,
+      "dp_db": 14.418129693614606,
+      "fi_rate": 11.892883195740332,
+      "state_qfi": 995.2270263500103,
+      "worst_input_leakage": 0.2022045190693767
+    },
+    {
+      "protocol": "raw_RS",
+      "cycles": 12.002034549646396,
+      "p": 0.6593302821749382,
+      "dp_db": 16.015083854210218,
+      "fi_rate": 15.430861050232748,
+      "state_qfi": 1286.8761226513204,
+      "worst_input_leakage": 0.19631519930370023
+    }
+  ],
+  "blind_spot_confirmed_numerically": true,
+  "interval_arithmetic_proof": false,
+  "decision": "V1_READOUT_NOT_UNIFORMLY_SENSITIVE",
+  "original_grid_pass_preserved": true,
+  "leading_order_leakage_bound_refuted": false,
+  "all_readouts_refuted": false,
+  "novelty_gate": "UNKNOWN",
+  "physical_gate": "NOT_TESTED",
+  "mass_and_enterprise_gate": "NOT_TESTED",
+  "mission_complete": false
+}

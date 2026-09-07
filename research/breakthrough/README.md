@@ -10,6 +10,7 @@ real consumer and enterprise workflows. External expert scrutiny is required
 before calling any result a breakthrough. A local experiment cannot close
 either gate.
 
+- [New sensing line: leading leakage bound survives; off-grid readout blindness defeats robust-sensor admission](sensing_rs/RESULTS_RU.md)
 - [Что сделано и почему это ещё не доказанный прорыв — без жаргона](PLAIN_LANGUAGE_RU.md)
 - [Decisive closure: R8 REJECTED; sole alternative refuted; no qualifying candidate](R8_DECISIVE_REVIEW_20260907.md)
 - [Bounded QEC hypothesis selection: three candidates, none admitted](QUANTUM_HYPOTHESIS_SELECTION_RESULTS_20260907.md)
