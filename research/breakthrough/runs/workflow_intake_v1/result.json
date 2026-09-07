@@ -1,0 +1,161 @@
+{
+  "lanes": {
+    "incidents": {
+      "license": {
+        "baseline_admitted": false,
+        "bundled_terms": [],
+        "human_terms_review": "pending",
+        "source_license": "CC-BY-4.0"
+      },
+      "members": {
+        "incident_event_log.csv": {
+          "bytes": 46212397,
+          "sha256": "fd184bbfd62329cfe093e99da2ea7071905f2ead91900b448eb2635870821bef"
+        }
+      },
+      "profile": {
+        "baseline_scoring_admitted": false,
+        "header_sha256": "7cb148af4c61aaca4580b63ef0abd2be68229d596b1f2d2f888be97b59e68f87",
+        "missing_expected_columns": [
+          "close_code"
+        ],
+        "observed_column_count": 36,
+        "reason": "header differs from frozen ordered contract",
+        "schema_accepted": false
+      },
+      "provenance": {
+        "archive_sha256": "6294e29a311647306bfdfc85783f7df66517c197b9cd49aa5ee36ba9c525d1d6",
+        "archive_url": "https://archive.ics.uci.edu/static/public/498/incident+management+process+enriched+event+log.zip",
+        "license": "CC-BY-4.0",
+        "retrieval_method": "Invoke-WebRequest from the official UCI HTTPS archive",
+        "retrieved_utc": "2026-09-07T13:10:18Z",
+        "source_page": "https://archive.ics.uci.edu/dataset/498/incident+management+process+enriched+event+log",
+        "source_snapshot_sha256": "63ed594cce7cf2fd3622fa06064f799d8e34dcbeca3a967eeb8d7316573d5d27"
+      },
+      "split_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "status": "profiled_not_baseline_admitted"
+    },
+    "sms": {
+      "license": {
+        "baseline_admitted": false,
+        "bundled_terms": [
+          {
+            "bytes": 5868,
+            "member": "readme",
+            "review_flags": [
+              "copyright",
+              "license"
+            ],
+            "sha256": "8753cd2d3cab68f80c8257851b8c2037778c267f55accb6fd1b5a2e32d36a84e"
+          }
+        ],
+        "human_terms_review": "pending",
+        "source_license": "CC-BY-4.0"
+      },
+      "members": {
+        "SMSSpamCollection": {
+          "bytes": 477907,
+          "sha256": "7d039a24a6083ed9ef0f806ebad56bbb976e3aeb8de05669173bfdc4996c239d"
+        },
+        "readme": {
+          "bytes": 5868,
+          "sha256": "8753cd2d3cab68f80c8257851b8c2037778c267f55accb6fd1b5a2e32d36a84e"
+        }
+      },
+      "profile": {
+        "baseline_scoring_admitted": false,
+        "class_balance_by_partition": {
+          "development": {
+            "ham": {
+              "count": 739,
+              "denominator": 844,
+              "rate": 0.8755924170616114
+            },
+            "spam": {
+              "count": 105,
+              "denominator": 844,
+              "rate": 0.12440758293838862
+            }
+          },
+          "evaluation": {
+            "ham": {
+              "count": 736,
+              "denominator": 847,
+              "rate": 0.8689492325855962
+            },
+            "spam": {
+              "count": 111,
+              "denominator": 847,
+              "rate": 0.13105076741440377
+            }
+          },
+          "train": {
+            "ham": {
+              "count": 3352,
+              "denominator": 3883,
+              "rate": 0.8632500643832088
+            },
+            "spam": {
+              "count": 531,
+              "denominator": 3883,
+              "rate": 0.13674993561679114
+            }
+          }
+        },
+        "conflicting_label_groups": 0,
+        "digit_template_cross_partition_groups": 4,
+        "digit_template_cross_partition_rows": 12,
+        "empty_message": {
+          "count": 0,
+          "denominator": 5574,
+          "rate": 0.0
+        },
+        "exact_duplicate_excess": {
+          "count": 403,
+          "denominator": 5574,
+          "rate": 0.07229996411912451
+        },
+        "group_partition_overlap": 0,
+        "malformed_rows": [],
+        "message_length_min_max": [
+          2,
+          910
+        ],
+        "normalized_duplicate_excess": {
+          "count": 415,
+          "denominator": 5574,
+          "rate": 0.07445281664872623
+        },
+        "normalized_groups": 5159,
+        "quarantined_group_rows": 0,
+        "rows": 5574,
+        "schema_drift": "single archive only; line-shape validity measured, cross-version drift unavailable",
+        "source_count_delta": 0,
+        "source_reported_rows": 5574,
+        "temporal_leakage_assessment": "unavailable: no reliable timestamps/sender/source-member labels",
+        "valid_labelled_rows": 5574
+      },
+      "provenance": {
+        "archive_sha256": "1587ea43e58e82b14ff1f5425c88e17f8496bfcdb67a583dbff9eefaf9963ce3",
+        "archive_url": "https://archive.ics.uci.edu/static/public/228/sms+spam+collection.zip",
+        "license": "CC-BY-4.0",
+        "retrieval_method": "Invoke-WebRequest from the official UCI HTTPS archive",
+        "retrieved_utc": "2026-09-07T13:10:18Z",
+        "source_page": "https://archive.ics.uci.edu/dataset/228/sms+spam+collection",
+        "source_snapshot_sha256": "ee3f17c49121781e68a0418f39016824025a493c60b52402345da1caed7afba3"
+      },
+      "split_sha256": "afe7bb594ec196af36150b92807e711d6728e73abf37d4f24905eb5f38a75ec8",
+      "status": "profiled_not_baseline_admitted"
+    }
+  },
+  "mass_indispensability_gate": false,
+  "scientific_breakthrough_gate": false,
+  "scoring_runs": 0,
+  "source_hashes": {
+    "test_workflow_intake.py": "5cbe4e816a3e7829e3bf563e37389f9e6c3d35b91bbf2e028505f2d7191b8ec7",
+    "workflow_intake_audit.py": "b83ef5c59b088b7edfdbdc5b7575813b1a26d7a8b4990c1c3a03d484b239e921",
+    "workflow_intake_protocol.json": "82d8eb7bacad218c003fe4e13fd0cf376f50d26366053f1a41e69fe04e3b6c31"
+  },
+  "source_sha": "3ce4cd76397bb235776d65368ad51f428b2c5c83",
+  "training_runs": 0
+}

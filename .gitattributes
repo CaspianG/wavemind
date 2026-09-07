@@ -12,3 +12,4 @@ benchmarks/scientific_mab_v9_development_run1_raw.jsonl text eol=crlf
 benchmarks/scientific_memops_v10_*/raw_pairs.jsonl text eol=crlf
 benchmarks/scientific_memops_v10_*_results.json text eol=crlf
 scientific-memory-admission/manifest.json text eol=crlf
+research/breakthrough/runs/workflow_intake_v1/* -text

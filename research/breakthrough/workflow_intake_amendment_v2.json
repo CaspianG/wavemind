@@ -1,0 +1,27 @@
+{
+  "effective_protocol_version": "1.1",
+  "amendment_id": "official_incident_header_alias_only",
+  "date": "2026-09-07",
+  "base_source_sha": "3ce4cd76397bb235776d65368ad51f428b2c5c83",
+  "base_protocol_sha256": "82d8eb7bacad218c003fe4e13fd0cf376f50d26366053f1a41e69fe04e3b6c31",
+  "authorized_scope": "Resolve the documented close_code versus archived closed_code naming mismatch without changing task, rows, source, split, outcomes, thresholds or scoring",
+  "patches": [
+    {"path": ["lanes", "incidents", "expected_columns", 32], "old": "close_code", "new": "closed_code"},
+    {"path": ["lanes", "incidents", "future_sensitive_columns", 3], "old": "close_code", "new": "closed_code"}
+  ],
+  "evidence": {
+    "incident_archive_sha256": "6294e29a311647306bfdfc85783f7df66517c197b9cd49aa5ee36ba9c525d1d6",
+    "incident_csv_sha256": "fd184bbfd62329cfe093e99da2ea7071905f2ead91900b448eb2635870821bef",
+    "incident_source_page_sha256": "63ed594cce7cf2fd3622fa06064f799d8e34dcbeca3a967eeb8d7316573d5d27",
+    "observed_header_sha256": "7cb148af4c61aaca4580b63ef0abd2be68229d596b1f2d2f888be97b59e68f87",
+    "only_different_column_zero_based": 32,
+    "first_result_sha256": "257252b0642cb9680efa2b0817d4dbb0d3f16b911b943c149ca0bbc5164a304b",
+    "first_sms_split_sha256": "afe7bb594ec196af36150b92807e711d6728e73abf37d4f24905eb5f38a75ec8",
+    "first_incident_split_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "interpretation": "Documentation/header naming discrepancy consistent with a documentation typo; author intent is not independently confirmed. The same resolution-code field remains excluded from unverified online features.",
+  "initial_failure_policy": "Preserve original result and splits byte-for-byte under runs/workflow_intake_v1; integrity replay success is not schema acceptance",
+  "main_run_policy": "Freeze this amendment, wrapper and tests before the new full incident profile; no model training or scoring",
+  "baseline_admitted": false,
+  "human_terms_review": "not yet supplied by a human"
+}
