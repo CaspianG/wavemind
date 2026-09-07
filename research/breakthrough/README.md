@@ -11,6 +11,7 @@ before calling any result a breakthrough. A local experiment cannot close
 either gate.
 
 - [Что сделано и почему это ещё не доказанный прорыв — без жаргона](PLAIN_LANGUAGE_RU.md)
+- [Decisive closure: R8 REJECTED; sole alternative refuted; no qualifying candidate](R8_DECISIVE_REVIEW_20260907.md)
 - [Bounded QEC hypothesis selection: three candidates, none admitted](QUANTUM_HYPOTHESIS_SELECTION_RESULTS_20260907.md)
 - [Selection criteria frozen before the literature search](QUANTUM_HYPOTHESIS_SELECTION_GATE_20260907.md)
 - [Current scientific decision gate: exact residual claim, proof and falsifiers](SCIENTIFIC_DECISION_GATE.md)
