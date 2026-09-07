@@ -1,10 +1,42 @@
 # R8: handoff for the next scientific gate
 
 Read this page first. Do not rerun the entire investigation to recover scope.
-This is a local proof candidate, not novelty clearance. No new max-effort gate
-or external reviewer interaction is authorized by the current intake task.
+This is a local proof candidate, not novelty clearance. The 2026-09-07
+three-question audit found an explicit ordinary-finite-algebra reduction
+to the required block ranks. **Do not prepare or run a new max-review packet
+for polynomial recognition as a novel capability.** No external review was sent.
 
-## Exact remaining claim
+## Current decision after the three pressure points
+
+1. **Rónyai/general algebra route:** the original full 1990 paper remains
+   unavailable; it was not promoted beyond abstract-level coverage. A concrete
+   structure interface was checked in Brooksbank–Wilson §2.2, Theorem 2.5 /
+   Remark 2.1. Our explicit reduction selects rank 1 in M2(F2) factors,
+   rejects F4 factors, and solves x_a XOR x_b=1 on the one-dimensional
+   composition factors. On these physical modules Rad(E)^2=0, so any
+   quotient-idempotent preimage a lifts by P=a^2. This fixes the previous
+   missing correlated-rank/characteristic-2 step. A direct small-module
+   specialization also gives a paper O(L n^2+n^4) bound without six anchors;
+   it is not an executed or independently reviewed algorithm.
+2. **Ivanyos–Qiao:** Proposition 32 can produce the needed projective ideal
+   after the quotient rank choice; Fact 33 compares ranks, not selects them.
+   Their main isometry/symmetrization route is not a char-2 drop-in. A local
+   rank-growth proof-line issue is documented with an elementary repair;
+   it does not refute their proposition or rescue our novelty claim.
+3. **Pairwise graph algorithms:** the read equations require a supplied
+   target and rank-n self-duality. Unknown CSS target and arbitrary code
+   rank are not handled merely by adding their allowed linear constraints.
+   No pairwise reduction was established; no impossibility theorem is claimed.
+
+Full conditions, derivation, source links and bounded reading gaps:
+[superseding theorem audit](PRIOR_ART_THEOREM_AUDIT.md).
+Next: independent scrutiny of the explicit reduction (radical kernel,
+simultaneous simple-action surjectivity, lift and complexity), not another
+local R8 enumeration. Historical proof correctness remains a different
+question from novelty. Six-anchor certificates alone are not an established
+new capability. Both mission gates remain false.
+
+## Exact R8 mathematical claim (not admitted as novel)
 
 For L binary generators of an isotropic S <= F2^(2n), n >= 1, a deterministic
 O(L n^2 + n^4) F2-operation algorithm decides whether **some** CSS form is
@@ -25,25 +57,29 @@ Try the six trace-one/determinant-zero anchor blocks via linear systems;
 assemble across atoms, then diagonalize to the X/Z projector. Under row
 action P G = G diag(1,0), so closure yields the CSS decomposition.
 
-The minimal residue is the **recognition consequence**, not new scalar
-decomposition, Cayley–Hamilton, conjugated projectors or a noise guarantee.
+The previously proposed novelty residue was the **recognition consequence**,
+not scalar decomposition, Cayley–Hamilton, projectors or a noise guarantee.
+The new ordinary-algebra reduction now prevents treating that residue as
+having survived the novelty gate.
 Detailed proof: [SCIENTIFIC_DECISION_GATE.md](SCIENTIFIC_DECISION_GATE.md).
 
-## Outstanding prior-art questions, not findings of absence
+## Source ledger and remaining coverage limits
 
 1. [Mirandola–Zémor, §2.3 Lemmas 2.7/2.10](https://arxiv.org/pdf/1501.06419v2):
    scalar/code decomposition is already known and explicitly excluded.
 2. [Rónyai, finite-algebra structure algorithms](https://www.sciencedirect.com/science/article/pii/S074771710880017X):
-   only the abstract was audited. Does an exact general reduction already
-   supply the prescribed rank-one block idempotent in characteristic two?
+   original full text not obtained. The explicit reduction via the ordinary
+   structure interface is now in the superseding audit; do not interpret
+   the remaining bibliographic gap as survival of the novelty claim.
 3. [Ivanyos–Qiao, §4.2–4.4](https://arxiv.org/pdf/1708.03495v3):
-   Proposition 32 and Fact 33 remain relevant even though main isometry
-   results have a characteristic restriction. Need exact reduction or a
-   precise mismatch. The F4 shortcut counterexample does not refute this paper.
+   Proposition 32 / Fact 33, proofs and small-field boundary now audited.
+   Construction after quotient-rank selection is specified above. The F4
+   shortcut counterexample does not refute this paper.
 4. [Van den Nest–Dehaene–De Moor / Bouchet](https://arxiv.org/pdf/quant-ph/0405023)
    and [Claudet–Perdrix §3.1](https://drops.dagstuhl.de/storage/00lipics/lipics-vol334-icalp2025/html/LIPIcs.ICALP.2025.59/LIPIcs.ICALP.2025.59.html):
-   supplied-pair graph equivalence is not yet a reduction for arbitrary rank
-   and an unspecified CSS target. Investigate that reduction, not just titles.
+   fixed-target equations, self-duality, determinant constraints and restricted
+   graph hypotheses audited. No direct arbitrary-rank/unknown-target reduction
+   established; Bouchet's original full proof was not separately retrieved.
 5. [Rains](https://arxiv.org/pdf/quant-ph/9703048),
    [Dasu–Burton](https://arxiv.org/html/2507.10519v1),
    [Albert Appendix F.2](https://arxiv.org/html/2608.05688v1):
