@@ -1,4 +1,4 @@
-# Breakthrough research — awaiting external inputs, not achieved
+# Breakthrough research — local investigation resumed, not achieved
 
 This is the research entry point for the mission started on 2026-09-06.
 The released WaveMind product is an input to the investigation, not evidence
@@ -11,6 +11,7 @@ before calling any result a breakthrough. A local experiment cannot close
 either gate.
 
 - [Что сделано и почему это ещё не доказанный прорыв — без жаргона](PLAIN_LANGUAGE_RU.md)
+- [Current scientific decision gate: exact residual claim, proof and falsifiers](SCIENTIFIC_DECISION_GATE.md)
 - [Starting state and instruction audit](STATE_AND_AUDIT.md)
 - [Primary-source novelty map and decision matrix](NOVELTY_REVIEW.md)
 - [Frozen first experiment](protocol_r1.json)
@@ -30,7 +31,12 @@ either gate.
 - [R8 complete small-subspace falsifier and narrowed novelty boundary](LC_SCALAR_R8_RESULTS.md)
 - [Workflow bridge audit: correct CSS conversion can worsen fixed-noise protection](WORKFLOW_BRIDGE_AUDIT.md)
 - [Safe-transfer prior-art audit: known mechanisms and incompatible guarantee targets](SAFE_TRANSPORT_PRIOR_ART_AUDIT.md)
-- [Learned-structure triage and external prerequisites for resumption](LEARNED_TRANSPORT_TRIAGE.md)
+- [Historical learned-structure triage and external requirements](LEARNED_TRANSPORT_TRIAGE.md)
+
+The subsequent instruction authorizes autonomous selection of public licensed
+consumer and enterprise workflows. Missing owner-selected tasks no longer
+blocks local research. Independent review and real-workflow validation remain
+required for the full gates; the earlier paused posture is historical.
 
 Results are recorded after execution, including rejection. No released runtime
 is changed by this experiment. No paid API, judge, simulator, quantum hardware,
