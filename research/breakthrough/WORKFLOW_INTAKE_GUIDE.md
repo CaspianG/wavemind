@@ -1,4 +1,14 @@
-# Public workflow intake: frozen checks, access not yet authorized
+# Public workflow intake: frozen checks and access history
+
+## Current update — 2026-09-07
+
+The controller has supplied local official archives and provenance. The first
+schema failure is preserved, and a frozen header-only amendment has passed
+full replay and independent pandas QA. See [actual results and admission
+hold](WORKFLOW_INTAKE_V2_RESULTS.md) and the [current notebook](workflow_intake_v2_review.ipynb).
+Both baselines remain unadmitted pending actual human terms review and frozen
+leakage-safe evaluation semantics. The access-denial account and original
+preflight/notebook observations below are historical, not the current intake state.
 
 The task is a data-quality/reproducibility audit, not training or scoring.
 The primary deliverables are repository protocol, checker, tests, split
