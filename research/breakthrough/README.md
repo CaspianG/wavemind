@@ -12,6 +12,8 @@ either gate.
 
 - [Что сделано и почему это ещё не доказанный прорыв — без жаргона](PLAIN_LANGUAGE_RU.md)
 - [Current scientific decision gate: exact residual claim, proof and falsifiers](SCIENTIFIC_DECISION_GATE.md)
+- [Decision-gate results: full replay, physical negatives, no novelty clearance](SCIENTIFIC_DECISION_RESULTS.md)
+- [Frozen public-workflow selection and measurement contract](PUBLIC_WORKFLOW_SELECTION_PROTOCOL.md)
 - [Starting state and instruction audit](STATE_AND_AUDIT.md)
 - [Primary-source novelty map and decision matrix](NOVELTY_REVIEW.md)
 - [Frozen first experiment](protocol_r1.json)
@@ -55,6 +57,7 @@ python research/breakthrough/verify_r7.py
 python research/breakthrough/verify_prior_art_applicability.py
 python research/breakthrough/verify_r8.py
 python research/breakthrough/verify_workflow_bridge.py
+python research/breakthrough/decision_gate_falsifier.py --verify research/breakthrough/runs/decision_gate
 ```
 
 For reproduction, create a clean detached checkout at the run's source SHA
