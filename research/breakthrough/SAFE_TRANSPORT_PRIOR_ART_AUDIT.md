@@ -172,3 +172,10 @@ interventions and improve over established factored/robust methods. That is
 still a question, not a survivor or authorization to invent a favorable model.
 Independent novelty/correctness review of R8 and real consumer/enterprise
 measurements remain mandatory for the original two gates.
+
+Follow-up: [learned-structure triage](LEARNED_TRANSPORT_TRIAGE.md) now adds
+invariant-feature learning, active ICP, identification under partial graph
+knowledge and a 2026 approximate-transport comparator. The broad remaining
+idea is not selected as a novel mechanism. External task/observation inputs
+and approved independent scrutiny are required to resume the next decisive
+validation; the full objective is unchanged.

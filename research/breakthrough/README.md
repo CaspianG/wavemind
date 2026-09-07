@@ -1,4 +1,4 @@
-# Breakthrough research — active, not achieved
+# Breakthrough research — awaiting external inputs, not achieved
 
 This is the research entry point for the mission started on 2026-09-06.
 The released WaveMind product is an input to the investigation, not evidence
@@ -30,6 +30,7 @@ either gate.
 - [R8 complete small-subspace falsifier and narrowed novelty boundary](LC_SCALAR_R8_RESULTS.md)
 - [Workflow bridge audit: correct CSS conversion can worsen fixed-noise protection](WORKFLOW_BRIDGE_AUDIT.md)
 - [Safe-transfer prior-art audit: known mechanisms and incompatible guarantee targets](SAFE_TRANSPORT_PRIOR_ART_AUDIT.md)
+- [Learned-structure triage and external prerequisites for resumption](LEARNED_TRANSPORT_TRIAGE.md)
 
 Results are recorded after execution, including rejection. No released runtime
 is changed by this experiment. No paid API, judge, simulator, quantum hardware,
