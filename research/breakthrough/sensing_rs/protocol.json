@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "id": "sensing_rs_20260907_v1",
+  "status_at_freeze": "untested_candidate_not_novelty_cleared",
+  "scope": "New quantum-sensing line; R8 and raw shared flags remain closed.",
+  "model": "Coherent three-level ladder, rectangular pulses; hbar=tau=1; H=Delta|2><2|+delta_q Z/2+Omega(1+epsilon)/2 [exp(-i phi)(|0><1|+eta|1><2|)+h.c.]+b cos(pi t) Z/2. Z=diag(1,-1,0).",
+  "pulse_duration": 0.25,
+  "tau": 1.0,
+  "candidate": "s_j=r_j*r_(j+1), j=0..N-1; r_j=(-1)^(popcount(j & (j>>1))); phases 0 or pi; N a power of two, N>=4.",
+  "mechanism_claim": "At b=delta_q=epsilon=eta=0, the eta derivative of the leakage row has norm at most a*sqrt(N)+c, uniformly in real Delta. a=(Omega/2)*abs(Is-exp(-i Delta tau)*Ic), c=Omega*abs(Ic). This is a leading-order coefficient bound, not a fixed-eta all-N leakage guarantee.",
+  "candidate_selection": "Algebraically constructed before numerical tests; no phase, detuning, protocol or threshold fitting.",
+  "mechanism_pulse_counts": [4, 8, 16, 64, 256],
+  "mechanism_detuning_cycles": {"start": -8.0, "stop": 8.0, "count": 4097},
+  "formula_relative_tolerance": 1e-9,
+  "bound_relative_tolerance": 1e-10,
+  "control_protocols": ["CP", "CPMG", "APCP", "XY8", "XY16", "MLEV8", "raw_RS"],
+  "finite_coupling_control": {"eta": 0.0001, "n": 64, "detuning_cycles": [-3.125, -0.25, 0.0, 0.25, 1.0, 2.375, 7.0]},
+  "engineering_screen": {
+    "n": 64,
+    "eta": 1.0,
+    "detuning_cycles": {"start": 12.0, "stop": 16.0, "count": 1025},
+    "amplitude_errors": [-0.02, 0.0, 0.02],
+    "qubit_detuning_over_omega": [-0.02, 0.0, 0.02],
+    "initial_state": "plus_x",
+    "measurement": "P_plus_y versus I-P_plus_y; leaked shots retained, not postselected",
+    "metric": "Classical local Fisher information for b at b=0 divided by N*tau+overhead; exact linear response during finite pulses and free intervals",
+    "overhead": 10.0,
+    "screening_condition": "candidate minimum information rate over the entire frozen grid >= 2 times the largest baseline minimum, and candidate ideal FI >= 0.95*CP ideal FI",
+    "interpretation": "Twofold is a preliminary local screening threshold, NOT the mission's order-of-magnitude real-workflow gate. Grid minima are not continuous-domain guarantees. Parameters are synthetic, not calibrated to a device."
+  },
+  "near_resonance_stress": {"n": 64, "eta": 1.0, "start": 0.0, "stop": 4.0, "count": 257},
+  "decisions": {
+    "incorrect_formula_or_bound": "REFUTED_MECHANISM; preserve counterexample; no silent retuning",
+    "correct_mechanism_but_failed_engineering_screen": "LIMITED_THEORETICAL_RESULT_NOT_USEFUL_SENSOR_ADMITTED",
+    "passed_local_screen": "PROVISIONAL_LOCAL_CANDIDATE_ONLY",
+    "novelty_gate": "UNKNOWN until exact prior-art equivalence audit and independent scrutiny",
+    "physical_gate": "NOT_TESTED",
+    "mass_and_enterprise_gate": "NOT_TESTED",
+    "mission_complete": false
+  },
+  "execution": "Local NumPy only; no hardware, paid endpoints, external publication, outreach or terms approval. Source/protocol committed before run. Existing output directories rejected."
+}
