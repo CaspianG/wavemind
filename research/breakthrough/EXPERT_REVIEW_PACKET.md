@@ -51,6 +51,12 @@ Could you assess the following?
 
 ## Evidence available for review
 
+- [Minimal residual R8 claim with explicit proof steps](SCIENTIFIC_DECISION_GATE.md)
+  and [frozen follow-up decision results](SCIENTIFIC_DECISION_RESULTS.md), source
+  `0692b111e141e4546a99c29a63359c2b935d46f4`: exhaustive unital spaces at one/two
+  sites (519 actual algebras) and ten complete seven-site graph LC orbits,
+  including five physical negatives. No counterexample; novelty still unreviewed.
+
 - [Frozen proof and caveats](LC_STITCHING.md), source SHA
   `90579911ad56ae2ef85e0c6f96c5c86d98cec178`.
 - [R5 catalog audit](LC_PROJECTOR_R5_RESULTS.md): 368 source-pinned catalog

@@ -14,6 +14,7 @@ either gate.
 - [Current scientific decision gate: exact residual claim, proof and falsifiers](SCIENTIFIC_DECISION_GATE.md)
 - [Decision-gate results: full replay, physical negatives, no novelty clearance](SCIENTIFIC_DECISION_RESULTS.md)
 - [Frozen public-workflow selection and measurement contract](PUBLIC_WORKFLOW_SELECTION_PROTOCOL.md)
+- [Selected public consumer/enterprise workflows and rejected-source ledger](PUBLIC_WORKFLOW_SELECTION.md)
 - [Starting state and instruction audit](STATE_AND_AUDIT.md)
 - [Primary-source novelty map and decision matrix](NOVELTY_REVIEW.md)
 - [Frozen first experiment](protocol_r1.json)
