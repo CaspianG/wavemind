@@ -1,0 +1,20 @@
+{
+  "source_commit": "cd73cd5028bfa6820039e96c29c1f00e000b4aa6",
+  "sources": {
+    "protocol_v3.json": "67191db747b80425e5ba5f51ef858b21d31eab9f4ebf490e55e5109931b620a4",
+    "PULSE_V3_THEORY.md": "fad1c92c58d5be619209e58ec1b811df5f9ea2078b62e6a2bf239679fa8fca35",
+    "pulse_v3.py": "926f42df1e5bcf5fc60de0d02bff83772d411783cfb701deb43ec25db433c109",
+    "experiment_v3.py": "bb5caf06439982e939e47aba1360925d441e92e3f58cc6c459e570963543c329",
+    "test_pulse_v3.py": "50aed9b9b584a60fdf4be3765bc776c89597b63cd66638e3c50410c436ceecf3",
+    "experiment.py": "f3b223a6a3972506c85d6f773077ee7a58cdde299c459efce43fa45c544742b6",
+    "readout_v2.py": "5a85fb6551b81dbcc1447cd47f921501440599d7469681859984cfb9ba9900c5"
+  },
+  "v2_results_sha256": "8e8b851452c4877994ed95d762de6ae30a6a852acd4d406d8363820b4304a05b",
+  "python": "3.13.2 (tags/v3.13.2:4f8bb39, Feb  4 2025, 15:23:48) [MSC v.1942 64 bit (AMD64)]",
+  "numpy": "2.5.2",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "utc_started": "2026-09-08T20:14:49Z",
+  "hardware_calls": 0,
+  "paid_calls": 0,
+  "independent_investigator": false
+}

@@ -1,0 +1,625 @@
+{
+  "protocol_id": "sensing_rs_quadrature_compensation_v3_20260908",
+  "screen": [
+    {
+      "waveform": "RECT",
+      "sequence": "RS_prefix",
+      "id": "RECT/RS_prefix",
+      "minimum_rate": 0.0011235059830493254,
+      "median_rate": 0.008682935846332882,
+      "maximum_rate": 0.014101197913321052,
+      "max_mean_worst_input_leakage": 0.9001282816543279,
+      "phase_realizations": 1,
+      "worst_cycles": 13.537109375,
+      "worst_errors": [
+        -0.02,
+        0.02
+      ]
+    },
+    {
+      "waveform": "RECT",
+      "sequence": "CP",
+      "id": "RECT/CP",
+      "minimum_rate": 9.19426723211723e-08,
+      "median_rate": 0.004261076791640422,
+      "maximum_rate": 0.014106478146710047,
+      "max_mean_worst_input_leakage": 0.9990665588401972,
+      "phase_realizations": 1,
+      "worst_cycles": 12.658203125,
+      "worst_errors": [
+        -0.02,
+        -0.02
+      ]
+    },
+    {
+      "waveform": "RECT",
+      "sequence": "CPMG",
+      "id": "RECT/CPMG",
+      "minimum_rate": 1.0687988122853298e-07,
+      "median_rate": 0.0006153062667063024,
+      "maximum_rate": 0.014091955319515265,
+      "max_mean_worst_input_leakage": 0.9990665588401977,
+      "phase_realizations": 1,
+      "worst_cycles": 12.658203125,
+      "worst_errors": [
+        -0.02,
+        -0.02
+      ]
+    },
+    {
+      "waveform": "RECT",
+      "sequence": "APCP",
+      "id": "RECT/APCP",
+      "minimum_rate": 5.823993611766635e-08,
+      "median_rate": 0.0004628006824743702,
+      "maximum_rate": 0.0127405820831025,
+      "max_mean_worst_input_leakage": 0.9975331818613071,
+      "phase_realizations": 1,
+      "worst_cycles": 14.369140625,
+      "worst_errors": [
+        0.0,
+        0.02
+      ]
+    },
+    {
+      "waveform": "RECT",
+      "sequence": "XY8",
+      "id": "RECT/XY8",
+      "minimum_rate": 1.0944410480870883e-05,
+      "median_rate": 0.012349224703097104,
+      "maximum_rate": 0.014092296356692202,
+      "max_mean_worst_input_leakage": 0.9964611349772677,
+      "phase_realizations": 1,
+      "worst_cycles": 13.095703125,
+      "worst_errors": [
+        0.0,
+        0.02
+      ]
+    },
+    {
+      "waveform": "RECT",
+      "sequence": "XY16",
+      "id": "RECT/XY16",
+      "minimum_rate": 0.00011090990282782283,
+      "median_rate": 0.011730865810538272,
+      "maximum_rate": 0.014077914883649316,
+      "max_mean_worst_input_leakage": 0.9999828190446901,
+      "phase_realizations": 1,
+      "worst_cycles": 13.724609375,
+      "worst_errors": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "waveform": "RECT",
+      "sequence": "MLEV8",
+      "id": "RECT/MLEV8",
+      "minimum_rate": 1.3606701189610976e-07,
+      "median_rate": 0.011962375878873676,
+      "maximum_rate": 0.014116026177443942,
+      "max_mean_worst_input_leakage": 0.9944108669483325,
+      "phase_realizations": 1,
+      "worst_cycles": 12.720703125,
+      "worst_errors": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "waveform": "RECT",
+      "sequence": "raw_RS",
+      "id": "RECT/raw_RS",
+      "minimum_rate": 0.0007995836914797791,
+      "median_rate": 0.009893686803256075,
+      "maximum_rate": 0.013962255097069975,
+      "max_mean_worst_input_leakage": 0.9969624543636599,
+      "phase_realizations": 1,
+      "worst_cycles": 14.099609375,
+      "worst_errors": [
+        -0.02,
+        0.02
+      ]
+    },
+    {
+      "waveform": "RECT",
+      "sequence": "RXY8",
+      "id": "RECT/RXY8",
+      "minimum_rate": 0.004749477657285789,
+      "median_rate": 0.008880385780770574,
+      "maximum_rate": 0.014046719288820751,
+      "max_mean_worst_input_leakage": 0.6975616078243252,
+      "phase_realizations": 32,
+      "worst_cycles": 12.427734375,
+      "worst_errors": [
+        0.02,
+        -0.02
+      ],
+      "seed_standard_error_at_worst_point": 0.00045805467513360007
+    },
+    {
+      "waveform": "FAST_RECT",
+      "sequence": "RS_prefix",
+      "id": "FAST_RECT/RS_prefix",
+      "minimum_rate": 1.442968324074826e-05,
+      "median_rate": 0.0030494959318308817,
+      "maximum_rate": 0.01379230153116425,
+      "max_mean_worst_input_leakage": 0.9999955725900933,
+      "phase_realizations": 1,
+      "worst_cycles": 13.146484375,
+      "worst_errors": [
+        0.02,
+        -0.02
+      ]
+    },
+    {
+      "waveform": "FAST_RECT",
+      "sequence": "CP",
+      "id": "FAST_RECT/CP",
+      "minimum_rate": 8.793245871920626e-08,
+      "median_rate": 0.0029904281324295984,
+      "maximum_rate": 0.013967200368669068,
+      "max_mean_worst_input_leakage": 0.999999059013204,
+      "phase_realizations": 1,
+      "worst_cycles": 13.783203125,
+      "worst_errors": [
+        -0.02,
+        -0.02
+      ]
+    },
+    {
+      "waveform": "FAST_RECT",
+      "sequence": "CPMG",
+      "id": "FAST_RECT/CPMG",
+      "minimum_rate": 9.958997786240435e-08,
+      "median_rate": 0.00042731247748628364,
+      "maximum_rate": 0.014060946744591895,
+      "max_mean_worst_input_leakage": 0.9999990590132037,
+      "phase_realizations": 1,
+      "worst_cycles": 15.384765625,
+      "worst_errors": [
+        -0.02,
+        0.02
+      ]
+    },
+    {
+      "waveform": "FAST_RECT",
+      "sequence": "APCP",
+      "id": "FAST_RECT/APCP",
+      "minimum_rate": 5.685614586586625e-08,
+      "median_rate": 6.206826878472121e-05,
+      "maximum_rate": 0.008397929544439358,
+      "max_mean_worst_input_leakage": 0.9998603203006209,
+      "phase_realizations": 1,
+      "worst_cycles": 15.208984375,
+      "worst_errors": [
+        -0.02,
+        0.02
+      ]
+    },
+    {
+      "waveform": "FAST_RECT",
+      "sequence": "XY8",
+      "id": "FAST_RECT/XY8",
+      "minimum_rate": 7.449051789027215e-07,
+      "median_rate": 0.007491344281490765,
+      "maximum_rate": 0.013862306826887012,
+      "max_mean_worst_input_leakage": 0.9996831810901576,
+      "phase_realizations": 1,
+      "worst_cycles": 13.826171875,
+      "worst_errors": [
+        -0.02,
+        -0.02
+      ]
+    },
+    {
+      "waveform": "FAST_RECT",
+      "sequence": "XY16",
+      "id": "FAST_RECT/XY16",
+      "minimum_rate": 3.4662802649320185e-05,
+      "median_rate": 0.007774329304540498,
+      "maximum_rate": 0.013868065037657716,
+      "max_mean_worst_input_leakage": 0.9996736724057408,
+      "phase_realizations": 1,
+      "worst_cycles": 12.884765625,
+      "worst_errors": [
+        -0.02,
+        0.02
+      ]
+    },
+    {
+      "waveform": "FAST_RECT",
+      "sequence": "MLEV8",
+      "id": "FAST_RECT/MLEV8",
+      "minimum_rate": 6.614647611109868e-08,
+      "median_rate": 0.0032204324855113747,
+      "maximum_rate": 0.013942286025879555,
+      "max_mean_worst_input_leakage": 0.9999387019136361,
+      "phase_realizations": 1,
+      "worst_cycles": 14.080078125,
+      "worst_errors": [
+        -0.02,
+        0.02
+      ]
+    },
+    {
+      "waveform": "FAST_RECT",
+      "sequence": "raw_RS",
+      "id": "FAST_RECT/raw_RS",
+      "minimum_rate": 1.995937565362916e-05,
+      "median_rate": 0.0044442718534854295,
+      "maximum_rate": 0.011832196396999709,
+      "max_mean_worst_input_leakage": 0.9999938163909414,
+      "phase_realizations": 1,
+      "worst_cycles": 13.017578125,
+      "worst_errors": [
+        -0.02,
+        0.02
+      ]
+    },
+    {
+      "waveform": "FAST_RECT",
+      "sequence": "RXY8",
+      "id": "FAST_RECT/RXY8",
+      "minimum_rate": 0.0009914992542761304,
+      "median_rate": 0.004267195895183621,
+      "maximum_rate": 0.013637731429563805,
+      "max_mean_worst_input_leakage": 0.7503963374475358,
+      "phase_realizations": 32,
+      "worst_cycles": 12.810546875,
+      "worst_errors": [
+        0.02,
+        0.02
+      ],
+      "seed_standard_error_at_worst_point": 0.00015940743444908483
+    },
+    {
+      "waveform": "HANN",
+      "sequence": "RS_prefix",
+      "id": "HANN/RS_prefix",
+      "minimum_rate": 0.013050264855383764,
+      "median_rate": 0.01396687524058226,
+      "maximum_rate": 0.014349057928537148,
+      "max_mean_worst_input_leakage": 0.03142450964149175,
+      "phase_realizations": 1,
+      "worst_cycles": 12.517578125,
+      "worst_errors": [
+        0.02,
+        0.02
+      ]
+    },
+    {
+      "waveform": "HANN",
+      "sequence": "CP",
+      "id": "HANN/CP",
+      "minimum_rate": 8.482873673855047e-08,
+      "median_rate": 0.006786308436667572,
+      "maximum_rate": 0.014323492674074671,
+      "max_mean_worst_input_leakage": 0.6631705277482691,
+      "phase_realizations": 1,
+      "worst_cycles": 12.291015625,
+      "worst_errors": [
+        -0.02,
+        -0.02
+      ]
+    },
+    {
+      "waveform": "HANN",
+      "sequence": "CPMG",
+      "id": "HANN/CPMG",
+      "minimum_rate": 4.2138982254157025e-08,
+      "median_rate": 0.0006037845287532593,
+      "maximum_rate": 0.014378205100939649,
+      "max_mean_worst_input_leakage": 0.6631705277482691,
+      "phase_realizations": 1,
+      "worst_cycles": 15.724609375,
+      "worst_errors": [
+        0.02,
+        0.0
+      ]
+    },
+    {
+      "waveform": "HANN",
+      "sequence": "APCP",
+      "id": "HANN/APCP",
+      "minimum_rate": 8.579765082454405e-08,
+      "median_rate": 9.818828659270481e-05,
+      "maximum_rate": 0.0006618554150878673,
+      "max_mean_worst_input_leakage": 0.3888496592267856,
+      "phase_realizations": 1,
+      "worst_cycles": 14.326171875,
+      "worst_errors": [
+        0.0,
+        0.02
+      ]
+    },
+    {
+      "waveform": "HANN",
+      "sequence": "XY8",
+      "id": "HANN/XY8",
+      "minimum_rate": 0.011360478215016083,
+      "median_rate": 0.01422710780019473,
+      "maximum_rate": 0.014443494134271997,
+      "max_mean_worst_input_leakage": 0.2318677834154672,
+      "phase_realizations": 1,
+      "worst_cycles": 12.076171875,
+      "worst_errors": [
+        0.0,
+        -0.02
+      ]
+    },
+    {
+      "waveform": "HANN",
+      "sequence": "XY16",
+      "id": "HANN/XY16",
+      "minimum_rate": 0.012529785028653938,
+      "median_rate": 0.014161922239775235,
+      "maximum_rate": 0.014407782212405323,
+      "max_mean_worst_input_leakage": 0.13443889363270825,
+      "phase_realizations": 1,
+      "worst_cycles": 12.263671875,
+      "worst_errors": [
+        0.02,
+        0.02
+      ]
+    },
+    {
+      "waveform": "HANN",
+      "sequence": "MLEV8",
+      "id": "HANN/MLEV8",
+      "minimum_rate": 0.011092325325942861,
+      "median_rate": 0.014166331572011229,
+      "maximum_rate": 0.01441199275925619,
+      "max_mean_worst_input_leakage": 0.18866091541817048,
+      "phase_realizations": 1,
+      "worst_cycles": 12.701171875,
+      "worst_errors": [
+        0.02,
+        -0.02
+      ]
+    },
+    {
+      "waveform": "HANN",
+      "sequence": "raw_RS",
+      "id": "HANN/raw_RS",
+      "minimum_rate": 0.008511972096610105,
+      "median_rate": 0.011835949279741308,
+      "maximum_rate": 0.013379250813028636,
+      "max_mean_worst_input_leakage": 0.20170944972825605,
+      "phase_realizations": 1,
+      "worst_cycles": 12.076171875,
+      "worst_errors": [
+        0.02,
+        0.02
+      ]
+    },
+    {
+      "waveform": "HANN",
+      "sequence": "RXY8",
+      "id": "HANN/RXY8",
+      "minimum_rate": 0.013487222675533823,
+      "median_rate": 0.014142547958689338,
+      "maximum_rate": 0.0143901342637247,
+      "max_mean_worst_input_leakage": 0.04028492487123979,
+      "phase_realizations": 32,
+      "worst_cycles": 12.287109375,
+      "worst_errors": [
+        0.02,
+        0.02
+      ],
+      "seed_standard_error_at_worst_point": 7.073087947003202e-05
+    },
+    {
+      "waveform": "DRAG3",
+      "sequence": "RS_prefix",
+      "id": "DRAG3/RS_prefix",
+      "minimum_rate": 0.013893444905404038,
+      "median_rate": 0.014341941965779668,
+      "maximum_rate": 0.014498440451586875,
+      "max_mean_worst_input_leakage": 0.012419887910638982,
+      "phase_realizations": 1,
+      "worst_cycles": 12.404296875,
+      "worst_errors": [
+        0.02,
+        0.02
+      ]
+    },
+    {
+      "waveform": "DRAG3",
+      "sequence": "CP",
+      "id": "DRAG3/CP",
+      "minimum_rate": 0.0009666591990427081,
+      "median_rate": 0.004332271042616669,
+      "maximum_rate": 0.014488260936870584,
+      "max_mean_worst_input_leakage": 0.30387313307569763,
+      "phase_realizations": 1,
+      "worst_cycles": 12.326171875,
+      "worst_errors": [
+        0.02,
+        0.02
+      ]
+    },
+    {
+      "waveform": "DRAG3",
+      "sequence": "CPMG",
+      "id": "DRAG3/CPMG",
+      "minimum_rate": 1.1038009565313082e-06,
+      "median_rate": 0.0006739869887123783,
+      "maximum_rate": 0.01449964104333805,
+      "max_mean_worst_input_leakage": 0.303873133075697,
+      "phase_realizations": 1,
+      "worst_cycles": 15.998046875,
+      "worst_errors": [
+        -0.02,
+        0.02
+      ]
+    },
+    {
+      "waveform": "DRAG3",
+      "sequence": "APCP",
+      "id": "DRAG3/APCP",
+      "minimum_rate": 8.405701591695119e-08,
+      "median_rate": 0.008885691303294932,
+      "maximum_rate": 0.01446304692023768,
+      "max_mean_worst_input_leakage": 0.20565537852768792,
+      "phase_realizations": 1,
+      "worst_cycles": 13.748046875,
+      "worst_errors": [
+        -0.02,
+        0.02
+      ]
+    },
+    {
+      "waveform": "DRAG3",
+      "sequence": "XY8",
+      "id": "DRAG3/XY8",
+      "minimum_rate": 0.012941374389529603,
+      "median_rate": 0.014416489772965863,
+      "maximum_rate": 0.014510081139360455,
+      "max_mean_worst_input_leakage": 0.10065652710818417,
+      "phase_realizations": 1,
+      "worst_cycles": 12.068359375,
+      "worst_errors": [
+        0.02,
+        0.02
+      ]
+    },
+    {
+      "waveform": "DRAG3",
+      "sequence": "XY16",
+      "id": "DRAG3/XY16",
+      "minimum_rate": 0.013712682463597838,
+      "median_rate": 0.014418480583163213,
+      "maximum_rate": 0.014510000284233677,
+      "max_mean_worst_input_leakage": 0.056348388773870765,
+      "phase_realizations": 1,
+      "worst_cycles": 12.013671875,
+      "worst_errors": [
+        0.02,
+        0.02
+      ]
+    },
+    {
+      "waveform": "DRAG3",
+      "sequence": "MLEV8",
+      "id": "DRAG3/MLEV8",
+      "minimum_rate": 0.012794932445024443,
+      "median_rate": 0.014408482263847538,
+      "maximum_rate": 0.014496284312261442,
+      "max_mean_worst_input_leakage": 0.08230360286443886,
+      "phase_realizations": 1,
+      "worst_cycles": 12.447265625,
+      "worst_errors": [
+        0.02,
+        0.02
+      ]
+    },
+    {
+      "waveform": "DRAG3",
+      "sequence": "raw_RS",
+      "id": "DRAG3/raw_RS",
+      "minimum_rate": 0.012072364383116187,
+      "median_rate": 0.013882481994287795,
+      "maximum_rate": 0.014503696992554667,
+      "max_mean_worst_input_leakage": 0.0831492663316028,
+      "phase_realizations": 1,
+      "worst_cycles": 12.447265625,
+      "worst_errors": [
+        0.02,
+        0.02
+      ]
+    },
+    {
+      "waveform": "DRAG3",
+      "sequence": "RXY8",
+      "id": "DRAG3/RXY8",
+      "minimum_rate": 0.014127745186495852,
+      "median_rate": 0.014412673928528266,
+      "maximum_rate": 0.014488515710562484,
+      "max_mean_worst_input_leakage": 0.016736984261794777,
+      "phase_realizations": 32,
+      "worst_cycles": 12.041015625,
+      "worst_errors": [
+        0.02,
+        0.02
+      ],
+      "seed_standard_error_at_worst_point": 2.9789209904383072e-05
+    }
+  ],
+  "resources": [
+    {
+      "waveform": "RECT",
+      "duration": 0.25,
+      "nominal_rf_peak": 12.566370614359172,
+      "nominal_rf_energy": 39.47841760435744,
+      "nominal_longitudinal_peak": 0.0,
+      "nominal_longitudinal_energy": 0.0,
+      "within_common_caps": true
+    },
+    {
+      "waveform": "FAST_RECT",
+      "duration": 0.125,
+      "nominal_rf_peak": 25.132741228718345,
+      "nominal_rf_energy": 78.95683520871488,
+      "nominal_longitudinal_peak": 0.0,
+      "nominal_longitudinal_energy": 0.0,
+      "within_common_caps": true
+    },
+    {
+      "waveform": "HANN",
+      "duration": 0.25,
+      "nominal_rf_peak": 25.132741228718345,
+      "nominal_rf_energy": 59.217626406536155,
+      "nominal_longitudinal_peak": 0.0,
+      "nominal_longitudinal_energy": 0.0,
+      "within_common_caps": true
+    },
+    {
+      "waveform": "DRAG3",
+      "duration": 0.25,
+      "nominal_rf_peak": 24.363371599267783,
+      "nominal_rf_energy": 58.21872910432586,
+      "nominal_longitudinal_peak": 5.385587406153931,
+      "nominal_longitudinal_energy": 1.9827330270045587,
+      "within_common_caps": true
+    }
+  ],
+  "points_per_combination": 9216,
+  "combinations": 36,
+  "candidate": "DRAG3/RS_prefix",
+  "best_minimum_baseline": "DRAG3/RXY8",
+  "best_median_baseline": "DRAG3/XY16",
+  "candidate_to_best_minimum_ratio": 0.9834155926512765,
+  "candidate_to_best_median_ratio": 0.9946916308592931,
+  "convergence": [
+    {
+      "id": "HANN/RS_prefix",
+      "pass": true,
+      "max_relative_128_256_difference": 2.92695239673082e-05
+    },
+    {
+      "id": "HANN/XY8",
+      "pass": true,
+      "max_relative_128_256_difference": 7.26193699369939e-06
+    },
+    {
+      "id": "DRAG3/RS_prefix",
+      "pass": true,
+      "max_relative_128_256_difference": 8.843066615704767e-06
+    },
+    {
+      "id": "DRAG3/XY8",
+      "pass": true,
+      "max_relative_128_256_difference": 2.8651944579116825e-06
+    }
+  ],
+  "numerical_gate_pass": true,
+  "advantage_gate_pass": false,
+  "decision": "NO_QUALIFYING_COMBINATION_ADVANTAGE",
+  "continuous_domain_certified": false,
+  "novelty": "NOT_ADMITTED_KNOWN_CONTROL_FOUNDATION",
+  "hardware_validation": "NOT_TESTED",
+  "mass_enterprise_validation": "NOT_TESTED",
+  "mission_complete": false,
+  "seconds": 140.84891429997515
+}
