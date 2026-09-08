@@ -1,0 +1,19 @@
+{
+  "source_commit": "66550207872d662e059d6b43bf29b0c4ee6c9edc",
+  "sources": {
+    "protocol_v2.json": "7c10cafdbbc8d9bf45f2a5bff2dbae8cceb102df4f6b8e987705f0711f2305ef",
+    "READOUT_V2_THEORY.md": "606eb703df9b454d91c91366c8da52c97c24b420bb0b13099ebcc50fcf1ddc06",
+    "readout_v2.py": "5a85fb6551b81dbcc1447cd47f921501440599d7469681859984cfb9ba9900c5",
+    "experiment_v2.py": "77c3545cce1fa9c8c7bd867bf1a7771f542b80005e3731f1abceb384b801c28e",
+    "test_readout_v2.py": "576d36c3c05ea68dc12e26fb811c8e1462caa4f643bcda146b0eca9ae8cf5ece",
+    "experiment.py": "f3b223a6a3972506c85d6f773077ee7a58cdde299c459efce43fa45c544742b6"
+  },
+  "original_source_commit": "ace8b6adee5ba26585c2db629a9cbbc368ccda08",
+  "old_roots_sha256": "75d436e32b50b2c033800fb6e91601ab0a360ef949d2cc4396516648d6e4786f",
+  "python": "3.13.2 (tags/v3.13.2:4f8bb39, Feb  4 2025, 15:23:48) [MSC v.1942 64 bit (AMD64)]",
+  "numpy": "2.5.2",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "utc_started": "2026-09-08T16:08:48Z",
+  "independent_investigator": false,
+  "hardware_calls": 0
+}
