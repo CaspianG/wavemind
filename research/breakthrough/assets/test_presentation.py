@@ -48,17 +48,15 @@ def test_current_status_matches_v3_and_keeps_mission_gates_closed():
     assert status["public_workflow_human_terms_review"] == "pending_actual_human_review"
 
 
-def test_concept_art_keeps_identity_and_explicit_captions():
+def test_concept_art_keeps_identity_and_accessible_image_links():
     image = HERE / "quantum-sensing-concept.png"
     assert hashlib.sha256(image.read_bytes()).hexdigest() == "20f97f9b1ab68bf846affa9c5683a547faef37c63950785fd6cd1629db65d6db"
     english = (RESEARCH / "README.md").read_text(encoding="utf-8")
     russian = (RESEARCH / "START_HERE_RU.md").read_text(encoding="utf-8")
-    assert "not a photograph of a built sensor" in english
-    assert "Обложка создана с помощью ИИ" in russian
-    assert "не показывает" in russian
     for page in (english, russian):
-        assert "assets/quantum-sensing-concept.png" in page
-        assert "assets/README.md" in page
+        images = re.findall(r"!\[([^\]]+)\]\((assets/quantum-sensing-concept.png)\)", page)
+        assert len(images) == 1
+        assert images[0][0].strip()
 
 
 def test_research_markdown_local_file_links_resolve():

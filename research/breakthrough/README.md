@@ -4,10 +4,9 @@ Quantum sensing research · 8 September 2026
 
 [По-русски](START_HERE_RU.md) · [Latest results](sensing_rs/RESULTS_V3_RU.md) · [Frozen protocol](sensing_rs/protocol_v3.json) · [Reproduce](#reproduce-or-audit) · [Archive](#research-archive)
 
-![Conceptual AI-generated illustration of a transparent crystal on a copper mount, not a photograph of a built sensor.](assets/quantum-sensing-concept.png)
+![Conceptual illustration: a transparent crystal on a copper mount.](assets/quantum-sensing-concept.png)
 
-*Conceptual AI-generated illustration, not a photograph of a built sensor or
-a completed experiment. [Artwork provenance](assets/README.md).*
+*Conceptual illustration.*
 
 A quantum state can respond to a weak field while a chosen measurement
 reveals almost none of that response. This investigation asks how pulse
@@ -27,6 +26,12 @@ six readout settings share the measurement budget. The score is local Fisher
 information about the weak signal divided by total time, including readout
 and assumed overhead. Higher is better within this model; the score is not
 a calibrated device sensitivity or an inspection success rate.
+
+![Model overview: weak field, evolution under 64 pulses, six finite readout settings and information per total time; unwanted third-level excitation is a separate branch.](assets/sensing-model.svg)
+
+*From a weak field to an observable score. A calculation schematic, not a
+built sensor. [Full-size figure](assets/sensing-model.svg) ·
+[Mathematical model](sensing_rs/PULSE_V3_THEORY.md).*
 
 | Version | Question | What survived the test |
 |---|---|---|
@@ -52,6 +57,15 @@ The candidate and coefficients were frozen before the main run. We evaluated
 uses 32 retained phase realizations sharing one shot budget, not 32 times
 the resources.
 
+![Minimum Fisher information per total time for four pulse shapes: shaping improves both RS and RXY8; DRAG3 with RXY8 remains ahead of DRAG3 with RS.](assets/pulse-comparison.svg)
+
+*Shaping helps both methods. RS and the strongest known grid minimum are
+shown for each shape; the complete experiment has 36 combinations.
+[Full-size figure](assets/pulse-comparison.svg).*
+
+<details>
+<summary>Chart values and units</summary>
+
 | Pulse shape | RS minimum FI/time | Best known minimum at the same shape |
 |---|---:|---:|
 | RECT | 0.001124 | 0.004749 · RXY8 |
@@ -62,11 +76,21 @@ the resources.
 Model units; minima over the finite v3 grid. This compact table selects RS
 and the strongest known minimum per shape. [All 36 results remain available](sensing_rs/runs/pulse_v3/results.json).
 
+</details>
+
 DRAG3/RS improved **12.37-fold** over RECT/RS, reaching **98.34%** of the
 best known minimum. The frozen requirement was at least **200%**, together
 with a median-score requirement. It did not pass. Nor is the gain free:
 DRAG3 consumes 47.47% more RF energy than RECT and needs added level control.
 All methods have equal caps and waveform choices, not equal consumed energy.
+
+![Three commanded DRAG3 controls: primary drive X, derivative quadrature Y and longitudinal level control d, with all 257 supplied samples per component.](assets/drag3-waveform.svg)
+
+*Inside one pulse: X is the primary drive, Y its quadrature correction,
+and d the added level control. These are commanded shapes, not measured
+oscilloscope traces; axes use model units.
+[Full-size figure](assets/drag3-waveform.svg) ·
+[Equations and assumptions](sensing_rs/PULSE_V3_THEORY.md).*
 
 ## What useful would have to mean
 
@@ -88,6 +112,10 @@ An improved simulation score cannot substitute for those observations.
 all 228 saved arrays; 43 archived files also matched their Git blobs byte for
 byte. This is a same-investigator reproduction, not an independent review.
 [Validation record](sensing_rs/validation_v3.json).
+
+[Figure sources, data and visual checks](assets/README.md) are also included.
+The figures use the owner's selected diagram-design style; they do not change
+the experimental protocol or the admission criteria.
 
 The scientific advantage gate remains false even when every software test
 passes. Protocols, raw arrays, source digests and rejected results remain

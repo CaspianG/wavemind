@@ -4,10 +4,8 @@
 
 **Verified experience for coding, support, and operations agents that repeat consequential work.**
 
-WaveMind turns independently verified tool work into compact, cited Experience
-Packets for the next run. Every packet keeps provenance, applicability
-boundaries, correction and rollback instead of asking an agent to trust an
-opaque history dump.
+WaveMind turns independently verified tool work into compact Experience Packets.
+Each packet keeps its source, scope, corrections and rollback path.
 
 <p><a href="https://pypi.org/project/wavemind/"><strong>PyPI</strong></a> &middot; <a href="https://github.com/CaspianG/wavemind/actions/workflows/full-check.yml">Build status</a> &middot; <a href="https://github.com/CaspianG/wavemind/releases/latest">Latest release</a> &middot; <a href="https://github.com/CaspianG/wavemind/blob/main/pyproject.toml">Python &gt;=3.10</a> &middot; <a href="LICENSE">MIT</a></p>
 
@@ -27,11 +25,9 @@ opaque history dump.
 
 ## The Idea, In Plain English
 
-Most agent memory stores what an agent **saw**. WaveMind carries forward what
-independent evidence says **worked**. A test, operator, tool, or downstream
-state verifies the outcome before a bounded procedure is promoted. The next
-agent gets a compact Experience Packet with its source, scope, corrections,
-and rollback path; without valid evidence, WaveMind can stay silent.
+Most agent memory stores what an agent **saw**. WaveMind reuses what independent
+evidence says **worked**. A test, operator, tool or downstream state must verify
+the outcome first; without valid evidence, a procedure is not promoted.
 
 | Raw agent history | WaveMind verified experience |
 |---|---|
@@ -40,21 +36,14 @@ and rollback path; without valid evidence, WaveMind can stay silent.
 | Lets corrections coexist as ambiguity | Reconciles conflicts and preserves what superseded what |
 | Makes learned behavior hard to inspect | Keeps provenance, applicability, deletion, and rollback explicit |
 
-The shift is from **accumulated context** to **governed, proof-carrying
-experience**. Read the [plain-language explanation and evidence boundaries](docs/WHY_WAVEMIND.md).
+Read the [plain-language explanation and evidence boundaries](docs/WHY_WAVEMIND.md).
 
 ## Quantum Sensing Research
 
-Can a quantum state respond to a field while its readout misses the signal?
-Our separate [research notebook](research/breakthrough/README.md) follows that
-question through a counterexample, a readout repair and pulse compensation.
-[Объяснение по-русски](research/breakthrough/START_HERE_RU.md).
+Can control make a weak signal easier to read? [Visual research guide](research/breakthrough/README.md) · [По-русски](research/breakthrough/START_HERE_RU.md).
 
-The latest simulation improves one candidate's worst-grid information rate
-12.37-fold over its rectangular-pulse version, but does **not** beat the
-strongest known control under the shared resource caps. This is reproducible
-research, not an admitted scientific breakthrough, a built sensor or a
-quantum feature of the WaveMind library. [Results and limits](research/breakthrough/sensing_rs/RESULTS_V3_RU.md).
+Simulation only: the candidate does **not** beat the strongest known control.
+This separate research track is not a proven breakthrough, built sensor or library feature. [Results and limits](research/breakthrough/sensing_rs/RESULTS_V3_RU.md).
 
 ## Built For Repeated Agent Work
 
@@ -66,9 +55,7 @@ quantum feature of the WaveMind library. [Results and limits](research/breakthro
 | Agent-platform teams | Rebuilding provenance, promotion, deletion, and rollback per framework | Share one governed Experience Packet contract across providers |
 | Private workflows | Learning without a reviewable source or exit path | Keep verified experience local, inspectable, and reversible |
 
-The flagship loop is `trace -> verification -> Experience Packet -> better
-next run -> explainable diff -> rollback`. See the dated
-[market and product audit](docs/MARKET_AUDIT_2026-08-16.md) for the evidence.
+See the dated [market and product audit](docs/MARKET_AUDIT_2026-08-16.md) for the evidence.
 
 ## What Makes It Different
 

@@ -12,9 +12,10 @@ The generated file was copied into the repository without image editing.
 
 SHA-256: `20f97f9b1ab68bf846affa9c5683a547faef37c63950785fd6cd1629db65d6db`.
 
-Required adjacent caption: “Conceptual AI-generated illustration, not a
-photograph of a built sensor or a completed experiment.” Localize this caption
-when using it on the Russian page. Keep descriptive alt text as well.
+Adjacent caption: “Conceptual illustration” / “Концептуальная иллюстрация”.
+The owner requested removal of the AI-generation wording from the cover on
+2026-09-09. The image itself is unchanged; this technical provenance record
+is retained separately from the cover. Keep descriptive alt text.
 
 <details>
 <summary>Generation prompt and provenance</summary>
@@ -32,28 +33,46 @@ Numerical results, labels and scientific charts must not be generated this way.
 The user selected [Cathryn Lavery's diagram-design](https://github.com/cathrynlavery/diagram-design).
 Upstream version 2.6, source revision
 `dcd9317ed9ec7477b20005544f36e3313664d815`, [MIT license](LICENSE.diagram-design.txt).
-Its first-project style choice is pending; no chart has been represented as
-finished or exported before that choice. The illustration above is separate
-from this diagram workflow.
+The owner approved the default light paper, dark ink and orange accent on
+2026-09-09. The illustration above is separate from this diagram workflow.
 
 The [figure contract](FIGURE_CONTRACT.md) defines questions, quantities,
 source data, omissions and export checks before drawing. Graphical style
 must not change a numerical value, hide a negative result or imply hardware
-validation. The current guides use source-backed tables while chart styling
-awaits confirmation.
+validation. English and Russian guides embed the same SVGs; exact tabular
+values remain available beside the comparison chart.
 
-Numerical inputs are already reproducible independently of that style choice:
+| Figure | What it explains | Editable source | Repository image |
+|---|---|---|---|
+| Measurement model | Field, control, readout and time-normalized information | [HTML](sensing-model.html) | [SVG](sensing-model.svg) |
+| Pulse comparison | RS and strongest known grid minimum for each of four shapes | [HTML](pulse-comparison.html) | [SVG](pulse-comparison.svg) |
+| DRAG3 waveform | Three commanded controls within one pulse | [HTML](drag3-waveform.html) | [SVG](drag3-waveform.svg) |
+
+All figures use a 1280 × 720 canvas. Open an SVG at full size to inspect small
+labels on a phone. SVGs embedded as images may use local font fallbacks because
+viewers can block remote font requests; HTML sources include the selected
+Instrument Serif, Geist and Geist Mono stylesheet. No PNG export is included.
+
+The figures are static and contain no JavaScript. They do not load experimental
+data from a server. To verify or rebuild with the existing Python/NumPy setup:
 
 ```sh
 python research/breakthrough/assets/build_figure_data.py --check
+python research/breakthrough/assets/render_figures.py --check
 python -m pytest research/breakthrough/assets -q -p no:cacheprovider
+# Explicitly regenerate the three HTML sources and their derived SVGs:
+python research/breakthrough/assets/render_figures.py
 ```
 
 [`figure-data.json`](figure-data.json) contains the eight selected bar values,
 257 exact-formula samples for each of the three commanded controls, resource
 costs and source hashes. The generator validates the complete run manifest
-before reading results. It renders no diagram and implies no style approval.
+before reading results. [`render_figures.py`](render_figures.py) independently
+compares those inputs with a fresh verified build before drawing. It does not
+rerun, retune or alter the experiment. SVG export follows the upstream HTML
+extraction procedure, including accessible names and strict XML color handling.
 
-[Presentation QA](presentation_validation.json) records the 42-test scoped
-run and the local English/Russian desktop/mobile preview checks. That preview
-is not a live GitHub rendering and the full product suite was not rerun.
+[Presentation QA](presentation_validation.json) records the scoped tests and
+local English/Russian desktop/mobile preview checks. A local preview is not
+the live GitHub renderer. The record explicitly states whether a full product
+suite or GitHub publication was performed.
