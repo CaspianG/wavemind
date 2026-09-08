@@ -1,16 +1,110 @@
-# Breakthrough research — local investigation resumed, not achieved
+# Where does the signal go?
 
-This is the research entry point for the mission started on 2026-09-06.
-The released WaveMind product is an input to the investigation, not evidence
-that a scientific breakthrough has happened.
+Quantum sensing research · 8 September 2026
 
-Both gates remain required: a novel, independently reproducible scientific
-capability and an order-of-magnitude or previously impossible improvement in
-real consumer and enterprise workflows. External expert scrutiny is required
-before calling any result a breakthrough. A local experiment cannot close
-either gate.
+[По-русски](START_HERE_RU.md) · [Latest results](sensing_rs/RESULTS_V3_RU.md) · [Frozen protocol](sensing_rs/protocol_v3.json) · [Reproduce](#reproduce-or-audit) · [Archive](#research-archive)
 
-- [Current sensing v2: blind spots repaired in-model; matched-budget advantage fails against randomized XY8](sensing_rs/RESULTS_V2_RU.md)
+![Conceptual AI-generated illustration of a transparent crystal on a copper mount, not a photograph of a built sensor.](assets/quantum-sensing-concept.png)
+
+*Conceptual AI-generated illustration, not a photograph of a built sensor or
+a completed experiment. [Artwork provenance](assets/README.md).*
+
+A quantum state can respond to a weak field while a chosen measurement
+reveals almost none of that response. This investigation asks how pulse
+control and readout can preserve useful, observable information.
+
+**Current status: simulation only; no qualifying advantage over known
+controls.** There is no built device, independent priority clearance or
+validated consumer/enterprise benefit. The released WaveMind library manages
+agent experience. The physics work is a separate research track, not a
+quantum feature of that library.
+
+## The experiment in one minute
+
+The model has two sensing levels and an unwanted third level. A weak field
+changes the state. A train of 64 pulses controls its evolution, after which
+six readout settings share the measurement budget. The score is local Fisher
+information about the weak signal divided by total time, including readout
+and assumed overhead. Higher is better within this model; the score is not
+a calibrated device sensitivity or an inspection success rate.
+
+| Version | Question | What survived the test |
+|---|---|---|
+| v1 · Sequence | Can Rudin–Shapiro phase coding control leakage? | A restricted first-order bound survived, but eight off-grid blind spots defeated the chosen readout. |
+| v2 · Readout | Can six native settings recover the observable signal? | All eight known blind spots were repaired in-model; randomized XY8 still had a 5.14-times higher grid minimum. |
+| v3 · Pulse | Does pulse-local compensation add an RS advantage? | Shaping greatly improved RS, but known sequences given the same controls benefited too. The advantage gate failed. |
+
+Versions are separate frozen experiments. In particular, v3 samples new
+detuning midpoints; its before/after gain compares two v3 variants on that
+same grid, not results stitched across different test sets.
+
+## What changed inside the pulse
+
+We tested rectangles, shorter rectangles, a smooth Hann envelope and fixed
+DRAG3 compensation. DRAG3 adds a derivative quadrature, a cubic in-phase
+correction and longitudinal level control. DRAG is an
+[established method](https://arxiv.org/abs/0901.0534), not an invention of
+this repository. The question was whether combining it with RS would add
+something beyond giving those same controls to established sequences.
+
+The candidate and coefficients were frozen before the main run. We evaluated
+36 pulse/sequence combinations, each at 9,216 model settings. Randomized XY8
+uses 32 retained phase realizations sharing one shot budget, not 32 times
+the resources.
+
+| Pulse shape | RS minimum FI/time | Best known minimum at the same shape |
+|---|---:|---:|
+| RECT | 0.001124 | 0.004749 · RXY8 |
+| FAST_RECT | 0.00001443 | 0.0009915 · RXY8 |
+| HANN | 0.013050 | 0.013487 · RXY8 |
+| DRAG3 | 0.013893 | 0.014128 · RXY8 |
+
+Model units; minima over the finite v3 grid. This compact table selects RS
+and the strongest known minimum per shape. [All 36 results remain available](sensing_rs/runs/pulse_v3/results.json).
+
+DRAG3/RS improved **12.37-fold** over RECT/RS, reaching **98.34%** of the
+best known minimum. The frozen requirement was at least **200%**, together
+with a median-score requirement. It did not pass. Nor is the gain free:
+DRAG3 consumes 47.47% more RF energy than RECT and needs added level control.
+All methods have equal caps and waveform choices, not equal consumed energy.
+
+## What useful would have to mean
+
+A possible future application is magnetic inspection: infer currents or
+changes inside an object from weak fields. That could matter to an individual
+checking a device or a company inspecting many objects, **if** a complete
+procedure proves more reliable, faster or less costly than a strong ordinary
+inspection method. No such outcome has been measured here.
+
+The remaining tests are distinct: demonstrate a new capability beyond known
+control; reproduce it independently; calibrate and test a real sensor; then
+compare a complete workflow on independently labeled held-out objects.
+Include calibration time, operator burden, false alarms and missed defects.
+An improved simulation score cannot substitute for those observations.
+
+## Audit trail
+
+35 focused implementation/evidence tests pass. A fresh local v3 run matched
+all 228 saved arrays; 43 archived files also matched their Git blobs byte for
+byte. This is a same-investigator reproduction, not an independent review.
+[Validation record](sensing_rs/validation_v3.json).
+
+The scientific advantage gate remains false even when every software test
+passes. Protocols, raw arrays, source digests and rejected results remain
+available so another person can check the conclusion.
+
+## Research archive
+
+This mission began on 2026-09-06. Both long-term gates remain open: a novel,
+independently reproducible scientific capability, and an order-of-magnitude
+or previously impossible improvement in real consumer and enterprise work.
+External expert scrutiny is required before calling a result a breakthrough.
+
+<details>
+<summary>Current sensing evidence and previous investigations</summary>
+
+- [Current sensing v3: pulse compensation helps; the combination advantage fails](sensing_rs/RESULTS_V3_RU.md)
+- [Preserved sensing v2: blind spots repaired in-model; matched-budget advantage fails against randomized XY8](sensing_rs/RESULTS_V2_RU.md)
 - [Reproduction and independent/device validation handoff — unsent](sensing_rs/VALIDATION_HANDOFF.md)
 - [Preserved sensing v1: leading leakage bound survives; off-grid readout blindness defeats robust-sensor admission](sensing_rs/RESULTS_RU.md)
 - [Что сделано и почему это ещё не доказанный прорыв — без жаргона](PLAIN_LANGUAGE_RU.md)
@@ -45,6 +139,8 @@ either gate.
 - [Safe-transfer prior-art audit: known mechanisms and incompatible guarantee targets](SAFE_TRANSPORT_PRIOR_ART_AUDIT.md)
 - [Historical learned-structure triage and external requirements](LEARNED_TRANSPORT_TRIAGE.md)
 
+</details>
+
 The subsequent instruction authorizes autonomous selection of public licensed
 consumer and enterprise workflows. Missing owner-selected tasks no longer
 blocks local research. Independent review and real-workflow validation remain
@@ -66,8 +162,17 @@ scientific advantage gate; they do not reopen the rejected R8 line:
 python -m pytest research/breakthrough/sensing_rs -q -p no:cacheprovider
 ```
 
-For a fresh full v2 reproduction and byte-level Git evidence audit, see
-[the sensing handoff](sensing_rs/VALIDATION_HANDOFF.md#reproduce-locally).
+For a fresh full v3 reproduction and byte-level Git evidence audit:
+
+```sh
+python research/breakthrough/sensing_rs/experiment_v3.py --output /NEW/PARENT/pulse-v3-replay
+python research/breakthrough/sensing_rs/verify_v3_replay.py /NEW/PARENT/pulse-v3-replay --check-git
+```
+
+Replace the placeholder with a new local path. The final directory must not
+already exist, and tracked sources must be committed. See the
+[sensing handoff](sensing_rs/VALIDATION_HANDOFF.md#reproduce-locally) for v2
+reproduction and the conditions needed for an independent or device test.
 The following commands are retained for historical evidence, not a request
 to restart those closed investigations:
 

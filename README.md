@@ -25,7 +25,7 @@ opaque history dump.
 
 </div>
 
-## The Breakthrough, In Plain English
+## The Idea, In Plain English
 
 Most agent memory stores what an agent **saw**. WaveMind carries forward what
 independent evidence says **worked**. A test, operator, tool, or downstream
@@ -42,6 +42,19 @@ and rollback path; without valid evidence, WaveMind can stay silent.
 
 The shift is from **accumulated context** to **governed, proof-carrying
 experience**. Read the [plain-language explanation and evidence boundaries](docs/WHY_WAVEMIND.md).
+
+## Quantum Sensing Research
+
+Can a quantum state respond to a field while its readout misses the signal?
+Our separate [research notebook](research/breakthrough/README.md) follows that
+question through a counterexample, a readout repair and pulse compensation.
+[Объяснение по-русски](research/breakthrough/START_HERE_RU.md).
+
+The latest simulation improves one candidate's worst-grid information rate
+12.37-fold over its rectangular-pulse version, but does **not** beat the
+strongest known control under the shared resource caps. This is reproducible
+research, not an admitted scientific breakthrough, a built sensor or a
+quantum feature of the WaveMind library. [Results and limits](research/breakthrough/sensing_rs/RESULTS_V3_RU.md).
 
 ## Built For Repeated Agent Work
 
