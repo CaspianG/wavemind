@@ -1,0 +1,42 @@
+{
+  "id": "sensing_rs_quadrature_compensation_v3_20260908",
+  "status_at_freeze": "unexecuted_new_hypothesis_known_DRAG_foundation_not_novelty_admitted",
+  "parent": "4d68648",
+  "question": "Does pulse-local leakage compensation give RS coding an advantage beyond giving the same controls to established sequences?",
+  "candidate": "DRAG3/RS_prefix",
+  "n": 64,
+  "eta": 1.0,
+  "reference_eta": 1.0,
+  "reference_spectator_cycles": 14.0,
+  "waveforms": ["RECT", "FAST_RECT", "HANN", "DRAG3"],
+  "protocols": ["RS_prefix", "CP", "CPMG", "APCP", "XY8", "XY16", "MLEV8", "raw_RS", "RXY8"],
+  "grid": {"start": 12.0, "stop": 16.0, "cells": 1024, "sampling": "cell_midpoints; disjoint from every original v2 detuning grid point"},
+  "amplitude_errors": [-0.02, 0.0, 0.02],
+  "qubit_detuning_over_reference_omega": [-0.02, 0.0, 0.02],
+  "reference_omega": "4*pi; identical absolute detuning errors for all waveforms",
+  "integration_slices": 128,
+  "randomized_baseline": {"seeds": 32, "seed_base": 260908, "shot_budget": "one budget divided among retained realizations, never multiplied"},
+  "resources": {
+    "pulse_durations": {"RECT": 0.25, "FAST_RECT": 0.125, "HANN": 0.25, "DRAG3": 0.25},
+    "nominal_rf_peak_cap": "8.1*pi radians/tau",
+    "nominal_rf_energy_cap_per_pulse": "8*pi^2 / tau",
+    "nominal_longitudinal_coefficient_cap": 6.0,
+    "longitudinal_generator": "diag(0,1,2); additional energy-level control, NOT a free frame relabeling",
+    "allocation": "same caps and waveform menu for every sequence; energy reported, not falsely equated",
+    "amplitude_error_scope": "RF quadratures multiplied by 1+epsilon; longitudinal control held at its nominal value; actual RF cap inflated by at most 1.02",
+    "analysis": "unchanged v2 finite rectangular native analysis, common 0.25 window, ideal initial plus_x, overhead=10",
+    "switching_bandwidth": "not hardware-calibrated; rectangle edges idealized for ALL methods"
+  },
+  "readout": {"p_bright": 0.10, "p_dark": 0.07, "settings": 6, "overhead": 10.0, "analysis_window": 0.25},
+  "noise": {"depolarizing_exponent": 0.2, "calibration": "synthetic, same exact isotropic qutrit channel as v2; no separate dephasing guarantee extended to v3"},
+  "convergence": {"slices": [64, 128, 256], "cycles": [12.001953125, 12.501953125, 13.001953125, 13.501953125, 14.001953125, 14.501953125, 15.001953125, 15.998046875], "sequences": ["RS_prefix", "XY8"], "error_pair": [0.02, -0.02], "rtol": 0.005, "atol": 1e-9},
+  "gates": {
+    "candidate_advantage": "DRAG3/RS_prefix minimum >= 2*best minimum over ALL non-RS baseline/waveform combinations AND median >= 0.9*best baseline median",
+    "ablation": "raw_RS is reported but excluded from the benchmark denominator",
+    "numerical": "finite probabilities, physical state norm, resource bounds and 128/256 convergence required; unresolved numerical gate never means success",
+    "continuous_domain": "not certified; this finite new grid is not a uniform sensitivity guarantee",
+    "novelty": "DRAG, Hann shaping and randomized XY8 are known. Any positive combination result is local, not scientific priority.",
+    "mission_complete": false
+  },
+  "execution": "freeze this protocol, theory, runner and tests before main data; no optimization, no outcome-based retuning, no hardware, no paid calls, preserve v1/v2 evidence"
+}
