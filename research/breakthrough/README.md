@@ -10,7 +10,9 @@ real consumer and enterprise workflows. External expert scrutiny is required
 before calling any result a breakthrough. A local experiment cannot close
 either gate.
 
-- [New sensing line: leading leakage bound survives; off-grid readout blindness defeats robust-sensor admission](sensing_rs/RESULTS_RU.md)
+- [Current sensing v2: blind spots repaired in-model; matched-budget advantage fails against randomized XY8](sensing_rs/RESULTS_V2_RU.md)
+- [Reproduction and independent/device validation handoff — unsent](sensing_rs/VALIDATION_HANDOFF.md)
+- [Preserved sensing v1: leading leakage bound survives; off-grid readout blindness defeats robust-sensor admission](sensing_rs/RESULTS_RU.md)
 - [Что сделано и почему это ещё не доказанный прорыв — без жаргона](PLAIN_LANGUAGE_RU.md)
 - [Decisive closure: R8 REJECTED; sole alternative refuted; no qualifying candidate](R8_DECISIVE_REVIEW_20260907.md)
 - [Bounded QEC hypothesis selection: three candidates, none admitted](QUANTUM_HYPOTHESIS_SELECTION_RESULTS_20260907.md)
@@ -55,6 +57,19 @@ or LongMemEval execution is authorized by these local runners.
 ## Reproduce or audit
 
 Python and NumPy suffice (`numpy==2.5.2` was used). Audit stored evidence:
+
+For the current sensing line, run its focused implementation/evidence tests
+(Pytest required). These reproduce both positive results and the failed
+scientific advantage gate; they do not reopen the rejected R8 line:
+
+```sh
+python -m pytest research/breakthrough/sensing_rs -q -p no:cacheprovider
+```
+
+For a fresh full v2 reproduction and byte-level Git evidence audit, see
+[the sensing handoff](sensing_rs/VALIDATION_HANDOFF.md#reproduce-locally).
+The following commands are retained for historical evidence, not a request
+to restart those closed investigations:
 
 ```sh
 python research/breakthrough/verify_evidence.py
