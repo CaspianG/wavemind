@@ -38,9 +38,7 @@ def defs(slug: str, *, arrows: bool = False) -> str:
     markers = ""
     if arrows:
         markers = f"""
-        <marker id="{slug}-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="{MUTED}"/></marker>
-        <marker id="{slug}-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="{ACCENT}"/></marker>
-        <marker id="{slug}-arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>"""
+        <marker id="{slug}-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="{MUTED}"/></marker>"""
     return f"      <defs>{markers}\n      </defs>"
 
 
@@ -93,7 +91,7 @@ def node(x: int, y: int, width: int, height: int, tag: str, name: str, lines: tu
         <rect x="{x}" y="{y}" width="{width}" height="{height}" rx="8" fill="{PAPER}"/>
         <rect x="{x}" y="{y}" width="{width}" height="{height}" rx="8" fill="{fill}" stroke="{stroke}" stroke-width="1.2"{dash}/>
         <rect x="{x + 16}" y="{y + 16}" width="64" height="20" rx="4" fill="none" stroke="{stroke}" stroke-width="0.8"/>
-        <text x="{x + 48}" y="{y + 30}" fill="{stroke}" font-size="12" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle" letter-spacing="0.12em">{text(tag)}</text>
+        <text x="{x + 48}" y="{y + 30}" fill="{INK}" font-size="12" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle" letter-spacing="0.12em">{text(tag)}</text>
         <text x="{fmt(center)}" y="{y + 64}" fill="{INK}" font-size="20" font-family="'Geist', sans-serif" font-weight="600" text-anchor="middle">{text(name)}</text>
 {line_markup}
       </g>"""

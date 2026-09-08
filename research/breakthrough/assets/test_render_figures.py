@@ -111,20 +111,44 @@ def test_readme_scale_and_safe_editorial_frame(rendered):
     assert float(axis_title.attrib["y"]) - float(tick.attrib["y"]) >= 28
 
 
+def test_small_node_tag_text_is_dark(rendered):
+    root = ET.parse(rendered / "sensing-model.svg").getroot()
+    control = next(item for item in root.findall(".//s:text", NS)
+                   if item.text == "CONTROL")
+    assert control.attrib["font-size"] == "12"
+    assert control.attrib["fill"] == "#2d3142"
+
+
+def test_every_arrow_marker_is_used(rendered):
+    root = ET.parse(rendered / "sensing-model.svg").getroot()
+    marker_ids = {marker.attrib["id"] for marker in root.findall(".//s:marker", NS)}
+    referenced_ids = {
+        match.group(1)
+        for element in root.iter()
+        if (marker_end := element.attrib.get("marker-end"))
+        and (match := re.fullmatch(r"url\(#([^)]+)\)", marker_end))
+    }
+    assert marker_ids == referenced_ids
+
+
 def test_bar_lengths_are_linear_zero_based_and_never_minimum_clamped(rendered):
     data = json.loads((HERE / "figure-data.json").read_text(encoding="utf-8"))
     root = ET.parse(rendered / "pulse-comparison.svg").getroot()
     bars = root.findall(".//s:rect[@data-method]", NS)
+    ordered_methods = []
     expected = {}
     for group in data["pulse_comparison"]:
+        ordered_methods.extend((group["candidate_id"], group["baseline_id"]))
         expected[group["candidate_id"]] = group["candidate_minimum"]
         expected[group["baseline_id"]] = group["baseline_minimum"]
     assert len(bars) == 8
-    assert {bar.attrib["data-method"] for bar in bars} == set(expected)
+    assert [bar.attrib["data-method"] for bar in bars] == ordered_methods
     # This independently specified scale is part of the documented figure contract.
-    for bar in bars:
+    for index, bar in enumerate(bars):
         value = expected[bar.attrib["data-method"]]
         assert float(bar.attrib["x"]) == 352
+        assert float(bar.attrib["y"]) == 196 + index * 48
+        assert float(bar.attrib["height"]) == 24
         assert float(bar.attrib["data-value"]) == value
         assert float(bar.attrib["width"]) == pytest.approx(value / .016 * 760, abs=1e-9)
     tiny = next(bar for bar in bars if bar.attrib["data-method"] == "FAST_RECT/RS_prefix")
