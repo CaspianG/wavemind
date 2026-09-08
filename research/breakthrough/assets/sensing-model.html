@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How the sensing protocol turns control into information</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --paper: #f5f5f5; --ink: #2d3142; --muted: #4f5d75; --accent: #eb6c36; }
+    body { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 32px; background: var(--paper); color: var(--ink); font-family: 'Geist', system-ui, sans-serif; }
+    .frame { width: min(100%, 1280px); }
+    svg { display: block; width: 100%; min-width: 900px; height: auto; }
+  </style>
+</head>
+<body>
+  <main class="frame">
+    <svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="sensing-model-title sensing-model-desc">
+      <title id="sensing-model-title">How the sensing protocol turns control into information</title>
+      <desc id="sensing-model-desc">Protocol model showing a weak field passing through 64-pulse three-level evolution, six finite readouts, and an information-per-total-time metric, with unwanted third-level excitation as a dashed branch.</desc>
+      <defs>
+        <marker id="sensing-model-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+        <marker id="sensing-model-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+        <marker id="sensing-model-arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+      </defs>
+      <rect width="1280" height="720" fill="#f5f5f5"/>
+      <text data-role="figure-title" x="64" y="88" fill="#2d3142" font-size="40" font-family="'Instrument Serif', serif">How the sensing protocol turns control into information</text>
+      <text data-role="figure-subtitle" x="64" y="124" fill="#4f5d75" font-size="18" font-family="'Geist', sans-serif">A finite three-level model — a protocol schematic, not a built device</text>
+      <line x1="64" y1="152" x2="1216" y2="152" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+
+      <line x1="288" y1="360" x2="368" y2="360" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#sensing-model-arrow)"/>
+      <line x1="592" y1="360" x2="672" y2="360" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#sensing-model-arrow)"/>
+      <line x1="896" y1="360" x2="976" y2="360" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#sensing-model-arrow)"/>
+      <line x1="480" y1="432" x2="480" y2="496" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#sensing-model-arrow)"/>
+      <rect x="496" y="452" width="120" height="20" rx="4" fill="#f5f5f5"/>
+      <text x="504" y="466" fill="#4f5d75" font-size="12" font-family="'Geist Mono', monospace" letter-spacing="0.08em">UNWANTED PATH</text>
+
+      <g>
+        <rect x="64" y="288" width="224" height="144" rx="8" fill="#f5f5f5"/>
+        <rect x="64" y="288" width="224" height="144" rx="8" fill="#ffffff" stroke="#4f5d75" stroke-width="1.2"/>
+        <rect x="80" y="304" width="64" height="20" rx="4" fill="none" stroke="#4f5d75" stroke-width="0.8"/>
+        <text x="112" y="318" fill="#4f5d75" font-size="12" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle" letter-spacing="0.12em">FIELD</text>
+        <text x="176.0" y="352" fill="#2d3142" font-size="20" font-family="'Geist', sans-serif" font-weight="600" text-anchor="middle">Weak oscillating field</text>
+        <text x="176.0" y="376" fill="#4f5d75" font-size="16" font-family="'Geist Mono', monospace" text-anchor="middle">known phase</text>
+        <text x="176.0" y="396" fill="#4f5d75" font-size="16" font-family="'Geist Mono', monospace" text-anchor="middle">weak signal amplitude</text>
+      </g>
+      <g>
+        <rect x="368" y="288" width="224" height="144" rx="8" fill="#f5f5f5"/>
+        <rect x="368" y="288" width="224" height="144" rx="8" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1.2"/>
+        <rect x="384" y="304" width="64" height="20" rx="4" fill="none" stroke="#eb6c36" stroke-width="0.8"/>
+        <text x="416" y="318" fill="#eb6c36" font-size="12" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle" letter-spacing="0.12em">CONTROL</text>
+        <text x="480.0" y="352" fill="#2d3142" font-size="20" font-family="'Geist', sans-serif" font-weight="600" text-anchor="middle">Three-level evolution</text>
+        <text x="480.0" y="376" fill="#4f5d75" font-size="16" font-family="'Geist Mono', monospace" text-anchor="middle">64 pulses</text>
+        <text x="480.0" y="396" fill="#4f5d75" font-size="16" font-family="'Geist Mono', monospace" text-anchor="middle">shaped drive</text>
+      </g>
+      <g>
+        <rect x="672" y="288" width="224" height="144" rx="8" fill="#f5f5f5"/>
+        <rect x="672" y="288" width="224" height="144" rx="8" fill="#ffffff" stroke="#4f5d75" stroke-width="1.2"/>
+        <rect x="688" y="304" width="64" height="20" rx="4" fill="none" stroke="#4f5d75" stroke-width="0.8"/>
+        <text x="720" y="318" fill="#4f5d75" font-size="12" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle" letter-spacing="0.12em">READOUT</text>
+        <text x="784.0" y="352" fill="#2d3142" font-size="20" font-family="'Geist', sans-serif" font-weight="600" text-anchor="middle">Finite readout scan</text>
+        <text x="784.0" y="376" fill="#4f5d75" font-size="16" font-family="'Geist Mono', monospace" text-anchor="middle">6 settings</text>
+        <text x="784.0" y="396" fill="#4f5d75" font-size="16" font-family="'Geist Mono', monospace" text-anchor="middle">shared protocol</text>
+      </g>
+      <g>
+        <rect x="976" y="288" width="224" height="144" rx="8" fill="#f5f5f5"/>
+        <rect x="976" y="288" width="224" height="144" rx="8" fill="#ffffff" stroke="#4f5d75" stroke-width="1.2"/>
+        <rect x="992" y="304" width="64" height="20" rx="4" fill="none" stroke="#4f5d75" stroke-width="0.8"/>
+        <text x="1024" y="318" fill="#4f5d75" font-size="12" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle" letter-spacing="0.12em">METRIC</text>
+        <text x="1088.0" y="352" fill="#2d3142" font-size="20" font-family="'Geist', sans-serif" font-weight="600" text-anchor="middle">Information / total time</text>
+        <text x="1088.0" y="376" fill="#4f5d75" font-size="16" font-family="'Geist Mono', monospace" text-anchor="middle">worst grid point</text>
+        <text x="1088.0" y="396" fill="#4f5d75" font-size="16" font-family="'Geist Mono', monospace" text-anchor="middle">T = 74.25</text>
+      </g>
+      <g>
+        <rect x="368" y="496" width="224" height="72" rx="8" fill="#f5f5f5"/>
+        <rect x="368" y="496" width="224" height="72" rx="8" fill="rgba(45,49,66,0.02)" stroke="#4f5d75" stroke-width="1.2" stroke-dasharray="4,4"/>
+        <rect x="384" y="512" width="64" height="20" rx="4" fill="none" stroke="#4f5d75" stroke-width="0.8"/>
+        <text x="416" y="526" fill="#4f5d75" font-size="12" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle" letter-spacing="0.12em">LEAKAGE</text>
+        <text x="480.0" y="560" fill="#2d3142" font-size="20" font-family="'Geist', sans-serif" font-weight="600" text-anchor="middle">Third-level excitation</text>
+
+      </g>
+
+      <line x1="64" y1="612" x2="1216" y2="612" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+      <text x="64" y="648" fill="#2d3142" font-size="16" font-family="'Geist Mono', monospace">MODEL BOUNDARY</text>
+      <text x="248" y="648" fill="#4f5d75" font-size="16" font-family="'Geist', sans-serif">Numerical protocol values; no hardware measurement or continuous-domain certificate.</text>
+      <text data-role="source" x="1216" y="668" fill="#4f5d75" font-size="16" font-family="'Geist Mono', monospace" text-anchor="end">SOURCE · protocol_v3.json · frozen experiment cd73cd5028bf</text>
+    </svg>
+  </main>
+</body>
+</html>
