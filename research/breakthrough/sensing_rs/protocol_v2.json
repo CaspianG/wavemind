@@ -1,0 +1,62 @@
+{
+  "id": "sensing_rs_native_readout_v2_20260908",
+  "status_at_freeze": "untested_new_readout_not_a_replacement_for_v1",
+  "prior_source": "0d975fc6cb557b4a39489bb6b6f1486195ea034f",
+  "model": "Same three-level ladder, signal b*cos(pi*t), tau=1, n=64, tp=0.25, eta=1. Real finite analysis pulses use the SAME coupled Hamiltonian, detuning and amplitude errors as sensing pulses. All nuisance values are conditioned on; joint nuisance estimation is NOT claimed.",
+  "n": 64,
+  "tp": 0.25,
+  "eta": 1.0,
+  "analysis_window": 0.25,
+  "overhead": 10.0,
+  "input_preparation": "ideal |+x>; fixed overhead includes preparation/readout time but no measured preparation fidelity is claimed",
+  "readout": {
+    "settings": ["Z+", "Z-", "X+", "X-", "Y+", "Y-"],
+    "nominal_analysis_angle_pi": [0.0, 1.0, 0.5, 0.5, 0.5, 0.5],
+    "nominal_analysis_phase_pi": [0.0, 0.0, 1.5, 0.5, 0.0, 1.0],
+    "pulse_placement": "centered in common analysis window; idle on both sides, including Z+",
+    "native_observable": "click effect p_dark*I+(p_bright-p_dark)*|0><0|; no event discarded",
+    "p_bright": 0.10,
+    "p_dark": 0.07,
+    "shot_allocation": "equal one sixth of total shots per setting; retain setting identity; average FI, never sum six independent budgets"
+  },
+  "noise": {
+    "primary_depolarizing_exponent": 0.2,
+    "meaning": "isotropic qutrit depolarization during total sensing+analysis time, rho -> exp(-0.2)*rho+(1-exp(-0.2))*I/3; commutes with any coherent evolution",
+    "hardware_calibration": "none; optical probabilities and all noise parameters are explicit synthetic assumptions"
+  },
+  "grid": {"start": 12.0, "stop": 16.0, "count": 1025},
+  "amplitude_errors": [-0.02, 0.0, 0.02],
+  "qubit_detuning_over_omega": [-0.02, 0.0, 0.02],
+  "protocols": ["RS_prefix", "CP", "CPMG", "APCP", "XY8", "XY16", "MLEV8", "raw_RS", "RXY8"],
+  "randomized_baseline": {
+    "seeds": 32,
+    "seed_base": 260908,
+    "method": "global phase uniform [0,2*pi) per XY8 block, fixed PCG64 generators seed_base+i, i=0..31",
+    "score": "equal shot average of conditional FI with phase-realization identity retained, same six-setting readout and time cost"
+  },
+  "gates": {
+    "known_blind_spots": "all 8 archived v1 roots give v2 FI rate >= 1 percent of ideal CP with the same detector, noise and analysis budget",
+    "preliminary_advantage": "minimum v2 candidate FI rate >= 2*largest baseline minimum AND candidate median >= 0.9*largest baseline median; includes RXY8, excludes raw_RS ablation",
+    "continuous_detuning": "conditional interpolation lower bound >0 across [12,16] for EACH of nine fixed error pairs; not a certificate over continuous amplitude/detuning errors",
+    "scientific_novelty": "unknown; Pauli readout, erasure sensing, random phases and RS polynomials are known",
+    "physical_and_workflow_validation": "not_tested",
+    "mission_complete": false
+  },
+  "continuous_audit": {
+    "endpoint_slope_vector_error_allowance": 1e-7,
+    "maximum_points_per_error_pair": 32769,
+    "method": "adaptive linear interpolation of six click-probability derivatives; analytic norm-curvature bound, no extrapolation from a positive scalar FI grid",
+    "arithmetic_status": "conditional on declared endpoint numerical-error allowance; NOT an interval-arithmetic proof"
+  },
+  "dephasing_stress": {
+    "protocols": ["RS_prefix", "XY8"],
+    "cases": "all 8 archived roots plus cycles [12,12.125,12.25,13,14,15,16] for amplitude errors [-0.02,0,0.02] and zero qubit detuning",
+    "gamma_times_total_duration": 0.2,
+    "lindblad_operator": "sqrt(gamma/2)*diag(1,-1,0); replaces isotropic depolarization, retains optical noise",
+    "pulse_slices": [16, 32, 64, 128],
+    "convergence_relative_tolerance": 0.003,
+    "convergence_absolute_tolerance": 1e-9,
+    "interpretation": "distinct noise-model stress, not a device-calibrated model or continuous dephasing guarantee"
+  },
+  "execution": "NumPy only; no optimizer, paid endpoints, hardware, external messages or publishing. Preserve all old evidence, freeze this source before numerical tests."
+}
