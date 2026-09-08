@@ -38,7 +38,7 @@
 - [x] Write tests for CLI generation, XML accessibility, 8 bar values/lengths, all 771 control points and deterministic checked-in outputs.
 - [x] Observe the first CLI test fail before implementation (2026-09-09): `1 failed`, renderer not yet present. Baseline outside the new renderer tests: `42 passed in 3.93s`.
 
-- [ ] Implement the minimal renderer. First verify the frozen input, fail explicitly if it differs, then render:
+- [x] Implement the minimal renderer. First verify the frozen input, fail explicitly if it differs, then render:
 
 ```python
 data = json.loads((HERE / "figure-data.json").read_text(encoding="utf-8"))
@@ -72,6 +72,29 @@ y = 544 - (amplitude + 8) / 36 * 360
 
 Plot bounds x112..1200, y184..544, time 0..0.25 tau, amplitude -8..28 inverse tau. Visible zero; `data-component` on each polyline, numerical serialization accurate within 1e-9 pixels. Caption: commanded controls, not measured traces. Additional d control is not free software; equal caps are not equal consumed energy. Record actual 47.47% extra RF cost in adjacent Markdown, not a fabricated curve.
 
-- [ ] Run `python -m pytest research/breakthrough/assets/test_render_figures.py -q -p no:cacheprovider`, `python research/breakthrough/assets/render_figures.py --check`, `python research/breakthrough/assets/build_figure_data.py --check`.
-- [ ] Run inspected upstream `self_check.py` and `verify-geometry.py` on all three HTML files. These are structural checks, not visual or scientific proof.
-- [ ] Self-review, commit only the renderer, its test and six generated files. Do not stage coordinating-agent docs. Report exact tests/output and any visual uncertainty. Controller performs actual Chrome/font/README QA and independent code review before publication.
+- [x] Run `python -m pytest research/breakthrough/assets/test_render_figures.py -q -p no:cacheprovider`, `python research/breakthrough/assets/render_figures.py --check`, `python research/breakthrough/assets/build_figure_data.py --check`.
+- [x] Run inspected upstream `self_check.py` and `verify-geometry.py` on all three HTML files. These are structural checks, not visual or scientific proof.
+- [x] Self-review, commit only the renderer, its test and six generated files. Do not stage coordinating-agent docs. Report exact tests/output and any visual uncertainty. Controller performs actual Chrome/font/README QA and independent code review before publication.
+
+## Verification record — 2026-09-09
+
+Renderer commit `493b82e`: seven renderer tests pass, frozen figure inputs match,
+all six exports match, upstream self-checks pass and geometry has zero findings.
+Independent task review approved spec compliance and code quality. The controller
+visually checked all three embedded figures and RU/EN desktop/mobile guides.
+The combined sensing, figure and document checks passed all 53 tests.
+
+At `037b51d`, the configured product suite passed 1415 tests with zero failures,
+16 skips and one existing MCP/Pydantic warning. The initial README-length and
+README-digest failures were resolved without changing the guards; the validity
+admission remains blocked (15 of 16 checks), not admitted. Ruff passes.
+The presentation QA JSON records commands, limitations and final-review status.
+No package build, GitHub CI, push, merge or release is claimed by this record.
+
+Final review cleanup `33295c5` makes small tag labels dark, removes unused SVG
+markers and adds exact ordered bar/row-geometry regressions. Nine renderer
+tests pass; the combined sensing/figure/document suite now passes 55 tests.
+All three figures and four language/viewport previews passed Chrome QA again;
+the changed model SVG was visually reinspected. Numerical evidence is unchanged.
+The single scoped re-review confirmed all three findings addressed and no new
+breakage. Publication approval remains pending; the existing worktree is kept.
