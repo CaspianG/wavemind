@@ -35,6 +35,12 @@ def public_experience_id(brain_id, runtime_id):
     ).hex
 
 
+def private_scope(brain_id, data):
+    """One ordered reported procedure per immutable governing basis."""
+    basis = data["_basis"] or digest(["legacy", data["receipt_id"]])
+    return "brain:" + brain_id + ":" + basis + ":" + digest(data["procedure"])
+
+
 def citations(conn, principal, brain_id, ids):
     if (
         not isinstance(ids, list)
@@ -162,13 +168,10 @@ class ExperienceBridge:
                 "integration_status": "unverified",
                 "_basis_origins": sorted(basis),
                 "_basis": fingerprint,
-                "_namespace": "brain:"
-                + brain_id
-                + ":"
-                + (fingerprint or digest(["legacy", packet["id"]])),
                 "_run": digest([brain_id, receipt["run_id"]]),
                 "_receipt_run_id": receipt["run_id"],
             }
+            data["_namespace"] = private_scope(brain_id, data)
             conn.execute(
                 "INSERT INTO outcomes(brain_id,id,receipt_id,status,created_at,payload_json) VALUES (?,?,?,'unverified',?,?)",
                 (brain_id, oid, receipt_id, time.time(), encode(data)),
@@ -255,6 +258,15 @@ class ExperienceBridge:
             if not isinstance(note, str) or len(note) > 8192:
                 raise invalid()
             evidence = citations(conn, principal, brain_id, evidence_citation_ids)
+            if data["verification"] is None:
+                if data["_namespace"] != private_scope(brain_id, data):
+                    raise BrainError(
+                        "invalid_state", "Private experience scope requires review."
+                    )
+                if self._scope_dirty(conn, brain_id, data["_namespace"]):
+                    raise BrainError(
+                        "cleanup_pending", "Private experience cleanup is pending."
+                    )
             if verifier_id is not None:
                 if (
                     not isinstance(verifier_id, str)
@@ -397,11 +409,21 @@ class ExperienceBridge:
         completed, pending = 0, 0
         with self.store.transaction(write=True) as conn:
             rows = conn.execute(
-                "SELECT * FROM outbox WHERE status='pending' ORDER BY created_at,id LIMIT ?",
+                "SELECT * FROM outbox WHERE status='pending' ORDER BY CASE WHEN kind LIKE 'source_%' THEN 0 ELSE 1 END,created_at,id LIMIT ?",
                 (limit,),
             ).fetchall()
             for operation in rows:
                 brain, oid = operation["brain_id"], operation["id"]
+                # A preceding purge can retire queued integrations already in
+                # this snapshot; never replay them into the now-clean scope.
+                if (
+                    conn.execute(
+                        "SELECT status FROM outbox WHERE brain_id=? AND id=?",
+                        (brain, oid),
+                    ).fetchone()[0]
+                    != "pending"
+                ):
+                    continue
                 conn.execute("SAVEPOINT experience_operation")
                 try:
                     if operation["kind"] == "integrate_outcome":
@@ -422,6 +444,19 @@ class ExperienceBridge:
                                 data=data,
                                 moment=time.time(),
                             )
+                            eligible &= data["_namespace"] == private_scope(brain, data)
+                            eligible &= (
+                                conn.execute(
+                                    "SELECT 1 FROM brain_experience_links WHERE brain_id=? AND outcome_id=? AND namespace=?",
+                                    (brain, oid, data["_namespace"]),
+                                ).fetchone()
+                                is not None
+                            )
+                            if self._scope_dirty(conn, brain, data["_namespace"]):
+                                raise BrainError(
+                                    "cleanup_pending",
+                                    "Private experience cleanup is pending.",
+                                )
                         if eligible:
                             ids = self.private.integrate(brain_id=brain, data=data)
                             self._acknowledge(conn, brain, oid, data, ids)
@@ -442,7 +477,7 @@ class ExperienceBridge:
                             (brain,),
                         ).fetchall()
                         for item in affected:
-                            self.private.purge(item[0])
+                            self._purge_scope(conn, brain, item[0])
                         conn.execute(
                             "UPDATE outbox SET status='completed' WHERE brain_id=? AND id=?",
                             (brain, oid),
@@ -465,8 +500,52 @@ class ExperienceBridge:
         for row in conn.execute(
             "SELECT DISTINCT namespace FROM brain_experience_links WHERE brain_id=? AND outcome_id=?",
             (brain, oid),
-        ):
-            self.private.purge(row[0])
+        ).fetchall():
+            self._purge_scope(conn, brain, row[0])
+
+    def _scope_dirty(self, conn, brain_id, namespace):
+        return (
+            conn.execute(
+                "SELECT 1 FROM brain_experience_links l JOIN outcomes o ON o.brain_id=l.brain_id AND o.id=l.outcome_id WHERE l.brain_id=? AND l.namespace=? AND (o.status='revoked' OR o.payload_json='{}') LIMIT 1",
+                (brain_id, namespace),
+            ).fetchone()
+            is not None
+        )
+
+    def _purge_scope(self, conn, brain_id, namespace):
+        self.private.purge(namespace)
+        self._retire_scope(conn, brain_id, namespace)
+
+    def _retire_scope(self, conn, brain_id, namespace):
+        """Retire only fully purged current mappings; keep history/replay keys.
+
+        The caller holds the Brain write transaction across private deletion
+        and this acknowledgment. A failure keeps opaque links for retry.
+        """
+        rows = conn.execute(
+            "SELECT DISTINCT o.id,o.payload_json FROM outcomes o JOIN brain_experience_links l ON l.brain_id=o.brain_id AND l.outcome_id=o.id WHERE l.brain_id=? AND l.namespace=?",
+            (brain_id, namespace),
+        ).fetchall()
+        for row in rows:
+            data = json.loads(row["payload_json"])
+            if data:
+                data["integration_status"] = "purged"
+                self._save(conn, brain_id, row["id"], data)
+            conn.execute(
+                "UPDATE outbox SET status='completed' WHERE brain_id=? AND id=? AND kind='integrate_outcome'",
+                (brain_id, row["id"]),
+            )
+        conn.execute(
+            "DELETE FROM brain_experience_links WHERE brain_id=? AND namespace=?",
+            (brain_id, namespace),
+        )
+        if rows:
+            record_change(
+                conn,
+                brain_id=brain_id,
+                kind="experience_purged",
+                record_id=rows[0]["id"],
+            )
 
     def _procedures(
         self, conn, principal, brain_id, *, moment, project_id=None, all_projects=False
@@ -496,6 +575,10 @@ class ExperienceBridge:
             try:
                 for row in links:
                     _, data = self._outcome(conn, principal, brain_id, row["id"])
+                    if data["_namespace"] != group["namespace"] or data[
+                        "_namespace"
+                    ] != private_scope(brain_id, data):
+                        raise _not_found()
                     scope = data["project_id"]
                     eligible &= (
                         row["status"] in ("verified", "failed")
@@ -531,7 +614,7 @@ class ExperienceBridge:
             if not all_projects and scope != project_id:
                 continue
             record = self.private.store.get(group["experience_id"])
-            if record is None:
+            if record is None or record.namespace != group["namespace"]:
                 continue
             result.append(
                 {

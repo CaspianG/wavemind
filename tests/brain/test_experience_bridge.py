@@ -174,7 +174,9 @@ def test_historical_owner_verification_after_expiry_and_other_revision(
         s.validate_packet(principal=agent, brain_id=brain, packet_id=packet_id)
 
 
-def independent_runs(s, owner, agent, brain, count=3, project_id=None, prefix="new"):
+def independent_runs(
+    s, owner, agent, brain, count=3, project_id=None, prefix="new", procedure=None
+):
     results = []
     # Import result evidence AFTER the receipts: per-run result citations are
     # not the procedure basis. Each independent run has separate evidence.
@@ -185,7 +187,14 @@ def independent_runs(s, owner, agent, brain, count=3, project_id=None, prefix="n
         cid = import_text(s, owner, brain, f"Result {prefix} {i} completed")[
             "citations"
         ][0]["id"]
-        result = outcome(s, agent, brain, receipt["id"], cid)
+        result = outcome(
+            s,
+            agent,
+            brain,
+            receipt["id"],
+            cid,
+            **({"procedure": procedure} if procedure is not None else {}),
+        )
         verify(s, owner, brain, result, cid)
         s.drain_outbox()
         results.append(result)
@@ -967,3 +976,270 @@ def test_verified_negative_validation_preserves_existing_compiler_policy(
     validations = s.experience.private.store.candidate_validations()
     assert len(validations) == 5
     assert sum(v["successful"] for v in validations) == 4
+
+
+def two_independent_procedures(s, owner, agent, brain):
+    receipts = [action(s, agent, brain, f"separate-{i}") for i in range(6)]
+    groups = [[], []]
+    evidence = [[], []]
+    for i, receipt in enumerate(receipts):
+        which = i // 3
+        cid = import_text(s, owner, brain, f"Distinct evidence {i}")["citations"][0][
+            "id"
+        ]
+        result = outcome(
+            s,
+            agent,
+            brain,
+            receipt["id"],
+            cid,
+            procedure=["Check orchard" if which == 0 else "Water orchard"],
+        )
+        verify(s, owner, brain, result, cid)
+        s.drain_outbox()
+        groups[which].append(result["id"])
+        evidence[which].append(cid)
+    return groups, evidence
+
+
+def test_different_procedures_have_exact_lineage_and_independent_acl_purge(
+    action_fixture,
+):
+    s, owner, agent, brain, _, _ = action_fixture
+    groups, evidence = two_independent_procedures(s, owner, agent, brain)
+    review = s.review_experience(principal=owner, brain_id=brain)
+    procedures = {p["content"]: p for p in review["procedures"]}
+    assert set(procedures["Reported steps: Check orchard"]["outcome_ids"]) == set(
+        groups[0]
+    )
+    assert set(procedures["Reported steps: Water orchard"]["outcome_ids"]) == set(
+        groups[1]
+    )
+    sibling_id = procedures["Reported steps: Water orchard"]["id"]
+    s.set_member(principal=owner, brain_id=brain, identity="reader", role="reader")
+    reader = Principal("reader")
+    sid = s.read_citation(principal=owner, brain_id=brain, citation_id=evidence[0][0])[
+        "source_id"
+    ]
+    s.set_source_access(principal=owner, brain_id=brain, source_id=sid, readers=[])
+    assert [
+        p["id"]
+        for p in s.review_experience(principal=reader, brain_id=brain)["procedures"]
+    ] == [sibling_id]
+    s.drain_outbox()
+    sibling = s.review_experience(principal=reader, brain_id=brain)["procedures"]
+    assert [p["id"] for p in sibling] == [sibling_id]
+    assert sibling[0]["eligible"] is True
+    assert set(sibling[0]["outcome_ids"]) == set(groups[1])
+    assert len(s.experience.private.store.candidate_validations()) == 3
+
+
+def test_acl_restore_requires_three_fresh_runs_and_retains_history_and_replay(
+    action_fixture,
+):
+    s, owner, agent, brain, _, cid = action_fixture
+    old = independent_runs(s, owner, agent, brain, prefix="old")
+    old_review = s.review_experience(principal=owner, brain_id=brain)
+    old_evidence = old_review["outcomes"][0]["verification"]["evidence_citation_ids"][0]
+    sid = s.read_citation(principal=owner, brain_id=brain, citation_id=cid)["source_id"]
+    s.set_source_access(principal=owner, brain_id=brain, source_id=sid, readers=[])
+    s.set_source_access(principal=owner, brain_id=brain, source_id=sid, readers=None)
+    s.drain_outbox()
+    historical = s.review_experience(principal=owner, brain_id=brain)
+    assert len(historical["outcomes"]) == 3
+    assert {o["integration_status"] for o in historical["outcomes"]} == {"purged"}
+    fresh = independent_runs(s, owner, agent, brain, count=1, prefix="fresh-one")
+    first = s.review_experience(principal=owner, brain_id=brain)["procedures"]
+    assert [p["status"] for p in first] == ["shadow"]
+    assert first[0]["eligible"] is False
+    fresh += independent_runs(s, owner, agent, brain, count=2, prefix="fresh-rest")
+    current = s.review_experience(principal=owner, brain_id=brain)["procedures"]
+    assert len(current) == 1 and current[0]["eligible"] is True
+    assert set(current[0]["outcome_ids"]) == {o["id"] for o in fresh}
+    replay_receipt = action(s, agent, brain, "new-replay")
+    replay = outcome(s, agent, brain, replay_receipt["id"], old_evidence)
+    assert (
+        verify(s, owner, brain, replay, old_evidence)["integration_status"] == "replay"
+    )
+    assert len(s.experience.private.store.candidate_validations()) == 3
+    assert {o["id"] for o in old} <= {
+        o["id"]
+        for o in s.review_experience(principal=owner, brain_id=brain)["outcomes"]
+    }
+
+
+def test_pending_cleanup_blocks_callback_and_verification_can_retry(
+    action_fixture, monkeypatch
+):
+    s, owner, agent, brain, _, cid = action_fixture
+    independent_runs(s, owner, agent, brain)
+    sid = s.read_citation(principal=owner, brain_id=brain, citation_id=cid)["source_id"]
+    s.set_source_access(principal=owner, brain_id=brain, source_id=sid, readers=[])
+    s.set_source_access(principal=owner, brain_id=brain, source_id=sid, readers=None)
+    receipt = action(s, agent, brain, "after-restoration")
+    evidence = import_text(s, owner, brain, "Fresh restoration result")["citations"][0][
+        "id"
+    ]
+    result = outcome(s, agent, brain, receipt["id"], evidence)
+    called = []
+
+    def callback(context):
+        called.append(context["receipt"]["id"])
+        return True
+
+    s.register_outcome_verifier(verifier_id="check", source="test", callback=callback)
+    with pytest.raises(BrainError) as error:
+        s.verify_outcome_with(
+            principal=owner,
+            brain_id=brain,
+            outcome_id=result["id"],
+            verifier_id="check",
+            evidence_citation_ids=[evidence],
+        )
+    assert error.value.code == "cleanup_pending"
+    assert called == []
+    assert (
+        s.review_experience(principal=owner, brain_id=brain)["outcomes"][-1][
+            "verification"
+        ]
+        is None
+    )
+    s.drain_outbox()
+    verified = s.verify_outcome_with(
+        principal=owner,
+        brain_id=brain,
+        outcome_id=result["id"],
+        verifier_id="check",
+        evidence_citation_ids=[evidence],
+    )
+    assert verified["status"] == "verified"
+    assert called == [receipt["id"]]
+    s.drain_outbox()
+    assert len(s.experience.private.store.candidate_validations()) == 1
+
+
+def test_crash_after_private_purge_keeps_mapping_until_retry(
+    action_fixture, monkeypatch
+):
+    s, owner, agent, brain, _, cid = action_fixture
+    independent_runs(s, owner, agent, brain)
+    sid = s.read_citation(principal=owner, brain_id=brain, citation_id=cid)["source_id"]
+    s.set_source_access(principal=owner, brain_id=brain, source_id=sid, readers=[])
+    original = getattr(s.experience, "_retire_scope", None)
+
+    def crash(*args):
+        raise OSError("after private commit")
+
+    monkeypatch.setattr(s.experience, "_retire_scope", crash, raising=False)
+    assert s.drain_outbox()["pending"] == 1
+    assert (
+        s.experience.private.store.conn.execute(
+            "SELECT COUNT(*) FROM experience_records"
+        ).fetchone()[0]
+        == 0
+    )
+    with s.store.transaction() as conn:
+        assert (
+            conn.execute("SELECT COUNT(*) FROM brain_experience_links").fetchone()[0]
+            > 0
+        )
+    monkeypatch.setattr(s.experience, "_retire_scope", original)
+    assert s.drain_outbox()["pending"] == 0
+    with s.store.transaction() as conn:
+        assert (
+            conn.execute("SELECT COUNT(*) FROM brain_experience_links").fetchone()[0]
+            == 0
+        )
+
+
+def test_old_mixed_scope_cannot_be_served_as_exact_procedure(action_fixture):
+    s, owner, agent, brain, _, _ = action_fixture
+    independent_runs(s, owner, agent, brain)
+    with s.store.transaction(write=True) as conn:
+        rows = conn.execute("SELECT id,payload_json FROM outcomes").fetchall()
+        for row in rows:
+            data = json.loads(row["payload_json"])
+            data["_namespace"] = "brain:" + brain + ":" + data["_basis"]
+            conn.execute(
+                "UPDATE outcomes SET payload_json=? WHERE id=?",
+                (json.dumps(data), row["id"]),
+            )
+            conn.execute(
+                "UPDATE brain_experience_links SET namespace=? WHERE outcome_id=?",
+                (data["_namespace"], row["id"]),
+            )
+        for table in [
+            "experience_records",
+            "experience_trajectories",
+            "agent_experience_events",
+            "agent_experience_verifications",
+        ]:
+            s.experience.private.store.conn.execute(
+                f"UPDATE {table} SET namespace=?", (data["_namespace"],)
+            )
+        s.experience.private.store.conn.commit()
+    assert (
+        s.build_context(principal=owner, brain_id=brain, question="orchard")[
+            "experiences"
+        ]
+        == []
+    )
+
+
+def test_purge_retires_crashed_integration_and_old_attestation_survives_restart(
+    action_fixture, monkeypatch, tmp_path
+):
+    s, owner, agent, brain, receipt, cid = action_fixture
+    result = outcome(s, agent, brain, receipt, cid)
+    attested = verify(s, owner, brain, result, cid)
+    original = s.experience._acknowledge
+
+    def crash(*args):
+        raise OSError("unacknowledged private commit")
+
+    monkeypatch.setattr(s.experience, "_acknowledge", crash)
+    assert s.drain_outbox()["pending"] == 1
+    assert len(s.experience.private.store.candidate_validations()) == 1
+    monkeypatch.setattr(s.experience, "_acknowledge", original)
+    sid = s.read_citation(principal=owner, brain_id=brain, citation_id=cid)["source_id"]
+    s.set_source_access(principal=owner, brain_id=brain, source_id=sid, readers=[])
+    s.set_source_access(principal=owner, brain_id=brain, source_id=sid, readers=None)
+    s.close()
+    reopened = BrainService(tmp_path)
+    try:
+        assert reopened.drain_outbox()["pending"] == 0
+        historical = verify(reopened, owner, brain, result, cid)
+        assert historical["verification"] == attested["verification"]
+        assert historical["integration_status"] == "purged"
+        assert reopened.experience.private.store.candidate_validations() == []
+        assert reopened.drain_outbox() == {"completed": 0, "pending": 0}
+        with reopened.store.transaction() as conn:
+            assert (
+                conn.execute(
+                    "SELECT status FROM outbox WHERE id=?", (result["id"],)
+                ).fetchone()[0]
+                == "completed"
+            )
+            assert (
+                conn.execute("SELECT COUNT(*) FROM brain_experience_links").fetchone()[
+                    0
+                ]
+                == 0
+            )
+            assert (
+                conn.execute(
+                    "SELECT COUNT(*) FROM brain_experience_evidence"
+                ).fetchone()[0]
+                > 0
+            )
+        independent_runs(
+            reopened, owner, agent, brain, count=1, prefix="new-after-restart"
+        )
+        assert [
+            p["status"]
+            for p in reopened.review_experience(principal=owner, brain_id=brain)[
+                "procedures"
+            ]
+        ] == ["shadow"]
+    finally:
+        reopened.close()
