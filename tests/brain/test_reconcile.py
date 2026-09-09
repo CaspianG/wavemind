@@ -1,5 +1,7 @@
 """Reviewed memory must preserve time, source authority, and explicit intent."""
 
+import json
+
 import pytest
 
 from wavemind.brain.models import BrainError, Principal
@@ -1061,3 +1063,353 @@ def test_deletion_scrubs_legacy_free_text_kind_column(
             f"SELECT kind,status,payload_json FROM {table} WHERE brain_id=? AND id='legacy'",
             (brain,),
         ).fetchone()[:] == ("deleted", "revoked", "{}")
+
+
+def test_new_correction_cannot_bypass_original_required_recheck(
+    source_fixture, tmp_path
+):
+    from wavemind.brain.reconcile import record_eligible
+
+    s, owner, brain, c = source_fixture
+    propose(source_fixture, claim(c, valid_from=0))
+    review(source_fixture, ["a"])
+    sid = s.read_citation(principal=owner, brain_id=brain, citation_id=c)["source_id"]
+    import_source(s, owner, brain, b"Changed original", source_id=sid)
+    independent = import_source(s, owner, brain, b"Correction evidence")
+    propose(
+        source_fixture,
+        claim(
+            independent["citations"][0]["id"], "b", "200", supersedes="a", valid_from=10
+        ),
+    )
+    result = review(source_fixture, ["b"])[0]
+    assert result["status"] == "proposed" and result["needs_recheck"] is True
+    with s.store.transaction() as conn:
+        assert (
+            record_eligible(
+                conn,
+                principal=owner,
+                brain_id=brain,
+                record_type="claim",
+                record_id="b",
+                as_of=15,
+            )
+            is False
+        )
+    review(source_fixture, ["a"], "recheck")
+    assert memory(source_fixture)["claims"][1]["status"] == "proposed"
+    s.close()
+    reopened = BrainService(tmp_path)
+    try:
+        assert (
+            reopened.review_claims(
+                principal=owner, brain_id=brain, claim_ids=["b"], action="recheck"
+            )[0]["status"]
+            == "active"
+        )
+        with reopened.store.transaction() as conn:
+            # The predecessor's time has ended; this must not block its valid correction.
+            assert (
+                record_eligible(
+                    conn,
+                    principal=owner,
+                    brain_id=brain,
+                    record_type="claim",
+                    record_id="a",
+                    as_of=15,
+                )
+                is False
+            )
+            assert (
+                record_eligible(
+                    conn,
+                    principal=owner,
+                    brain_id=brain,
+                    record_type="claim",
+                    record_id="b",
+                    as_of=15,
+                )
+                is True
+            )
+    finally:
+        reopened.close()
+
+
+@pytest.mark.parametrize("change", ["conflict", "correction", "rejected_fork"])
+def test_reconciliation_basis_change_revokes_issued_packet_chain(
+    source_fixture, tmp_path, change
+):
+    s, owner, brain, c = source_fixture
+    propose(
+        source_fixture, claim(c, valid_from=0), claim(c, "unrelated", key="unrelated")
+    )
+    review(source_fixture, ["a", "unrelated"])
+    if change == "rejected_fork":
+        propose(
+            source_fixture,
+            claim(c, "b", "200", supersedes="a", valid_from=10),
+            claim(c, "fork", "300", supersedes="a", valid_from=20),
+        )
+        review(source_fixture, ["b", "fork"])
+    sid = s.read_citation(principal=owner, brain_id=brain, citation_id=c)["source_id"]
+    with s.store.transaction(write=True) as conn:
+        for packet, origin in (("p", "a"), ("untouched", "unrelated")):
+            conn.execute(
+                "INSERT INTO packets(brain_id,id,principal_id,revision,digest,payload_json) VALUES (?,?,'owner',1,'digest',?)",
+                (brain, packet, '{"text":"Issued context"}'),
+            )
+            conn.execute(
+                "INSERT INTO dependencies VALUES (?,'packet',?,'claim',?,?)",
+                (brain, packet, origin, sid),
+            )
+        conn.execute(
+            "INSERT INTO receipts(brain_id,id,packet_id,principal_id,packet_digest) VALUES (?,'r','p','owner','digest')",
+            (brain,),
+        )
+        conn.execute(
+            "INSERT INTO outcomes(brain_id,id,receipt_id,status,payload_json) VALUES (?,'o','r','active',?)",
+            (brain, '{"text":"Prior outcome"}'),
+        )
+        conn.execute(
+            "INSERT INTO previews(brain_id,id,principal_id,payload_json) VALUES (?,'context-preview','owner',?)",
+            (brain, '{"text":"Preview of original"}'),
+        )
+        conn.execute(
+            "INSERT INTO dependencies VALUES (?,'preview','context-preview','claim','a',?)",
+            (brain, sid),
+        )
+    if change == "rejected_fork":
+        review(source_fixture, ["b"], "reject")
+        assert memory(source_fixture)["claims"][0]["effective_valid_until"] == 20
+    else:
+        fields = {"supersedes": "a", "valid_from": 10} if change == "correction" else {}
+        propose(source_fixture, claim(c, "b", "200", **fields))
+        review(source_fixture, ["b"])
+    with s.store.transaction() as conn:
+        assert (
+            conn.execute(
+                "SELECT status FROM packets WHERE brain_id=? AND id='p'", (brain,)
+            ).fetchone()[0]
+            == "revoked"
+        )
+        assert (
+            conn.execute(
+                "SELECT status FROM outcomes WHERE brain_id=? AND id='o'", (brain,)
+            ).fetchone()[0]
+            == "revoked"
+        )
+        assert conn.execute(
+            "SELECT status,payload_json FROM previews WHERE brain_id=? AND id='context-preview'",
+            (brain,),
+        ).fetchone()[:] == ("revoked", "{}")
+        assert (
+            conn.execute(
+                "SELECT status FROM packets WHERE brain_id=? AND id='untouched'",
+                (brain,),
+            ).fetchone()[0]
+            == "active"
+        )
+    if change == "correction":
+        assert {r["id"]: r["status"] for r in memory(source_fixture)["claims"]}[
+            "b"
+        ] == "active"
+    s.close()
+    reopened = BrainService(tmp_path)
+    try:
+        with reopened.store.transaction() as conn:
+            assert (
+                conn.execute(
+                    "SELECT status FROM packets WHERE brain_id=? AND id='p'", (brain,)
+                ).fetchone()[0]
+                == "revoked"
+            )
+    finally:
+        reopened.close()
+
+
+def test_as_of_dependency_expiry_applies_transitively_and_to_relation_endpoints(
+    source_fixture,
+):
+    from wavemind.brain.reconcile import record_eligible
+
+    s, owner, brain, c = source_fixture
+    propose(
+        source_fixture,
+        claim(c, valid_from=0, valid_until=10),
+        claim(c, "b", key="b", valid_from=0, valid_until=20, depends_on=["a"]),
+        claim(c, "child", key="child", valid_from=0, valid_until=30, depends_on=["b"]),
+    )
+    review(source_fixture, ["a", "b", "child"])
+    relation = s.add_relation(
+        principal=owner,
+        brain_id=brain,
+        relation={
+            "kind": "related_to",
+            "from_id": "a",
+            "to_id": "child",
+            "citation_ids": [c],
+        },
+    )
+    s.review_records(
+        principal=owner,
+        brain_id=brain,
+        record_type="relation",
+        record_ids=[relation["id"]],
+        action="approve",
+    )
+    with s.store.transaction() as conn:
+        for kind, rid in (
+            ("claim", "a"),
+            ("claim", "b"),
+            ("claim", "child"),
+            ("relation", relation["id"]),
+        ):
+            args = dict(
+                principal=owner, brain_id=brain, record_type=kind, record_id=rid
+            )
+            assert record_eligible(conn, **args, as_of=5) is True
+            assert record_eligible(conn, **args, as_of=10) is False
+            assert record_eligible(conn, **args, as_of=15) is False
+
+
+def test_supersession_temporal_exception_does_not_override_explicit_dependency(
+    source_fixture,
+):
+    from wavemind.brain.reconcile import record_eligible
+
+    s, owner, brain, c = source_fixture
+    propose(
+        source_fixture,
+        claim(c, valid_from=0, valid_until=10),
+        claim(
+            c,
+            "b",
+            "200",
+            supersedes="a",
+            valid_from=10,
+            valid_until=20,
+            depends_on=["a"],
+        ),
+    )
+    review(source_fixture, ["a", "b"])
+    with s.store.transaction() as conn:
+        assert (
+            record_eligible(
+                conn,
+                principal=owner,
+                brain_id=brain,
+                record_type="claim",
+                record_id="b",
+                as_of=15,
+            )
+            is False
+        )
+
+
+@pytest.mark.parametrize("storage", ["payload", "dependency_links"])
+def test_as_of_dependency_cycle_reports_failure_without_read_transaction_writes(
+    source_fixture, storage
+):
+    from wavemind.brain.reconcile import record_eligible
+    from wavemind.brain.sources import context_pending
+
+    s, owner, brain, c = source_fixture
+    propose(source_fixture, claim(c), claim(c, "b", key="b"))
+    review(source_fixture, ["a", "b"])
+    with s.store.transaction(write=True) as conn:
+        for rid, parent in (("a", "b"), ("b", "a")):
+            if storage == "payload":
+                conn.execute(
+                    "UPDATE claims SET payload_json=json_set(payload_json,'$.depends_on',json(?)) WHERE brain_id=? AND id=?",
+                    (json.dumps([parent]), brain, rid),
+                )
+            else:
+                sid = conn.execute(
+                    "SELECT id FROM sources WHERE brain_id=?", (brain,)
+                ).fetchone()[0]
+                conn.execute(
+                    "INSERT INTO dependencies VALUES (?,'claim',?,'claim',?,?)",
+                    (brain, rid, parent, sid),
+                )
+    before = s.list_brains(principal=owner)[0]["revision"]
+    with s.store.transaction() as conn:
+        with pytest.raises(BrainError) as exc:
+            record_eligible(
+                conn,
+                principal=owner,
+                brain_id=brain,
+                record_type="claim",
+                record_id="a",
+                as_of=15,
+            )
+        assert exc.value.code == "dependency_cycle"
+        assert (
+            "a" not in exc.value.message.split()
+            and "b" not in exc.value.message.split()
+        )
+        assert context_pending(conn, brain_id=brain) is False
+    assert s.list_brains(principal=owner)[0]["revision"] == before
+
+
+def test_correction_activation_requires_usable_original_review_state(source_fixture):
+    s, owner, brain, c = source_fixture
+    entity = s.create_entity(
+        principal=owner, brain_id=brain, kind="artifact", name="Basis", citation_ids=[c]
+    )
+    propose(
+        source_fixture,
+        claim(c, entity_ids=[entity["id"]]),
+        claim(c, "b", "200", supersedes="a", valid_from=10),
+    )
+    review(source_fixture, ["a", "b"])
+    assert {r["id"]: r["status"] for r in memory(source_fixture)["claims"]} == {
+        "a": "proposed",
+        "b": "proposed",
+    }
+
+
+def test_as_of_dependency_limit_reports_failure_without_read_transaction_writes(
+    source_fixture,
+):
+    from wavemind.brain.reconcile import record_eligible
+    from wavemind.brain.sources import context_pending
+
+    s, owner, brain, c = source_fixture
+    sid = s.read_citation(principal=owner, brain_id=brain, citation_id=c)["source_id"]
+    with s.store.transaction(write=True) as conn:
+        conn.executemany(
+            "INSERT INTO claims(brain_id,id,kind,status,payload_json) VALUES (?,?,'fact','active',?)",
+            [
+                (
+                    brain,
+                    f"chain{i}",
+                    json.dumps(
+                        {
+                            "kind": "fact",
+                            "key": "chain",
+                            "content": "Basis",
+                            "citation_ids": [c],
+                            "_review": "approved",
+                            "effective_valid_from": 0,
+                            "effective_valid_until": 20,
+                            "depends_on": [f"chain{i - 1}"] if i else [],
+                        }
+                    ),
+                )
+                for i in range(10001)
+            ],
+        )
+        conn.executemany(
+            "INSERT INTO dependencies VALUES (?,'claim',?,'source',?,?)",
+            [(brain, f"chain{i}", sid, sid) for i in range(10001)],
+        )
+    before = s.list_brains(principal=owner)[0]["revision"]
+    with s.store.transaction() as conn:
+        args = dict(principal=owner, brain_id=brain, record_type="claim", as_of=15)
+        assert record_eligible(conn, **args, record_id="chain9999") is True
+        with pytest.raises(BrainError) as exc:
+            record_eligible(conn, **args, record_id="chain10000")
+        assert exc.value.code == "dependency_limit"
+        assert "chain" not in str(exc.value) and "10000" not in str(exc.value)
+        assert context_pending(conn, brain_id=brain) is False
+    assert s.list_brains(principal=owner)[0]["revision"] == before

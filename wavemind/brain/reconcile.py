@@ -123,11 +123,17 @@ def _load(conn, brain_id):
     return records
 
 
-def _origins(record):
+def _prerequisites(record):
     data = record["data"]
     ids = set(data.get("depends_on", [])) | set(data.get("entity_ids", []))
     if record["type"] == "relation":
         ids.update((data["from_id"], data["to_id"]))
+    return ids
+
+
+def _origins(record):
+    data = record["data"]
+    ids = _prerequisites(record)
     if data.get("supersedes"):
         ids.add(data["supersedes"])
     return ids
@@ -176,30 +182,111 @@ def _public(rid, row):
 
 
 def record_eligible(conn, *, principal, brain_id, record_type, record_id, as_of):
-    """Authorized as-of eligibility for Task4; never trusts status alone.
+    """Read-only, bounded as-of verification of all applicable prerequisites.
 
     Superseded claims remain eligible within their preserved effective history.
-    Missing/inaccessible data raises the same not_found as other Brain reads.
+    Supersession lineage needs reviewed/fresh state, but its own effective time
+    need not include the replacement's later time. Explicit ordinary edges
+    still require as_of validity, including an ID also named by supersedes.
+    Missing/inaccessible data raises not_found. Graph cycle/overflow raises
+    dependency_cycle/dependency_limit without writing from this read snapshot;
+    a write consumer must mark pending and discard partially collected context.
     """
     require_access(conn, principal, brain_id, "read")
     if _timestamp(as_of) is None:
         raise _invalid()
-    row = _require_record(
-        conn, principal, brain_id, record_id, _load(conn, brain_id), record_type
+    records, completed, path, authorized_sources = {}, set(), set(), set()
+    pending = context_pending(conn, brain_id=brain_id)
+    lookup = (
+        """SELECT r.*, (SELECT json_group_array(json_array(d.origin_type,d.origin_id,d.source_id))
+        FROM dependencies d WHERE d.brain_id=? AND d.dependent_type=r.record_type AND d.dependent_id=?) AS origins_json
+        FROM ("""
+        + " UNION ALL ".join(
+            f"SELECT '{kind}' AS record_type,status,payload_json FROM {table} WHERE brain_id=? AND id=? AND payload_json!='{{}}'"
+            for kind, table in TABLES.items()
+        )
+        + ") r"
     )
-    data = row["data"]
-    if (
-        context_pending(conn, brain_id=brain_id)
-        or data.get("needs_recheck")
-        or data.get("_review") != "approved"
-    ):
-        return False
-    if row["status"] not in ("active", "superseded") or data.get("effective_empty"):
-        return False
-    if record_type != "claim":
-        return row["status"] == "active"
-    start, end = data.get("effective_valid_from"), data.get("effective_valid_until")
-    return (start is None or start <= as_of) and (end is None or as_of < end)
+    stack = [(record_id, True, False, record_type)]
+    while stack:
+        rid, temporal, finished, expected_type = stack.pop()
+        state = (rid, temporal)
+        if finished:
+            path.remove(rid)
+            completed.add(state)
+            continue
+        if rid in path:
+            raise BrainError(
+                "dependency_cycle", "Dependency cycle prevents verification."
+            )
+        if state in completed:
+            if expected_type is not None and records[rid]["type"] != expected_type:
+                raise _not_found()
+            continue
+        if rid not in records:
+            if len(records) == MAX_RECORDS:
+                raise BrainError(
+                    "dependency_limit", "Dependency verification limit reached."
+                )
+            # Load only reached records: a deep unrelated history cannot widen
+            # the traversal or make a bounded eligibility check unbounded.
+            found = conn.execute(lookup, (brain_id, rid) * (len(TABLES) + 1)).fetchall()
+            if len(found) != 1:
+                raise _not_found()
+            stored = found[0]
+            records[rid] = {
+                "type": stored["record_type"],
+                "status": stored["status"],
+                "data": json.loads(stored["payload_json"]),
+                "origins": json.loads(stored["origins_json"]),
+            }
+        row = records[rid]
+        if expected_type is not None and row["type"] != expected_type:
+            raise _not_found()
+        sources = {origin[2] for origin in row["origins"]}
+        if not sources:
+            raise _not_found()
+        # This cache is local to this call and the immutable caller-owned
+        # transaction. It cannot outlive a source ACL or membership snapshot.
+        unseen_sources = sources - authorized_sources
+        if unseen_sources:
+            require_access(conn, principal, brain_id, "read", unseen_sources)
+            authorized_sources.update(unseen_sources)
+        data = row["data"]
+        if pending or data.get("needs_recheck") or data.get("_review") != "approved":
+            return False
+        if row["status"] not in ("active", "superseded"):
+            return False
+        if row["type"] != "claim" and row["status"] != "active":
+            return False
+        if temporal and row["type"] == "claim":
+            start, end = (
+                data.get("effective_valid_from"),
+                data.get("effective_valid_until"),
+            )
+            if (
+                data.get("effective_empty")
+                or (start is not None and as_of < start)
+                or (end is not None and as_of >= end)
+            ):
+                return False
+        path.add(rid)
+        stack.append((rid, temporal, True, expected_type))
+        ordinary = _prerequisites(row)
+        origin_types = {}
+        for kind, parent, _ in row["origins"]:
+            if kind == "source":
+                continue
+            if kind not in TABLES:
+                raise _not_found()
+            origin_types[parent] = kind
+            if parent != data.get("supersedes"):
+                ordinary.add(parent)
+        for parent in sorted(ordinary, reverse=True):
+            stack.append((parent, True, False, origin_types.get(parent)))
+        if data.get("supersedes") and data["supersedes"] not in ordinary:
+            stack.append((data["supersedes"], False, False, "claim"))
+    return True
 
 
 def _require_record(conn, principal, brain_id, rid, records, record_type=None):
@@ -244,12 +331,24 @@ def _check_capacity(conn, brain_id, additional):
         raise BrainError("dependency_limit", "Memory dependency limit reached.")
 
 
+def _basis_signature(row):
+    data = row["data"]
+    return (
+        row["status"],
+        bool(data.get("needs_recheck")),
+        data.get("effective_valid_from"),
+        data.get("effective_valid_until"),
+        bool(data.get("effective_empty")),
+    )
+
+
 def _reconcile(conn, brain_id):
     records = _load(conn, brain_id)
     if sum(row["status"] != "revoked" for row in records.values()) > MAX_RECORDS:
         mark_context_pending(conn, brain_id=brain_id)
         return records
     previous = {rid: row["status"] for rid, row in records.items()}
+    previous_basis = {rid: _basis_signature(row) for rid, row in records.items()}
     order = _order(records)
     governing = defaultdict(set)
     # Materialize every origin after out-of-order originals arrive. These
@@ -308,7 +407,17 @@ def _reconcile(conn, brain_id):
                         "proposed",
                         "incompatible_original",
                     )
-        ordinary = _origins(row) - {data.get("supersedes")}
+                elif target["data"].get("needs_recheck"):
+                    # New correction proposals must inherit a stale basis too;
+                    # source invalidation cannot have visited a not-yet-existing row.
+                    data["needs_recheck"] = True
+                    row["status"], data["pending_reason"] = "proposed", "needs_recheck"
+                elif target["status"] not in ("active", "superseded"):
+                    row["status"], data["pending_reason"] = (
+                        "proposed",
+                        "unusable_original",
+                    )
+        ordinary = _prerequisites(row)
         if any(records[p]["status"] != "active" for p in ordinary if p in records):
             row["status"], data["pending_reason"] = "proposed", "dependency_unreviewed"
             if previous[rid] in ("active", "superseded"):
@@ -376,9 +485,15 @@ def _reconcile(conn, brain_id):
                 governing[second_id].add(first_id)
     for rid in order:
         row = records[rid]
-        ordinary = _origins(row) - {row["data"].get("supersedes")}
-        if row["status"] in ("active", "superseded") and any(
-            records[p]["status"] != "active" for p in ordinary if p in records
+        ordinary = _prerequisites(row)
+        original = records.get(row["data"].get("supersedes"))
+        unusable_original = original is not None and (
+            original["status"] not in ("active", "superseded")
+            or original["data"].get("needs_recheck")
+        )
+        if row["status"] in ("active", "superseded") and (
+            unusable_original
+            or any(records[p]["status"] != "active" for p in ordinary if p in records)
         ):
             row["status"] = "proposed"
             row["data"]["pending_reason"] = "dependency_unreviewed"
@@ -419,6 +534,18 @@ def _reconcile(conn, brain_id):
             invalidate_dependents(conn, brain_id=brain_id, seeds={(row["type"], rid)})
     # Invalidation may have changed descendants already visited above.
     records = _load(conn, brain_id)
+    changed_basis = {
+        (row["type"], rid)
+        for rid, row in records.items()
+        if previous_basis[rid] != _basis_signature(row)
+    }
+    if changed_basis:
+        # A packet can depend directly on a conflicted or temporally clipped
+        # claim. Its invalidation must not rely on an intermediate semantic row
+        # becoming proposed, nor require the correction itself to be rechecked.
+        invalidate_dependents(
+            conn, brain_id=brain_id, seeds=changed_basis, context_only=True
+        )
     return records
 
 
@@ -607,7 +734,7 @@ class Reconciliation:
                         conn, brain_id=brain_id, seeds={(record_type, rid)}
                     )
                 if action == "recheck":
-                    ordinary = _origins(row) - {data.get("supersedes")}
+                    ordinary = _prerequisites(row)
                     data["needs_recheck"] = any(
                         records[p]["status"] != "active"
                         or records[p]["data"].get("needs_recheck")

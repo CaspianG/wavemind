@@ -139,14 +139,19 @@ def _invalidate_records(conn, *, brain_id, affected, reason):
             )
 
 
-def invalidate_dependents(conn, *, brain_id, seeds):
-    """Semantic review changes share source lifecycle propagation machinery."""
+def invalidate_dependents(conn, *, brain_id, seeds, context_only=False):
+    """Share lifecycle propagation; context-only changes preserve semantic intent."""
     affected, overflow = dependency_closure(conn, brain_id=brain_id, seeds=seeds)
     if overflow:
-        _overflow(conn, brain_id)
-    _invalidate_records(
-        conn, brain_id=brain_id, affected=affected - set(seeds), reason="updated"
-    )
+        _overflow(conn, brain_id, "access_changed" if context_only else "updated")
+    affected -= set(seeds)
+    if context_only:
+        affected = {
+            node
+            for node in affected
+            if node[0] in ("packet", "receipt", "outcome", "preview")
+        }
+    _invalidate_records(conn, brain_id=brain_id, affected=affected, reason="updated")
 
 
 def _erase_source_closure(conn, *, brain_id, source_id):
