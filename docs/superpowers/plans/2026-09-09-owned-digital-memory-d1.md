@@ -326,7 +326,7 @@ if (profile_dir / "brain.sqlite3").exists():
 
 ### Task 7: Authenticated HTTP, MCP and developer launch path
 
-**Files:** Create `wavemind/brain/auth.py`, `http.py`, `mcp.py`, `cli.py`, `tests/brain/test_http.py`, `test_mcp_cli.py`; narrow integration changes to `wavemind/api.py`, `wavemind/cli.py`, `pyproject.toml`.
+**Files:** Create `wavemind/brain/auth.py`, `http.py`, `mcp.py`, `cli.py`, `tests/brain/test_http.py`, `test_mcp_cli.py`; narrow integration changes to `wavemind/api.py`, `wavemind/cli.py`, `pyproject.toml`. Add `wavemind/integrations/mcp_compat.py` shared MCP initialization helper and use it from the existing `wavemind/mcp_server.py` and `wavemind/integrations/mcp_experience.py` builders; extend `tests/test_official_provider_contracts.py` for cold-process compatibility.
 
 **Interfaces:** `BrainAuth(state_dir: Path)`, `bootstrap_owner() -> str` (one-time local terminal secret, never URL/log), `issue_agent(*, principal, brain_ids, operations, label) -> dict`, `authenticate(token: str) -> Principal`, `revoke_token(*, principal, token_id: str) -> None`. Store only token digests, owner-scoped grants and revocation metadata, never echo token beyond creation. `mount_brain(app: FastAPI, service: BrainService, auth: BrainAuth) -> None`; extend existing `create_app` with optional keyword `brain_service=None, brain_auth=None` default disabled. `BrainMCPAdapter(service, principal)` exposes explicit typed operations and refuses requests containing principal/role/verifier; MCP stdio launcher authenticates a local configured credential before binding. CLI delegates via `wavemind brain init|serve|mcp|backup|restore|export|doctor`, separate parser in new module; the `brain serve` command launches existing FastAPI with optional Brain only, not a new independent service.
 
@@ -353,6 +353,17 @@ return service.build_context(principal=principal, brain_id=brain_id,
 ```
 
   Fail closed when Brain auth is not explicitly configured, even though old API local mode permits unauthenticated operations. Add shutdown cleanup without breaking existing app shutdown. MCP methods are shared service invocations with bound principal, not an arbitrary SQL/command adapter. Developer startup explicitly says it requires Python and is not D2 consumer installation; core workflows do not call models or download embeddings.
+
+  Baseline diagnostic found mcp 1.29.0 + pydantic 2.13.4 + pydantic-settings 2.15.0 warns on first FastMCP construction because its Settings.lifespan forward reference is incomplete. A fresh-process check confirmed rebuilding Settings before constructing FastMCP resolves the cause. Add `require_fastmcp() -> tuple[type, type]` returning `(FastMCP, Context)` from the shared helper; preserve optional-dependency ImportError behavior in each caller. Do not mutate installed dependency files or suppress warnings. The helper's initialization is:
+
+```python
+from mcp.server.fastmcp import Context, FastMCP
+from mcp.server.fastmcp.server import Settings
+Settings.model_rebuild()
+return FastMCP, Context
+```
+
+  Put these imports inside the helper so the core package still imports without the MCP extra. Before the helper change, add a fresh subprocess test for each existing builder with `warnings.simplefilter("error", IncompleteFieldDefinitionWarning)` and real `list_tools()` output validation; observe the first-construction failure. After the helper, require both cold-start tool contracts and Brain MCP initialization to pass without warning. A warm second construction is insufficient evidence.
 - [ ] Run Brain+existing API/CLI/MCP tests and Ruff, build wheel and inspect modules; commit `feat(brain): expose authenticated shared HTTP MCP and CLI workflows`.
 
 ### Task 8: Usable RU/EN owner workflow and real browser scenarios
