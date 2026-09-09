@@ -174,7 +174,57 @@ class BrainStore:
                         FOREIGN KEY(brain_id) REFERENCES brains(id) ON DELETE CASCADE
                     )""")
                     conn.execute("PRAGMA user_version=2")
-                elif version != 2:
+                    version = 2
+                if version == 2:
+                    conn.execute("""CREATE TABLE brain_packet_basis (
+                        brain_id TEXT NOT NULL,packet_id TEXT NOT NULL,payload_json TEXT NOT NULL,
+                        basis_digest TEXT, legacy INTEGER NOT NULL DEFAULT 0 CHECK(legacy IN (0,1)),
+                        PRIMARY KEY(brain_id,packet_id),
+                        FOREIGN KEY(brain_id,packet_id) REFERENCES packets(brain_id,id) ON DELETE CASCADE)""")
+                    conn.execute("""CREATE TABLE brain_experience_links (
+                        brain_id TEXT NOT NULL,outcome_id TEXT NOT NULL,namespace TEXT NOT NULL,
+                        experience_id TEXT NOT NULL DEFAULT '',created_at REAL NOT NULL,
+                        PRIMARY KEY(brain_id,outcome_id,experience_id),
+                        FOREIGN KEY(brain_id,outcome_id) REFERENCES outcomes(brain_id,id) ON DELETE CASCADE)""")
+                    conn.execute("""CREATE TABLE brain_experience_evidence (
+                        brain_id TEXT NOT NULL,key TEXT NOT NULL,outcome_id TEXT NOT NULL,
+                        PRIMARY KEY(brain_id,key),
+                        FOREIGN KEY(brain_id,outcome_id) REFERENCES outcomes(brain_id,id) ON DELETE CASCADE)""")
+                    # Legacy Task4's complete origin set includes future-bound
+                    # and budget-trimmed contributors absent from public items.
+                    conn.execute("""INSERT INTO brain_packet_basis(brain_id,packet_id,payload_json,legacy)
+                        SELECT p.brain_id,p.id,COALESCE((SELECT json_group_array(json_array(origin_type,origin_id,source_id))
+                        FROM dependencies d WHERE d.brain_id=p.brain_id AND d.dependent_type='packet' AND d.dependent_id=p.id),'[]'),1
+                        FROM packets p WHERE p.payload_json!='{}' AND json_array_length(p.payload_json,'$.experiences')=0""")
+                    from .experience_records import basis_fingerprint
+                    import json
+
+                    for packet in conn.execute(
+                        "SELECT p.* FROM packets p JOIN brains b ON b.id=p.brain_id WHERE p.status='active' AND p.revision=b.revision AND p.expires_at>?",
+                        (time.time(),),
+                    ).fetchall():
+                        manifest = conn.execute(
+                            "SELECT payload_json FROM brain_packet_basis WHERE brain_id=? AND packet_id=?",
+                            (packet["brain_id"], packet["id"]),
+                        ).fetchone()
+                        if manifest and json.loads(manifest[0]):
+                            try:
+                                fingerprint = basis_fingerprint(
+                                    conn,
+                                    brain_id=packet["brain_id"],
+                                    project_id=json.loads(packet["payload_json"])[
+                                        "project_id"
+                                    ],
+                                    origins={tuple(o) for o in json.loads(manifest[0])},
+                                )
+                            except (BrainError, KeyError, TypeError, ValueError):
+                                continue
+                            conn.execute(
+                                "UPDATE brain_packet_basis SET basis_digest=? WHERE brain_id=? AND packet_id=?",
+                                (fingerprint, packet["brain_id"], packet["id"]),
+                            )
+                    conn.execute("PRAGMA user_version=3")
+                elif version != 3:
                     raise BrainError(
                         "unsupported_schema", "Unsupported Brain schema version."
                     )

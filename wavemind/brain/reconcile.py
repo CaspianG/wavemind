@@ -107,7 +107,7 @@ def record_sources(conn, *, brain_id, record_type, record_id):
     }
 
 
-def _load(conn, brain_id):
+def _load(conn, brain_id, *, endpoints=False):
     records = {}
     for kind, table in TABLES.items():
         for row in conn.execute(
@@ -120,6 +120,16 @@ def _load(conn, brain_id):
                     "status": row["status"],
                     "data": data,
                 }
+    if endpoints:
+        from .experience_records import endpoint_record
+
+        for kind, table in (("receipt", "receipts"), ("outcome", "outcomes")):
+            for row in conn.execute(
+                f"SELECT id FROM {table} WHERE brain_id=?", (brain_id,)
+            ):
+                item = endpoint_record(conn, brain_id, row[0], kind)
+                if item:
+                    records[row[0]] = item
     return records
 
 
@@ -162,6 +172,8 @@ def _order(records):
 
 
 def _save(conn, brain_id, rid, row):
+    if row["type"] not in TABLES:
+        return
     conn.execute(
         f"UPDATE {TABLES[row['type']]} SET status=?,payload_json=? WHERE brain_id=? AND id=?",
         (
@@ -293,15 +305,36 @@ def _record_state(
             # Load only reached records: a deep unrelated history cannot widen
             # the traversal or make a bounded eligibility check unbounded.
             found = conn.execute(lookup, (brain_id, rid) * (len(TABLES) + 1)).fetchall()
-            if len(found) != 1:
+            if not found:
+                from .experience_records import endpoint_record
+
+                endpoints = [
+                    endpoint_record(conn, brain_id, rid, kind)
+                    for kind in ("receipt", "outcome")
+                ]
+                endpoints = [item for item in endpoints if item is not None]
+                if len(endpoints) != 1:
+                    raise _not_found()
+                records[rid] = {
+                    **endpoints[0],
+                    "origins": [
+                        tuple(o)
+                        for o in conn.execute(
+                            "SELECT origin_type,origin_id,source_id FROM dependencies WHERE brain_id=? AND dependent_type=? AND dependent_id=?",
+                            (brain_id, endpoints[0]["type"], rid),
+                        )
+                    ],
+                }
+            elif len(found) != 1:
                 raise _not_found()
-            stored = found[0]
-            records[rid] = {
-                "type": stored["record_type"],
-                "status": stored["status"],
-                "data": json.loads(stored["payload_json"]),
-                "origins": json.loads(stored["origins_json"]),
-            }
+            else:
+                stored = found[0]
+                records[rid] = {
+                    "type": stored["record_type"],
+                    "status": stored["status"],
+                    "data": json.loads(stored["payload_json"]),
+                    "origins": json.loads(stored["origins_json"]),
+                }
         row = records[rid]
         if expected_type is not None and row["type"] != expected_type:
             raise _not_found()
@@ -341,6 +374,9 @@ def _record_state(
             ):
                 eligible = False
         applicable &= eligible
+        if temporal and data.get("_endpoint_until") is not None:
+            transitions.add(data["_endpoint_until"])
+            applicable &= as_of < data["_endpoint_until"]
         if not applicable and not complete:
             return False, (), frozenset()
         path.add(rid)
@@ -350,7 +386,7 @@ def _record_state(
         for kind, parent, _ in row["origins"]:
             if kind == "source":
                 continue
-            if kind not in TABLES:
+            if kind not in {*TABLES, "receipt", "outcome"}:
                 raise _not_found()
             origin_types[parent] = kind
             if parent != data.get("supersedes"):
@@ -364,6 +400,15 @@ def _record_state(
 
 def _require_record(conn, principal, brain_id, rid, records, record_type=None):
     row = records.get(rid)
+    if row is None:
+        from .experience_records import endpoint_record
+
+        found = [
+            endpoint_record(conn, brain_id, rid, kind)
+            for kind in ("receipt", "outcome")
+        ]
+        found = [item for item in found if item is not None]
+        row = found[0] if len(found) == 1 else None
     if row is None or (record_type is not None and row["type"] != record_type):
         raise _not_found()
     sources = record_sources(
@@ -416,7 +461,7 @@ def _basis_signature(row):
 
 
 def _reconcile(conn, brain_id):
-    records = _load(conn, brain_id)
+    records = _load(conn, brain_id, endpoints=True)
     if sum(row["status"] != "revoked" for row in records.values()) > MAX_RECORDS:
         mark_context_pending(conn, brain_id=brain_id)
         return records
@@ -441,6 +486,8 @@ def _reconcile(conn, brain_id):
                 )
     for rid in order:
         row, data = records[rid], records[rid]["data"]
+        if row["type"] not in TABLES:
+            continue
         data.pop("pending_reason", None)
         approved = data.get("_review") == "approved"
         if data.get("_review") == "rejected" or row["status"] == "revoked":
@@ -606,7 +653,7 @@ def _reconcile(conn, brain_id):
         ):
             invalidate_dependents(conn, brain_id=brain_id, seeds={(row["type"], rid)})
     # Invalidation may have changed descendants already visited above.
-    records = _load(conn, brain_id)
+    records = _load(conn, brain_id, endpoints=True)
     changed_basis = {
         (row["type"], rid)
         for rid, row in records.items()
@@ -951,6 +998,15 @@ class Reconciliation:
             data["depends_on"] = _ids(data.get("depends_on", []))
             for rid in [data["from_id"], data["to_id"], *data["depends_on"]]:
                 _require_record(conn, principal, brain_id, _identifier(rid), records)
+            if data["kind"] == "action_outcome":
+                _require_record(
+                    conn, principal, brain_id, data["from_id"], records, "receipt"
+                )
+                target = _require_record(
+                    conn, principal, brain_id, data["to_id"], records, "outcome"
+                )
+                if target["data"]["receipt_id"] != data["from_id"]:
+                    raise _invalid()
             rid = uuid4().hex
             data.update(registered_at=time.time(), _review="none")
             row = {"type": "relation", "status": "proposed", "data": data}

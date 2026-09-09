@@ -983,6 +983,9 @@ def test_schema_v1_migration_preserves_claim_data(source_fixture, tmp_path):
     propose(source_fixture, claim(c))
     with s.store.transaction(write=True) as conn:
         conn.execute("DROP TABLE brain_context_state")
+        conn.execute("DROP TABLE brain_packet_basis")
+        conn.execute("DROP TABLE brain_experience_links")
+        conn.execute("DROP TABLE brain_experience_evidence")
         conn.execute("PRAGMA user_version=1")
     s.close()
     reopened = BrainService(tmp_path)
@@ -994,7 +997,7 @@ def test_schema_v1_migration_preserves_claim_data(source_fixture, tmp_path):
             == "100"
         )
         with reopened.store.transaction() as conn:
-            assert conn.execute("PRAGMA user_version").fetchone()[0] == 2
+            assert conn.execute("PRAGMA user_version").fetchone()[0] == 3
     finally:
         reopened.close()
 

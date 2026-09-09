@@ -936,6 +936,23 @@ class AgentExperienceRuntime:
         source_type = "independently_verified_run" if verified else "unverified_run"
         kinds: list[tuple[ExperienceKind, str, str, dict[str, Any]]] = []
 
+        reported = metadata.get("declared_procedure")
+        if (
+            isinstance(reported, list)
+            and reported
+            and all(isinstance(step, str) and step.strip() for step in reported)
+        ):
+            kinds.append(
+                (
+                    ExperienceKind.PROCEDURE,
+                    "Procedure reported for a verified outcome"
+                    if verified
+                    else "Reported procedure awaiting verification",
+                    "Reported steps: " + " -> ".join(reported),
+                    {"reported_steps": list(reported), "steps_observed": False},
+                )
+            )
+
         declared_tools = tuple(
             str(tool)
             for tool in metadata.get("declared_tools", ())

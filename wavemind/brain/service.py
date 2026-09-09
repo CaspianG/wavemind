@@ -10,6 +10,7 @@ from .store import BrainStore, record_change
 from .sources import Sources, invalidate_source
 from .reconcile import Reconciliation
 from .context import Context
+from .experience_bridge import ExperienceBridge
 
 
 class BrainService:
@@ -18,9 +19,82 @@ class BrainService:
         self.sources = Sources(self.store)
         self.reconciliation = Reconciliation(self.store)
         self.context = Context(self.store)
-        # Reserved for Task5's private runtime; never supplied by a transport.
-        # Task4 does not invoke it or invent experience/provenance authority.
-        self._private_experience_provider = None
+        self.experience = ExperienceBridge(self.store, state_dir)
+        self._private_experience_provider = self.experience.eligible_experiences
+        self.context.experience_provider = self._private_experience_provider
+
+    def record_outcome(
+        self, *, principal: Principal, brain_id: str, receipt_id: str, outcome: dict
+    ) -> dict:
+        return self.experience.record_outcome(
+            principal=principal,
+            brain_id=brain_id,
+            receipt_id=receipt_id,
+            outcome=outcome,
+        )
+
+    def verify_outcome(
+        self,
+        *,
+        principal: Principal,
+        brain_id: str,
+        outcome_id: str,
+        success: bool,
+        evidence_citation_ids: list[str],
+        note: str = "",
+    ) -> dict:
+        return self.experience.verify_outcome(
+            principal=principal,
+            brain_id=brain_id,
+            outcome_id=outcome_id,
+            success=success,
+            evidence_citation_ids=evidence_citation_ids,
+            note=note,
+        )
+
+    def register_outcome_verifier(self, *, verifier_id, source, callback):
+        return self.experience.register_outcome_verifier(
+            verifier_id=verifier_id, source=source, callback=callback
+        )
+
+    def verify_outcome_with(
+        self,
+        *,
+        principal: Principal,
+        brain_id: str,
+        outcome_id: str,
+        verifier_id: str,
+        evidence_citation_ids: list[str],
+        note: str = "",
+    ) -> dict:
+        return self.experience.verify_outcome_with(
+            principal=principal,
+            brain_id=brain_id,
+            outcome_id=outcome_id,
+            verifier_id=verifier_id,
+            evidence_citation_ids=evidence_citation_ids,
+            note=note,
+        )
+
+    def drain_outbox(self, *, limit: int = 100) -> dict:
+        return self.experience.drain_outbox(limit=limit)
+
+    def review_experience(
+        self,
+        *,
+        principal: Principal,
+        brain_id: str,
+        limit: int = 100,
+        outcome_cursor: str | None = None,
+        procedure_cursor: str | None = None,
+    ) -> dict:
+        return self.experience.review_experience(
+            principal=principal,
+            brain_id=brain_id,
+            limit=limit,
+            outcome_cursor=outcome_cursor,
+            procedure_cursor=procedure_cursor,
+        )
 
     def build_context(
         self,
@@ -163,11 +237,21 @@ class BrainService:
     def change_source(
         self, *, principal: Principal, brain_id: str, source_id: str, action: str
     ) -> dict:
-        return self.sources.change_source(
+        result = self.sources.change_source(
             principal=principal, brain_id=brain_id, source_id=source_id, action=action
         )
+        if action == "delete":
+            self.drain_outbox()
+            with self.store.transaction() as conn:
+                pending = conn.execute(
+                    "SELECT 1 FROM outbox WHERE brain_id=? AND status='pending' AND kind='source_deleted' AND source_id=?",
+                    (brain_id, source_id),
+                ).fetchone()
+            result["private_cleanup"] = "pending" if pending else "completed"
+        return result
 
     def close(self):
+        self.experience.close()
         self.store.close()
 
     def create_brain(

@@ -195,6 +195,10 @@ def _erase_source_closure(conn, *, brain_id, source_id):
                 (brain_id, kind),
             )
         conn.execute(
+            "DELETE FROM brain_packet_basis WHERE brain_id=? AND packet_id IN (SELECT id FROM brain_erasure_targets WHERE kind='packet')",
+            (brain_id,),
+        )
+        conn.execute(
             "UPDATE outbox SET payload_json='{}' WHERE brain_id=? AND source_id=?",
             (brain_id, source_id),
         )

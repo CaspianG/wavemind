@@ -105,7 +105,9 @@ def _evidence(conn, *, principal, brain_id, origins, firewall):
     citations = {}
     tainted = False
     for node in sorted({(kind, rid) for kind, rid, _ in origins if kind != "source"}):
-        table = reconcile.TABLES.get(node[0])
+        table = {**reconcile.TABLES, "receipt": "receipts", "outcome": "outcomes"}.get(
+            node[0]
+        )
         if table is None:
             raise _not_found()
         row = conn.execute(
@@ -390,6 +392,7 @@ def validate_persisted_packet(conn, *, principal, brain_id, packet_id):
 class Context:
     def __init__(self, store):
         self.store = store
+        self.experience_provider = None
 
     def build_context(
         self,
@@ -418,6 +421,7 @@ class Context:
             moment = now if moment is None else float(moment)
             pending = context_pending(conn, brain_id=brain_id)
             groups, expiry, context_origins = [], now + LIFETIME, set()
+            governing_origins = set()
             if not pending:
                 try:
                     groups, expiry, context_origins = _select(
@@ -429,6 +433,76 @@ class Context:
                         project_id=project_id,
                         now=now,
                     )
+                    governing_origins = set(context_origins)
+                    if self.experience_provider is not None:
+                        firewall = MemoryFirewall(
+                            MemoryFirewallPolicy(namespace=brain_id)
+                        )
+                        for item in self.experience_provider(
+                            conn,
+                            principal,
+                            brain_id,
+                            question,
+                            moment,
+                            project_id=project_id,
+                        ):
+                            origins = {tuple(o) for o in item["origins"]}
+                            require_access(
+                                conn,
+                                principal,
+                                brain_id,
+                                "read",
+                                {o[2] for o in origins},
+                            )
+                            if (
+                                not origins
+                                or item["project_id"] != project_id
+                                or type(item.get("applicable")) is not bool
+                            ):
+                                raise _not_found()
+                            evidence = [
+                                resolve_citation(
+                                    conn,
+                                    principal=principal,
+                                    brain_id=brain_id,
+                                    citation_id=cid,
+                                )
+                                for cid in item["citation_ids"]
+                            ]
+                            if any(
+                                c["source_id"] not in {o[2] for o in origins}
+                                for c in evidence
+                            ):
+                                raise _not_found()
+                            if _tainted(firewall, text=item["content"]) or any(
+                                _tainted(
+                                    firewall,
+                                    text=c["text"],
+                                    metadata=json.loads(
+                                        conn.execute(
+                                            "SELECT metadata_json FROM sources WHERE brain_id=? AND id=?",
+                                            (brain_id, c["source_id"]),
+                                        ).fetchone()[0]
+                                    ),
+                                )
+                                for c in evidence
+                            ):
+                                continue
+                            bounds = [
+                                bound for bound in item["transitions"] if bound > now
+                            ]
+                            expiry = min([expiry] + bounds)
+                            if bounds:
+                                context_origins.update(origins)
+                            if item["applicable"]:
+                                public = {
+                                    k: v
+                                    for k, v in item.items()
+                                    if k not in ("origins", "transitions", "applicable")
+                                }
+                                groups.append(
+                                    ("experiences", public, evidence, origins)
+                                )
                 except BrainError as error:
                     if error.code not in {"dependency_limit", "dependency_cycle"}:
                         raise
@@ -442,7 +516,12 @@ class Context:
                         record_id=brain_id,
                     )
                     # Commit the gate even if this request cannot fit a packet.
-                    pending, groups, context_origins = True, [], set()
+                    pending, groups, context_origins, governing_origins = (
+                        True,
+                        [],
+                        set(),
+                        set(),
+                    )
             packet = dict(
                 schema=SCHEMA,
                 id=uuid4().hex,
@@ -495,6 +574,33 @@ class Context:
                 origins = context_origins | {
                     origin for group in groups for origin in group[3]
                 }
+                # Governing basis excludes private experience evidence lineage.
+                basis = {
+                    origin
+                    for group in groups
+                    if group[0] != "experiences"
+                    for origin in group[3]
+                }
+                basis.update(governing_origins)
+                if not basis <= origins:
+                    raise _not_found()
+                from .experience_records import basis_fingerprint
+
+                fingerprint = basis_fingerprint(
+                    conn,
+                    brain_id=brain_id,
+                    project_id=packet["project_id"],
+                    origins=basis,
+                )
+                conn.execute(
+                    "INSERT INTO brain_packet_basis(brain_id,packet_id,payload_json,basis_digest) VALUES (?,?,?,?)",
+                    (
+                        brain_id,
+                        packet["id"],
+                        canonical_bytes(sorted(basis)).decode(),
+                        fingerprint,
+                    ),
+                )
                 for kind, rid, sid in sorted(origins):
                     conn.execute(
                         "INSERT INTO dependencies VALUES (?, 'packet', ?, ?, ?, ?)",
