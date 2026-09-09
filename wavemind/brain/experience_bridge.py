@@ -335,6 +335,7 @@ class ExperienceBridge:
             ]
             keys += [digest(["citation", c["id"]]) for c in evidence]
             keys += [digest(["evidence_content", c["text"]]) for c in evidence]
+            keys = sorted(set(keys))
             replay = any(
                 conn.execute(
                     "SELECT 1 FROM brain_experience_evidence WHERE brain_id=? AND key=?",

@@ -248,6 +248,48 @@ def test_replay_with_new_outcome_keys_packets_or_run_evidence_cannot_promote(
     assert sum(o["integration_status"] == "replay" for o in review["outcomes"]) == 3
 
 
+def test_distinct_citations_with_identical_content_reserve_once(action_fixture):
+    s, owner, agent, brain, receipt, _ = action_fixture
+    source = import_text(s, owner, brain, "x" * 20_000)
+    evidence = [c["id"] for c in source["citations"][:2]]
+    assert len(set(evidence)) == 2
+    texts = [
+        s.read_citation(principal=owner, brain_id=brain, citation_id=cid)["text"]
+        for cid in evidence
+    ]
+    assert texts[0] == texts[1]
+    result = outcome(
+        s, agent, brain, receipt, evidence[0], evidence_citation_ids=evidence
+    )
+    arguments = {
+        "principal": owner,
+        "brain_id": brain,
+        "outcome_id": result["id"],
+        "success": True,
+        "evidence_citation_ids": evidence,
+    }
+    attested = s.verify_outcome(**arguments)
+    assert attested["status"] == "verified"
+    assert attested["integration_status"] == "pending"
+    assert s.verify_outcome(**arguments) == attested
+    s.drain_outbox()
+    assert len(s.experience.private.store.candidate_validations()) == 1
+
+    other_receipt = action(s, agent, brain, "identical-content-replay")
+    replay_cid = import_text(s, owner, brain, texts[0])["citations"][0]["id"]
+    assert replay_cid not in evidence
+    replay = outcome(s, agent, brain, other_receipt["id"], replay_cid)
+    assert (
+        verify(s, owner, brain, replay, replay_cid)["integration_status"] == "replay"
+    )
+    s.drain_outbox()
+    assert len(s.experience.private.store.candidate_validations()) == 1
+    assert [
+        p["status"]
+        for p in s.review_experience(principal=owner, brain_id=brain)["procedures"]
+    ] == ["shadow"]
+
+
 def test_failed_unverified_and_callback_error_are_visible_after_restart(
     action_fixture, tmp_path
 ):
