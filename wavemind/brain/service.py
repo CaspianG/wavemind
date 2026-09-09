@@ -1,0 +1,153 @@
+"""Transport-independent Brain application operations."""
+
+import json
+from pathlib import Path
+from uuid import uuid4
+
+from .access import _not_found, require_access
+from .models import BrainError, Principal, bounded_text
+from .store import BrainStore, record_change
+
+
+class BrainService:
+    def __init__(self, state_dir: Path):
+        self.store = BrainStore(state_dir)
+
+    def close(self):
+        self.store.close()
+
+    def create_brain(
+        self, *, principal: Principal, title: str, mode: str = "personal"
+    ) -> dict:
+        # Creating a new owner is a trusted human bootstrap operation. A token
+        # scoped to existing Brains cannot acquire a new scope by creating one.
+        if (
+            not isinstance(principal, Principal)
+            or principal.kind != "human"
+            or principal.brain_ids is not None
+            or (
+                principal.operations is not None
+                and "manage_access" not in principal.operations
+            )
+        ):
+            raise _not_found()
+        bounded_text(title, maximum=500)
+        if mode not in ("personal", "team"):
+            raise BrainError("invalid_input", "Invalid Brain mode.")
+        brain_id = uuid4().hex
+        with self.store.transaction(write=True) as conn:
+            conn.execute(
+                "INSERT INTO brains(id,title,mode,owner) VALUES (?,?,?,?)",
+                (brain_id, title, mode, principal.identity),
+            )
+            conn.execute(
+                "INSERT INTO members(brain_id,identity,role) VALUES (?,?,'owner')",
+                (brain_id, principal.identity),
+            )
+            record_change(
+                conn,
+                brain_id=brain_id,
+                kind="brain_created",
+                record_id=brain_id,
+                increment=False,
+            )
+            return dict(
+                conn.execute("SELECT * FROM brains WHERE id=?", (brain_id,)).fetchone()
+            )
+
+    def list_brains(self, *, principal: Principal) -> list[dict]:
+        if not isinstance(principal, Principal):
+            raise _not_found()
+        with self.store.transaction() as conn:
+            rows = conn.execute(
+                """SELECT b.* FROM brains b JOIN members m ON m.brain_id=b.id
+                   WHERE m.identity=? ORDER BY b.id""",
+                (principal.identity,),
+            ).fetchall()
+            visible = []
+            for row in rows:
+                try:
+                    require_access(conn, principal, row["id"], "read")
+                except BrainError as error:
+                    if error.code != "not_found":
+                        raise
+                else:
+                    visible.append(dict(row))
+            return visible
+
+    def set_member(
+        self, *, principal: Principal, brain_id: str, identity: str, role: str | None
+    ) -> None:
+        with self.store.transaction(write=True) as conn:
+            require_access(conn, principal, brain_id, "manage_access")
+            bounded_text(identity)
+            if role not in (None, "owner", "editor", "reader"):
+                raise BrainError("invalid_input", "Invalid membership role.")
+            current = conn.execute(
+                "SELECT role FROM members WHERE brain_id=? AND identity=?",
+                (brain_id, identity),
+            ).fetchone()
+            if current is not None and current["role"] == "owner" and role != "owner":
+                owners = conn.execute(
+                    "SELECT identity FROM members WHERE brain_id=? AND role='owner' ORDER BY identity",
+                    (brain_id,),
+                ).fetchall()
+                if len(owners) == 1:
+                    raise BrainError("invalid_input", "A Brain must retain an owner.")
+                successor = next(
+                    row["identity"] for row in owners if row["identity"] != identity
+                )
+                conn.execute(
+                    "UPDATE brains SET owner=? WHERE id=? AND owner=?",
+                    (successor, brain_id, identity),
+                )
+            if role is None:
+                conn.execute(
+                    "DELETE FROM members WHERE brain_id=? AND identity=?",
+                    (brain_id, identity),
+                )
+            else:
+                conn.execute(
+                    """INSERT INTO members(brain_id,identity,role) VALUES (?,?,?)
+                       ON CONFLICT(brain_id,identity) DO UPDATE SET role=excluded.role""",
+                    (brain_id, identity, role),
+                )
+            # Membership identities can be personal data; the audit records only
+            # the Brain's opaque ID and the operation, never the member payload.
+            record_change(
+                conn,
+                brain_id=brain_id,
+                kind="member_removed" if role is None else "member_set",
+                record_id=brain_id,
+            )
+
+    def set_source_access(
+        self,
+        *,
+        principal: Principal,
+        brain_id: str,
+        source_id: str,
+        readers: list[str] | None,
+    ) -> None:
+        with self.store.transaction(write=True) as conn:
+            require_access(conn, principal, brain_id, "manage_access")
+            if (
+                not isinstance(source_id, str)
+                or conn.execute(
+                    "SELECT 1 FROM sources WHERE brain_id=? AND id=?",
+                    (brain_id, source_id),
+                ).fetchone()
+                is None
+            ):
+                raise _not_found()
+            if readers is not None:
+                if not isinstance(readers, list):
+                    raise BrainError("invalid_input", "Invalid source readers.")
+                readers = sorted({bounded_text(reader) for reader in readers})
+            conn.execute(
+                "UPDATE sources SET readers_json=? WHERE brain_id=? AND id=?",
+                (None if readers is None else json.dumps(readers), brain_id, source_id),
+            )
+            record_change(
+                conn, brain_id=brain_id, kind="source_access_set", record_id=source_id
+            )
