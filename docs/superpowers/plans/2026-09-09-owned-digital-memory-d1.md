@@ -55,6 +55,55 @@ Public JSON values are ordinary dictionaries/lists/primitives validated at the b
 
 The public service functions and dictionary fields below are the contracts produced by each task. Internal SQL helpers may be added in their responsible module. No module may copy private Brain data into the old default databases.
 
+### Task 0: Repair existing cross-volume upgrade recovery
+
+**Files:** Modify `wavemind/upgrade.py:restore_upgrade_backup`; extend `tests/test_upgrade.py`. This prerequisite was added after the baseline run exposed a real failure with TEMP on C: and the selected data profile on D:.
+
+**Interfaces:** Preserve `restore_upgrade_backup(path: Path) -> None` and the existing archive format. No dependency on the new Brain code. Every restored candidate and its recovery copy must permit same-filesystem atomic replacement at its own target, including profiles whose assets live on different volumes. Validation happens before replacement; a subsequent failure restores exact prior bytes or prior absence for already touched targets. Do not change TMP/TEMP to conceal the defect or use non-atomic move fallback for the final replacement.
+
+- [ ] Reproduce existing `test_interrupted_journal_is_recovered_before_retry` with system TEMP unchanged on C: and fresh pytest basetemp under `D:/codex-brain-d1`; observed RED is `OSError: [WinError 17]` at `os.replace(candidate, target)`.
+- [ ] Add a portable regression which models volume boundaries through `os.replace` while checking real restored contents:
+
+```python
+def test_restore_stages_each_asset_on_its_target_volume(tmp_path, monkeypatch):
+    import errno
+    first, second = tmp_path / "volume-a", tmp_path / "volume-b"
+    first.mkdir()
+    second.mkdir()
+    core, experience, _, _ = _state(first)
+    config = second / "client.json"
+    config.write_text('{"saved": true}', encoding="utf-8")
+    wheel, digest = _wheel(first / "wavemind-2.12.1-py3-none-any.whl", "2.12.1")
+    options = _options(first, core, experience, wheel, digest, config_paths=(config,))
+    archive = create_upgrade_backup(options, first / "backup.zip", source_version="2.12.1", target_version="2.12.1")
+    config.write_text("changed", encoding="utf-8")
+    real_replace = upgrade.os.replace
+    def volume(path):
+        resolved = Path(path).resolve()
+        return next((root for root in (first, second) if resolved.is_relative_to(root)), None)
+    def same_volume_only(source, target):
+        if volume(source) != volume(target):
+            raise OSError(errno.EXDEV, "cross-device replacement")
+        return real_replace(source, target)
+    monkeypatch.setattr(upgrade.os, "replace", same_volume_only)
+    restore_upgrade_backup(archive)
+    assert config.read_text(encoding="utf-8") == '{"saved": true}'
+    assert database_inventory(core)["tables"]["memories"]["rows"] == 1
+```
+
+  Run the new test before production change and observe cross-device RED. Add failure injection on a later asset with real unchanged earlier bytes, missing target restoration and task-owned staging cleanup assertions.
+- [ ] Allocate candidate/rollback staging per target using `TemporaryDirectory(dir=target.parent)` managed across the restore by `contextlib.ExitStack`, preserving rollback files until the whole operation succeeds. Copy archive bytes there, validate SQLite candidates before replacing, and recover with same-target-volume replacements where possible. Retain original failure and report rollback failure as `UpgradeRollbackError`. Never mutate unrelated files.
+
+```python
+with contextlib.ExitStack() as stack:
+    local = Path(stack.enter_context(tempfile.TemporaryDirectory(
+        prefix=".wavemind-restore-", dir=target.parent)))
+    candidate = local / "candidate"
+```
+
+  The stack covers the entire multi-target restore, not one loop iteration. Rollback must run before stack cleanup.
+- [ ] Run focused regression, all `tests/test_upgrade.py` and Ruff, inspect diff and commit `fix: restore upgrade assets atomically across data volumes`. Review this prerequisite independently before Task 1. Repeat final full-suite verification after the repair; the initial baseline had 1323 pass, 14 skips and one third-party Pydantic warning before this failure.
+
 ### Task 1: Persistent Brain state and exact authorization
 
 **Files:** Create `wavemind/brain/__init__.py`, `models.py`, `store.py`, `access.py`, `service.py`; create `tests/brain/__init__.py`, `tests/brain/test_store_access.py`.
