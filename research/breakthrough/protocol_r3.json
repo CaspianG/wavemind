@@ -1,0 +1,18 @@
+{
+  "protocol_id": "h1-hidden-drift-identifiability-counterexample-r3-20260906",
+  "status": "preregistered_before_r3_execution",
+  "target_claim": "Past verified action plus unchanged textual scope suffices to select a correct action after arbitrary hidden environment change without fresh distinguishing evidence.",
+  "worlds": "H_s=s*omega*Z/2 with s in {-1,+1}, known omega=1; prepare +X; past/current accessible readout is X; unobserved sign may change after the original verification",
+  "history_times": [0.05, 6.0, 17],
+  "target_angles_pi_units": [0.3, 0.5, 0.7],
+  "control_actions": [-1, 1],
+  "readout_error_rates": [0.0, 0.02, 0.1],
+  "baseline": "Exact Bayesian posterior over signs, equal current-world prior; X-only history has identical likelihoods in both worlds",
+  "fresh_probe_ablation": "Allow a Y measurement after pi/2 evolution; outcome identifies the sign with probability 1-readout_error; both memory policy and baseline have equal access",
+  "classical_control": "Hidden classical bit with identical history distribution and a binary symmetric diagnostic; same decision bound",
+  "prediction": "X probabilities match to 1e-12 for every time; at pi/2 correct sign-conditioned correction has fidelity 1 and wrong one 0; no X-only randomized decision exceeds 1/2 average success under equal sign prior; Y probe yields 1-error",
+  "statistics": "Exact finite enumeration and analytic symmetry, no stochastic significance or physical measurement claim",
+  "falsifier_of_counterexample": "Any X likelihood differs by >1e-12, pi/2 fidelity matrix differs from predicted diagonal by >1e-12, or fresh diagnostic disagrees with analytic error rates",
+  "decision": "If the counterexample checks, reject only the universal scope-alone transfer claim. Do not infer that WaveMind itself makes that claim or that all useful memory transfer is impossible.",
+  "resources": {"max_seconds": 10, "external_data": false, "longmemeval_runs": 0, "paid_calls": 0, "quantum_hardware_calls": 0}
+}

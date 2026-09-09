@@ -1,0 +1,31 @@
+{
+  "protocol_id": "h4-certificate-falsifier-r1-20260906",
+  "status": "preregistered_before_experiment_execution",
+  "base_sha": "a465ac0e3a5610cadcf07320fcd08bf6873158f3",
+  "hypothesis": "A posterior-distance certificate saves at least 90% of exact action-score calls and gives at least 10x paired decision p95 speedup against vectorized cached-likelihood EIG in every family, with no action disagreement.",
+  "evidence_class": "local_generated_quantum_model_mechanistic_falsifier_only",
+  "external_dataset": null,
+  "external_baseline_executed": false,
+  "model": {
+    "families": ["x_rotation", "z_rotation", "tilted_rotation"],
+    "omega_grid": [0.2, 2.4, 61],
+    "preparations": ["z", "x"],
+    "measurements": ["z", "y", "x"],
+    "times": [0.15, 3.0, 12],
+    "readout_error": 0.02,
+    "visibility_decay_time": 5.0
+  },
+  "seeds": [107, 211, 307, 401, 503, 601, 701, 809, 907, 1009, 1103, 1201, 1301, 1409, 1511, 1601, 1709, 1801, 1901, 2003, 2111, 2203, 2309, 2411],
+  "steps_per_seed": 48,
+  "timing_inner_repeats": 7,
+  "timing_order": "alternate exact first and candidate first by step parity",
+  "baselines": ["vectorized_cached_likelihood_eig", "exact_posterior_memoization", "naive_likelihood_rebuild_reference"],
+  "ablations": ["uncertified_last_action_reuse", "no_memory_exact_eig"],
+  "history_policy": "exact EIG baseline generates histories; each method sees identical posteriors, actions and outcomes; ablation reports one-step regret, not off-policy end-task success",
+  "metrics": ["action_disagreement_count", "maximum_eig_regret_nats", "exact_score_call_fraction", "decision_p95_ns", "paired_seed_p95_speedup", "anchor_bytes", "likelihood_setup_ns", "naive_setup_plus_score_ns", "posterior_truth_probability"],
+  "statistics": {"unit": "seed within family, not individual shots", "bootstrap_seed": 99173, "bootstrap_resamples": 2000, "interval": "paired seed-ratio percentile 95% CI"},
+  "thresholds": {"max_disagreements": 0, "max_score_call_fraction": 0.1, "min_mean_seed_p95_speedup": 10.0, "min_speedup_ci_lower": 10.0, "max_eig_regret_nats": 1e-12},
+  "stop_rules": ["Abort on invalid likelihood, posterior or certificate disagreement", "Abort after 120 wall seconds", "Evaluate all three declared families before rejection on speed or reuse", "No outcome-driven retuning or rerun replacement", "Any local pass authorizes only independent preflight, not breakthrough or product claims"],
+  "protected_inputs": ["all LongMemEval-V2 held-out or per-question rows", "all v31 held-out raw rows", "paid model/judge/simulator endpoints", "quantum hardware endpoints"],
+  "integrity": "Commit protocol and implementation before execution; receipt records exact source SHA, protocol/file hashes, runtime, every raw decision, and generated likelihood hashes. Existing result directories must not be overwritten."
+}

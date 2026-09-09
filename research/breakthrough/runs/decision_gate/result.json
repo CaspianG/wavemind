@@ -1,0 +1,52 @@
+{
+  "source_sha": "0692b111e141e4546a99c29a63359c2b935d46f4",
+  "source_hashes": {
+    "decision_gate_protocol.json": "f8e7bc8c5fd92625e6885dde30867d844b7e6231f4823a9b3ceb157e74cec9a5",
+    "SCIENTIFIC_DECISION_GATE.md": "1b283a5dafe4891c836bcfcdb536c610c7e61b3833fde27f4cd651b92848752e",
+    "decision_gate_falsifier.py": "b57568f6b94d7f3f86e67eea6647b7e0653e586444b56231e1adcd81a023687c",
+    "test_decision_gate.py": "df5c7bce9f1eec2d40c0b54845ef4c12c2f52d75cef8d0e0f69524d2444d2cb8",
+    "lc_graph_oracle.py": "4a32680e2035b92ad80d4ab4f4e82d451098d9f06c2673f3ef1cc0739d1eba09",
+    "lc_r8_corpus.py": "d03c84258ddd1a15ff62e9280c5741469493e4d3e1bb65489a698a958b0794ef",
+    "lc_scalar_components.py": "f32db44edf2fbfbef8f9c5f4d0ffee23b03da5cad13f1d761de87cd2578958f7",
+    "lc_scalar_check.py": "2381eff008abbb28abb952ec9fcdb00c26f05636526b139ac2d5056f3e3806d8",
+    "lc_certificate_check.py": "60cf8c29494657efed736b46082302e4d491b06f023ad4c0a011f122764b72ba"
+  },
+  "python": "3.13.2",
+  "started_utc": "2026-09-07T11:15:59.382529+00:00",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "status": "finite_gate_pass",
+  "failure": null,
+  "summary": {
+    "records": 29239,
+    "unital_linear_spaces": 29228,
+    "actual_algebras": 519,
+    "algebra_negative": 223,
+    "lemma_checks": 5044,
+    "graphs": 10,
+    "resolved_graphs": 10,
+    "negative_graphs": 5,
+    "distinct_resolved_orbits": 10,
+    "negative_component_sizes": {
+      "hash-0": [
+        7
+      ],
+      "hash-1": [
+        7
+      ],
+      "hash-4": [
+        6,
+        1
+      ],
+      "hash-6": [
+        7
+      ],
+      "cycle": [
+        7
+      ]
+    }
+  },
+  "seconds": 1.6486258999211714,
+  "raw_sha256": "83bad867a3e74c7540a48d583929c30f23db45aadb30c7d9c012edb3cc554c52",
+  "novelty_cleared": false,
+  "real_workflows": 0
+}

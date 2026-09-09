@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "date": "2026-09-07",
+  "label": "R8 follow-up scientific decision falsifier, not a novelty admission",
+  "source_r8": "fff2c991506344b7f69be6c4357bd52c1f91eb8b",
+  "algebra_domain_sites": [1, 2],
+  "unital_linear_subspace_counts": {"1": 16, "2": 29212},
+  "algebra_truth": "Enumerate every element; rank-one means nonzero, nonidentity and P*P=P, checked by direct matrix multiplication",
+  "graph_sites": 7,
+  "graph_hash_seed": "wavemind-r8-decision-gate-v1",
+  "graph_hash_cases": 8,
+  "graph_controls": ["cycle", "star"],
+  "graph_generation": "For index 0..7 take the low 21 bits of SHA256(UTF8(seed + ':' + decimal index)); edges in lexicographic unordered-pair order",
+  "max_orbit_states_per_input": 100000,
+  "max_seconds_per_orbit": 90,
+  "predeclared_predictions": [
+    "All actual unital algebras satisfy the atom trace-one determinant lemma",
+    "All actual unital algebras give identical six-anchor and complete-element existence answers",
+    "Dropping multiplication closure or ignoring scalar atoms breaks the anchored propagation implication on explicit controls",
+    "R8 and the complete graph LC-orbit truth agree on every resolved input",
+    "All R8 certificates pass the frozen independent dense checker"
+  ],
+  "coverage_requirements": ["Report physical positive and negative counts separately", "Report duplicate graph orbits and negative component sizes", "If no physical negative indecomposable input occurs, retain the gap and do not replace inputs"],
+  "stop_rule": "Preserve completed records and failure details on any mismatch; resource-limited graph orbits are unresolved, never negative; any unresolved case prevents full finite-gate pass",
+  "cost": "Local CPU only, no endpoints, network, hardware, external data or model calls; at most ten graph orbits with 90 seconds each",
+  "novelty_cleared": false,
+  "real_workflows": 0,
+  "main_generation_requires_clean_frozen_commit": true
+}

@@ -1,0 +1,2 @@
+# Evidence checksums cover exact emitted bytes, including Windows CRLF.
+runs/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

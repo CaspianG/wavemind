@@ -1,0 +1,13 @@
+{
+  "source_sha": "5ee82f8ef4b5087e0c8a1a35ded6b3701a9ae9bd",
+  "protocol_sha256": "717f60bb943ca82c9b7dbd5bb3c23547d3ea442d021d339fb53975906542974b",
+  "implementation_sha256": "a08971e9bf15ab9ad4959194455ebb8ff6b7fa792f63897a1336d04d02b200fc",
+  "python": "3.13.2",
+  "numpy": "2.5.2",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "started_unix_ns": 1788718495465272500,
+  "evidence_class": "local_generated_quantum_model_mechanistic_falsifier_only",
+  "external_data_used": false,
+  "paid_calls": 0,
+  "longmemeval_runs": 0
+}

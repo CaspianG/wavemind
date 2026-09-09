@@ -1,0 +1,17 @@
+{
+  "source_sha": "a2f23fd3b38cce136b656d0f88e2b375e22fa1ed",
+  "source_hashes": {
+    "workflow_intake_protocol.json": "82d8eb7bacad218c003fe4e13fd0cf376f50d26366053f1a41e69fe04e3b6c31",
+    "workflow_intake_audit.py": "b83ef5c59b088b7edfdbdc5b7575813b1a26d7a8b4990c1c3a03d484b239e921",
+    "test_workflow_intake.py": "5cbe4e816a3e7829e3bf563e37389f9e6c3d35b91bbf2e028505f2d7191b8ec7",
+    "workflow_intake_amendment_v2.json": "4b19c9c8b6dca8d848633624a8303a985e0b2f9e80288c4cca1750fe45c8ada6",
+    "workflow_intake_v2.py": "ec39dbc87ce3713cc9b39e6f17b8a6dccc1e5280c1f04b63688798427109d2b7",
+    "test_workflow_intake_v2.py": "2a152adc7c125315be9d99fd3e82fd432b48a92351b5e5f10359f6dae9cac08b",
+    "WORKFLOW_INTAKE_AMENDMENT_V2.md": "082e40d2bb172fcd173d92dcfbbb87388c522ba7ebdb05f1bd4a5c7331901d9b"
+  },
+  "effective_protocol_sha256": "3d74cd005cd455ae640718973241b03617d465917543d9341a38f8826a92e411",
+  "started_utc": "2026-09-07T13:21:18.866603+00:00",
+  "python": "3.12.14",
+  "amendment": "official_incident_header_alias_only",
+  "first_result_sha256": "257252b0642cb9680efa2b0817d4dbb0d3f16b911b943c149ca0bbc5164a304b"
+}

@@ -1,0 +1,26 @@
+{
+  "protocol_id": "h4-equivalence-quotient-falsifier-r2-20260906",
+  "status": "preregistered_before_r2_execution_after_r1_rejection",
+  "allowed_development_evidence": "r1 raw decisions and result: tilted family has tied scores; x and z also fail despite positive margins",
+  "new_assertion": "Removing equivalent binary measurement channels makes the R1 certificate achieve the original 90% score-call reduction and 10x decision speedup versus an equally quotient-aware cached exact baseline.",
+  "claim_boundary": "Generated model screen only; no novelty admission, independent physical evidence or consumer outcome",
+  "model": {
+    "families": ["x_rotation", "z_rotation", "tilted_rotation"],
+    "omega_grid": [0.23, 2.53, 67],
+    "preparations": ["z", "x"],
+    "measurements": ["z", "y", "x"],
+    "times": [0.19, 3.19, 13],
+    "readout_error": 0.02,
+    "visibility_decay_time": 5.0
+  },
+  "channel_quotient": "First representative of each allclose row or complemented row with rtol=0, atol=1e-14; retain mapping. Both baseline and candidate receive identical quotient. Compare full-table EIG regret <=1e-12.",
+  "seeds": [3109, 3203, 3301, 3407, 3511, 3607, 3701, 3803, 3907, 4001, 4111, 4201, 4303, 4409, 4507, 4603, 4703, 4801, 4903, 5003, 5101, 5209, 5303, 5407],
+  "steps": 48,
+  "timing_repeats": 7,
+  "history": "quotient exact EIG chooses actions; paired candidate observes identical posteriors; alternate timing order and warm both functions",
+  "statistics": {"unit": "seed within family", "bootstrap_seed": 81191, "resamples": 2000, "ci": "percentile 95% of paired seed p95 ratios"},
+  "thresholds": {"max_score_call_fraction": 0.1, "min_mean_speedup": 10.0, "min_speedup_ci_lower": 10.0, "max_regret_nats": 1e-12, "max_candidate_action_disagreements": 0},
+  "ablation": "Full unquotiented cached exact selector evaluated outside timed section to check equivalence; R1 is preserved as the no-quotient predecessor, not a held-out comparator",
+  "stop_rules": ["Stop on numerical invalidity or candidate disagreement", "120 seconds maximum", "No retuning or overwriting a result", "Any speed or score gate failure rejects this candidate"],
+  "resources": {"external_data": false, "paid_calls": 0, "longmemeval_runs": 0, "quantum_hardware_calls": 0}
+}

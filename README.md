@@ -4,10 +4,8 @@
 
 **Verified experience for coding, support, and operations agents that repeat consequential work.**
 
-WaveMind turns independently verified tool work into compact, cited Experience
-Packets for the next run. Every packet keeps provenance, applicability
-boundaries, correction and rollback instead of asking an agent to trust an
-opaque history dump.
+WaveMind turns independently verified tool work into compact Experience Packets.
+Each packet keeps its source, scope, corrections and rollback path.
 
 <p><a href="https://pypi.org/project/wavemind/"><strong>PyPI</strong></a> &middot; <a href="https://github.com/CaspianG/wavemind/actions/workflows/full-check.yml">Build status</a> &middot; <a href="https://github.com/CaspianG/wavemind/releases/latest">Latest release</a> &middot; <a href="https://github.com/CaspianG/wavemind/blob/main/pyproject.toml">Python &gt;=3.10</a> &middot; <a href="LICENSE">MIT</a></p>
 
@@ -17,7 +15,7 @@ opaque history dump.
   <a href="#quick-start"><strong>Quick Start</strong></a> &middot;
   <a href="docs/WHY_WAVEMIND.md"><strong>Why WaveMind</strong></a> &middot;
   <a href="docs/README.md">Documentation</a> &middot;
-  <a href="#wavemind-studio">Studio</a> &middot;
+  <a href="#quantum-sensing-research"><strong>Quantum research / Исследование</strong></a> &middot; <a href="#wavemind-studio">Studio</a> &middot;
   <a href="https://caspiang.github.io/wavemind/"><strong>Product site</strong></a> &middot; <a href="https://caspiang.github.io/wavemind/evidence/">Evidence</a> &middot;
   <a href="docs/ROADMAP.md">Roadmap</a> &middot;
   <a href="#contributing">Contributing</a>
@@ -25,13 +23,22 @@ opaque history dump.
 
 </div>
 
-## The Breakthrough, In Plain English
+## Quantum Sensing Research
 
-Most agent memory stores what an agent **saw**. WaveMind carries forward what
-independent evidence says **worked**. A test, operator, tool, or downstream
-state verifies the outcome before a bounded procedure is promoted. The next
-agent gets a compact Experience Packet with its source, scope, corrections,
-and rollback path; without valid evidence, WaveMind can stay silent.
+![Conceptual illustration: a transparent crystal on a copper mount, not a built sensor.](research/breakthrough/assets/quantum-sensing-concept.png)
+
+Can control make a weak signal easier to read? *Cover: conceptual illustration.* [Visual research guide](research/breakthrough/README.md) · [По-русски](research/breakthrough/START_HERE_RU.md).
+
+![Frozen simulation: pulse compensation improves both methods; DRAG3 with RXY8 remains above DRAG3 with RS.](research/breakthrough/assets/pulse-comparison.svg)
+
+Simulation only: the candidate does **not** beat the strongest known control.
+This separate research track is not a proven breakthrough, built sensor or library feature. [Results and limits](research/breakthrough/sensing_rs/RESULTS_V3_RU.md).
+
+## The Idea, In Plain English
+
+Most agent memory stores what an agent **saw**. WaveMind reuses what independent
+evidence says **worked**. A test, operator, tool or downstream state must verify
+the outcome first; without valid evidence, a procedure is not promoted.
 
 | Raw agent history | WaveMind verified experience |
 |---|---|
@@ -40,8 +47,7 @@ and rollback path; without valid evidence, WaveMind can stay silent.
 | Lets corrections coexist as ambiguity | Reconciles conflicts and preserves what superseded what |
 | Makes learned behavior hard to inspect | Keeps provenance, applicability, deletion, and rollback explicit |
 
-The shift is from **accumulated context** to **governed, proof-carrying
-experience**. Read the [plain-language explanation and evidence boundaries](docs/WHY_WAVEMIND.md).
+Read the [plain-language explanation and evidence boundaries](docs/WHY_WAVEMIND.md) · [Dated market and product audit](docs/MARKET_AUDIT_2026-08-16.md).
 
 ## Built For Repeated Agent Work
 
@@ -52,10 +58,6 @@ experience**. Read the [plain-language explanation and evidence boundaries](docs
 | Browser and operations agents | Repeating an obsolete navigation or runbook step | Reuse a cited procedure after an external-state check |
 | Agent-platform teams | Rebuilding provenance, promotion, deletion, and rollback per framework | Share one governed Experience Packet contract across providers |
 | Private workflows | Learning without a reviewable source or exit path | Keep verified experience local, inspectable, and reversible |
-
-The flagship loop is `trace -> verification -> Experience Packet -> better
-next run -> explainable diff -> rollback`. See the dated
-[market and product audit](docs/MARKET_AUDIT_2026-08-16.md) for the evidence.
 
 ## What Makes It Different
 
@@ -70,9 +72,7 @@ still matters now?**
 | Small integration surface | Python API, CLI, FastAPI, MCP, LangChain memory, and framework adapters. |
 | Evidence-first releases | Public JSON artifacts, admission gates, reproducible commands, and locked claims when proof is missing. |
 
-WaveMind complements FAISS, Qdrant, pgvector, Chroma, and other candidate
-indexes. It is the memory policy and lifecycle around retrieval, not another
-claim that one vector database should replace every other system.
+WaveMind complements FAISS, Qdrant, pgvector, Chroma, and other candidate indexes. It is the memory policy and lifecycle around retrieval, not another claim that one vector database should replace every other system.
 
 ## Verified Today
 

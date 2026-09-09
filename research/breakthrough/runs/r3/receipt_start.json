@@ -1,0 +1,13 @@
+{
+  "source_sha": "b12df277a475134249ce81451976dd1c80d411bd",
+  "started_unix_ns": 1788718852851160800,
+  "hashes": {
+    "protocol_r3.json": "0f45621106c26a449663a1dc0c28a2a1a2238001f6bedbbb2f44b9c49fb7edee",
+    "experiment_r3.py": "df1254b5a150c4aaf6d7279b1116cb3d94fdd3bdd413954fdad2e873792dd879",
+    "experiment_r1.py": "a08971e9bf15ab9ad4959194455ebb8ff6b7fa792f63897a1336d04d02b200fc"
+  },
+  "evidence_class": "exact_analytic_model_counterexample_not_physical_data",
+  "external_data_used": false,
+  "paid_calls": 0,
+  "longmemeval_runs": 0
+}

@@ -1,0 +1,170 @@
+{
+  "protocol_id": "sensing_rs_20260907_v1",
+  "mechanism_pass": true,
+  "finite_coupling": {
+    "n": 64,
+    "eta": 0.0001,
+    "max_leakage_row_remainder": 5.812576777687563e-10,
+    "dyson_remainder_bound": 1.693364680716708e-07,
+    "all_within_remainder": true
+  },
+  "engineering": [
+    {
+      "protocol": "RS_prefix",
+      "minimum_fi_rate": 0.018114603702232304,
+      "median_fi_rate": 13.769830486566327,
+      "maximum_fi_rate": 21.58070351328173,
+      "worst_case": {
+        "amplitude_error": -0.02,
+        "qubit_detuning_over_omega": -0.02,
+        "spectator_detuning_cycles": 12.0
+      },
+      "maximum_worst_input_leakage": 0.9101709374000408,
+      "ideal_fisher_information": 1612.1607107546772
+    },
+    {
+      "protocol": "CP",
+      "minimum_fi_rate": 5.543081338517925e-10,
+      "median_fi_rate": 0.9287872134634496,
+      "maximum_fi_rate": 21.54358453317262,
+      "worst_case": {
+        "amplitude_error": 0.02,
+        "qubit_detuning_over_omega": 0.0,
+        "spectator_detuning_cycles": 13.23828125
+      },
+      "maximum_worst_input_leakage": 0.9997336881349372,
+      "ideal_fisher_information": 1612.160710754682
+    },
+    {
+      "protocol": "CPMG",
+      "minimum_fi_rate": 5.543081340323592e-10,
+      "median_fi_rate": 0.9287872134634481,
+      "maximum_fi_rate": 21.543584533172588,
+      "worst_case": {
+        "amplitude_error": 0.02,
+        "qubit_detuning_over_omega": 0.0,
+        "spectator_detuning_cycles": 13.23828125
+      },
+      "maximum_worst_input_leakage": 0.999733688134937,
+      "ideal_fisher_information": 1612.160710754682
+    },
+    {
+      "protocol": "APCP",
+      "minimum_fi_rate": 3.6587468087017194e-09,
+      "median_fi_rate": 0.6996597785357025,
+      "maximum_fi_rate": 19.706347885766306,
+      "worst_case": {
+        "amplitude_error": 0.02,
+        "qubit_detuning_over_omega": -0.02,
+        "spectator_detuning_cycles": 13.6171875
+      },
+      "maximum_worst_input_leakage": 0.9998433534973677,
+      "ideal_fisher_information": 1612.1607107546772
+    },
+    {
+      "protocol": "XY8",
+      "minimum_fi_rate": 2.632604434512467e-05,
+      "median_fi_rate": 18.471314293991853,
+      "maximum_fi_rate": 21.574092263344124,
+      "worst_case": {
+        "amplitude_error": 0.0,
+        "qubit_detuning_over_omega": 0.0,
+        "spectator_detuning_cycles": 12.96875
+      },
+      "maximum_worst_input_leakage": 0.9871277406170211,
+      "ideal_fisher_information": 1612.1607107546772
+    },
+    {
+      "protocol": "XY16",
+      "minimum_fi_rate": 4.111121545550108e-06,
+      "median_fi_rate": 17.76874607782424,
+      "maximum_fi_rate": 21.572266629421904,
+      "worst_case": {
+        "amplitude_error": 0.02,
+        "qubit_detuning_over_omega": 0.0,
+        "spectator_detuning_cycles": 12.15625
+      },
+      "maximum_worst_input_leakage": 0.9992108983353695,
+      "ideal_fisher_information": 1612.1607107546772
+    },
+    {
+      "protocol": "MLEV8",
+      "minimum_fi_rate": 1.6853473554607213e-05,
+      "median_fi_rate": 17.81987156347581,
+      "maximum_fi_rate": 21.588946253454573,
+      "worst_case": {
+        "amplitude_error": -0.02,
+        "qubit_detuning_over_omega": 0.0,
+        "spectator_detuning_cycles": 13.71875
+      },
+      "maximum_worst_input_leakage": 0.9994874664996547,
+      "ideal_fisher_information": 1612.1607107546772
+    },
+    {
+      "protocol": "raw_RS",
+      "minimum_fi_rate": 1.341012576242289e-05,
+      "median_fi_rate": 15.081015522770965,
+      "maximum_fi_rate": 21.42530239403662,
+      "worst_case": {
+        "amplitude_error": 0.0,
+        "qubit_detuning_over_omega": 0.02,
+        "spectator_detuning_cycles": 13.60546875
+      },
+      "maximum_worst_input_leakage": 0.9843923131273122,
+      "ideal_fisher_information": 1612.1607107546783
+    }
+  ],
+  "engineering_parameter_points_per_protocol": 9225,
+  "best_baseline_by_minimum_rate": "XY8",
+  "candidate_to_best_baseline_minimum_rate_ratio": 688.0868034998564,
+  "candidate_to_cp_ideal_fi_ratio": 0.999999999999997,
+  "engineering_screen_pass": true,
+  "near_resonance_stress": [
+    {
+      "protocol": "RS_prefix",
+      "minimum_fisher_information": 0.0003128956989244815,
+      "maximum_worst_input_leakage": 0.999514288862442
+    },
+    {
+      "protocol": "CP",
+      "minimum_fisher_information": 0.00014531839009671003,
+      "maximum_worst_input_leakage": 0.9989776042400984
+    },
+    {
+      "protocol": "CPMG",
+      "minimum_fisher_information": 0.00014531839009676416,
+      "maximum_worst_input_leakage": 0.9989776042400984
+    },
+    {
+      "protocol": "APCP",
+      "minimum_fisher_information": 2.687783883121103e-06,
+      "maximum_worst_input_leakage": 0.9981887719220965
+    },
+    {
+      "protocol": "XY8",
+      "minimum_fisher_information": 2.2981924793172903e-06,
+      "maximum_worst_input_leakage": 0.9941297605882342
+    },
+    {
+      "protocol": "XY16",
+      "minimum_fisher_information": 0.007343891138218687,
+      "maximum_worst_input_leakage": 0.9942338754416011
+    },
+    {
+      "protocol": "MLEV8",
+      "minimum_fisher_information": 2.5152100872759984e-06,
+      "maximum_worst_input_leakage": 0.9926858780467963
+    },
+    {
+      "protocol": "raw_RS",
+      "minimum_fisher_information": 0.0006368416961289834,
+      "maximum_worst_input_leakage": 0.9996804788666752
+    }
+  ],
+  "verdict": "PROVISIONAL_LOCAL_CANDIDATE_ONLY",
+  "novelty_gate": "UNKNOWN",
+  "physical_gate": "NOT_TESTED",
+  "mass_and_enterprise_gate": "NOT_TESTED",
+  "mission_complete": false,
+  "seconds": 5.979846299975179
+}

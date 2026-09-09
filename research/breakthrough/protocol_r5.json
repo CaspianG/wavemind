@@ -1,0 +1,31 @@
+{
+  "protocol_id": "lc-projector-catalog-audit-r5-20260906",
+  "status": "registered_before_first_catalog_computation",
+  "question": "Can the site-dependent projector criterion close the full local-Clifford-to-CSS classification gap on this public PBB catalog?",
+  "upstream_commit": "b5b44b05b95d1e645814ff6446235b3ae6b736d6",
+  "catalog_git_blob": "98e6e12abef0c561b8c35b399c0a1b7c5834c083",
+  "catalog_records": 368,
+  "order": "ascending (n, original 1-based source line), complete fixed catalog; immutable line-NNNN record identity; upstream code_id is optional metadata",
+  "metadata_amendment": "Original launch at 34c81bcbfa4d992131163dfc5caf9cdaf4cc3cda failed before the receipt, output creation, matrix construction or solver call: 66 records omit code_id. Preserve this failure, use source-line identity and freeze the amendment before any catalog computation. Hypotheses, corpus, method and resource bounds unchanged.",
+  "predictions": {
+    "practical_coverage": "At least 95 percent of all 368 records obtain a verified full-LC yes/no certificate within the registered sweep budget.",
+    "hidden_css": "At least one record whose upstream lc_any is false admits a full-LC CSS witness. Record rejection if none is found; unresolved records prevent universal rejection."
+  },
+  "comparators": [
+    "upstream lc_any labels, treated as restricted-family reports, not negative ground truth",
+    "locally implemented 36 uniform two-block Clifford rank checks, not the upstream package or complete best-known solver",
+    "independent direct full 6^n enumeration on named and seeded small controls in preflight"
+  ],
+  "validation": [
+    "upstream Git blob equals snapshotted bytes and all 368 immutable source-line record keys present",
+    "two independent matrix constructors agree; commutation and n-k rank match catalog",
+    "every positive includes local gates checked with a separate dense group-rank implementation",
+    "every negative includes valid necessary constraints independently checked to be impossible",
+    "reject any contradiction with an independently verified baseline witness"
+  ],
+  "limits": {"max_affine_dimension": 18, "candidate_seconds_per_code": 12, "sweep_wall_seconds": 600},
+  "statistics": "Exact finite classification, no sampling confidence interval. One timing observation per method/code; no general speedup claim. Budget includes constructors, candidate, baseline and certificate checker; checked between records.",
+  "stop_rules": ["stop and preserve partial records on validation failure", "resource limit yields unresolved or unattempted, not non-CSS", "never overwrite any receipt or raw evidence"],
+  "resources": {"paid_calls": 0, "longmemeval_runs": 0, "hardware_calls": 0, "external_data": "existing cached public QEC catalog"},
+  "claim_boundary": "algebraic public-catalog audit, no novelty clearance, no product uplift, no external investigator, both full-mission gates remain false"
+}

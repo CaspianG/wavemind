@@ -8,7 +8,7 @@ benchmarks only when the deployment requires them.
 
 | Goal | Guide |
 |---|---|
-| Understand the breakthrough without reading the code | [Why WaveMind](WHY_WAVEMIND.md) |
+| Understand the product idea without reading the code | [Why WaveMind](WHY_WAVEMIND.md) |
 | Install and recall the first memory | [Quick Start](../README.md#quick-start) |
 | Generate a Python, TypeScript, MCP, or Docker starter | `wavemind init` in the [Quick Start](../README.md#quick-start) |
 | Diagnose the local runtime and project | `wavemind doctor --project <path>` |
@@ -18,6 +18,7 @@ benchmarks only when the deployment requires them.
 | Migrate local Chroma memory | [Chroma Migration](CHROMA_MIGRATION.md) |
 | Safely upgrade Python or Docker Compose state | [Safe Upgrade Guide](UPGRADE.md) |
 | Find the right source, test, workflow, or generated artifact | [Repository Guide](REPOSITORY_GUIDE.md) |
+| Explore the separate quantum sensing investigation | [Research guide](../research/breakthrough/README.md) / [По-русски](../research/breakthrough/START_HERE_RU.md) |
 
 ## Build With WaveMind
 

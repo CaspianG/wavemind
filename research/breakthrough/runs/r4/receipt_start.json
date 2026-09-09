@@ -1,0 +1,14 @@
+{
+  "source_sha": "1428e8c6f7de4c899d2fec4fc67b4363fce14a79",
+  "started_unix_ns": 1788719672375619500,
+  "hashes": {
+    "protocol_r4.json": "befcfb135b4c62e32c3354313e33d762b270f27463f0038c05816ea22bbed359",
+    "diagnostic_oracle.py": "64f4f8e4263d00625b6c345bd25fb18da150c1b0aa8c5afda3d4fc4ebc4927a3",
+    "experiment_r4.py": "08b18dacb2c3bb390f101a3ca7b5e33fb7b2731900c8861dfccf3650b7cac7f6",
+    "experiment_r1.py": "a08971e9bf15ab9ad4959194455ebb8ff6b7fa792f63897a1336d04d02b200fc"
+  },
+  "evidence_class": "exact_generated_model_baseline",
+  "external_data_used": false,
+  "scientific_breakthrough_gate": false,
+  "mass_indispensability_gate": false
+}

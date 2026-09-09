@@ -1,0 +1,464 @@
+{
+  "units": "tau=1, phase in radians; no hardware frequency/calibration supplied",
+  "protocol": "RS_prefix",
+  "n": 64,
+  "preparation": "ideal plus_x assumption",
+  "sensing_pulses": [
+    {
+      "center": 0.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 1.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 2.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    },
+    {
+      "center": 3.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    },
+    {
+      "center": 4.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 5.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    },
+    {
+      "center": 6.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    },
+    {
+      "center": 7.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 8.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 9.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 10.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    },
+    {
+      "center": 11.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 12.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 13.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    },
+    {
+      "center": 14.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    },
+    {
+      "center": 15.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    },
+    {
+      "center": 16.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 17.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 18.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    },
+    {
+      "center": 19.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    },
+    {
+      "center": 20.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 21.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    },
+    {
+      "center": 22.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    },
+    {
+      "center": 23.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    },
+    {
+      "center": 24.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 25.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 26.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    },
+    {
+      "center": 27.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 28.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 29.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    },
+    {
+      "center": 30.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    },
+    {
+      "center": 31.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 32.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 33.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 34.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    },
+    {
+      "center": 35.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    },
+    {
+      "center": 36.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 37.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    },
+    {
+      "center": 38.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    },
+    {
+      "center": 39.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 40.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 41.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 42.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    },
+    {
+      "center": 43.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 44.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 45.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    },
+    {
+      "center": 46.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    },
+    {
+      "center": 47.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 48.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 49.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 50.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    },
+    {
+      "center": 51.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    },
+    {
+      "center": 52.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 53.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    },
+    {
+      "center": 54.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    },
+    {
+      "center": 55.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    },
+    {
+      "center": 56.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 57.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 58.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    },
+    {
+      "center": 59.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 60.5,
+      "duration": 0.25,
+      "phase": 0.0
+    },
+    {
+      "center": 61.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    },
+    {
+      "center": 62.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    },
+    {
+      "center": 63.5,
+      "duration": 0.25,
+      "phase": 3.141592653589793
+    }
+  ],
+  "analysis_settings": {
+    "Z+": [
+      {
+        "start": 64,
+        "duration": 0.125,
+        "phase": null
+      },
+      {
+        "start": 64.125,
+        "duration": 0.0,
+        "phase": 0.0
+      },
+      {
+        "start": 64.125,
+        "duration": 0.125,
+        "phase": null
+      }
+    ],
+    "Z-": [
+      {
+        "start": 64,
+        "duration": 0.0,
+        "phase": null
+      },
+      {
+        "start": 64.0,
+        "duration": 0.25,
+        "phase": 0.0
+      },
+      {
+        "start": 64.25,
+        "duration": 0.0,
+        "phase": null
+      }
+    ],
+    "X+": [
+      {
+        "start": 64,
+        "duration": 0.0625,
+        "phase": null
+      },
+      {
+        "start": 64.0625,
+        "duration": 0.125,
+        "phase": 4.71238898038469
+      },
+      {
+        "start": 64.1875,
+        "duration": 0.0625,
+        "phase": null
+      }
+    ],
+    "X-": [
+      {
+        "start": 64,
+        "duration": 0.0625,
+        "phase": null
+      },
+      {
+        "start": 64.0625,
+        "duration": 0.125,
+        "phase": 1.5707963267948966
+      },
+      {
+        "start": 64.1875,
+        "duration": 0.0625,
+        "phase": null
+      }
+    ],
+    "Y+": [
+      {
+        "start": 64,
+        "duration": 0.0625,
+        "phase": null
+      },
+      {
+        "start": 64.0625,
+        "duration": 0.125,
+        "phase": 0.0
+      },
+      {
+        "start": 64.1875,
+        "duration": 0.0625,
+        "phase": null
+      }
+    ],
+    "Y-": [
+      {
+        "start": 64,
+        "duration": 0.0625,
+        "phase": null
+      },
+      {
+        "start": 64.0625,
+        "duration": 0.125,
+        "phase": 3.141592653589793
+      },
+      {
+        "start": 64.1875,
+        "duration": 0.0625,
+        "phase": null
+      }
+    ]
+  },
+  "native_detector": {
+    "settings": [
+      "Z+",
+      "Z-",
+      "X+",
+      "X-",
+      "Y+",
+      "Y-"
+    ],
+    "nominal_analysis_angle_pi": [
+      0.0,
+      1.0,
+      0.5,
+      0.5,
+      0.5,
+      0.5
+    ],
+    "nominal_analysis_phase_pi": [
+      0.0,
+      0.0,
+      1.5,
+      0.5,
+      0.0,
+      1.0
+    ],
+    "pulse_placement": "centered in common analysis window; idle on both sides, including Z+",
+    "native_observable": "click effect p_dark*I+(p_bright-p_dark)*|0><0|; no event discarded",
+    "p_bright": 0.1,
+    "p_dark": 0.07,
+    "shot_allocation": "equal one sixth of total shots per setting; retain setting identity; average FI, never sum six independent budgets"
+  },
+  "simulation_only": true
+}

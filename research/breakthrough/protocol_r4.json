@@ -1,0 +1,17 @@
+{
+  "protocol_id": "diagnostic-optimal-baseline-r4-20260906",
+  "status": "registered_before_sweep",
+  "purpose": "Compute exact optimal diagnostic baselines and reject treating fixed short witness memory as generally sufficient; no new mechanism claim",
+  "models": "Two opposite Hamiltonian signs at R3 pi/2 with X and noisy Y readout; equivalent classical hidden-bit model; stationary conditional independence",
+  "noises": ["0", "1/50", "1/10", "1/4", "1/2"],
+  "probe_costs": ["1/1000", "1/100", "1/10"],
+  "positive_sign_priors": ["1/2", "9/10", "99/100"],
+  "horizons": [0, 1, 2, 3, 4, 5, 6],
+  "metrics": ["exact_expected_loss_including_all_probes", "exact_expected_probe_count", "optimal_root_action", "states_evaluated", "runtime"],
+  "comparison": "optimal adaptive finite-horizon policy versus optimal no-probe and optimal at-most-one-probe policy with identical inputs",
+  "validation": "Exact rational results must match brute enumeration of every depth-two policy; risk cannot increase with horizon; risky decisions and measurements cost the same for all policies",
+  "statistics": "Exact finite enumeration, no sampling CI, no experimental significance claim",
+  "stop_rules": ["stop on failed exact validation", "120 seconds wall maximum", "do not overwrite results"],
+  "claim_boundary": "generated analytic model baselines only; no external dataset, quantum advantage, independent task domain, product evidence or scientific admission",
+  "resources": {"paid_calls": 0, "external_data": false, "longmemeval_runs": 0}
+}

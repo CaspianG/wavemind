@@ -1,0 +1,35 @@
+{
+  "retrieved_date": "2026-09-06",
+  "purpose": "source review and reproducibility; upstream packages not executed; the pinned qcode catalog was independently audited in R5",
+  "repositories": [
+    {
+      "repository": "qiskit-community/qcode-discovery",
+      "sha": "b5b44b05b95d1e645814ff6446235b3ae6b736d6",
+      "tree_sha": "f572f817865c9ad5cc0f3057d18bc76d5dbc4895",
+      "commit_date": "2026-09-01T12:06:30Z",
+      "source": "public read-only connector retrieval cached before the Chrome access denial",
+      "executed": false,
+      "catalog_independently_audited": true,
+      "catalog_git_blob": "98e6e12abef0c561b8c35b399c0a1b7c5834c083",
+      "local_baseline": "36 uniform two-block Clifford rank tests independently implemented, not the full upstream pipeline"
+    },
+    {
+      "repository": "QInfer/python-qinfer",
+      "sha": "8170c84a0be1723f8c6b09e0d3c7a40a886f1fe3",
+      "tree_sha": "51e4ca38dbea45d20f61018d8c6b1d0e13ae0251",
+      "commit_date": "2018-08-17T20:03:00Z",
+      "url": "https://github.com/QInfer/python-qinfer/commit/8170c84a0be1723f8c6b09e0d3c7a40a886f1fe3",
+      "source": "GitHub connector GET",
+      "executed": false
+    },
+    {
+      "repository": "ae-foster/dad",
+      "sha": "4b1008174e1531d1f14601d83cef481c0f586f36",
+      "tree_sha": "fca8c1ccba4f90675680102d17e7b9c0e4fbc610",
+      "commit_date": "2021-06-14T15:04:05Z",
+      "url": "https://github.com/ae-foster/dad/commit/4b1008174e1531d1f14601d83cef481c0f586f36",
+      "source": "GitHub connector GET",
+      "executed": false
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "source_sha": "f7726d79f2db3b57d24eca12f8973a70170b7484",
+  "started_unix_ns": 1788727062104868200,
+  "hashes": {
+    "protocol_r7.json": "e09ab661e5b98c12a6c00523c2fbd4aad917f1bfc10c0deebf3e13c4e143e2b9",
+    "LC_ADVERSARIAL_FRAMES.md": "3980dd297ec01d1e447b696da086d2d226404ae027643cd9a288afad0323984a",
+    "lc_r7_frames.py": "524322753a9a5d78a0ed7d248db88d8a689fce5f25bba0d96fd3749a33a27140",
+    "lc_r7_check.py": "0a4491c501024a3f676640966e7aec9220e6a8ef476d2e85cd451e3a91323eaa",
+    "test_lc_r7.py": "e6ed6310327d45847bb24d0baf1abf4f0ebd35915bdfe1b9cf7376657fe08597",
+    "experiment_r7.py": "bc8cd7f01841f3615b0eb5fb23fbb3c4b81454da1c45a95dd5e8758990b6470b",
+    "lc_stitching.py": "7bc4ffeca106b2e444cda6fb3b9d1a9250f4add6d87d828860b4aaee632f57a7",
+    "lc_projector.py": "a496cb034e87f593f9c06b21871a2d00ae6583b397d7d3cef76f2e323fbd1798",
+    "lc_certificate_check.py": "60cf8c29494657efed736b46082302e4d491b06f023ad4c0a011f122764b72ba",
+    "experiment_r1.py": "a08971e9bf15ab9ad4959194455ebb8ff6b7fa792f63897a1336d04d02b200fc"
+  },
+  "python": "3.13.2",
+  "numpy": "2.5.2",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "evidence_class": "constructed_affine_frame_mechanism_test",
+  "scientific_breakthrough_gate": false,
+  "mass_indispensability_gate": false,
+  "status": "completed_all_predictions_passed",
+  "failure": null,
+  "elapsed_seconds": 27.144195699947886,
+  "summary": {
+    "records": 384,
+    "by_arm": {
+      "localized/all_order_three": 96,
+      "localized/shifted": 96,
+      "mixed/all_order_three": 96,
+      "mixed/shifted": 96
+    },
+    "hard_arm_records": 96,
+    "multi_piece_records": 289,
+    "no_global_single_candidate_records": 134,
+    "unpartitioned_sum_failures": 372,
+    "max_pieces": 8,
+    "max_candidates_considered": 24,
+    "max_affine_dimension": 24,
+    "max_qubits": 48,
+    "matrix_unit_products_checked": 156672,
+    "preserving_maps_checked": 33936
+  },
+  "output_hashes": {
+    "inputs.jsonl": "d53fc3d094ad1fe886756e3954225e3cb64767941c124efe1b727f9895ad59f5",
+    "raw.jsonl": "86bd664395389cdbc4e518e6b6424a51c548a9da8bd631ea368dea2a33f96c95",
+    "assumption_control.json": "44c67968fbec9bfdb3e64d4cd64ca79435c62fcb904532b9ad90143bed00bb85"
+  }
+}

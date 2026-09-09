@@ -1,0 +1,63 @@
+{
+  "source_sha": "90579911ad56ae2ef85e0c6f96c5c86d98cec178",
+  "started_unix_ns": 1788724704543958100,
+  "hashes": {
+    "protocol_r6.json": "409e34209f6e9955eccd6f4d33ee8b7a7f2b3f3b7a27a98195a0661882d84a9b",
+    "LC_STITCHING.md": "997dd9b59209c53e1b9925d85350cb29dd4070178452d21c4335c7f3d240bd77",
+    "lc_stitching.py": "7bc4ffeca106b2e444cda6fb3b9d1a9250f4add6d87d828860b4aaee632f57a7",
+    "lc_stitching_check.py": "ef59bc55bf0b0b191a36f122301e151da279ae6ee4e0d4c20923a667e0d9f7d8",
+    "lc_graph_oracle.py": "4a32680e2035b92ad80d4ab4f4e82d451098d9f06c2673f3ef1cc0739d1eba09",
+    "lc_r6_corpus.py": "c1b24c1fc3fa0b7d3e3f3030520c1e5c971d680490518e08451c808209952d26",
+    "experiment_r6.py": "bb953e8d5ac2c4279e116f9cfc5926c1fa035879b2c9bbabdf346393c001623e",
+    "test_lc_stitching.py": "31e938520944465ebbb71b1c1039cf836c3c5256422770eb7f19b0a644896b71",
+    "lc_projector.py": "a496cb034e87f593f9c06b21871a2d00ae6583b397d7d3cef76f2e323fbd1798",
+    "lc_certificate_check.py": "60cf8c29494657efed736b46082302e4d491b06f023ad4c0a011f122764b72ba",
+    "experiment_r1.py": "a08971e9bf15ab9ad4959194455ebb8ff6b7fa792f63897a1336d04d02b200fc"
+  },
+  "python": "3.13.2",
+  "numpy": "2.5.2",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "evidence_class": "exhaustive_small_graph_orbits_and_seeded_constructed_codes",
+  "scientific_breakthrough_gate": false,
+  "mass_indispensability_gate": false,
+  "status": "complete_falsifier",
+  "records": 34047,
+  "counts": {
+    "css_equivalent": 24375,
+    "not_lc_css": 9672
+  },
+  "families": {
+    "graph_state": 33867,
+    "random_clifford": 144,
+    "toric": 12,
+    "bell_products": 12,
+    "five_with_spectators": 12
+  },
+  "certificate_counts": {
+    "local_clifford_witness_verified": 24375,
+    "linear_impossibility_certificate_verified": 9528,
+    "forced_order_three_impossibility_verified": 144
+  },
+  "oracle_comparisons": 33951,
+  "proper_code_brute_enumerations": 48,
+  "previously_unresolved_certified": 29,
+  "trace_only_ablation_false_positives": 144,
+  "maximum_candidate_maps_considered": 146,
+  "oracle_table_hashes": {
+    "1": "a2364bd1a5d90b7d63a6921a1a0ce93be353df587a62cbc7058307888a72e8d6",
+    "2": "d6dd3db80a35e74ea22f5dce0911c7c1bf974f222d9366b9fba8038927addc31",
+    "3": "75cfc660f266cfe0557ec48f7d566be131d97e5e9416b52e5909c1ed84668d6d",
+    "4": "d83a580683678077f4471da09875d192becbdc69b0172c934ff41c18c32b0d26",
+    "5": "238cfa6bfa61873fced1107661a9546d51372d1a64e5b6f55857464efce281dd",
+    "6": "3e5e6253033280ec22c3519f98c8ea8dfa6f0d2679537665410d20ad8725db53"
+  },
+  "raw_sha256": "41085dc68dcee3e92c16277b69feb9b00e34e736a00d39f0de5d81823ec359a8",
+  "cases_sha256": "6062a3541a77dc8f80257484a4e5d9006f1d4328270108364a5efd52afecf906",
+  "elapsed_seconds": 43.11850300000515,
+  "predictions": {
+    "no_disagreement_or_invalid_certificate": true,
+    "complete_within_budget": true,
+    "at_least_twelve_r5_unresolved_certified": true,
+    "trace_only_ablation_refuted": true
+  }
+}

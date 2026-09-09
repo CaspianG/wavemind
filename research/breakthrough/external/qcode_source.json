@@ -1,0 +1,14 @@
+{
+  "repository": "qiskit-community/qcode-discovery",
+  "sha": "b5b44b05b95d1e645814ff6446235b3ae6b736d6",
+  "tree_sha": "f572f817865c9ad5cc0f3057d18bc76d5dbc4895",
+  "date": "2026-09-01T12:06:30Z",
+  "catalog_path": "results/campaign7_publication_merged.jsonl",
+  "catalog_git_blob": "98e6e12abef0c561b8c35b399c0a1b7c5834c083",
+  "license_git_blob": "261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64",
+  "records": 368,
+  "license": "Apache-2.0",
+  "provenance": "Retrieved before Chrome permission denial via public read-only GitHub connector; cached content snapshotted locally. No new GitHub access.",
+  "transform": "UTF-8 text; CRLF normalized to LF, exactly one final newline. Validate upstream Git blob on normalized bytes before use.",
+  "distance_boundary": "Distance fields are upstream reports, not independently certified by this LC-equivalence experiment."
+}

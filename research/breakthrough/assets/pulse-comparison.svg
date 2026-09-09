@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="pulse-comparison-title pulse-comparison-desc">
+      <title id="pulse-comparison-title">Pulse compensation improves both methods</title>
+      <desc id="pulse-comparison-desc">Eight finite-grid minima compare RS and best-known RXY8 for four pulse waveforms; DRAG3 with RS is highlighted while the claimed two-times advantage gate remains failed.</desc>
+      <defs>
+        <style>@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');</style>
+      </defs>
+      <rect width="1280" height="720" fill="#f5f5f5"/>
+      <text data-role="figure-title" x="64" y="88" fill="#2d3142" font-size="40" font-family="'Instrument Serif', serif">Pulse compensation improves both methods</text>
+      <text data-role="figure-subtitle" x="64" y="124" fill="#4f5d75" font-size="18" font-family="'Geist', sans-serif">Finite-grid minima of Fisher information per total time · higher is better · source order retained</text>
+      <line x1="64" y1="152" x2="1216" y2="152" stroke="#2d3142" stroke-opacity="0.12" stroke-width="0.8"/>
+      <line x1="352" y1="176" x2="352" y2="572" stroke="#2d3142" stroke-opacity="0.24" stroke-width="1"/>
+      <text x="352" y="592" fill="#2d3142" font-size="18" font-family="'Geist Mono', monospace" text-anchor="middle">0.000</text>
+      <line x1="542" y1="176" x2="542" y2="572" stroke="#2d3142" stroke-opacity="0.08" stroke-width="0.8"/>
+      <text x="542" y="592" fill="#2d3142" font-size="18" font-family="'Geist Mono', monospace" text-anchor="middle">0.004</text>
+      <line x1="732" y1="176" x2="732" y2="572" stroke="#2d3142" stroke-opacity="0.08" stroke-width="0.8"/>
+      <text x="732" y="592" fill="#2d3142" font-size="18" font-family="'Geist Mono', monospace" text-anchor="middle">0.008</text>
+      <line x1="922" y1="176" x2="922" y2="572" stroke="#2d3142" stroke-opacity="0.08" stroke-width="0.8"/>
+      <text x="922" y="592" fill="#2d3142" font-size="18" font-family="'Geist Mono', monospace" text-anchor="middle">0.012</text>
+      <line x1="1112" y1="176" x2="1112" y2="572" stroke="#2d3142" stroke-opacity="0.08" stroke-width="0.8"/>
+      <text x="1112" y="592" fill="#2d3142" font-size="18" font-family="'Geist Mono', monospace" text-anchor="middle">0.016</text>
+      <text data-role="category-label" x="328" y="215" fill="#2d3142" font-size="20" font-family="'Geist', sans-serif" font-weight="600" text-anchor="end">RECT · RS</text>
+      <rect data-method="RECT/RS_prefix" data-value="0.0011235059830493254" x="352" y="196" width="53.36653419484296" height="24" fill="#d9dde4" stroke="#4f5d75" stroke-width="1"/>
+      <text data-role="value-label" x="417.366534194843" y="215" fill="#2d3142" font-size="18" font-family="'Geist Mono', monospace">0.00112351</text>
+      <text data-role="category-label" x="328" y="263" fill="#2d3142" font-size="20" font-family="'Geist', sans-serif" font-weight="600" text-anchor="end">RECT · RXY8</text>
+      <rect data-method="RECT/RXY8" data-value="0.004749477657285789" x="352" y="244" width="225.60018872107497" height="24" fill="#d9dde4" stroke="#4f5d75" stroke-width="1"/>
+      <text data-role="value-label" x="589.600188721075" y="263" fill="#2d3142" font-size="18" font-family="'Geist Mono', monospace">0.00474948</text>
+      <text data-role="category-label" x="328" y="311" fill="#2d3142" font-size="20" font-family="'Geist', sans-serif" font-weight="600" text-anchor="end">FAST_RECT · RS</text>
+      <rect data-method="FAST_RECT/RS_prefix" data-value="1.442968324074826e-05" x="352" y="292" width="0.6854099539355424" height="24" fill="#d9dde4" stroke="#4f5d75" stroke-width="1"/>
+      <text data-role="value-label" x="364.68540995393556" y="311" fill="#2d3142" font-size="18" font-family="'Geist Mono', monospace">1.44297e-05</text>
+      <text data-role="category-label" x="328" y="359" fill="#2d3142" font-size="20" font-family="'Geist', sans-serif" font-weight="600" text-anchor="end">FAST_RECT · RXY8</text>
+      <rect data-method="FAST_RECT/RXY8" data-value="0.0009914992542761304" x="352" y="340" width="47.0962145781162" height="24" fill="#d9dde4" stroke="#4f5d75" stroke-width="1"/>
+      <text data-role="value-label" x="411.0962145781162" y="359" fill="#2d3142" font-size="18" font-family="'Geist Mono', monospace">0.000991499</text>
+      <text data-role="category-label" x="328" y="407" fill="#2d3142" font-size="20" font-family="'Geist', sans-serif" font-weight="600" text-anchor="end">HANN · RS</text>
+      <rect data-method="HANN/RS_prefix" data-value="0.013050264855383764" x="352" y="388" width="619.8875806307288" height="24" fill="#d9dde4" stroke="#4f5d75" stroke-width="1"/>
+      <text data-role="value-label" x="983.8875806307288" y="407" fill="#2d3142" font-size="18" font-family="'Geist Mono', monospace">0.0130503</text>
+      <text data-role="category-label" x="328" y="455" fill="#2d3142" font-size="20" font-family="'Geist', sans-serif" font-weight="600" text-anchor="end">HANN · RXY8</text>
+      <rect data-method="HANN/RXY8" data-value="0.013487222675533823" x="352" y="436" width="640.6430770878566" height="24" fill="#d9dde4" stroke="#4f5d75" stroke-width="1"/>
+      <text data-role="value-label" x="1004.6430770878566" y="455" fill="#2d3142" font-size="18" font-family="'Geist Mono', monospace">0.0134872</text>
+      <text data-role="category-label" x="328" y="503" fill="#2d3142" font-size="20" font-family="'Geist', sans-serif" font-weight="600" text-anchor="end">DRAG3 · RS</text>
+      <rect data-method="DRAG3/RS_prefix" data-value="0.013893444905404038" x="352" y="484" width="659.9386330066917" height="24" fill="#eb6c36" stroke="#2d3142" stroke-width="1"/>
+      <text data-role="value-label" x="1023.9386330066917" y="503" fill="#2d3142" font-size="18" font-family="'Geist Mono', monospace">0.0138934</text>
+      <text data-role="category-label" x="328" y="551" fill="#2d3142" font-size="20" font-family="'Geist', sans-serif" font-weight="600" text-anchor="end">DRAG3 · RXY8</text>
+      <rect data-method="DRAG3/RXY8" data-value="0.014127745186495852" x="352" y="532" width="671.067896358553" height="24" fill="#d9dde4" stroke="#4f5d75" stroke-width="1"/>
+      <text data-role="value-label" x="1035.0678963585528" y="551" fill="#2d3142" font-size="18" font-family="'Geist Mono', monospace">0.0141277</text>
+      <text x="732" y="620" fill="#2d3142" font-size="16" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">MINIMUM RATE · NORMALIZED MODEL UNITS</text>
+      <line x1="64" y1="632" x2="1216" y2="632" stroke="#2d3142" stroke-opacity="0.12" stroke-width="0.8"/>
+      <text x="64" y="648" fill="#2d3142" font-size="16" font-family="'Geist', sans-serif">9,216 finite-grid settings per combination; RXY8 averages 32 retained phases on one shared budget.</text>
+      <text data-role="source" x="64" y="668" fill="#2d3142" font-size="16" font-family="'Geist Mono', monospace">SOURCE · results.json · protocol_v3.json</text>
+      <text x="1216" y="668" fill="#2d3142" font-size="16" font-family="'Geist Mono', monospace" text-anchor="end">MODEL ONLY · GATE FAILED · CANDIDATE/BEST 98.34% · NO CONTINUOUS GUARANTEE</text>
+    </svg>

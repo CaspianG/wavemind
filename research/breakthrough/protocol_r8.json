@@ -1,0 +1,25 @@
+{
+  "protocol_id": "scalar-components-six-anchor-r8-20260907",
+  "status": "registered_before_main_generation",
+  "all_subspace_qubits": [1, 2, 3],
+  "subspace_counts_by_n": {"1": 5, "2": 67, "3": 2825},
+  "small_subspaces": 2897,
+  "isotropic_small_subspaces": 549,
+  "small_oracle_local_assignments": 612642,
+  "reused_r7_hard_cases": 96,
+  "records_total": 2993,
+  "r7_inputs_sha256": "d53fc3d094ad1fe886756e3954225e3cb64767941c124efe1b727f9895ad59f5",
+  "predictions": [
+    "For every small binary subspace the six-anchor component algorithm agrees with complete 6^n local-frame enumeration and unchanged R6 theorem-level reconstruction.",
+    "The complete scalar mask algebra has a basis of the reported disjoint component indicators, with component count equal to its nullity and additive projected subspace ranks.",
+    "On all 549 isotropic small subspaces the unchanged public R6 solver also agrees and its separate dense certificate checker accepts its witness or contradiction.",
+    "Every reused R7 hard code is positive with exactly its known block count of components and its known block size, using at most six anchor systems per component without using its adversarial affine frame."
+  ],
+  "preflight": "Known XXXX/ZZZZ four-qubit positive and five-qubit-code negative; two-Bell control shows that one anchor without scalar decomposition is insufficient. No complete n<=3 corpus generated before freeze.",
+  "wall_seconds": 600,
+  "stop_rules": ["stop on first failed invariant and preserve active input and all earlier raw records", "do not overwrite an output directory", "do not change frozen R5-R7 sources or protocol denominators after outcomes"],
+  "interpretation": "Exact exhaustive small-domain and reused structured-case falsifier, not a sample estimate or performance benchmark. Internal comparator based on known scalar-code decomposition plus the proposed anchor argument; not executed external SOTA.",
+  "resources": {"paid_calls": 0, "external_benchmark_runs": 0, "new_external_data": 0, "quantum_hardware_calls": 0, "new_dependencies": 0},
+  "scientific_breakthrough_gate": false,
+  "mass_indispensability_gate": false
+}

@@ -1,0 +1,15 @@
+{
+  "source_sha": "34c81bcbfa4d992131163dfc5caf9cdaf4cc3cda",
+  "command": "python research/breakthrough/experiment_r5.py --output research/breakthrough/runs/r5",
+  "status": "input_metadata_validation_failed_before_output_creation",
+  "exception": "KeyError: 'code_id'",
+  "location": "experiment_r5.py original line 29, unique code_id assertion",
+  "records": 368,
+  "records_missing_optional_code_id": 66,
+  "missing_required_polynomial_or_lc_fields": 0,
+  "catalog_matrices_constructed": 0,
+  "catalog_solver_calls": 0,
+  "output_directory_created": false,
+  "recorded_by": "assistant after inspecting terminal failure and input metadata; not an automatically produced run receipt",
+  "remediation": "Use pinned source-line record identity, add regression test, commit preregistration metadata amendment before the first catalog computation. No outcomes or resource thresholds inspected or changed."
+}

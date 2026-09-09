@@ -1,0 +1,191 @@
+{
+  "source_sha": "2459ecb902ede227e6ee15304e0416f6dafb2ed7",
+  "started_unix_ns": 1788728045687358200,
+  "python": "3.13.2",
+  "numpy": "2.5.2",
+  "hashes": {
+    "prior_art_applicability_protocol.json": "b656a367ce814a61637d1849ee3a848059198b676d0195d641eaa8dc345daf38",
+    "prior_art_applicability.py": "bcfd6f9ddc2a9eda66377510f4663d24d4d0c81d99ba02f935042029efe8e378",
+    "experiment_r1.py": "a08971e9bf15ab9ad4959194455ebb8ff6b7fa792f63897a1336d04d02b200fc",
+    "lc_certificate_check.py": "60cf8c29494657efed736b46082302e4d491b06f023ad4c0a011f122764b72ba",
+    "lc_stitching.py": "7bc4ffeca106b2e444cda6fb3b9d1a9250f4add6d87d828860b4aaee632f57a7",
+    "lc_stitching_check.py": "ef59bc55bf0b0b191a36f122301e151da279ae6ee4e0d4c20923a667e0d9f7d8",
+    "lc_projector.py": "a496cb034e87f593f9c06b21871a2d00ae6583b397d7d3cef76f2e323fbd1798"
+  },
+  "evidence_class": "source_examples_and_exact_reduction_counterexample",
+  "scientific_breakthrough_gate": false,
+  "mass_indispensability_gate": false,
+  "status": "applicability_checks_passed",
+  "failure": null,
+  "algebra_control": {
+    "algebra": "F4_embedded_in_M2_F2",
+    "members": [
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        1,
+        0,
+        0,
+        1
+      ],
+      [
+        0,
+        1,
+        1,
+        1
+      ],
+      [
+        1,
+        1,
+        1,
+        0
+      ]
+    ],
+    "idempotent_ranks": [
+      0,
+      2
+    ],
+    "has_nonzero_idempotent": true,
+    "has_rank_one_idempotent": false,
+    "conclusion": "arbitrary_nonzero_idempotent_is_not_the_required_witness"
+  },
+  "source_examples": [
+    {
+      "name": "XYZ-example-2",
+      "paulis": [
+        "XIIX",
+        "YIYY",
+        "ZZIZ"
+      ],
+      "n": 4,
+      "all_local_assignments_checked": 1296,
+      "local_css_assignments": 16,
+      "uniform_assignments_checked": 6,
+      "uniform_css_assignments": 0,
+      "first_local_witness": [
+        [
+          0,
+          1,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          1,
+          1
+        ],
+        [
+          0,
+          1,
+          1,
+          0
+        ]
+      ],
+      "r6_result": {
+        "status": "css_equivalent",
+        "n": 4,
+        "stabilizer_rank": 3,
+        "linear_rank": 8,
+        "equations_processed": 15,
+        "elapsed_seconds": 8.14999220892787e-05,
+        "method": "trace_one_central_mask_stitching",
+        "gates": [
+          [
+            0,
+            1,
+            1,
+            0
+          ],
+          [
+            0,
+            1,
+            1,
+            0
+          ],
+          [
+            0,
+            1,
+            1,
+            1
+          ],
+          [
+            0,
+            1,
+            1,
+            0
+          ]
+        ],
+        "affine_dimension": 4,
+        "candidates_considered": 1,
+        "cover_pieces": [
+          {
+            "candidate_index": 0,
+            "sites_hex": "0xf"
+          }
+        ],
+        "projector_hex": "0x400",
+        "particular_bad_qubits": 0
+      },
+      "certificate_audit": "local_clifford_witness_verified"
+    },
+    {
+      "name": "XYZ-example-3",
+      "paulis": [
+        "XIXX",
+        "YYIY",
+        "ZZZI"
+      ],
+      "n": 4,
+      "all_local_assignments_checked": 1296,
+      "local_css_assignments": 0,
+      "uniform_assignments_checked": 6,
+      "uniform_css_assignments": 0,
+      "first_local_witness": null,
+      "r6_result": {
+        "status": "not_lc_css",
+        "n": 4,
+        "stabilizer_rank": 3,
+        "linear_rank": 9,
+        "equations_processed": 11,
+        "elapsed_seconds": 3.529991954565048e-05,
+        "method": "trace_one_central_mask_stitching",
+        "certificate_type": "linear_contradiction",
+        "constraints": [
+          {
+            "generator": 0,
+            "annihilator_hex": "0x9"
+          },
+          {
+            "generator": 0,
+            "annihilator_hex": "0x82"
+          },
+          {
+            "generator": 1,
+            "annihilator_hex": "0x9"
+          },
+          {
+            "generator": 1,
+            "annihilator_hex": "0x8c"
+          },
+          {
+            "generator": 2,
+            "annihilator_hex": "0x9"
+          }
+        ]
+      },
+      "certificate_audit": "linear_impossibility_certificate_verified"
+    }
+  ],
+  "elapsed_seconds": 0.42279979994054884
+}

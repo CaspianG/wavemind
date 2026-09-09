@@ -1,0 +1,16 @@
+{
+  "source_commit": "ace8b6adee5ba26585c2db629a9cbbc368ccda08",
+  "source_files": {
+    "protocol.json": "56e4522965e39d0938c1a819ef78ec6eaf813609f8433c1f788c9f1590a8391e",
+    "THEORY.md": "0e0ff33a3064aef131af39946f5351e25e6ff338fbd5ba15f5f0a03050213d97",
+    "experiment.py": "f3b223a6a3972506c85d6f773077ee7a58cdde299c459efce43fa45c544742b6",
+    "test_experiment.py": "3a371d180c00c44ecae2221bdcc4b679e000cba9376046d58c16be04097d8cb1"
+  },
+  "protocol_id": "sensing_rs_20260907_v1",
+  "python": "3.13.2 (tags/v3.13.2:4f8bb39, Feb  4 2025, 15:23:48) [MSC v.1942 64 bit (AMD64)]",
+  "numpy": "2.5.2",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "utc_started": "2026-09-07T18:04:35Z",
+  "independent_investigator": false,
+  "hardware_calls": 0
+}

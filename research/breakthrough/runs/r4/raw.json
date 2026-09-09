@@ -1,0 +1,4097 @@
+[
+  {
+    "noise": "0",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 0,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 1,
+    "risk": "1/1000",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 2,
+    "risk": "1/1000",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 7
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 3,
+    "risk": "1/1000",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 10
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 4,
+    "risk": "1/1000",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 13
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 5,
+    "risk": "1/1000",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 6,
+    "risk": "1/1000",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 19
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 0,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 1,
+    "risk": "1/1000",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 2,
+    "risk": "1/1000",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 7
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 3,
+    "risk": "1/1000",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 10
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 4,
+    "risk": "1/1000",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 13
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 5,
+    "risk": "1/1000",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 6,
+    "risk": "1/1000",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 19
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 0,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 1,
+    "risk": "1/1000",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 2,
+    "risk": "1/1000",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 7
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 3,
+    "risk": "1/1000",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 10
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 4,
+    "risk": "1/1000",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 13
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 5,
+    "risk": "1/1000",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 6,
+    "risk": "1/1000",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 19
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 0,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 1,
+    "risk": "1/100",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 2,
+    "risk": "1/100",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 7
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 3,
+    "risk": "1/100",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 10
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 4,
+    "risk": "1/100",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 13
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 5,
+    "risk": "1/100",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 6,
+    "risk": "1/100",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 19
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 0,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 1,
+    "risk": "1/100",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 2,
+    "risk": "1/100",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 7
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 3,
+    "risk": "1/100",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 10
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 4,
+    "risk": "1/100",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 13
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 5,
+    "risk": "1/100",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 6,
+    "risk": "1/100",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 19
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 0,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 1,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 2,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 7
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 3,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 10
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 4,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 13
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 5,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 6,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 19
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 0,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 1,
+    "risk": "1/10",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 2,
+    "risk": "1/10",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 7
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 3,
+    "risk": "1/10",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 10
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 4,
+    "risk": "1/10",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 13
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 5,
+    "risk": "1/10",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 6,
+    "risk": "1/10",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 19
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 0,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 1,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 2,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 7
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 3,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 10
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 4,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 13
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 5,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 6,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 19
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 0,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 1,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 2,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 7
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 3,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 10
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 4,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 13
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 5,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "0",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 6,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 19
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 0,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 1,
+    "risk": "21/1000",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 2,
+    "risk": "21/1000",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 9
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 3,
+    "risk": "4029/1250000",
+    "expected_probes": "2549/1250",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 4,
+    "risk": "4029/1250000",
+    "expected_probes": "2549/1250",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 25
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 5,
+    "risk": "3947421/1562500000",
+    "expected_probes": "3249901/1562500",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 36
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 6,
+    "risk": "3947421/1562500000",
+    "expected_probes": "3249901/1562500",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 49
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 0,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 1,
+    "risk": "21/1000",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 2,
+    "risk": "1359/250000",
+    "expected_probes": "279/250",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 9
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 3,
+    "risk": "4029/1250000",
+    "expected_probes": "2549/1250",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 4,
+    "risk": "1502773/625000000",
+    "expected_probes": "1339013/625000",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 25
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 5,
+    "risk": "2859183/1250000000",
+    "expected_probes": "2723743/1250000",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 36
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 6,
+    "risk": "877024293/390625000000",
+    "expected_probes": "853523133/390625000",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 49
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 0,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 1,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 2,
+    "risk": "2277/1250000",
+    "expected_probes": "1287/1250",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 9
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 3,
+    "risk": "4089/2500000",
+    "expected_probes": "2599/2500",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 4,
+    "risk": "2024073/1562500000",
+    "expected_probes": "1656813/1562500",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 25
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 5,
+    "risk": "4025361/3125000000",
+    "expected_probes": "3314851/3125000",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 36
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 6,
+    "risk": "2489804577/1953125000000",
+    "expected_probes": "2073371337/1953125000",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 49
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 0,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 1,
+    "risk": "3/100",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 2,
+    "risk": "3/100",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 9
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 3,
+    "risk": "2697/125000",
+    "expected_probes": "2549/1250",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 4,
+    "risk": "2697/125000",
+    "expected_probes": "2549/1250",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 25
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 5,
+    "risk": "3319653/156250000",
+    "expected_probes": "3249901/1562500",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 36
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 6,
+    "risk": "3319653/156250000",
+    "expected_probes": "3249901/1562500",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 49
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 0,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 1,
+    "risk": "3/100",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 2,
+    "risk": "387/25000",
+    "expected_probes": "279/250",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 9
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 3,
+    "risk": "3527/250000",
+    "expected_probes": "2839/2500",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 4,
+    "risk": "863963/62500000",
+    "expected_probes": "711171/625000",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 25
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 5,
+    "risk": "8622823/625000000",
+    "expected_probes": "7114111/6250000",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 36
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 6,
+    "risk": "2154834187/156250000000",
+    "expected_probes": "1778597379/1562500000",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 49
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 0,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 1,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 2,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 9
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 3,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 4,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 25
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 5,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 36
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 6,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 49
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 0,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 1,
+    "risk": "3/25",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 2,
+    "risk": "3/25",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 9
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 3,
+    "risk": "3/25",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 4,
+    "risk": "3/25",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 25
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 5,
+    "risk": "3/25",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 36
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 6,
+    "risk": "3/25",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 49
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 0,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 1,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 2,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 9
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 3,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 4,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 25
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 5,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 36
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 6,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 49
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 0,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 1,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 2,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 9
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 3,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 4,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 25
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 5,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 36
+  },
+  {
+    "noise": "1/50",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 6,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 49
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 0,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 1,
+    "risk": "101/1000",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 2,
+    "risk": "101/1000",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 9
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 3,
+    "risk": "1509/50000",
+    "expected_probes": "109/50",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 4,
+    "risk": "1509/50000",
+    "expected_probes": "109/50",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 25
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 5,
+    "risk": "59393/5000000",
+    "expected_probes": "16593/5000",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 36
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 6,
+    "risk": "59393/5000000",
+    "expected_probes": "16593/5000",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 49
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 0,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 1,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 2,
+    "risk": "1459/50000",
+    "expected_probes": "59/50",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 9
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 3,
+    "risk": "1459/50000",
+    "expected_probes": "59/50",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 4,
+    "risk": "54393/5000000",
+    "expected_probes": "11593/5000",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 25
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 5,
+    "risk": "54393/5000000",
+    "expected_probes": "11593/5000",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 36
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 6,
+    "risk": "2968611/500000000",
+    "expected_probes": "1313011/500000",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 49
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 0,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 1,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 2,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 9
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 3,
+    "risk": "2413/500000",
+    "expected_probes": "563/500",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 4,
+    "risk": "116807/25000000",
+    "expected_probes": "28357/25000",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 25
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 5,
+    "risk": "154279/50000000",
+    "expected_probes": "62429/50000",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 36
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 6,
+    "risk": "1898063/625000000",
+    "expected_probes": "196597/156250",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 49
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 0,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 1,
+    "risk": "11/100",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 2,
+    "risk": "11/100",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 9
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 3,
+    "risk": "249/5000",
+    "expected_probes": "109/50",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 4,
+    "risk": "249/5000",
+    "expected_probes": "109/50",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 25
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 5,
+    "risk": "9741/250000",
+    "expected_probes": "5981/2500",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 36
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 6,
+    "risk": "9741/250000",
+    "expected_probes": "5981/2500",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 49
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 0,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 1,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 2,
+    "risk": "199/5000",
+    "expected_probes": "59/50",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 9
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 3,
+    "risk": "199/5000",
+    "expected_probes": "59/50",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 4,
+    "risk": "7241/250000",
+    "expected_probes": "3481/2500",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 25
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 5,
+    "risk": "7241/250000",
+    "expected_probes": "3481/2500",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 36
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 6,
+    "risk": "337669/12500000",
+    "expected_probes": "178829/125000",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 49
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 0,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 1,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 2,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 9
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 3,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 4,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 25
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 5,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 36
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 6,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 49
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 0,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 1,
+    "risk": "1/5",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 2,
+    "risk": "1/5",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 9
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 3,
+    "risk": "1/5",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 4,
+    "risk": "1/5",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 25
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 5,
+    "risk": "1/5",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 36
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 6,
+    "risk": "1/5",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 49
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 0,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 1,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 2,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 9
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 3,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 4,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 25
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 5,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 36
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 6,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 49
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 0,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 1,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 2,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 9
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 3,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 4,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 25
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 5,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 36
+  },
+  {
+    "noise": "1/10",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 6,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 49
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 0,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 1,
+    "risk": "251/1000",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 2,
+    "risk": "251/1000",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 9
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 3,
+    "risk": "1269/8000",
+    "expected_probes": "19/8",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 4,
+    "risk": "1269/8000",
+    "expected_probes": "19/8",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 25
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 5,
+    "risk": "13733/128000",
+    "expected_probes": "483/128",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 36
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 6,
+    "risk": "13733/128000",
+    "expected_probes": "483/128",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 49
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 0,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 1,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 2,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 9
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 3,
+    "risk": "5863/80000",
+    "expected_probes": "113/80",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 4,
+    "risk": "5863/80000",
+    "expected_probes": "113/80",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 25
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 5,
+    "risk": "3429/64000",
+    "expected_probes": "179/64",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 36
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 6,
+    "risk": "3429/64000",
+    "expected_probes": "179/64",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 49
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 0,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 1,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 2,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 9
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 3,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 4,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 25
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 5,
+    "risk": "12727/1280000",
+    "expected_probes": "1727/1280",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 36
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 6,
+    "risk": "502501/51200000",
+    "expected_probes": "69251/51200",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 49
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 0,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 1,
+    "risk": "13/50",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 2,
+    "risk": "13/50",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 9
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 3,
+    "risk": "9/50",
+    "expected_probes": "19/8",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 4,
+    "risk": "9/50",
+    "expected_probes": "19/8",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 25
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 5,
+    "risk": "113/800",
+    "expected_probes": "483/128",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 36
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 6,
+    "risk": "113/800",
+    "expected_probes": "483/128",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 49
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 0,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 1,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 2,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 9
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 3,
+    "risk": "43/500",
+    "expected_probes": "113/80",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 4,
+    "risk": "43/500",
+    "expected_probes": "113/80",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 25
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 5,
+    "risk": "119/1600",
+    "expected_probes": "469/256",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 36
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 6,
+    "risk": "119/1600",
+    "expected_probes": "469/256",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 49
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 0,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 1,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 2,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 9
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 3,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 4,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 25
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 5,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 36
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 6,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 49
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 0,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 1,
+    "risk": "7/20",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 2,
+    "risk": "7/20",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 9
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 3,
+    "risk": "7/20",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 4,
+    "risk": "7/20",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 25
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 5,
+    "risk": "7/20",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 36
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 6,
+    "risk": "7/20",
+    "expected_probes": "1",
+    "root_action": [
+      "test",
+      1
+    ],
+    "cached_states": 49
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 0,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 1,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 2,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 9
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 3,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 4,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 25
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 5,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 36
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 6,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 49
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 0,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 1,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 2,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 9
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 3,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 16
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 4,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 25
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 5,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 36
+  },
+  {
+    "noise": "1/4",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 6,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 49
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 0,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 1,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 2
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 2,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 3
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 3,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 4,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 5
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 5,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 6
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/1000",
+    "positive_prior": "1/2",
+    "horizon": 6,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 7
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 0,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 1,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 2
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 2,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 3
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 3,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 4,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 5
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 5,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 6
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/1000",
+    "positive_prior": "9/10",
+    "horizon": 6,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 7
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 0,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 1,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 2
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 2,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 3
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 3,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 4,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 5
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 5,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 6
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/1000",
+    "positive_prior": "99/100",
+    "horizon": 6,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 7
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 0,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 1,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 2
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 2,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 3
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 3,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 4,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 5
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 5,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 6
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/100",
+    "positive_prior": "1/2",
+    "horizon": 6,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 7
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 0,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 1,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 2
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 2,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 3
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 3,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 4,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 5
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 5,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 6
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/100",
+    "positive_prior": "9/10",
+    "horizon": 6,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 7
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 0,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 1,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 2
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 2,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 3
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 3,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 4,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 5
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 5,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 6
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/100",
+    "positive_prior": "99/100",
+    "horizon": 6,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 7
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 0,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 1,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 2
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 2,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 3
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 3,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 4,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 5
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 5,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 6
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/10",
+    "positive_prior": "1/2",
+    "horizon": 6,
+    "risk": "1/2",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      0
+    ],
+    "cached_states": 7
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 0,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 1,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 2
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 2,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 3
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 3,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 4,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 5
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 5,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 6
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/10",
+    "positive_prior": "9/10",
+    "horizon": 6,
+    "risk": "1/10",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 7
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 0,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 1
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 1,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 2
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 2,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 3
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 3,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 4
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 4,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 5
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 5,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 6
+  },
+  {
+    "noise": "1/2",
+    "probe_cost": "1/10",
+    "positive_prior": "99/100",
+    "horizon": 6,
+    "risk": "1/100",
+    "expected_probes": "0",
+    "root_action": [
+      "stop",
+      1
+    ],
+    "cached_states": 7
+  }
+]

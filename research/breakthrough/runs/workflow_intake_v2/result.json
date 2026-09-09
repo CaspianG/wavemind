@@ -1,0 +1,1282 @@
+{
+  "amendment": "official_incident_header_alias_only",
+  "baseline_admitted": false,
+  "effective_protocol_sha256": "3d74cd005cd455ae640718973241b03617d465917543d9341a38f8826a92e411",
+  "first_result_sha256": "257252b0642cb9680efa2b0817d4dbb0d3f16b911b943c149ca0bbc5164a304b",
+  "human_terms_review": "pending_actual_human_review",
+  "lanes": {
+    "incidents": {
+      "license": {
+        "baseline_admitted": false,
+        "bundled_terms": [],
+        "human_terms_review": "pending",
+        "source_license": "CC-BY-4.0"
+      },
+      "members": {
+        "incident_event_log.csv": {
+          "bytes": 46212397,
+          "sha256": "fd184bbfd62329cfe093e99da2ea7071905f2ead91900b448eb2635870821bef"
+        }
+      },
+      "profile": {
+        "baseline_scoring_admitted": false,
+        "columns": [
+          "number",
+          "incident_state",
+          "active",
+          "reassignment_count",
+          "reopen_count",
+          "sys_mod_count",
+          "made_sla",
+          "caller_id",
+          "opened_by",
+          "opened_at",
+          "sys_created_by",
+          "sys_created_at",
+          "sys_updated_by",
+          "sys_updated_at",
+          "contact_type",
+          "location",
+          "category",
+          "subcategory",
+          "u_symptom",
+          "cmdb_ci",
+          "impact",
+          "urgency",
+          "priority",
+          "assignment_group",
+          "assigned_to",
+          "knowledge",
+          "u_priority_confirmation",
+          "notify",
+          "problem_id",
+          "rfc",
+          "vendor",
+          "caused_by",
+          "closed_code",
+          "resolved_by",
+          "resolved_at",
+          "closed_at"
+        ],
+        "conflicting_equal_event_keys": 0,
+        "date_nonmissing_valid": {
+          "closed_at": 141712,
+          "opened_at": 141712,
+          "resolved_at": 138571,
+          "sys_created_at": 88636,
+          "sys_updated_at": 141712
+        },
+        "exact_duplicate_excess": {
+          "count": 0,
+          "denominator": 141712,
+          "rate": 0.0
+        },
+        "future_outcome_values": {
+          "closed_at_after_record_update": 116726,
+          "resolved_at_after_record_update": 87471,
+          "update_before_opened": 5
+        },
+        "incidents": 24918,
+        "incidents_with_regressions": {
+          "timestamp": 1,
+          "update_counter": 4
+        },
+        "invalid_values": {},
+        "missing_identifier_rows": [],
+        "missingness": {
+          "active": {
+            "count": 0,
+            "denominator": 141712,
+            "rate": 0.0
+          },
+          "assigned_to": {
+            "count": 27496,
+            "denominator": 141712,
+            "rate": 0.19402732302133904
+          },
+          "assignment_group": {
+            "count": 14213,
+            "denominator": 141712,
+            "rate": 0.10029496443491025
+          },
+          "caller_id": {
+            "count": 29,
+            "denominator": 141712,
+            "rate": 0.00020464039742576492
+          },
+          "category": {
+            "count": 78,
+            "denominator": 141712,
+            "rate": 0.000550412103421023
+          },
+          "caused_by": {
+            "count": 141689,
+            "denominator": 141712,
+            "rate": 0.9998376989951451
+          },
+          "closed_at": {
+            "count": 0,
+            "denominator": 141712,
+            "rate": 0.0
+          },
+          "closed_code": {
+            "count": 714,
+            "denominator": 141712,
+            "rate": 0.005038387715930902
+          },
+          "cmdb_ci": {
+            "count": 141267,
+            "denominator": 141712,
+            "rate": 0.9968598283843287
+          },
+          "contact_type": {
+            "count": 0,
+            "denominator": 141712,
+            "rate": 0.0
+          },
+          "impact": {
+            "count": 0,
+            "denominator": 141712,
+            "rate": 0.0
+          },
+          "incident_state": {
+            "count": 0,
+            "denominator": 141712,
+            "rate": 0.0
+          },
+          "knowledge": {
+            "count": 0,
+            "denominator": 141712,
+            "rate": 0.0
+          },
+          "location": {
+            "count": 76,
+            "denominator": 141712,
+            "rate": 0.0005362989725640736
+          },
+          "made_sla": {
+            "count": 0,
+            "denominator": 141712,
+            "rate": 0.0
+          },
+          "notify": {
+            "count": 0,
+            "denominator": 141712,
+            "rate": 0.0
+          },
+          "number": {
+            "count": 0,
+            "denominator": 141712,
+            "rate": 0.0
+          },
+          "opened_at": {
+            "count": 0,
+            "denominator": 141712,
+            "rate": 0.0
+          },
+          "opened_by": {
+            "count": 4835,
+            "denominator": 141712,
+            "rate": 0.034118493846674945
+          },
+          "priority": {
+            "count": 0,
+            "denominator": 141712,
+            "rate": 0.0
+          },
+          "problem_id": {
+            "count": 139417,
+            "denominator": 141712,
+            "rate": 0.9838051823416507
+          },
+          "reassignment_count": {
+            "count": 0,
+            "denominator": 141712,
+            "rate": 0.0
+          },
+          "reopen_count": {
+            "count": 0,
+            "denominator": 141712,
+            "rate": 0.0
+          },
+          "resolved_at": {
+            "count": 3141,
+            "denominator": 141712,
+            "rate": 0.022164672010838885
+          },
+          "resolved_by": {
+            "count": 226,
+            "denominator": 141712,
+            "rate": 0.0015947837868352716
+          },
+          "rfc": {
+            "count": 140721,
+            "denominator": 141712,
+            "rate": 0.9930069436603817
+          },
+          "subcategory": {
+            "count": 111,
+            "denominator": 141712,
+            "rate": 0.0007832787625606865
+          },
+          "sys_created_at": {
+            "count": 53076,
+            "denominator": 141712,
+            "rate": 0.3745342666817207
+          },
+          "sys_created_by": {
+            "count": 53076,
+            "denominator": 141712,
+            "rate": 0.3745342666817207
+          },
+          "sys_mod_count": {
+            "count": 0,
+            "denominator": 141712,
+            "rate": 0.0
+          },
+          "sys_updated_at": {
+            "count": 0,
+            "denominator": 141712,
+            "rate": 0.0
+          },
+          "sys_updated_by": {
+            "count": 0,
+            "denominator": 141712,
+            "rate": 0.0
+          },
+          "u_priority_confirmation": {
+            "count": 0,
+            "denominator": 141712,
+            "rate": 0.0
+          },
+          "u_symptom": {
+            "count": 32964,
+            "denominator": 141712,
+            "rate": 0.23261262278423844
+          },
+          "urgency": {
+            "count": 0,
+            "denominator": 141712,
+            "rate": 0.0
+          },
+          "vendor": {
+            "count": 141468,
+            "denominator": 141712,
+            "rate": 0.9982781980354521
+          }
+        },
+        "missingness_by_partition": {
+          "development": {
+            "active": {
+              "count": 0,
+              "denominator": 21582,
+              "rate": 0.0
+            },
+            "assigned_to": {
+              "count": 4037,
+              "denominator": 21582,
+              "rate": 0.18705402650356778
+            },
+            "assignment_group": {
+              "count": 2188,
+              "denominator": 21582,
+              "rate": 0.10138078027986284
+            },
+            "caller_id": {
+              "count": 9,
+              "denominator": 21582,
+              "rate": 0.0004170141784820684
+            },
+            "category": {
+              "count": 7,
+              "denominator": 21582,
+              "rate": 0.00032434436104160873
+            },
+            "caused_by": {
+              "count": 21571,
+              "denominator": 21582,
+              "rate": 0.9994903160040775
+            },
+            "closed_at": {
+              "count": 0,
+              "denominator": 21582,
+              "rate": 0.0
+            },
+            "closed_code": {
+              "count": 131,
+              "denominator": 21582,
+              "rate": 0.006069873042350107
+            },
+            "cmdb_ci": {
+              "count": 21483,
+              "denominator": 21582,
+              "rate": 0.9954128440366973
+            },
+            "contact_type": {
+              "count": 0,
+              "denominator": 21582,
+              "rate": 0.0
+            },
+            "impact": {
+              "count": 0,
+              "denominator": 21582,
+              "rate": 0.0
+            },
+            "incident_state": {
+              "count": 0,
+              "denominator": 21582,
+              "rate": 0.0
+            },
+            "knowledge": {
+              "count": 0,
+              "denominator": 21582,
+              "rate": 0.0
+            },
+            "location": {
+              "count": 4,
+              "denominator": 21582,
+              "rate": 0.0001853396348809193
+            },
+            "made_sla": {
+              "count": 0,
+              "denominator": 21582,
+              "rate": 0.0
+            },
+            "notify": {
+              "count": 0,
+              "denominator": 21582,
+              "rate": 0.0
+            },
+            "number": {
+              "count": 0,
+              "denominator": 21582,
+              "rate": 0.0
+            },
+            "opened_at": {
+              "count": 0,
+              "denominator": 21582,
+              "rate": 0.0
+            },
+            "opened_by": {
+              "count": 712,
+              "denominator": 21582,
+              "rate": 0.03299045500880363
+            },
+            "priority": {
+              "count": 0,
+              "denominator": 21582,
+              "rate": 0.0
+            },
+            "problem_id": {
+              "count": 21168,
+              "denominator": 21582,
+              "rate": 0.9808173477898249
+            },
+            "reassignment_count": {
+              "count": 0,
+              "denominator": 21582,
+              "rate": 0.0
+            },
+            "reopen_count": {
+              "count": 0,
+              "denominator": 21582,
+              "rate": 0.0
+            },
+            "resolved_at": {
+              "count": 451,
+              "denominator": 21582,
+              "rate": 0.02089704383282365
+            },
+            "resolved_by": {
+              "count": 34,
+              "denominator": 21582,
+              "rate": 0.001575386896487814
+            },
+            "rfc": {
+              "count": 21375,
+              "denominator": 21582,
+              "rate": 0.9904086738949124
+            },
+            "subcategory": {
+              "count": 11,
+              "denominator": 21582,
+              "rate": 0.0005096839959225281
+            },
+            "sys_created_at": {
+              "count": 8059,
+              "denominator": 21582,
+              "rate": 0.37341302937633214
+            },
+            "sys_created_by": {
+              "count": 8059,
+              "denominator": 21582,
+              "rate": 0.37341302937633214
+            },
+            "sys_mod_count": {
+              "count": 0,
+              "denominator": 21582,
+              "rate": 0.0
+            },
+            "sys_updated_at": {
+              "count": 0,
+              "denominator": 21582,
+              "rate": 0.0
+            },
+            "sys_updated_by": {
+              "count": 0,
+              "denominator": 21582,
+              "rate": 0.0
+            },
+            "u_priority_confirmation": {
+              "count": 0,
+              "denominator": 21582,
+              "rate": 0.0
+            },
+            "u_symptom": {
+              "count": 4760,
+              "denominator": 21582,
+              "rate": 0.22055416550829396
+            },
+            "urgency": {
+              "count": 0,
+              "denominator": 21582,
+              "rate": 0.0
+            },
+            "vendor": {
+              "count": 21555,
+              "denominator": 21582,
+              "rate": 0.9987489574645538
+            }
+          },
+          "evaluation": {
+            "active": {
+              "count": 0,
+              "denominator": 21352,
+              "rate": 0.0
+            },
+            "assigned_to": {
+              "count": 4172,
+              "denominator": 21352,
+              "rate": 0.195391532409142
+            },
+            "assignment_group": {
+              "count": 2079,
+              "denominator": 21352,
+              "rate": 0.09736792806294492
+            },
+            "caller_id": {
+              "count": 0,
+              "denominator": 21352,
+              "rate": 0.0
+            },
+            "category": {
+              "count": 13,
+              "denominator": 21352,
+              "rate": 0.0006088422630198576
+            },
+            "caused_by": {
+              "count": 21352,
+              "denominator": 21352,
+              "rate": 1.0
+            },
+            "closed_at": {
+              "count": 0,
+              "denominator": 21352,
+              "rate": 0.0
+            },
+            "closed_code": {
+              "count": 131,
+              "denominator": 21352,
+              "rate": 0.006135256650430873
+            },
+            "cmdb_ci": {
+              "count": 21269,
+              "denominator": 21352,
+              "rate": 0.9961127763207194
+            },
+            "contact_type": {
+              "count": 0,
+              "denominator": 21352,
+              "rate": 0.0
+            },
+            "impact": {
+              "count": 0,
+              "denominator": 21352,
+              "rate": 0.0
+            },
+            "incident_state": {
+              "count": 0,
+              "denominator": 21352,
+              "rate": 0.0
+            },
+            "knowledge": {
+              "count": 0,
+              "denominator": 21352,
+              "rate": 0.0
+            },
+            "location": {
+              "count": 7,
+              "denominator": 21352,
+              "rate": 0.0003278381416260772
+            },
+            "made_sla": {
+              "count": 0,
+              "denominator": 21352,
+              "rate": 0.0
+            },
+            "notify": {
+              "count": 0,
+              "denominator": 21352,
+              "rate": 0.0
+            },
+            "number": {
+              "count": 0,
+              "denominator": 21352,
+              "rate": 0.0
+            },
+            "opened_at": {
+              "count": 0,
+              "denominator": 21352,
+              "rate": 0.0
+            },
+            "opened_by": {
+              "count": 663,
+              "denominator": 21352,
+              "rate": 0.03105095541401274
+            },
+            "priority": {
+              "count": 0,
+              "denominator": 21352,
+              "rate": 0.0
+            },
+            "problem_id": {
+              "count": 21010,
+              "denominator": 21352,
+              "rate": 0.9839827650805545
+            },
+            "reassignment_count": {
+              "count": 0,
+              "denominator": 21352,
+              "rate": 0.0
+            },
+            "reopen_count": {
+              "count": 0,
+              "denominator": 21352,
+              "rate": 0.0
+            },
+            "resolved_at": {
+              "count": 470,
+              "denominator": 21352,
+              "rate": 0.02201198950917947
+            },
+            "resolved_by": {
+              "count": 22,
+              "denominator": 21352,
+              "rate": 0.0010303484451105282
+            },
+            "rfc": {
+              "count": 21138,
+              "denominator": 21352,
+              "rate": 0.9899775196702885
+            },
+            "subcategory": {
+              "count": 18,
+              "denominator": 21352,
+              "rate": 0.0008430123641813413
+            },
+            "sys_created_at": {
+              "count": 7950,
+              "denominator": 21352,
+              "rate": 0.3723304608467591
+            },
+            "sys_created_by": {
+              "count": 7950,
+              "denominator": 21352,
+              "rate": 0.3723304608467591
+            },
+            "sys_mod_count": {
+              "count": 0,
+              "denominator": 21352,
+              "rate": 0.0
+            },
+            "sys_updated_at": {
+              "count": 0,
+              "denominator": 21352,
+              "rate": 0.0
+            },
+            "sys_updated_by": {
+              "count": 0,
+              "denominator": 21352,
+              "rate": 0.0
+            },
+            "u_priority_confirmation": {
+              "count": 0,
+              "denominator": 21352,
+              "rate": 0.0
+            },
+            "u_symptom": {
+              "count": 4881,
+              "denominator": 21352,
+              "rate": 0.2285968527538404
+            },
+            "urgency": {
+              "count": 0,
+              "denominator": 21352,
+              "rate": 0.0
+            },
+            "vendor": {
+              "count": 21333,
+              "denominator": 21352,
+              "rate": 0.9991101536155864
+            }
+          },
+          "train": {
+            "active": {
+              "count": 0,
+              "denominator": 98778,
+              "rate": 0.0
+            },
+            "assigned_to": {
+              "count": 19287,
+              "denominator": 98778,
+              "rate": 0.1952560286703517
+            },
+            "assignment_group": {
+              "count": 9946,
+              "denominator": 98778,
+              "rate": 0.1006904371418737
+            },
+            "caller_id": {
+              "count": 20,
+              "denominator": 98778,
+              "rate": 0.00020247423515357672
+            },
+            "category": {
+              "count": 58,
+              "denominator": 98778,
+              "rate": 0.0005871752819453724
+            },
+            "caused_by": {
+              "count": 98766,
+              "denominator": 98778,
+              "rate": 0.9998785154589078
+            },
+            "closed_at": {
+              "count": 0,
+              "denominator": 98778,
+              "rate": 0.0
+            },
+            "closed_code": {
+              "count": 452,
+              "denominator": 98778,
+              "rate": 0.004575917714470834
+            },
+            "cmdb_ci": {
+              "count": 98515,
+              "denominator": 98778,
+              "rate": 0.9973374638077305
+            },
+            "contact_type": {
+              "count": 0,
+              "denominator": 98778,
+              "rate": 0.0
+            },
+            "impact": {
+              "count": 0,
+              "denominator": 98778,
+              "rate": 0.0
+            },
+            "incident_state": {
+              "count": 0,
+              "denominator": 98778,
+              "rate": 0.0
+            },
+            "knowledge": {
+              "count": 0,
+              "denominator": 98778,
+              "rate": 0.0
+            },
+            "location": {
+              "count": 65,
+              "denominator": 98778,
+              "rate": 0.0006580412642491243
+            },
+            "made_sla": {
+              "count": 0,
+              "denominator": 98778,
+              "rate": 0.0
+            },
+            "notify": {
+              "count": 0,
+              "denominator": 98778,
+              "rate": 0.0
+            },
+            "number": {
+              "count": 0,
+              "denominator": 98778,
+              "rate": 0.0
+            },
+            "opened_at": {
+              "count": 0,
+              "denominator": 98778,
+              "rate": 0.0
+            },
+            "opened_by": {
+              "count": 3460,
+              "denominator": 98778,
+              "rate": 0.03502804268156877
+            },
+            "priority": {
+              "count": 0,
+              "denominator": 98778,
+              "rate": 0.0
+            },
+            "problem_id": {
+              "count": 97239,
+              "denominator": 98778,
+              "rate": 0.9844196076049323
+            },
+            "reassignment_count": {
+              "count": 0,
+              "denominator": 98778,
+              "rate": 0.0
+            },
+            "reopen_count": {
+              "count": 0,
+              "denominator": 98778,
+              "rate": 0.0
+            },
+            "resolved_at": {
+              "count": 2220,
+              "denominator": 98778,
+              "rate": 0.022474640102047014
+            },
+            "resolved_by": {
+              "count": 170,
+              "denominator": 98778,
+              "rate": 0.001721030998805402
+            },
+            "rfc": {
+              "count": 98208,
+              "denominator": 98778,
+              "rate": 0.9942294842981231
+            },
+            "subcategory": {
+              "count": 82,
+              "denominator": 98778,
+              "rate": 0.0008301443641296645
+            },
+            "sys_created_at": {
+              "count": 37067,
+              "denominator": 98778,
+              "rate": 0.37525562372188137
+            },
+            "sys_created_by": {
+              "count": 37067,
+              "denominator": 98778,
+              "rate": 0.37525562372188137
+            },
+            "sys_mod_count": {
+              "count": 0,
+              "denominator": 98778,
+              "rate": 0.0
+            },
+            "sys_updated_at": {
+              "count": 0,
+              "denominator": 98778,
+              "rate": 0.0
+            },
+            "sys_updated_by": {
+              "count": 0,
+              "denominator": 98778,
+              "rate": 0.0
+            },
+            "u_priority_confirmation": {
+              "count": 0,
+              "denominator": 98778,
+              "rate": 0.0
+            },
+            "u_symptom": {
+              "count": 23323,
+              "denominator": 98778,
+              "rate": 0.23611532932434348
+            },
+            "urgency": {
+              "count": 0,
+              "denominator": 98778,
+              "rate": 0.0
+            },
+            "vendor": {
+              "count": 98580,
+              "denominator": 98778,
+              "rate": 0.9979955050719795
+            }
+          }
+        },
+        "monthly_profile": {
+          "2016-02": {
+            "missing:resolved_at": 9,
+            "missing:sys_created_at": 127,
+            "rows": 496,
+            "state:Active": 146,
+            "state:Awaiting Problem": 2,
+            "state:Awaiting User Info": 44,
+            "state:Closed": 2,
+            "state:New": 253,
+            "state:Resolved": 49
+          },
+          "2016-03": {
+            "missing:resolved_at": 1251,
+            "missing:sys_created_at": 13922,
+            "rows": 49820,
+            "state:Active": 16636,
+            "state:Awaiting Problem": 179,
+            "state:Awaiting User Info": 6298,
+            "state:Closed": 5871,
+            "state:New": 12887,
+            "state:Resolved": 7949
+          },
+          "2016-04": {
+            "missing:resolved_at": 1076,
+            "missing:sys_created_at": 16946,
+            "rows": 43758,
+            "state:Active": 10940,
+            "state:Awaiting Problem": 133,
+            "state:Awaiting User Info": 4296,
+            "state:Awaiting Vendor": 13,
+            "state:Closed": 8342,
+            "state:New": 11548,
+            "state:Resolved": 8486
+          },
+          "2016-05": {
+            "missing:resolved_at": 743,
+            "missing:sys_created_at": 19396,
+            "rows": 39674,
+            "state:Active": 9369,
+            "state:Awaiting Problem": 110,
+            "state:Awaiting User Info": 3007,
+            "state:Awaiting Vendor": 143,
+            "state:Closed": 8441,
+            "state:New": 10908,
+            "state:Resolved": 7696
+          },
+          "2016-06": {
+            "missing:resolved_at": 38,
+            "missing:sys_created_at": 1737,
+            "rows": 4781,
+            "state:Active": 1041,
+            "state:Awaiting Evidence": 4,
+            "state:Awaiting Problem": 22,
+            "state:Awaiting User Info": 688,
+            "state:Awaiting Vendor": 228,
+            "state:Closed": 1604,
+            "state:New": 277,
+            "state:Resolved": 912,
+            "state:unrecognized:b96b303663277134": 5
+          },
+          "2016-07": {
+            "missing:sys_created_at": 164,
+            "rows": 786,
+            "state:Active": 144,
+            "state:Awaiting Evidence": 6,
+            "state:Awaiting Problem": 8,
+            "state:Awaiting User Info": 92,
+            "state:Awaiting Vendor": 121,
+            "state:Closed": 207,
+            "state:New": 57,
+            "state:Resolved": 151
+          },
+          "2016-08": {
+            "missing:sys_created_at": 83,
+            "rows": 346,
+            "state:Active": 62,
+            "state:Awaiting Evidence": 2,
+            "state:Awaiting User Info": 53,
+            "state:Awaiting Vendor": 36,
+            "state:Closed": 72,
+            "state:New": 44,
+            "state:Resolved": 77
+          },
+          "2016-09": {
+            "missing:sys_created_at": 47,
+            "rows": 284,
+            "state:Active": 49,
+            "state:Awaiting Evidence": 4,
+            "state:Awaiting Problem": 3,
+            "state:Awaiting User Info": 31,
+            "state:Awaiting Vendor": 53,
+            "state:Closed": 60,
+            "state:New": 30,
+            "state:Resolved": 54
+          },
+          "2016-10": {
+            "missing:sys_created_at": 49,
+            "rows": 309,
+            "state:Active": 53,
+            "state:Awaiting Evidence": 1,
+            "state:Awaiting Problem": 1,
+            "state:Awaiting User Info": 27,
+            "state:Awaiting Vendor": 30,
+            "state:Closed": 69,
+            "state:New": 47,
+            "state:Resolved": 81
+          },
+          "2016-11": {
+            "missing:sys_created_at": 75,
+            "rows": 268,
+            "state:Active": 54,
+            "state:Awaiting Evidence": 7,
+            "state:Awaiting Problem": 3,
+            "state:Awaiting User Info": 21,
+            "state:Awaiting Vendor": 20,
+            "state:Closed": 63,
+            "state:New": 37,
+            "state:Resolved": 63
+          },
+          "2016-12": {
+            "missing:sys_created_at": 46,
+            "rows": 253,
+            "state:Active": 46,
+            "state:Awaiting Evidence": 8,
+            "state:Awaiting User Info": 14,
+            "state:Awaiting Vendor": 9,
+            "state:Closed": 63,
+            "state:New": 58,
+            "state:Resolved": 55
+          },
+          "2017-01": {
+            "missing:sys_created_at": 202,
+            "rows": 540,
+            "state:Active": 109,
+            "state:Awaiting Evidence": 6,
+            "state:Awaiting User Info": 40,
+            "state:Awaiting Vendor": 32,
+            "state:Closed": 80,
+            "state:New": 185,
+            "state:Resolved": 88
+          },
+          "2017-02": {
+            "missing:resolved_at": 24,
+            "missing:sys_created_at": 282,
+            "rows": 397,
+            "state:Active": 67,
+            "state:Awaiting User Info": 31,
+            "state:Awaiting Vendor": 22,
+            "state:Closed": 111,
+            "state:New": 76,
+            "state:Resolved": 90
+          }
+        },
+        "online_feature_availability": "not established; enriched fields are not proof of event-time observability",
+        "parsed_rows": 141712,
+        "row_width_errors": [],
+        "rows": 141712,
+        "schema_accepted": true,
+        "schema_drift": "single snapshot; header/row shape checked, cross-version drift unavailable",
+        "source_count_delta": 0,
+        "source_reported_incidents": 24918,
+        "source_reported_rows": 141712,
+        "state_balance_by_partition": {
+          "development": {
+            "Active": {
+              "count": 5939,
+              "denominator": 21582,
+              "rate": 0.2751830228894449
+            },
+            "Awaiting Evidence": {
+              "count": 8,
+              "denominator": 21582,
+              "rate": 0.0003706792697618386
+            },
+            "Awaiting Problem": {
+              "count": 83,
+              "denominator": 21582,
+              "rate": 0.003845797423779075
+            },
+            "Awaiting User Info": {
+              "count": 2317,
+              "denominator": 21582,
+              "rate": 0.10735798350477249
+            },
+            "Awaiting Vendor": {
+              "count": 78,
+              "denominator": 21582,
+              "rate": 0.003614122880177926
+            },
+            "Closed": {
+              "count": 3802,
+              "denominator": 21582,
+              "rate": 0.17616532295431378
+            },
+            "New": {
+              "count": 5429,
+              "denominator": 21582,
+              "rate": 0.2515522194421277
+            },
+            "Resolved": {
+              "count": 3926,
+              "denominator": 21582,
+              "rate": 0.1819108516356223
+            }
+          },
+          "evaluation": {
+            "Active": {
+              "count": 5947,
+              "denominator": 21352,
+              "rate": 0.2785219183214687
+            },
+            "Awaiting Evidence": {
+              "count": 4,
+              "denominator": 21352,
+              "rate": 0.00018733608092918696
+            },
+            "Awaiting Problem": {
+              "count": 36,
+              "denominator": 21352,
+              "rate": 0.0016860247283626826
+            },
+            "Awaiting User Info": {
+              "count": 2211,
+              "denominator": 21352,
+              "rate": 0.1035500187336081
+            },
+            "Awaiting Vendor": {
+              "count": 89,
+              "denominator": 21352,
+              "rate": 0.00416822780067441
+            },
+            "Closed": {
+              "count": 3761,
+              "denominator": 21352,
+              "rate": 0.17614275009366803
+            },
+            "New": {
+              "count": 5420,
+              "denominator": 21352,
+              "rate": 0.2538403896590483
+            },
+            "Resolved": {
+              "count": 3884,
+              "denominator": 21352,
+              "rate": 0.18190333458224053
+            }
+          },
+          "train": {
+            "Active": {
+              "count": 26830,
+              "denominator": 98778,
+              "rate": 0.2716191864585232
+            },
+            "Awaiting Evidence": {
+              "count": 26,
+              "denominator": 98778,
+              "rate": 0.0002632165056996497
+            },
+            "Awaiting Problem": {
+              "count": 342,
+              "denominator": 98778,
+              "rate": 0.0034623094211261615
+            },
+            "Awaiting User Info": {
+              "count": 10114,
+              "denominator": 98778,
+              "rate": 0.10239122071716374
+            },
+            "Awaiting Vendor": {
+              "count": 540,
+              "denominator": 98778,
+              "rate": 0.0054668043491465715
+            },
+            "Closed": {
+              "count": 17422,
+              "denominator": 98778,
+              "rate": 0.17637530624228068
+            },
+            "New": {
+              "count": 25558,
+              "denominator": 98778,
+              "rate": 0.2587418251027557
+            },
+            "Resolved": {
+              "count": 17941,
+              "denominator": 98778,
+              "rate": 0.181629512644516
+            },
+            "unrecognized:b96b303663277134": {
+              "count": 5,
+              "denominator": 98778,
+              "rate": 5.061855878839418e-05
+            }
+          }
+        },
+        "timestamp_ranges_naive_source_timezone_unknown": {
+          "closed_at": [
+            "2016-02-29T17:47:00",
+            "2017-02-18T15:00:00"
+          ],
+          "opened_at": [
+            "2016-02-29T01:16:00",
+            "2017-02-16T14:17:00"
+          ],
+          "resolved_at": [
+            "2016-02-29T09:04:00",
+            "2017-02-17T00:47:00"
+          ],
+          "sys_created_at": [
+            "2016-02-29T01:23:00",
+            "2017-01-27T16:59:00"
+          ],
+          "sys_updated_at": [
+            "2016-02-29T01:23:00",
+            "2017-02-18T15:00:00"
+          ]
+        },
+        "within_incident_file_order_regressions": {
+          "timestamp": 1,
+          "update_counter": 4
+        }
+      },
+      "provenance": {
+        "archive_sha256": "6294e29a311647306bfdfc85783f7df66517c197b9cd49aa5ee36ba9c525d1d6",
+        "archive_url": "https://archive.ics.uci.edu/static/public/498/incident+management+process+enriched+event+log.zip",
+        "license": "CC-BY-4.0",
+        "retrieval_method": "Invoke-WebRequest from the official UCI HTTPS archive",
+        "retrieved_utc": "2026-09-07T13:10:18Z",
+        "source_page": "https://archive.ics.uci.edu/dataset/498/incident+management+process+enriched+event+log",
+        "source_snapshot_sha256": "63ed594cce7cf2fd3622fa06064f799d8e34dcbeca3a967eeb8d7316573d5d27"
+      },
+      "split_sha256": "b624174e8f9dedc4115117ed4d1b5a17b9747509924c2fcb4fa40588059a014f",
+      "status": "profiled_not_baseline_admitted"
+    },
+    "sms": {
+      "license": {
+        "baseline_admitted": false,
+        "bundled_terms": [
+          {
+            "bytes": 5868,
+            "member": "readme",
+            "review_flags": [
+              "copyright",
+              "license"
+            ],
+            "sha256": "8753cd2d3cab68f80c8257851b8c2037778c267f55accb6fd1b5a2e32d36a84e"
+          }
+        ],
+        "human_terms_review": "pending",
+        "source_license": "CC-BY-4.0"
+      },
+      "members": {
+        "SMSSpamCollection": {
+          "bytes": 477907,
+          "sha256": "7d039a24a6083ed9ef0f806ebad56bbb976e3aeb8de05669173bfdc4996c239d"
+        },
+        "readme": {
+          "bytes": 5868,
+          "sha256": "8753cd2d3cab68f80c8257851b8c2037778c267f55accb6fd1b5a2e32d36a84e"
+        }
+      },
+      "profile": {
+        "baseline_scoring_admitted": false,
+        "class_balance_by_partition": {
+          "development": {
+            "ham": {
+              "count": 739,
+              "denominator": 844,
+              "rate": 0.8755924170616114
+            },
+            "spam": {
+              "count": 105,
+              "denominator": 844,
+              "rate": 0.12440758293838862
+            }
+          },
+          "evaluation": {
+            "ham": {
+              "count": 736,
+              "denominator": 847,
+              "rate": 0.8689492325855962
+            },
+            "spam": {
+              "count": 111,
+              "denominator": 847,
+              "rate": 0.13105076741440377
+            }
+          },
+          "train": {
+            "ham": {
+              "count": 3352,
+              "denominator": 3883,
+              "rate": 0.8632500643832088
+            },
+            "spam": {
+              "count": 531,
+              "denominator": 3883,
+              "rate": 0.13674993561679114
+            }
+          }
+        },
+        "conflicting_label_groups": 0,
+        "digit_template_cross_partition_groups": 4,
+        "digit_template_cross_partition_rows": 12,
+        "empty_message": {
+          "count": 0,
+          "denominator": 5574,
+          "rate": 0.0
+        },
+        "exact_duplicate_excess": {
+          "count": 403,
+          "denominator": 5574,
+          "rate": 0.07229996411912451
+        },
+        "group_partition_overlap": 0,
+        "malformed_rows": [],
+        "message_length_min_max": [
+          2,
+          910
+        ],
+        "normalized_duplicate_excess": {
+          "count": 415,
+          "denominator": 5574,
+          "rate": 0.07445281664872623
+        },
+        "normalized_groups": 5159,
+        "quarantined_group_rows": 0,
+        "rows": 5574,
+        "schema_drift": "single archive only; line-shape validity measured, cross-version drift unavailable",
+        "source_count_delta": 0,
+        "source_reported_rows": 5574,
+        "temporal_leakage_assessment": "unavailable: no reliable timestamps/sender/source-member labels",
+        "valid_labelled_rows": 5574
+      },
+      "provenance": {
+        "archive_sha256": "1587ea43e58e82b14ff1f5425c88e17f8496bfcdb67a583dbff9eefaf9963ce3",
+        "archive_url": "https://archive.ics.uci.edu/static/public/228/sms+spam+collection.zip",
+        "license": "CC-BY-4.0",
+        "retrieval_method": "Invoke-WebRequest from the official UCI HTTPS archive",
+        "retrieved_utc": "2026-09-07T13:10:18Z",
+        "source_page": "https://archive.ics.uci.edu/dataset/228/sms+spam+collection",
+        "source_snapshot_sha256": "ee3f17c49121781e68a0418f39016824025a493c60b52402345da1caed7afba3"
+      },
+      "split_sha256": "afe7bb594ec196af36150b92807e711d6728e73abf37d4f24905eb5f38a75ec8",
+      "status": "profiled_not_baseline_admitted"
+    }
+  },
+  "mass_indispensability_gate": false,
+  "python": "3.12.14",
+  "scientific_breakthrough_gate": false,
+  "scoring_runs": 0,
+  "seconds": 13.093999999924563,
+  "source_hashes": {
+    "WORKFLOW_INTAKE_AMENDMENT_V2.md": "082e40d2bb172fcd173d92dcfbbb87388c522ba7ebdb05f1bd4a5c7331901d9b",
+    "test_workflow_intake.py": "5cbe4e816a3e7829e3bf563e37389f9e6c3d35b91bbf2e028505f2d7191b8ec7",
+    "test_workflow_intake_v2.py": "2a152adc7c125315be9d99fd3e82fd432b48a92351b5e5f10359f6dae9cac08b",
+    "workflow_intake_amendment_v2.json": "4b19c9c8b6dca8d848633624a8303a985e0b2f9e80288c4cca1750fe45c8ada6",
+    "workflow_intake_audit.py": "b83ef5c59b088b7edfdbdc5b7575813b1a26d7a8b4990c1c3a03d484b239e921",
+    "workflow_intake_protocol.json": "82d8eb7bacad218c003fe4e13fd0cf376f50d26366053f1a41e69fe04e3b6c31",
+    "workflow_intake_v2.py": "ec39dbc87ce3713cc9b39e6f17b8a6dccc1e5280c1f04b63688798427109d2b7"
+  },
+  "source_sha": "a2f23fd3b38cce136b656d0f88e2b375e22fa1ed",
+  "started_utc": "2026-09-07T13:21:18.866603+00:00",
+  "status": "amended_profile_completed_not_baseline_admitted",
+  "training_runs": 0
+}

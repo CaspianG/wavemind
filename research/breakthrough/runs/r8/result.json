@@ -1,0 +1,52 @@
+{
+  "source_sha": "fff2c991506344b7f69be6c4357bd52c1f91eb8b",
+  "started_unix_ns": 1788730947980558100,
+  "hashes": {
+    "LC_SCALAR_COMPONENTS.md": "a7bbff1d8b30e96946de447b51d5630b6839408f4d39cdcdda97d876f200833d",
+    "protocol_r8.json": "5b2d874bc697e4480c0a3859412de12c48c010b3d5d85d56e54d9f755a93424e",
+    "lc_scalar_components.py": "f32db44edf2fbfbef8f9c5f4d0ffee23b03da5cad13f1d761de87cd2578958f7",
+    "lc_scalar_check.py": "2381eff008abbb28abb952ec9fcdb00c26f05636526b139ac2d5056f3e3806d8",
+    "lc_r8_corpus.py": "d03c84258ddd1a15ff62e9280c5741469493e4d3e1bb65489a698a958b0794ef",
+    "experiment_r8.py": "066ce368bc5d0276e894866cf67b96d19dc5f49b4052ae129af03e0cda594d79",
+    "test_lc_r8.py": "12a7ddbdcc66e042bb52fbb1a54217985f3295b984e003702452227b2b7729d5",
+    "verify_r8.py": "796ad641a8c65a3d69937ac5bbeddc163903f9c8b77cf0800a9d040a14b0198c",
+    "experiment_r1.py": "a08971e9bf15ab9ad4959194455ebb8ff6b7fa792f63897a1336d04d02b200fc",
+    "lc_projector.py": "a496cb034e87f593f9c06b21871a2d00ae6583b397d7d3cef76f2e323fbd1798",
+    "lc_stitching.py": "7bc4ffeca106b2e444cda6fb3b9d1a9250f4add6d87d828860b4aaee632f57a7",
+    "lc_certificate_check.py": "60cf8c29494657efed736b46082302e4d491b06f023ad4c0a011f122764b72ba",
+    "lc_stitching_check.py": "ef59bc55bf0b0b191a36f122301e151da279ae6ee4e0d4c20923a667e0d9f7d8",
+    "verify_evidence.py": "7e1e2317790d9746b4a9e573fdbff1feec300c1851373ae2da2ee6c3b5396f0c",
+    "runs/r7/inputs.jsonl": "d53fc3d094ad1fe886756e3954225e3cb64767941c124efe1b727f9895ad59f5"
+  },
+  "python": "3.13.2",
+  "numpy": "2.5.2",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "evidence_class": "exhaustive_small_subspaces_and_reused_structural_cases",
+  "scientific_breakthrough_gate": false,
+  "mass_indispensability_gate": false,
+  "status": "completed_all_predictions_passed",
+  "failure": null,
+  "elapsed_seconds": 7.737889499985613,
+  "summary": {
+    "records": 2993,
+    "small_subspaces": 2897,
+    "reused_r7_hard": 96,
+    "small_counts_by_n": {
+      "1": 5,
+      "2": 67,
+      "3": 2825
+    },
+    "small_isotropic": 549,
+    "small_oracle_assignments": 612642,
+    "small_positive": 2681,
+    "small_negative": 216,
+    "small_isotropic_positive": 549,
+    "reused_r7_positive": 96,
+    "maximum_anchor_systems": 8,
+    "maximum_component_size": 6
+  },
+  "output_hashes": {
+    "inputs.jsonl": "4a3ee414420192e67163f6a9c25dbc0769a60e81398dc5a04d2363bcb8d87027",
+    "raw.jsonl": "8ce2370274908cdb0fb61266f31ec9330dd3bfcce7307fc04c7eb345db6f03b5"
+  }
+}
