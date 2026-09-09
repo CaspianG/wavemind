@@ -1013,3 +1013,51 @@ def test_rejected_history_does_not_reopen_global_pending_on_future_review(
     assert review(source_fixture, ["a"])[0]["status"] == "active"
     with s.store.transaction() as conn:
         assert context_pending(conn, brain_id=brain) is False
+
+
+@pytest.mark.parametrize("kind", ["PRIVATE KIND", "unknown", "Person"])
+def test_entity_kind_is_exact_public_taxonomy_not_free_text(source_fixture, kind):
+    s, owner, brain, c = source_fixture
+    with pytest.raises(BrainError) as exc:
+        s.create_entity(
+            principal=owner, brain_id=brain, kind=kind, name="Alex", citation_ids=[c]
+        )
+    assert exc.value.code == "invalid_input"
+    assert memory(source_fixture)["entities"] == []
+
+
+@pytest.mark.parametrize(
+    "kind", ["person", "organization", "project", "client", "artifact"]
+)
+def test_all_specified_entity_kinds_are_supported(source_fixture, kind):
+    s, owner, brain, c = source_fixture
+    row = s.create_entity(
+        principal=owner, brain_id=brain, kind=kind, name="Name", citation_ids=[c]
+    )
+    assert row["kind"] == kind and row["status"] == "proposed"
+
+
+@pytest.mark.parametrize(
+    "record_type,table",
+    [("entity", "entities"), ("claim", "claims"), ("relation", "relations")],
+)
+def test_deletion_scrubs_legacy_free_text_kind_column(
+    source_fixture, record_type, table
+):
+    s, owner, brain, c = source_fixture
+    sid = s.read_citation(principal=owner, brain_id=brain, citation_id=c)["source_id"]
+    with s.store.transaction(write=True) as conn:
+        conn.execute(
+            f"INSERT INTO {table}(brain_id,id,kind,payload_json) VALUES (?,'legacy','PRIVATE KIND',?)",
+            (brain, '{"content":"PRIVATE CONTENT"}'),
+        )
+        conn.execute(
+            "INSERT INTO dependencies VALUES (?,?,'legacy','source',?,?)",
+            (brain, record_type, sid, sid),
+        )
+    s.change_source(principal=owner, brain_id=brain, source_id=sid, action="delete")
+    with s.store.transaction() as conn:
+        assert conn.execute(
+            f"SELECT kind,status,payload_json FROM {table} WHERE brain_id=? AND id='legacy'",
+            (brain,),
+        ).fetchone()[:] == ("deleted", "revoked", "{}")

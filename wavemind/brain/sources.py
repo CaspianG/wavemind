@@ -115,6 +115,8 @@ def _invalidate_records(conn, *, brain_id, affected, reason):
             continue
         if reason == "deleted" or kind == "preview":
             status = ",status='revoked'" if kind != "receipt" else ""
+            if reason == "deleted" and kind in ("claim", "entity", "relation"):
+                status += ",kind='deleted'"
             conn.execute(
                 f"UPDATE {table} SET payload_json='{{}}'{status} WHERE brain_id=? AND id=?",
                 (brain_id, record_id),
@@ -181,6 +183,8 @@ def _erase_source_closure(conn, *, brain_id, source_id):
         )
         for kind, table in DERIVED_TABLES.items():
             status = ",status='revoked'" if kind != "receipt" else ""
+            if kind in ("claim", "entity", "relation"):
+                status += ",kind='deleted'"
             conn.execute(
                 f"UPDATE {table} SET payload_json='{{}}'{status} WHERE brain_id=? AND id IN (SELECT id FROM brain_erasure_targets WHERE kind=?)",
                 (brain_id, kind),

@@ -26,6 +26,7 @@ from .store import record_change
 
 TABLES = {"claim": "claims", "entity": "entities", "relation": "relations"}
 CLAIM_KINDS = {"fact", "goal", "constraint", "decision", "commitment"}
+ENTITY_KINDS = {"person", "organization", "project", "client", "artifact"}
 RELATION_KINDS = {
     "related_to",
     "supersedes",
@@ -438,9 +439,11 @@ class Reconciliation:
             require_access(conn, principal, brain_id, "propose")
             sources = _evidence(conn, principal, brain_id, citation_ids)
             _check_capacity(conn, brain_id, 1)
+            if not isinstance(kind, str) or kind not in ENTITY_KINDS:
+                raise _invalid()
             rid = uuid4().hex
             data = {
-                "kind": _text(bounded_text(kind), 100),
+                "kind": kind,
                 "name": _text(bounded_text(name, maximum=500), 500),
                 "citation_ids": citation_ids,
                 "registered_at": time.time(),
