@@ -232,6 +232,8 @@ def overlaps(a_start, a_end, b_start, b_end):
 
 ### Task 4: Budgeted current context and preaction receipts
 
+**Persisted scope field:** Extend the packet field list below with required nullable `project_id`, storing the authorized project/client selector in the canonical persisted and public v1 packet, including digest and cost accounting. A receipt inherits scope from its validated packet. Task5 applicability must not infer scope from question text or whichever claim happened to fit the byte budget.
+
 **Task4 boundary refinements (controller rulings):** Build/validate require read; begin_action requires record_outcome plus independent read, reusing the existing operation taxonomy and never executing its action string. `project_id` selects an explicit same-Brain approved/readable entity of kind project or client, referenced in claim.entity_ids; no name matching or automatic project merging. Hidden/missing/ineligible selectors fail closed, never fall back to global retrieval. Explicit project filtering omits unscoped source-only evidence. Keep Task4 experiences empty and its service-owned private extension point uninvoked until Task5 defines the actual verified-runtime item/provenance contract and tests integration. No transport-supplied provider/trust fields or prematurely simulated experience. Digest hashes the complete canonical packet excluding digest only; final cost.bytes includes the digest and cost envelope itself.
 
 **Files:** Create `wavemind/brain/context.py`, `tests/brain/test_context.py`; extend service.
