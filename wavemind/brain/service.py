@@ -9,6 +9,7 @@ from .models import BrainError, Principal, bounded_text
 from .store import BrainStore, record_change
 from .sources import Sources, invalidate_source
 from .reconcile import Reconciliation
+from .context import Context
 
 
 class BrainService:
@@ -16,6 +17,53 @@ class BrainService:
         self.store = BrainStore(state_dir)
         self.sources = Sources(self.store)
         self.reconciliation = Reconciliation(self.store)
+        self.context = Context(self.store)
+        # Reserved for Task5's private runtime; never supplied by a transport.
+        # Task4 does not invoke it or invent experience/provenance authority.
+        self._private_experience_provider = None
+
+    def build_context(
+        self,
+        *,
+        principal: Principal,
+        brain_id: str,
+        question: str,
+        moment: float | None = None,
+        project_id: str | None = None,
+        max_bytes: int = 16384,
+    ) -> dict:
+        return self.context.build_context(
+            principal=principal,
+            brain_id=brain_id,
+            question=question,
+            moment=moment,
+            project_id=project_id,
+            max_bytes=max_bytes,
+        )
+
+    def validate_packet(
+        self, *, principal: Principal, brain_id: str, packet_id: str
+    ) -> dict:
+        return self.context.validate_packet(
+            principal=principal, brain_id=brain_id, packet_id=packet_id
+        )
+
+    def begin_action(
+        self,
+        *,
+        principal: Principal,
+        brain_id: str,
+        packet_id: str,
+        run_id: str,
+        action: str,
+    ) -> dict:
+        return self.context.begin_action(
+            principal=principal,
+            brain_id=brain_id,
+            packet_id=packet_id,
+            run_id=run_id,
+            action=action,
+        )
 
     def create_entity(
         self,
