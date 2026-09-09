@@ -717,3 +717,76 @@ def test_lifecycle_retains_reviewable_history_except_delete(context, action, sta
             "SELECT status,payload_json FROM claims WHERE id='untouched'"
         ).fetchone()
         assert row[:] == ("active", '{"text":"Other evidence"}')
+
+
+@pytest.mark.parametrize("kind", ["agent", "human"])
+def test_import_only_principal_cannot_retry_creator_stored_content(
+    context, tmp_path, kind
+):
+    s, owner, b = context
+    p = preview(s, owner, b, b"Human reviewed source")
+    first = commit(s, owner, b, p)
+    restricted = Principal("owner", kind, {b}, {"import"})
+    s.close()
+    reopened = BrainService(tmp_path)
+    try:
+        with pytest.raises(BrainError) as exc:
+            commit(reopened, restricted, b, p)
+        assert exc.value.code == "not_found"
+        allowed = Principal("owner", kind, {b}, {"import", "read"})
+        assert commit(reopened, allowed, b, p) == first
+    finally:
+        reopened.close()
+
+
+@pytest.mark.parametrize("existing", [False, True])
+def test_import_commit_requires_read_for_new_and_existing_stored_citations(
+    context, existing
+):
+    s, owner, b = context
+    if existing:
+        imported(s, owner, b)
+    p = preview(s, owner, b)
+    before = s.list_brains(principal=owner)[0]["revision"]
+    restricted = Principal("owner", "agent", {b}, {"import"})
+    with pytest.raises(BrainError) as exc:
+        commit(s, restricted, b, p)
+    assert exc.value.code == "not_found"
+    assert s.list_brains(principal=owner)[0]["revision"] == before
+    assert len(s.list_sources(principal=owner, brain_id=b)) == int(existing)
+    assert (
+        commit(s, owner, b, p)["sources"][0]["citations"][0]["text"]
+        == "Ship on Friday."
+    )
+
+
+@pytest.mark.parametrize("explicit", [False, True])
+def test_import_preview_requires_read_before_returning_stored_source_identity(
+    context, explicit
+):
+    s, owner, b = context
+    source = imported(s, owner, b)
+    restricted = Principal("owner", "agent", {b}, {"import"})
+    with pytest.raises(BrainError) as exc:
+        preview(s, restricted, b, **({"source_id": source["id"]} if explicit else {}))
+    assert exc.value.code == "not_found"
+    with s.store.transaction() as conn:
+        assert (
+            conn.execute(
+                "SELECT count(*) FROM previews WHERE status='pending'"
+            ).fetchone()[0]
+            == 0
+        )
+
+
+def test_import_only_can_preview_supplied_bytes_and_cancel_without_reading_stored_data(
+    context,
+):
+    s, owner, b = context
+    restricted = Principal("owner", "agent", {b}, {"import"})
+    p = preview(s, restricted, b, b"Explicit supplied bytes")
+    assert p["files"][0]["preview_text"] == "Explicit supplied bytes"
+    args = dict(principal=restricted, brain_id=b, preview_id=p["id"], accepted_ids=[])
+    assert s.commit_import(**args) == {"sources": []}
+    assert s.commit_import(**args) == {"sources": []}
+    assert s.list_sources(principal=owner, brain_id=b) == []

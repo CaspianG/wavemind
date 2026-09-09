@@ -134,7 +134,8 @@ def _chunks(text):
         yield start, len(text), text[start:]
 
 
-def _version_result(conn, brain_id, source_id, version):
+def _version_result(conn, *, principal, brain_id, source_id, version):
+    require_access(conn, principal, brain_id, "read", [source_id])
     citations = []
     for row in conn.execute(
         """SELECT c.id,c.text,c.locator_json FROM chunks c JOIN source_versions v
@@ -159,9 +160,11 @@ def _resolve_source(conn, *, principal, brain_id, item):
         ).fetchall()
         if rows:
             require_access(conn, principal, brain_id, "import", [r[0] for r in rows])
+            require_access(conn, principal, brain_id, "read", [r[0] for r in rows])
             source_id = rows[0][0]
     if source_id is not None:
         require_access(conn, principal, brain_id, "import", [source_id])
+        require_access(conn, principal, brain_id, "read", [source_id])
         row = conn.execute(
             "SELECT status FROM sources WHERE brain_id=? AND id=?",
             (brain_id, source_id),
@@ -207,6 +210,9 @@ class Sources:
                     require_access(
                         conn, principal, brain_id, "import", [item["source_id"]]
                     )
+                    require_access(
+                        conn, principal, brain_id, "read", [item["source_id"]]
+                    )
         parsed = []
         for item in files:
             result = {
@@ -241,6 +247,9 @@ class Sources:
                 elif item["source_id"] is not None:
                     require_access(
                         conn, principal, brain_id, "import", [item["source_id"]]
+                    )
+                    require_access(
+                        conn, principal, brain_id, "read", [item["source_id"]]
                     )
             conn.execute(
                 "UPDATE previews SET status='expired',payload_json='{}' WHERE brain_id=? AND expires_at<=? AND status='pending'",
@@ -310,6 +319,11 @@ class Sources:
             ):
                 raise _invalid()
             accepted = sorted(accepted_ids)
+            # This API returns persisted citation text as part of confirmation,
+            # so nonempty commits need both operations even for a new source.
+            # Creator identity is not a substitute for a live token read grant.
+            if accepted:
+                require_access(conn, principal, brain_id, "read")
             payload = json.loads(row["payload_json"])
             if row["status"] in ("committed", "cancelled"):
                 if payload["accepted_ids"] != accepted:
@@ -321,6 +335,14 @@ class Sources:
                     "import",
                     [item["id"] for item in payload["result"]["sources"]],
                 )
+                if payload["result"]["sources"]:
+                    require_access(
+                        conn,
+                        principal,
+                        brain_id,
+                        "read",
+                        [item["id"] for item in payload["result"]["sources"]],
+                    )
                 return payload["result"]
             if row["expires_at"] is None or row["expires_at"] <= time.time():
                 raise BrainError("preview_expired", "Import preview expired.")
@@ -368,7 +390,13 @@ class Sources:
                 ).fetchone()
                 if existing:
                     sources.append(
-                        _version_result(conn, brain_id, sid, existing["version"])
+                        _version_result(
+                            conn,
+                            principal=principal,
+                            brain_id=brain_id,
+                            source_id=sid,
+                            version=existing["version"],
+                        )
                     )
                     continue
                 current = conn.execute(
@@ -418,7 +446,15 @@ class Sources:
                 record_change(
                     conn, brain_id=brain_id, kind="source_imported", record_id=sid
                 )
-                sources.append(_version_result(conn, brain_id, sid, current + 1))
+                sources.append(
+                    _version_result(
+                        conn,
+                        principal=principal,
+                        brain_id=brain_id,
+                        source_id=sid,
+                        version=current + 1,
+                    )
+                )
             result = {"sources": sources}
             conn.execute(
                 "UPDATE previews SET status=?,payload_json=? WHERE brain_id=? AND id=?",
