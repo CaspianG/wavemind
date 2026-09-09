@@ -166,7 +166,15 @@ class BrainStore:
                     for statement in _SCHEMA:
                         conn.execute(statement)
                     conn.execute("PRAGMA user_version=1")
-                elif version != 1:
+                    version = 1
+                if version == 1:
+                    conn.execute("""CREATE TABLE brain_context_state (
+                        brain_id TEXT PRIMARY KEY, pending INTEGER NOT NULL DEFAULT 0
+                        CHECK(pending IN (0,1)), reason TEXT,
+                        FOREIGN KEY(brain_id) REFERENCES brains(id) ON DELETE CASCADE
+                    )""")
+                    conn.execute("PRAGMA user_version=2")
+                elif version != 2:
                     raise BrainError(
                         "unsupported_schema", "Unsupported Brain schema version."
                     )

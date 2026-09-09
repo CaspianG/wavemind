@@ -83,7 +83,7 @@ def test_isolated_schema_reopens_without_creating_generic_databases(tmp_path):
     store = BrainStore(tmp_path)
     try:
         with store.transaction() as conn:
-            assert conn.execute("PRAGMA user_version").fetchone()[0] == 1
+            assert conn.execute("PRAGMA user_version").fetchone()[0] == 2
             assert conn.execute("PRAGMA foreign_keys").fetchone()[0] == 1
             tables = {
                 r[0]

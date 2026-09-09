@@ -2,7 +2,9 @@
 
 import hashlib
 import json
+import sqlite3
 import time
+from collections import defaultdict, deque
 from uuid import uuid4
 
 from .access import _not_found, allowed_sources, require_access
@@ -16,10 +18,211 @@ MAX_IMPORT_BYTES = 50 * 1024 * 1024
 CHUNK_BYTES = 8192
 PREVIEW_SECONDS = 900
 MAX_PENDING_PREVIEWS = 5
+MAX_DEPENDENCY_NODES = 10000
+ERASURE_SECONDS = 30
+DERIVED_TABLES = {
+    "claim": "claims",
+    "entity": "entities",
+    "relation": "relations",
+    "packet": "packets",
+    "receipt": "receipts",
+    "outcome": "outcomes",
+    "preview": "previews",
+}
+
+
+def context_pending(conn, *, brain_id):
+    """Internal transaction helper; callers authorize before reading this gate."""
+    row = conn.execute(
+        "SELECT pending FROM brain_context_state WHERE brain_id=?", (brain_id,)
+    ).fetchone()
+    return row is not None and bool(row[0])
+
+
+def mark_context_pending(conn, *, brain_id, reason="dependency_limit"):
+    conn.execute(
+        """INSERT INTO brain_context_state(brain_id,pending,reason) VALUES (?,1,?)
+                 ON CONFLICT(brain_id) DO UPDATE SET pending=1,reason=excluded.reason""",
+        (brain_id, reason),
+    )
+
+
+def dependency_closure(conn, *, brain_id, seeds, source_id=None):
+    """At most 10,000 visited nodes, including seeds; cycles terminate."""
+    graph = defaultdict(set)
+    starts = set(seeds)
+    for row in conn.execute("SELECT * FROM dependencies WHERE brain_id=?", (brain_id,)):
+        child = (row["dependent_type"], row["dependent_id"])
+        graph[(row["origin_type"], row["origin_id"])].add(child)
+        if source_id is not None and row["source_id"] == source_id:
+            starts.add(child)
+    for origin, child in dependency_edges(conn, brain_id=brain_id):
+        graph[origin].add(child)
+    queue, visited = deque(sorted(starts)), set()
+    while queue:
+        node = queue.popleft()
+        if node in visited:
+            continue
+        if len(visited) == MAX_DEPENDENCY_NODES:
+            return visited, True
+        visited.add(node)
+        queue.extend(sorted(graph[node] - visited))
+    return visited, False
+
+
+def dependency_edges(conn, *, brain_id):
+    """Exact-Brain origin edges including implicit receipt/outcome references."""
+    for row in conn.execute("SELECT * FROM dependencies WHERE brain_id=?", (brain_id,)):
+        yield (
+            (row["origin_type"], row["origin_id"]),
+            (row["dependent_type"], row["dependent_id"]),
+        )
+    for row in conn.execute(
+        "SELECT id,packet_id FROM receipts WHERE brain_id=?", (brain_id,)
+    ):
+        yield ("packet", row["packet_id"]), ("receipt", row["id"])
+    for row in conn.execute(
+        "SELECT id,receipt_id FROM outcomes WHERE brain_id=?", (brain_id,)
+    ):
+        yield ("receipt", row["receipt_id"]), ("outcome", row["id"])
+
+
+def _overflow(conn, brain_id, reason="updated"):
+    mark_context_pending(conn, brain_id=brain_id)
+    # The pending gate covers every consumer. Explicit rechecks remain needed
+    # after graph recovery so unvisited rows cannot retain an obsolete approval.
+    for table in (
+        ("claims", "entities", "relations") if reason in ("updated", "revoked") else ()
+    ):
+        conn.execute(
+            f"UPDATE {table} SET status='proposed',payload_json=json_set(payload_json,'$.needs_recheck',json('true')) WHERE brain_id=? AND status!='revoked' AND payload_json!='{{}}'",
+            (brain_id,),
+        )
+    for table in ("packets", "outcomes"):
+        conn.execute(
+            f"UPDATE {table} SET status='revoked' WHERE brain_id=?", (brain_id,)
+        )
+    conn.execute(
+        "UPDATE previews SET status='revoked',payload_json='{}' WHERE brain_id=?",
+        (brain_id,),
+    )
+
+
+def _invalidate_records(conn, *, brain_id, affected, reason):
+    for kind, record_id in affected:
+        table = DERIVED_TABLES.get(kind)
+        if table is None:
+            continue
+        if reason == "deleted" or kind == "preview":
+            status = ",status='revoked'" if kind != "receipt" else ""
+            conn.execute(
+                f"UPDATE {table} SET payload_json='{{}}'{status} WHERE brain_id=? AND id=?",
+                (brain_id, record_id),
+            )
+        elif kind in ("claim", "entity", "relation"):
+            if reason == "updated":
+                conn.execute(
+                    f"UPDATE {table} SET status='proposed',payload_json=json_set(payload_json,'$.needs_recheck',json('true')) WHERE brain_id=? AND id=? AND status!='revoked' AND payload_json!='{{}}'",
+                    (brain_id, record_id),
+                )
+            elif reason == "revoked":
+                conn.execute(
+                    f"UPDATE {table} SET status='revoked' WHERE brain_id=? AND id=?",
+                    (brain_id, record_id),
+                )
+        elif kind in ("packet", "outcome"):
+            conn.execute(
+                f"UPDATE {table} SET status='revoked' WHERE brain_id=? AND id=?",
+                (brain_id, record_id),
+            )
+
+
+def invalidate_dependents(conn, *, brain_id, seeds):
+    """Semantic review changes share source lifecycle propagation machinery."""
+    affected, overflow = dependency_closure(conn, brain_id=brain_id, seeds=seeds)
+    if overflow:
+        _overflow(conn, brain_id)
+    _invalidate_records(
+        conn, brain_id=brain_id, affected=affected - set(seeds), reason="updated"
+    )
+
+
+def _erase_source_closure(conn, *, brain_id, source_id):
+    """Erasure-only bounded-time SQL closure; UNION terminates cyclic graphs.
+
+    Every content-bearing target is scrubbed before dependency rows can be
+    removed. Exceptions propagate to the enclosing lifecycle transaction.
+    """
+    deadline = time.monotonic() + ERASURE_SECONDS
+
+    def interrupted():
+        return time.monotonic() >= deadline
+
+    prefix = """WITH RECURSIVE edges(ot,oi,dt,di) AS (
+        SELECT origin_type,origin_id,dependent_type,dependent_id FROM dependencies WHERE brain_id=?
+        UNION SELECT 'packet',packet_id,'receipt',id FROM receipts WHERE brain_id=?
+        UNION SELECT 'receipt',receipt_id,'outcome',id FROM outcomes WHERE brain_id=?
+    ), affected(kind,id) AS (
+        SELECT 'source',?
+        UNION SELECT dependent_type,dependent_id FROM dependencies WHERE brain_id=? AND source_id=?
+        UNION SELECT e.dt,e.di FROM edges e JOIN affected a ON e.ot=a.kind AND e.oi=a.id
+    ) """
+    params = (brain_id, brain_id, brain_id, source_id, brain_id, source_id)
+    conn.set_progress_handler(interrupted, 1000)
+    try:
+        if interrupted():
+            raise sqlite3.OperationalError("interrupted")
+        conn.execute(
+            "CREATE TEMP TABLE brain_erasure_targets(kind TEXT,id TEXT,PRIMARY KEY(kind,id))"
+        )
+        conn.execute(
+            prefix + "INSERT INTO brain_erasure_targets SELECT kind,id FROM affected",
+            params,
+        )
+        for kind, table in DERIVED_TABLES.items():
+            status = ",status='revoked'" if kind != "receipt" else ""
+            conn.execute(
+                f"UPDATE {table} SET payload_json='{{}}'{status} WHERE brain_id=? AND id IN (SELECT id FROM brain_erasure_targets WHERE kind=?)",
+                (brain_id, kind),
+            )
+        conn.execute(
+            "UPDATE outbox SET payload_json='{}' WHERE brain_id=? AND source_id=?",
+            (brain_id, source_id),
+        )
+    except sqlite3.Error:
+        raise BrainError(
+            "deletion_failed", "Source deletion did not complete."
+        ) from None
+    finally:
+        conn.set_progress_handler(None, 0)
+        conn.execute("DROP TABLE IF EXISTS temp.brain_erasure_targets")
 
 
 def _invalid():
     return BrainError("invalid_input", "Invalid import request.")
+
+
+def resolve_citation(conn, *, principal, brain_id, citation_id):
+    """Resolve exact historic evidence using the caller's authorized snapshot."""
+    require_access(conn, principal, brain_id, "read")
+    if not isinstance(citation_id, str):
+        raise _not_found()
+    row = conn.execute(
+        """SELECT c.*,v.version FROM chunks c JOIN source_versions v
+        ON c.brain_id=v.brain_id AND c.source_id=v.source_id AND c.version_id=v.id
+        WHERE c.brain_id=? AND c.id=?""",
+        (brain_id, citation_id),
+    ).fetchone()
+    if row is None:
+        raise _not_found()
+    require_access(conn, principal, brain_id, "read", [row["source_id"]])
+    return {
+        "id": row["id"],
+        "source_id": row["source_id"],
+        "version": row["version"],
+        "text": row["text"],
+        **json.loads(row["locator_json"]),
+    }
 
 
 def invalidate_source(conn, *, brain_id: str, source_id: str, reason: str):
@@ -32,24 +235,13 @@ def invalidate_source(conn, *, brain_id: str, source_id: str, reason: str):
     Updated claims/entities/relations become proposed with needs_recheck=True.
     No source text enters the outbox. The caller records the revision change.
     """
-    links = conn.execute(
-        "SELECT * FROM dependencies WHERE brain_id=?", (brain_id,)
-    ).fetchall()
-    affected = {
-        (r["dependent_type"], r["dependent_id"])
-        for r in links
-        if r["source_id"] == source_id
-    }
-    affected.add(("source", source_id))
-    while True:
-        added = {
-            (r["dependent_type"], r["dependent_id"])
-            for r in links
-            if (r["origin_type"], r["origin_id"]) in affected
-        } - affected
-        if not added:
-            break
-        affected.update(added)
+    affected, overflow = dependency_closure(
+        conn, brain_id=brain_id, seeds={("source", source_id)}, source_id=source_id
+    )
+    if overflow:
+        _overflow(conn, brain_id, reason)
+    if reason == "deleted":
+        _erase_source_closure(conn, brain_id=brain_id, source_id=source_id)
     # Import previews include both pending normalized content and committed
     # retry results. Purge the whole preview, never a partial accepted batch.
     for row in conn.execute(
@@ -63,59 +255,7 @@ def invalidate_source(conn, *, brain_id: str, source_id: str, reason: str):
             for item in data.get("result", {}).get("sources", [])
         ):
             affected.add(("preview", row["id"]))
-    for row in conn.execute(
-        "SELECT id,packet_id FROM receipts WHERE brain_id=?", (brain_id,)
-    ):
-        if ("packet", row["packet_id"]) in affected:
-            affected.add(("receipt", row["id"]))
-    for row in conn.execute(
-        "SELECT id,receipt_id FROM outcomes WHERE brain_id=?", (brain_id,)
-    ):
-        if ("receipt", row["receipt_id"]) in affected:
-            affected.add(("outcome", row["id"]))
-    tables = {
-        "claim": "claims",
-        "entity": "entities",
-        "relation": "relations",
-        "packet": "packets",
-        "receipt": "receipts",
-        "outcome": "outcomes",
-        "preview": "previews",
-    }
-    for kind, record_id in affected:
-        table = tables.get(kind)
-        if table is None:
-            continue
-        if reason == "deleted" or kind == "preview":
-            status = ",status='revoked'" if kind != "receipt" else ""
-            conn.execute(
-                f"UPDATE {table} SET payload_json='{{}}'{status} WHERE brain_id=? AND id=?",
-                (brain_id, record_id),
-            )
-        elif kind in ("claim", "entity", "relation"):
-            if reason == "updated":
-                row = conn.execute(
-                    f"SELECT payload_json FROM {table} WHERE brain_id=? AND id=?",
-                    (brain_id, record_id),
-                ).fetchone()
-                if row is not None:
-                    payload = json.loads(row[0])
-                    payload["needs_recheck"] = True
-                    conn.execute(
-                        f"UPDATE {table} SET status='proposed',payload_json=? WHERE brain_id=? AND id=?",
-                        (json.dumps(payload, ensure_ascii=False), brain_id, record_id),
-                    )
-            elif reason == "revoked":
-                conn.execute(
-                    f"UPDATE {table} SET status='revoked' WHERE brain_id=? AND id=?",
-                    (brain_id, record_id),
-                )
-            # ACL changes affect readers, not the owner's semantic review.
-        elif kind in ("packet", "outcome"):
-            conn.execute(
-                f"UPDATE {table} SET status='revoked' WHERE brain_id=? AND id=?",
-                (brain_id, record_id),
-            )
+    _invalidate_records(conn, brain_id=brain_id, affected=affected, reason=reason)
     conn.execute(
         "INSERT INTO outbox(brain_id,id,kind,source_id,created_at) VALUES (?,?,?,?,?)",
         (brain_id, uuid4().hex, "source_" + reason, source_id, time.time()),
@@ -473,25 +613,9 @@ class Sources:
         self, *, principal: Principal, brain_id: str, citation_id: str
     ) -> dict:
         with self.store.transaction() as conn:
-            require_access(conn, principal, brain_id, "read")
-            if not isinstance(citation_id, str):
-                raise _not_found()
-            row = conn.execute(
-                """SELECT c.*,v.version FROM chunks c JOIN source_versions v
-                ON c.brain_id=v.brain_id AND c.source_id=v.source_id AND c.version_id=v.id
-                WHERE c.brain_id=? AND c.id=?""",
-                (brain_id, citation_id),
-            ).fetchone()
-            if row is None:
-                raise _not_found()
-            require_access(conn, principal, brain_id, "read", [row["source_id"]])
-            return {
-                "id": row["id"],
-                "source_id": row["source_id"],
-                "version": row["version"],
-                "text": row["text"],
-                **json.loads(row["locator_json"]),
-            }
+            return resolve_citation(
+                conn, principal=principal, brain_id=brain_id, citation_id=citation_id
+            )
 
     def list_sources(self, *, principal: Principal, brain_id: str) -> list[dict]:
         with self.store.transaction() as conn:

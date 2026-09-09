@@ -8,12 +8,77 @@ from .access import _not_found, require_access
 from .models import BrainError, Principal, bounded_text
 from .store import BrainStore, record_change
 from .sources import Sources, invalidate_source
+from .reconcile import Reconciliation
 
 
 class BrainService:
     def __init__(self, state_dir: Path):
         self.store = BrainStore(state_dir)
         self.sources = Sources(self.store)
+        self.reconciliation = Reconciliation(self.store)
+
+    def create_entity(
+        self,
+        *,
+        principal: Principal,
+        brain_id: str,
+        kind: str,
+        name: str,
+        citation_ids: list[str],
+    ) -> dict:
+        return self.reconciliation.create_entity(
+            principal=principal,
+            brain_id=brain_id,
+            kind=kind,
+            name=name,
+            citation_ids=citation_ids,
+        )
+
+    def propose_claims(
+        self, *, principal: Principal, brain_id: str, claims: list[dict]
+    ) -> list[dict]:
+        return self.reconciliation.propose_claims(
+            principal=principal, brain_id=brain_id, claims=claims
+        )
+
+    def review_claims(
+        self, *, principal: Principal, brain_id: str, claim_ids: list[str], action: str
+    ) -> list[dict]:
+        return self.reconciliation.review_claims(
+            principal=principal, brain_id=brain_id, claim_ids=claim_ids, action=action
+        )
+
+    def review_records(
+        self,
+        *,
+        principal: Principal,
+        brain_id: str,
+        record_type: str,
+        record_ids: list[str],
+        action: str,
+    ) -> list[dict]:
+        return self.reconciliation.review_records(
+            principal=principal,
+            brain_id=brain_id,
+            record_type=record_type,
+            record_ids=record_ids,
+            action=action,
+        )
+
+    def add_relation(
+        self, *, principal: Principal, brain_id: str, relation: dict
+    ) -> dict:
+        return self.reconciliation.add_relation(
+            principal=principal, brain_id=brain_id, relation=relation
+        )
+
+    def review_memory(self, *, principal: Principal, brain_id: str) -> dict:
+        return self.reconciliation.review_memory(principal=principal, brain_id=brain_id)
+
+    def recheck_dependencies(self, *, principal: Principal, brain_id: str) -> dict:
+        return self.reconciliation.recheck_dependencies(
+            principal=principal, brain_id=brain_id
+        )
 
     def preview_import(
         self, *, principal: Principal, brain_id: str, files: list[dict]
