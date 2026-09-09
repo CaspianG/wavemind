@@ -91,7 +91,9 @@
     "raw_uci_records_found": false,
     "incidental_local_paths_in_three_historical_validation_records": true,
     "approximate_existing_research_tree_mib": 82.17,
-    "publication_approval_received": false,
+    "publication_approval_received": true,
+    "publication_approval_date": "2026-09-09",
+    "publication_target": "CaspianG/wavemind main, through reviewed pull request",
     "independent_scientific_peer_review": false
   },
   "illustration_is_experimental_evidence": false,
