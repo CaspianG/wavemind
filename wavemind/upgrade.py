@@ -747,29 +747,36 @@ def verify_upgrade_backup(path: Path) -> dict[str, Any]:
 
 def restore_upgrade_backup(path: Path) -> None:
     manifest = verify_upgrade_backup(path)
-    with tempfile.TemporaryDirectory(prefix="wavemind-upgrade-restore-") as raw:
-        staging = Path(raw)
-        rollback = staging / "rollback"
-        rollback.mkdir()
+    with contextlib.ExitStack() as stack:
+        prepared: list[tuple[Path, Path | None, Path]] = []
+        with zipfile.ZipFile(path, "r") as archive:
+            for entry in manifest["files"]:
+                target = Path(str(entry["target_path"]))
+                target.parent.mkdir(parents=True, exist_ok=True)
+                # Both activation and recovery must stay on this target's filesystem.
+                local = Path(stack.enter_context(tempfile.TemporaryDirectory(
+                    prefix=".wavemind-restore-", dir=target.parent,
+                )))
+                candidate: Path | None = None
+                if bool(entry["existed"]):
+                    candidate = local / "candidate"
+                    candidate.write_bytes(archive.read(str(entry["archive_path"])))
+                    if str(entry["kind"]).startswith("sqlite"):
+                        database_inventory(candidate)
+                prepared.append((target, candidate, local / "previous"))
+
         replaced: list[tuple[Path, Path | None]] = []
         try:
-            with zipfile.ZipFile(path, "r") as archive:
-                for index, entry in enumerate(manifest["files"]):
-                    target = Path(str(entry["target_path"]))
-                    target.parent.mkdir(parents=True, exist_ok=True)
-                    previous: Path | None = None
-                    if target.exists():
-                        previous = rollback / f"{index:04d}-{target.name}"
-                        shutil.copy2(target, previous)
-                    replaced.append((target, previous))
-                    if bool(entry["existed"]):
-                        candidate = staging / f"restore-{index:04d}"
-                        candidate.write_bytes(archive.read(str(entry["archive_path"])))
-                        if str(entry["kind"]).startswith("sqlite"):
-                            database_inventory(candidate)
-                        os.replace(candidate, target)
-                    else:
-                        target.unlink(missing_ok=True)
+            for target, candidate, recovery in prepared:
+                previous: Path | None = None
+                if target.exists():
+                    shutil.copy2(target, recovery)
+                    previous = recovery
+                if candidate is not None:
+                    os.replace(candidate, target)
+                else:
+                    target.unlink(missing_ok=True)
+                replaced.append((target, previous))
         except Exception as exc:
             failures: list[str] = []
             for target, previous in reversed(replaced):
@@ -777,7 +784,7 @@ def restore_upgrade_backup(path: Path) -> None:
                     if previous is None:
                         target.unlink(missing_ok=True)
                     else:
-                        shutil.copy2(previous, target)
+                        os.replace(previous, target)
                 except OSError as rollback_exc:
                     failures.append(f"{target}: {rollback_exc}")
             if failures:
