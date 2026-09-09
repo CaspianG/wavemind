@@ -8,6 +8,47 @@ from wavemind.brain.models import BrainError, Principal
 from wavemind.brain.service import BrainService
 
 
+def test_context_state_returns_all_authorized_payload_reference_origins(source_fixture):
+    from wavemind.brain import reconcile
+
+    s, owner, brain, cid = source_fixture
+    root_source = s.read_citation(principal=owner, brain_id=brain, citation_id=cid)[
+        "source_id"
+    ]
+    parent_source = import_source(s, owner, brain, b"Parent activation")
+    propose(
+        source_fixture,
+        claim(
+            parent_source["citations"][0]["id"], "parent", key="parent", valid_from=1100
+        ),
+        claim(cid, "child", valid_from=1200, depends_on=["parent"]),
+    )
+    review(source_fixture, ["parent", "child"])
+    with s.store.transaction(write=True) as conn:
+        conn.execute(
+            "DELETE FROM dependencies WHERE brain_id=? AND dependent_type='claim' AND dependent_id='child' AND source_id=?",
+            (brain, parent_source["id"]),
+        )
+    with s.store.transaction() as conn:
+        state = reconcile.context_record_state(
+            conn,
+            principal=owner,
+            brain_id=brain,
+            record_type="claim",
+            record_id="child",
+            as_of=1000,
+        )
+    assert state[:2] == (False, (1100, 1200))
+    assert state[2] == frozenset(
+        {
+            ("claim", "child", root_source),
+            ("source", root_source, root_source),
+            ("claim", "parent", parent_source["id"]),
+            ("source", parent_source["id"], parent_source["id"]),
+        }
+    )
+
+
 @pytest.mark.parametrize(
     "parent_state", ["approved", "unreviewed", "stale", "conflicted"]
 )
@@ -47,13 +88,13 @@ def test_context_conflict_opt_in_only_relaxes_root(source_fixture, parent_state)
             as_of=10,
         )
         assert reconcile.record_eligible(conn, **args) is False
-        assert reconcile.context_record_state(conn, **args, conflict=True) == (
+        assert reconcile.context_record_state(conn, **args, conflict=True)[:2] == (
             parent_state == "approved",
             (20,),
         )
         assert reconcile.context_record_state(
             conn, **(args | {"as_of": 20}), conflict=True
-        ) == (False, (20,))
+        )[:2] == (False, (20,))
 
 
 def test_context_state_finishes_ineligible_prerequisite_walk(
@@ -76,7 +117,7 @@ def test_context_state_finishes_ineligible_prerequisite_walk(
         as_of=1000,
     )
     with s.store.transaction() as conn:
-        assert reconcile.context_record_state(conn, **args) == (False, (1100, 2000))
+        assert reconcile.context_record_state(conn, **args)[:2] == (False, (1100, 2000))
     monkeypatch.setattr(reconcile, "MAX_RECORDS", 1)
     with s.store.transaction() as conn:
         assert reconcile.record_eligible(conn, **args) is False
@@ -104,8 +145,20 @@ def test_context_state_preserves_supersession_lineage_time_exception(source_fixt
             record_id="b",
             as_of=15,
         )
-        assert reconcile.context_record_state(conn, **args) == (True, (5, 10, 20))
-        assert reconcile.context_record_state(conn, **(args | {"as_of": 20})) == (
+        state = reconcile.context_record_state(conn, **args)
+        assert state[:2] == (True, (5, 10, 20))
+        sid = conn.execute(
+            "SELECT source_id FROM chunks WHERE brain_id=? AND id=?", (brain, cid)
+        ).fetchone()[0]
+        assert state[2] == frozenset(
+            {
+                ("claim", "a", sid),
+                ("claim", "b", sid),
+                ("claim", "basis", sid),
+                ("source", sid, sid),
+            }
+        )
+        assert reconcile.context_record_state(conn, **(args | {"as_of": 20}))[:2] == (
             False,
             (5, 10, 20),
         )

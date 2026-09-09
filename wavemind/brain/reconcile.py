@@ -212,7 +212,7 @@ def context_record_state(
     as_of,
     conflict=False,
 ):
-    """Return (applicable, sorted temporal bounds) after complete verification.
+    """Return (applicable, temporal bounds, origins) after complete verification.
 
     Context must inspect currently ineligible prerequisites too: their future
     activation can change an empty packet. No partial bounds escape if any
@@ -220,6 +220,10 @@ def context_record_state(
     conflict=True permits only a conflicted claim root as uncertainty, never
     an ordinary prerequisite. Ordinary record_eligible remains strict.
     Supersession lineage skips its own bounds, retaining ordinary prerequisites.
+    Origins is a frozenset of (record_type, record_id, source_id) triples for
+    every reached semantic record and all its governing sources, plus singular
+    source triples. Payload-only prerequisites contribute identically to stored
+    edges; consumers must not reinterpret the graph to reconstruct provenance.
     This read-only helper raises the same sanitized named failures as above;
     the authorized write consumer owns committing the pending gate.
     """
@@ -253,7 +257,7 @@ def _record_state(
     if _timestamp(as_of) is None:
         raise _invalid()
     records, completed, path, authorized_sources = {}, set(), set(), set()
-    applicable, transitions = True, set()
+    applicable, transitions, origins = True, set(), set()
     pending = context_pending(conn, brain_id=brain_id)
     lookup = (
         """SELECT r.*, (SELECT json_group_array(json_array(d.origin_type,d.origin_id,d.source_id))
@@ -310,6 +314,9 @@ def _record_state(
         if unseen_sources:
             require_access(conn, principal, brain_id, "read", unseen_sources)
             authorized_sources.update(unseen_sources)
+        if complete:
+            origins.update((row["type"], rid, sid) for sid in sources)
+            origins.update(("source", sid, sid) for sid in sources)
         data = row["data"]
         eligible = not (
             pending or data.get("needs_recheck") or data.get("_review") != "approved"
@@ -320,7 +327,7 @@ def _record_state(
             eligible &= row["status"] in ("active", "superseded")
             eligible &= row["type"] == "claim" or row["status"] == "active"
         if not eligible and not complete:
-            return False, ()
+            return False, (), frozenset()
         if temporal and row["type"] == "claim":
             start, end = (
                 data.get("effective_valid_from"),
@@ -335,7 +342,7 @@ def _record_state(
                 eligible = False
         applicable &= eligible
         if not applicable and not complete:
-            return False, ()
+            return False, (), frozenset()
         path.add(rid)
         stack.append((rid, temporal, True, expected_type))
         ordinary = _prerequisites(row)
@@ -352,7 +359,7 @@ def _record_state(
             stack.append((parent, True, False, origin_types.get(parent)))
         if data.get("supersedes") and data["supersedes"] not in ordinary:
             stack.append((data["supersedes"], False, False, "claim"))
-    return applicable, tuple(sorted(transitions))
+    return applicable, tuple(sorted(transitions)), frozenset(origins)
 
 
 def _require_record(conn, principal, brain_id, rid, records, record_type=None):

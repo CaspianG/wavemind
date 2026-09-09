@@ -25,7 +25,6 @@ from .store import record_change
 SCHEMA = "wavemind.brain_context.v1"
 MAX_SCAN = 10000
 MAX_CANDIDATES = 128
-MAX_ORIGINS = 10000
 LIFETIME = 900
 WARNINGS = [
     "source_content_is_untrusted_data",
@@ -96,24 +95,16 @@ def _tainted(firewall, *, text, metadata=None):
     return firewall.is_tainted(record)
 
 
-def _provenance(conn, *, principal, brain_id, kind, rid, firewall):
-    """Collect already-materialized origins, without reconciling authority.
+def _evidence(conn, *, principal, brain_id, origins, firewall):
+    """Inspect evidence for the shared verifier's completed authorized origins.
 
-    Eligibility is exclusively the shared reconciliation verifier's responsibility.
-    This walk copies every reached semantic/source origin for erasure and
-    checks emitted evidence against the existing firewall.
+    No second graph walk: payload and stored references must have identical
+    scope for applicability, bounds, evidence/firewall checks and persistence.
     """
-    todo, seen, origins, citations = [(kind, rid)], set(), set(), {}
+    require_access(conn, principal, brain_id, "read", {sid for _, _, sid in origins})
+    citations = {}
     tainted = False
-    while todo:
-        node = todo.pop()
-        if node in seen:
-            continue
-        if len(seen) >= MAX_ORIGINS:
-            raise BrainError(
-                "dependency_limit", "Dependency verification limit reached."
-            )
-        seen.add(node)
+    for node in sorted({(kind, rid) for kind, rid, _ in origins if kind != "source"}):
         table = reconcile.TABLES.get(node[0])
         if table is None:
             raise _not_found()
@@ -124,14 +115,6 @@ def _provenance(conn, *, principal, brain_id, kind, rid, firewall):
         if row is None:
             raise _not_found()
         data = json.loads(row[0])
-        sources = reconcile.record_sources(
-            conn, brain_id=brain_id, record_type=node[0], record_id=node[1]
-        )
-        if not sources:
-            raise _not_found()
-        require_access(conn, principal, brain_id, "read", sources)
-        origins.update((node[0], node[1], sid) for sid in sources)
-        origins.update(("source", sid, sid) for sid in sources)
         # Scan actual strings: JSON escapes would turn newlines into literal
         # backslash-n and alter the firewall's existing whitespace patterns.
         tainted |= _tainted(
@@ -142,6 +125,10 @@ def _provenance(conn, *, principal, brain_id, kind, rid, firewall):
             c = resolve_citation(
                 conn, principal=principal, brain_id=brain_id, citation_id=cid
             )
+            if (node[0], node[1], c["source_id"]) not in origins:
+                # An evidence source absent from the verified record's origins
+                # is incomplete provenance, not permission to invent a link.
+                raise _not_found()
             meta = conn.execute(
                 "SELECT metadata_json FROM sources WHERE brain_id=? AND id=?",
                 (brain_id, c["source_id"]),
@@ -152,12 +139,7 @@ def _provenance(conn, *, principal, brain_id, kind, rid, firewall):
                 "authority": "source_data",
                 "review_status": "evidence_for_reviewed_memory",
             }
-        for edge in conn.execute(
-            "SELECT DISTINCT origin_type,origin_id FROM dependencies WHERE brain_id=? AND dependent_type=? AND dependent_id=? AND origin_type!='source'",
-            (brain_id, *node),
-        ):
-            todo.append(tuple(edge))
-    return origins, list(citations.values()), tainted
+    return list(citations.values()), tainted
 
 
 def _eligible(conn, *, principal, brain_id, kind, rid, moment):
@@ -182,7 +164,7 @@ def _select(conn, *, principal, brain_id, question, moment, project_id, now):
         ).fetchone()
         if project is None or project[0] not in ("project", "client"):
             raise _not_found()
-        applicable, bounds = reconcile.context_record_state(
+        applicable, bounds, selector_origins = reconcile.context_record_state(
             conn,
             principal=principal,
             brain_id=brain_id,
@@ -192,17 +174,17 @@ def _select(conn, *, principal, brain_id, question, moment, project_id, now):
         )
         if not applicable:
             raise _not_found()
-        context_origins, _, tainted = _provenance(
+        _, tainted = _evidence(
             conn,
             principal=principal,
             brain_id=brain_id,
-            kind="entity",
-            rid=project_id,
+            origins=selector_origins,
             firewall=firewall,
         )
         transitions.extend(bounds)
         if tainted:
             raise _not_found()
+        context_origins.update(selector_origins)
     rows = conn.execute(
         "SELECT id,status,payload_json FROM claims WHERE brain_id=? ORDER BY id LIMIT ?",
         (brain_id, MAX_SCAN + 1),
@@ -226,7 +208,7 @@ def _select(conn, *, principal, brain_id, question, moment, project_id, now):
     for _, rid, row, data in sorted(ranked)[:MAX_CANDIDATES]:
         try:
             conflict = row["status"] == "conflicted"
-            applicable, bounds = reconcile.context_record_state(
+            applicable, bounds, origins = reconcile.context_record_state(
                 conn,
                 principal=principal,
                 brain_id=brain_id,
@@ -237,12 +219,11 @@ def _select(conn, *, principal, brain_id, question, moment, project_id, now):
             )
             if not applicable and not any(bound > now for bound in bounds):
                 continue
-            origins, citations, tainted = _provenance(
+            citations, tainted = _evidence(
                 conn,
                 principal=principal,
                 brain_id=brain_id,
-                kind="claim",
-                rid=rid,
+                origins=origins,
                 firewall=firewall,
             )
         except BrainError as error:
@@ -378,7 +359,7 @@ def validate_persisted_packet(conn, *, principal, brain_id, packet_id):
         ):
             raise BrainError("stale_packet", "Context packet is no longer current.")
     for conflict in packet["conflicts"]:
-        applicable, _ = reconcile.context_record_state(
+        applicable, _, _ = reconcile.context_record_state(
             conn,
             principal=principal,
             brain_id=brain_id,
