@@ -7,11 +7,52 @@ from uuid import uuid4
 from .access import _not_found, require_access
 from .models import BrainError, Principal, bounded_text
 from .store import BrainStore, record_change
+from .sources import Sources, invalidate_source
 
 
 class BrainService:
     def __init__(self, state_dir: Path):
         self.store = BrainStore(state_dir)
+        self.sources = Sources(self.store)
+
+    def preview_import(
+        self, *, principal: Principal, brain_id: str, files: list[dict]
+    ) -> dict:
+        return self.sources.preview_import(
+            principal=principal, brain_id=brain_id, files=files
+        )
+
+    def commit_import(
+        self,
+        *,
+        principal: Principal,
+        brain_id: str,
+        preview_id: str,
+        accepted_ids: list[str],
+    ) -> dict:
+        return self.sources.commit_import(
+            principal=principal,
+            brain_id=brain_id,
+            preview_id=preview_id,
+            accepted_ids=accepted_ids,
+        )
+
+    def read_citation(
+        self, *, principal: Principal, brain_id: str, citation_id: str
+    ) -> dict:
+        return self.sources.read_citation(
+            principal=principal, brain_id=brain_id, citation_id=citation_id
+        )
+
+    def list_sources(self, *, principal: Principal, brain_id: str) -> list[dict]:
+        return self.sources.list_sources(principal=principal, brain_id=brain_id)
+
+    def change_source(
+        self, *, principal: Principal, brain_id: str, source_id: str, action: str
+    ) -> dict:
+        return self.sources.change_source(
+            principal=principal, brain_id=brain_id, source_id=source_id, action=action
+        )
 
     def close(self):
         self.store.close()
@@ -147,6 +188,9 @@ class BrainService:
             conn.execute(
                 "UPDATE sources SET readers_json=? WHERE brain_id=? AND id=?",
                 (None if readers is None else json.dumps(readers), brain_id, source_id),
+            )
+            invalidate_source(
+                conn, brain_id=brain_id, source_id=source_id, reason="access_changed"
             )
             record_change(
                 conn, brain_id=brain_id, kind="source_access_set", record_id=source_id
