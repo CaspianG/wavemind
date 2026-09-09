@@ -99,11 +99,11 @@ def _tainted(firewall, *, text, metadata=None):
 def _provenance(conn, *, principal, brain_id, kind, rid, firewall):
     """Collect already-materialized origins, without reconciling authority.
 
-    Eligibility is exclusively reconcile.record_eligible's responsibility.
+    Eligibility is exclusively the shared reconciliation verifier's responsibility.
     This walk copies every reached semantic/source origin for erasure and
     checks emitted evidence against the existing firewall.
     """
-    todo, seen, origins, citations, transitions = [(kind, rid)], set(), set(), {}, []
+    todo, seen, origins, citations = [(kind, rid)], set(), set(), {}
     tainted = False
     while todo:
         node = todo.pop()
@@ -138,11 +138,6 @@ def _provenance(conn, *, principal, brain_id, kind, rid, firewall):
             firewall,
             text="\n".join(value for value in data.values() if isinstance(value, str)),
         )
-        transitions.extend(
-            data.get(field)
-            for field in ("effective_valid_from", "effective_valid_until")
-            if data.get(field) is not None
-        )
         for cid in data.get("citation_ids", []):
             c = resolve_citation(
                 conn, principal=principal, brain_id=brain_id, citation_id=cid
@@ -162,7 +157,7 @@ def _provenance(conn, *, principal, brain_id, kind, rid, firewall):
             (brain_id, *node),
         ):
             todo.append(tuple(edge))
-    return origins, list(citations.values()), transitions, tainted
+    return origins, list(citations.values()), tainted
 
 
 def _eligible(conn, *, principal, brain_id, kind, rid, moment):
@@ -179,26 +174,25 @@ def _eligible(conn, *, principal, brain_id, kind, rid, moment):
 def _select(conn, *, principal, brain_id, question, moment, project_id, now):
     firewall = MemoryFirewall(MemoryFirewallPolicy(namespace=brain_id))
     permitted = allowed_sources(conn, principal, brain_id)
-    groups, transitions, selector_origins = [], [], set()
+    groups, transitions, context_origins = [], [], set()
     if project_id is not None:
         project = conn.execute(
             "SELECT kind FROM entities WHERE brain_id=? AND id=?",
             (brain_id, project_id),
         ).fetchone()
-        if (
-            project is None
-            or project[0] not in ("project", "client")
-            or not _eligible(
-                conn,
-                principal=principal,
-                brain_id=brain_id,
-                kind="entity",
-                rid=project_id,
-                moment=moment,
-            )
-        ):
+        if project is None or project[0] not in ("project", "client"):
             raise _not_found()
-        selector_origins, _, bounds, tainted = _provenance(
+        applicable, bounds = reconcile.context_record_state(
+            conn,
+            principal=principal,
+            brain_id=brain_id,
+            record_type="entity",
+            record_id=project_id,
+            as_of=moment,
+        )
+        if not applicable:
+            raise _not_found()
+        context_origins, _, tainted = _provenance(
             conn,
             principal=principal,
             brain_id=brain_id,
@@ -227,40 +221,23 @@ def _select(conn, *, principal, brain_id, question, moment, project_id, now):
         data = json.loads(row["payload_json"])
         if project_id is not None and project_id not in data.get("entity_ids", []):
             continue
-        transitions.extend(
-            data.get(k)
-            for k in ("effective_valid_from", "effective_valid_until")
-            if data.get(k) is not None
-        )
         score = len(query & _terms(data.get("content", "") + " " + data.get("key", "")))
         ranked.append((-score, row["id"], row, data))
     for _, rid, row, data in sorted(ranked)[:MAX_CANDIDATES]:
         try:
-            conflict = (
-                row["status"] == "conflicted"
-                and data.get("_review") == "approved"
-                and not data.get("needs_recheck")
-                and not data.get("effective_empty")
-            )
-            if conflict:
-                start, end = (
-                    data.get("effective_valid_from"),
-                    data.get("effective_valid_until"),
-                )
-                if (start is not None and moment < start) or (
-                    end is not None and moment >= end
-                ):
-                    continue
-            elif not _eligible(
+            conflict = row["status"] == "conflicted"
+            applicable, bounds = reconcile.context_record_state(
                 conn,
                 principal=principal,
                 brain_id=brain_id,
-                kind="claim",
-                rid=rid,
-                moment=moment,
-            ):
+                record_type="claim",
+                record_id=rid,
+                as_of=moment,
+                conflict=conflict,
+            )
+            if not applicable and not any(bound > now for bound in bounds):
                 continue
-            origins, citations, bounds, tainted = _provenance(
+            origins, citations, tainted = _provenance(
                 conn,
                 principal=principal,
                 brain_id=brain_id,
@@ -273,7 +250,12 @@ def _select(conn, *, principal, brain_id, question, moment, project_id, now):
                 continue
             raise
         transitions.extend(bounds)
-        if tainted:
+        if any(bound > now for bound in bounds):
+            # Bounds influence even empty/budget-trimmed envelopes. Keep all
+            # their origins for live ACL checks and erasure without emitting
+            # currently ineligible evidence or claiming it as active memory.
+            context_origins.update(origins)
+        if not applicable or tainted:
             continue
         public = {k: v for k, v in data.items() if not k.startswith("_")}
         public.update(id=rid, status=row["status"], authority="reviewed_claim")
@@ -314,7 +296,7 @@ def _select(conn, *, principal, brain_id, question, moment, project_id, now):
             c.update(authority="source_data", review_status="unreviewed")
             groups.append(("citations", c, [], {("source", sid, sid)}))
     expiry = min([now + LIFETIME] + [bound for bound in transitions if bound > now])
-    return groups, expiry, selector_origins
+    return groups, expiry, context_origins
 
 
 def _assemble(packet, groups):
@@ -395,6 +377,18 @@ def validate_persisted_packet(conn, *, principal, brain_id, packet_id):
             moment=packet["moment"],
         ):
             raise BrainError("stale_packet", "Context packet is no longer current.")
+    for conflict in packet["conflicts"]:
+        applicable, _ = reconcile.context_record_state(
+            conn,
+            principal=principal,
+            brain_id=brain_id,
+            record_type="claim",
+            record_id=conflict["id"],
+            as_of=packet["moment"],
+            conflict=True,
+        )
+        if not applicable:
+            raise BrainError("stale_packet", "Context packet is no longer current.")
     project = packet["project_id"]
     if project is not None and not _eligible(
         conn,
@@ -442,10 +436,10 @@ class Context:
             now = time.time()
             moment = now if moment is None else float(moment)
             pending = context_pending(conn, brain_id=brain_id)
-            groups, expiry, selector_origins = [], now + LIFETIME, set()
+            groups, expiry, context_origins = [], now + LIFETIME, set()
             if not pending:
                 try:
-                    groups, expiry, selector_origins = _select(
+                    groups, expiry, context_origins = _select(
                         conn,
                         principal=principal,
                         brain_id=brain_id,
@@ -467,7 +461,7 @@ class Context:
                         record_id=brain_id,
                     )
                     # Commit the gate even if this request cannot fit a packet.
-                    pending, groups, selector_origins = True, [], set()
+                    pending, groups, context_origins = True, [], set()
             packet = dict(
                 schema=SCHEMA,
                 id=uuid4().hex,
@@ -517,7 +511,7 @@ class Context:
                         canonical_bytes(packet).decode(),
                     ),
                 )
-                origins = selector_origins | {
+                origins = context_origins | {
                     origin for group in groups for origin in group[3]
                 }
                 for kind, rid, sid in sorted(origins):

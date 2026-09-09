@@ -780,6 +780,262 @@ def test_visible_conflicts_are_uncertainty_not_actionable_claims(active_claim_fi
     assert p["coverage"]["status"] == "partial"
 
 
+def scoped_conflicts(f, **parent_fields):
+    s, owner, brain, _, cid = f
+    project = s.create_entity(
+        principal=owner,
+        brain_id=brain,
+        kind="project",
+        name="Project",
+        citation_ids=[cid],
+    )
+    s.review_records(
+        principal=owner,
+        brain_id=brain,
+        record_type="entity",
+        record_ids=[project["id"]],
+        action="approve",
+    )
+    approve(s, owner, brain, cid, "parent", "orchard parent", **parent_fields)
+    for rid, content in [
+        ("conflict_a", "Plant orchard"),
+        ("conflict_b", "Cancel orchard"),
+    ]:
+        approve(
+            s,
+            owner,
+            brain,
+            cid,
+            rid,
+            content,
+            key="conflict",
+            depends_on=["parent"],
+            entity_ids=[project["id"]],
+        )
+    return project["id"]
+
+
+def future_scoped_child(f):
+    s, owner, brain, _, cid = f
+    project = s.create_entity(
+        principal=owner,
+        brain_id=brain,
+        kind="project",
+        name="Project",
+        citation_ids=[cid],
+    )
+    s.review_records(
+        principal=owner,
+        brain_id=brain,
+        record_type="entity",
+        record_ids=[project["id"]],
+        action="approve",
+    )
+    parent_source = source(s, owner, brain, "Private parent activation evidence")
+    approve(
+        s,
+        owner,
+        brain,
+        parent_source["citations"][0]["id"],
+        "parent",
+        "Private parent",
+        valid_from=1100,
+    )
+    approve(
+        s,
+        owner,
+        brain,
+        cid,
+        "child",
+        "orchard child",
+        valid_from=1200,
+        depends_on=["parent"],
+        entity_ids=[project["id"]],
+    )
+    return project["id"], parent_source["id"]
+
+
+def test_future_transition_only_origins_scrub_empty_packet_and_receipt(
+    active_claim_fixture, monkeypatch
+):
+    s, owner, brain, *_ = active_claim_fixture
+    project, sid = future_scoped_child(active_claim_fixture)
+    monkeypatch.setattr(time, "time", lambda: 1000.0)
+    p = build(active_claim_fixture, project_id=project)
+    assert p["claims"] == p["citations"] == []
+    assert p["expires_at"] == 1100.0
+    receipt = s.begin_action(
+        principal=owner, brain_id=brain, packet_id=p["id"], run_id="r", action="a"
+    )
+    s.change_source(principal=owner, brain_id=brain, source_id=sid, action="delete")
+    with s.store.transaction() as conn:
+        assert (
+            conn.execute(
+                "SELECT payload_json FROM packets WHERE brain_id=? AND id=?",
+                (brain, p["id"]),
+            ).fetchone()[0]
+            == "{}"
+        )
+        assert (
+            conn.execute(
+                "SELECT payload_json FROM receipts WHERE brain_id=? AND id=?",
+                (brain, receipt["id"]),
+            ).fetchone()[0]
+            == "{}"
+        )
+
+
+def test_hidden_reached_prerequisite_discards_candidate_and_all_transition_bounds(
+    active_claim_fixture, monkeypatch
+):
+    from wavemind.brain import reconcile
+
+    s, owner, brain, *_ = active_claim_fixture
+    project, hidden_source = future_scoped_child(active_claim_fixture)
+    s.set_member(principal=owner, brain_id=brain, identity="reader", role="reader")
+    s.set_source_access(
+        principal=owner, brain_id=brain, source_id=hidden_source, readers=[]
+    )
+    # Legacy/incomplete materialization: payload still references the parent.
+    # A visible root's own bound cannot escape before the reached ACL check.
+    with s.store.transaction(write=True) as conn:
+        conn.execute(
+            "DELETE FROM dependencies WHERE brain_id=? AND dependent_type='claim' AND dependent_id='child' AND source_id=?",
+            (brain, hidden_source),
+        )
+    reader = Principal("reader")
+    with s.store.transaction() as conn:
+        with pytest.raises(BrainError) as error:
+            reconcile.context_record_state(
+                conn,
+                principal=reader,
+                brain_id=brain,
+                record_type="claim",
+                record_id="child",
+                as_of=1000,
+            )
+        assert error.value.code == "not_found"
+    monkeypatch.setattr(time, "time", lambda: 1000.0)
+    p = s.build_context(
+        principal=reader, brain_id=brain, question="orchard", project_id=project
+    )
+    assert p["expires_at"] == 1900.0
+    assert p["claims"] == p["citations"] == p["conflicts"] == []
+    assert p["coverage"]["selected_claims"] == p["coverage"]["selected_citations"] == 0
+    assert hidden_source not in encoded(p).decode()
+    assert "Private parent" not in encoded(p).decode()
+
+
+def test_conflict_prerequisite_expiry_excludes_uncertainty(active_claim_fixture):
+    project = scoped_conflicts(active_claim_fixture, valid_until=20)
+    before = build(active_claim_fixture, project_id=project, moment=19)
+    assert {c["id"] for c in before["conflicts"]} == {"conflict_a", "conflict_b"}
+    expired = build(active_claim_fixture, project_id=project, moment=20)
+    assert expired["conflicts"] == expired["claims"] == expired["citations"] == []
+
+
+@pytest.mark.parametrize("failure", ["limit", "cycle"])
+def test_conflict_incomplete_walk_commits_pending_and_rejects_application(
+    active_claim_fixture, tmp_path, monkeypatch, failure
+):
+    from wavemind.brain import reconcile
+
+    s, owner, brain, sid, _ = active_claim_fixture
+    project = scoped_conflicts(active_claim_fixture)
+    old = build(active_claim_fixture, project_id=project)
+    assert len(old["conflicts"]) == 2
+    if failure == "limit":
+        monkeypatch.setattr(reconcile, "MAX_RECORDS", 1)
+    else:
+        with s.store.transaction(write=True) as conn:
+            conn.execute(
+                "INSERT INTO dependencies VALUES (?,'claim','parent','claim','conflict_a',?)",
+                (brain, sid),
+            )
+    # No source/revision mutation can hide a missing application verifier.
+    for operation, fields in [
+        (s.validate_packet, {}),
+        (s.begin_action, {"run_id": "r", "action": "a"}),
+    ]:
+        with pytest.raises(BrainError) as error:
+            operation(principal=owner, brain_id=brain, packet_id=old["id"], **fields)
+        assert error.value.code == "dependency_" + failure
+    pending = build(active_claim_fixture, project_id=project)
+    assert pending["coverage"]["status"] == "pending"
+    assert (
+        pending["claims"]
+        == pending["conflicts"]
+        == pending["citations"]
+        == pending["experiences"]
+        == []
+    )
+    s.close()
+    reopened = BrainService(tmp_path)
+    try:
+        assert (
+            reopened.build_context(principal=owner, brain_id=brain, question="orchard")[
+                "coverage"
+            ]["status"]
+            == "pending"
+        )
+        with pytest.raises(BrainError) as error:
+            reopened.begin_action(
+                principal=owner,
+                brain_id=brain,
+                packet_id=old["id"],
+                run_id="r",
+                action="a",
+            )
+        assert error.value.code == "context_pending"
+    finally:
+        reopened.close()
+
+
+def test_scoped_empty_packet_expires_on_unscoped_prerequisite_activation(
+    active_claim_fixture, monkeypatch
+):
+    s, owner, brain, _, cid = active_claim_fixture
+    project = s.create_entity(
+        principal=owner,
+        brain_id=brain,
+        kind="project",
+        name="Project",
+        citation_ids=[cid],
+    )
+    s.review_records(
+        principal=owner,
+        brain_id=brain,
+        record_type="entity",
+        record_ids=[project["id"]],
+        action="approve",
+    )
+    approve(s, owner, brain, cid, "parent", "orchard parent", valid_from=1100)
+    approve(
+        s,
+        owner,
+        brain,
+        cid,
+        "child",
+        "orchard child",
+        depends_on=["parent"],
+        entity_ids=[project["id"]],
+    )
+    monkeypatch.setattr(time, "time", lambda: 1000.0)
+    old = build(active_claim_fixture, project_id=project["id"])
+    assert old["claims"] == []
+    assert old["expires_at"] == 1100.0
+    monkeypatch.setattr(time, "time", lambda: 1100.0)
+    fresh = build(active_claim_fixture, project_id=project["id"])
+    assert [c["id"] for c in fresh["claims"]] == ["child"]
+    for operation, fields in [
+        (s.validate_packet, {}),
+        (s.begin_action, {"run_id": "r", "action": "a"}),
+    ]:
+        with pytest.raises(BrainError) as error:
+            operation(principal=owner, brain_id=brain, packet_id=old["id"], **fields)
+        assert error.value.code == "stale_packet"
+
+
 def test_receipt_uniqueness_across_service_instances_and_action_tuples(
     active_claim_fixture, tmp_path
 ):

@@ -8,6 +8,109 @@ from wavemind.brain.models import BrainError, Principal
 from wavemind.brain.service import BrainService
 
 
+@pytest.mark.parametrize(
+    "parent_state", ["approved", "unreviewed", "stale", "conflicted"]
+)
+def test_context_conflict_opt_in_only_relaxes_root(source_fixture, parent_state):
+    from wavemind.brain import reconcile
+
+    s, owner, brain, cid = source_fixture
+    propose(
+        source_fixture,
+        claim(cid, "parent", key="parent", valid_until=20),
+        claim(cid, "a", depends_on=["parent"]),
+        claim(cid, "b", "200", depends_on=["parent"]),
+    )
+    review(source_fixture, ["parent", "a", "b"])
+    with s.store.transaction(write=True) as conn:
+        if parent_state == "unreviewed":
+            conn.execute(
+                "UPDATE claims SET payload_json=json_set(payload_json,'$._review','none') WHERE brain_id=? AND id='parent'",
+                (brain,),
+            )
+        elif parent_state == "stale":
+            conn.execute(
+                "UPDATE claims SET payload_json=json_set(payload_json,'$.needs_recheck',json('true')) WHERE brain_id=? AND id='parent'",
+                (brain,),
+            )
+        elif parent_state == "conflicted":
+            conn.execute(
+                "UPDATE claims SET status='conflicted' WHERE brain_id=? AND id='parent'",
+                (brain,),
+            )
+    with s.store.transaction() as conn:
+        args = dict(
+            principal=owner,
+            brain_id=brain,
+            record_type="claim",
+            record_id="a",
+            as_of=10,
+        )
+        assert reconcile.record_eligible(conn, **args) is False
+        assert reconcile.context_record_state(conn, **args, conflict=True) == (
+            parent_state == "approved",
+            (20,),
+        )
+        assert reconcile.context_record_state(
+            conn, **(args | {"as_of": 20}), conflict=True
+        ) == (False, (20,))
+
+
+def test_context_state_finishes_ineligible_prerequisite_walk(
+    source_fixture, monkeypatch
+):
+    from wavemind.brain import reconcile
+
+    s, owner, brain, cid = source_fixture
+    propose(
+        source_fixture,
+        claim(cid, "parent", key="parent", valid_from=1100),
+        claim(cid, "child", valid_from=2000, depends_on=["parent"]),
+    )
+    review(source_fixture, ["parent", "child"])
+    args = dict(
+        principal=owner,
+        brain_id=brain,
+        record_type="claim",
+        record_id="child",
+        as_of=1000,
+    )
+    with s.store.transaction() as conn:
+        assert reconcile.context_record_state(conn, **args) == (False, (1100, 2000))
+    monkeypatch.setattr(reconcile, "MAX_RECORDS", 1)
+    with s.store.transaction() as conn:
+        assert reconcile.record_eligible(conn, **args) is False
+        with pytest.raises(BrainError) as error:
+            reconcile.context_record_state(conn, **args)
+        assert error.value.code == "dependency_limit"
+
+
+def test_context_state_preserves_supersession_lineage_time_exception(source_fixture):
+    from wavemind.brain import reconcile
+
+    s, owner, brain, cid = source_fixture
+    propose(
+        source_fixture,
+        claim(cid, "basis", key="basis", valid_from=5, valid_until=20),
+        claim(cid, "a", valid_from=0, depends_on=["basis"]),
+        claim(cid, "b", "200", valid_from=10, supersedes="a"),
+    )
+    review(source_fixture, ["basis", "a", "b"])
+    with s.store.transaction() as conn:
+        args = dict(
+            principal=owner,
+            brain_id=brain,
+            record_type="claim",
+            record_id="b",
+            as_of=15,
+        )
+        assert reconcile.context_record_state(conn, **args) == (True, (5, 10, 20))
+        assert reconcile.context_record_state(conn, **(args | {"as_of": 20})) == (
+            False,
+            (5, 10, 20),
+        )
+
+
 def import_source(s, owner, brain, content=b"Budget evidence", **fields):
     preview = s.preview_import(
         principal=owner,

@@ -192,10 +192,68 @@ def record_eligible(conn, *, principal, brain_id, record_type, record_id, as_of)
     dependency_cycle/dependency_limit without writing from this read snapshot;
     a write consumer must mark pending and discard partially collected context.
     """
+    return _record_state(
+        conn,
+        principal=principal,
+        brain_id=brain_id,
+        record_type=record_type,
+        record_id=record_id,
+        as_of=as_of,
+    )[0]
+
+
+def context_record_state(
+    conn,
+    *,
+    principal,
+    brain_id,
+    record_type,
+    record_id,
+    as_of,
+    conflict=False,
+):
+    """Return (applicable, sorted temporal bounds) after complete verification.
+
+    Context must inspect currently ineligible prerequisites too: their future
+    activation can change an empty packet. No partial bounds escape if any
+    reached record/origin is inaccessible, missing, cyclic, or over the limit.
+    conflict=True permits only a conflicted claim root as uncertainty, never
+    an ordinary prerequisite. Ordinary record_eligible remains strict.
+    Supersession lineage skips its own bounds, retaining ordinary prerequisites.
+    This read-only helper raises the same sanitized named failures as above;
+    the authorized write consumer owns committing the pending gate.
+    """
+    if type(conflict) is not bool:
+        raise _invalid()
+    return _record_state(
+        conn,
+        principal=principal,
+        brain_id=brain_id,
+        record_type=record_type,
+        record_id=record_id,
+        as_of=as_of,
+        conflict=conflict,
+        complete=True,
+    )
+
+
+def _record_state(
+    conn,
+    *,
+    principal,
+    brain_id,
+    record_type,
+    record_id,
+    as_of,
+    conflict=False,
+    complete=False,
+):
+    """One prerequisite traversal for ordinary eligibility and context state."""
     require_access(conn, principal, brain_id, "read")
     if _timestamp(as_of) is None:
         raise _invalid()
     records, completed, path, authorized_sources = {}, set(), set(), set()
+    applicable, transitions = True, set()
     pending = context_pending(conn, brain_id=brain_id)
     lookup = (
         """SELECT r.*, (SELECT json_group_array(json_array(d.origin_type,d.origin_id,d.source_id))
@@ -253,23 +311,31 @@ def record_eligible(conn, *, principal, brain_id, record_type, record_id, as_of)
             require_access(conn, principal, brain_id, "read", unseen_sources)
             authorized_sources.update(unseen_sources)
         data = row["data"]
-        if pending or data.get("needs_recheck") or data.get("_review") != "approved":
-            return False
-        if row["status"] not in ("active", "superseded"):
-            return False
-        if row["type"] != "claim" and row["status"] != "active":
-            return False
+        eligible = not (
+            pending or data.get("needs_recheck") or data.get("_review") != "approved"
+        )
+        if conflict and rid == record_id:
+            eligible &= row["type"] == "claim" and row["status"] == "conflicted"
+        else:
+            eligible &= row["status"] in ("active", "superseded")
+            eligible &= row["type"] == "claim" or row["status"] == "active"
+        if not eligible and not complete:
+            return False, ()
         if temporal and row["type"] == "claim":
             start, end = (
                 data.get("effective_valid_from"),
                 data.get("effective_valid_until"),
             )
+            transitions.update(bound for bound in (start, end) if bound is not None)
             if (
                 data.get("effective_empty")
                 or (start is not None and as_of < start)
                 or (end is not None and as_of >= end)
             ):
-                return False
+                eligible = False
+        applicable &= eligible
+        if not applicable and not complete:
+            return False, ()
         path.add(rid)
         stack.append((rid, temporal, True, expected_type))
         ordinary = _prerequisites(row)
@@ -286,7 +352,7 @@ def record_eligible(conn, *, principal, brain_id, record_type, record_id, as_of)
             stack.append((parent, True, False, origin_types.get(parent)))
         if data.get("supersedes") and data["supersedes"] not in ordinary:
             stack.append((data["supersedes"], False, False, "claim"))
-    return True
+    return applicable, tuple(sorted(transitions))
 
 
 def _require_record(conn, principal, brain_id, rid, records, record_type=None):
