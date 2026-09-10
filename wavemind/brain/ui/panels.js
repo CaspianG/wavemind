@@ -83,7 +83,7 @@ function memory(parent, s) {
     await post(s, 'claims/propose', {claims: [claim]}); await s.refresh();
   })));
   const relation = details(creation, 'Propose relation'); relation.open = true;
-  const relationKind = field(relation, 'Relation kind', {options: kinds(['related_to', 'justified_by', 'depends_on', 'supersedes', 'action_outcome'])});
+  const relationKind = field(relation, 'Relation kind', {options: kinds(['related_to', 'justified_by', 'depends_on', 'supersedes'])});
   const all = [...s.memory.claims, ...s.memory.entities, ...s.memory.relations];
   const fromRecord = field(relation, 'From record', {options: ids(all)}), toRecord = field(relation, 'To record', {options: ids(all)});
   add(relation, button('Propose relation', () => s.run(async () => {

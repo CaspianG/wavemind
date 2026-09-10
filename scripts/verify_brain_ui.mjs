@@ -199,6 +199,10 @@ try {
   await claim('rationale', 'fact', 'rationale', 'Avoid loss.', transcript, entity.id);
   await claim('question', 'fact', 'open-question', 'Unknown: who signs?', transcript, entity.id);
   await pick(transcript);
+  const relationKinds = await page.getByLabel('Relation kind', {exact: true}).locator('option').evaluateAll(
+    options => options.map(option => option.value),
+  );
+  assert.deepEqual(relationKinds, ['related_to', 'justified_by', 'depends_on', 'supersedes']);
   await page.getByLabel('Relation kind', {exact: true}).selectOption('justified_by');
   await page.getByLabel('From record', {exact: true}).selectOption('decision');
   await page.getByLabel('To record', {exact: true}).selectOption('rationale');

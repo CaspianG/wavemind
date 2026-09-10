@@ -112,6 +112,7 @@ production = [
   "opentelemetry-instrumentation-fastapi>=0.46b0",
 ]
 dev = [
+  "build>=1",
   "pytest>=8",
   "httpx>=0.27",
   "httpx2>=2",
@@ -119,7 +120,9 @@ dev = [
   "mcp>=1.28,<2",
   "pyyaml>=6",
   "ruff==0.15.22",
+  "setuptools>=68",
   "tomli>=2.0.1; python_version < '3.11'",
+  "wheel>=0.42",
 ]
 
 [project.scripts]
