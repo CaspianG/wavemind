@@ -386,7 +386,7 @@ def test_parent_replacement_is_pinned_through_native_creation(tmp_path, monkeypa
     else:
         native_open = credential_file.os.open
 
-        def before_open(path, flags, mode=0o777, *, dir_fd=None):
+        def before_open(path, flags, mode=0o600, *, dir_fd=None):
             if flags & os.O_CREAT:
                 replace_parent()
             return native_open(path, flags, mode, dir_fd=dir_fd)
