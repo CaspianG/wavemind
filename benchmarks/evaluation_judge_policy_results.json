@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.evaluation_judge_policy.v1",
-  "generated_at": "2026-09-10T22:52:07Z",
-  "source_sha": "5ebf531837e3e2b2176bb3e83ef698d279c45e7e",
+  "generated_at": "2026-09-10T23:44:49Z",
+  "source_sha": "fb269290278facadbb8773ab64a01145a2e59693",
   "active_primary_scorers": [
     {
       "family": "state-bench-agent-learning",
@@ -99,6 +99,6 @@
   "integrity": {
     "schema": "wavemind.artifact_integrity.v1",
     "algorithm": "sha256",
-    "payload_sha256": "db69bfde1e5071e8547ca7a294f61ccf4e232b8f2571b5e8534414dc13bdb623"
+    "payload_sha256": "6fbfc4170a3c2651b2888f0d7df2a38b6a6b7106631578b5ecc947cd7b2810c6"
   }
 }
