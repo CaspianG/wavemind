@@ -550,7 +550,12 @@ def test_malformed_and_duplicate_next_relations_fail_closed(link):
     from wavemind.codeql_admission import _next_page
 
     with pytest.raises(CodeQLAdmissionError, match="invalid_pagination"):
-        _next_page(link, REPOSITORY)
+        _next_page(
+            link,
+            REPOSITORY,
+            "https://api.github.com/repos/CaspianG/wavemind/code-scanning/alerts"
+            "?ref=refs%2Fpull%2F121%2Fmerge&state=open&per_page=100",
+        )
 
 
 def test_production_transport_rejects_redirect_before_forwarding_authorization(
@@ -862,3 +867,313 @@ def test_historical_analyses_on_same_ref_are_ignored_for_exact_sha():
 def test_nonzero_analysis_with_silent_empty_alert_pages_fails_closed():
     with pytest.raises(CodeQLAdmissionError, match="missing_alert_results"):
         _verify([[]], deadline_seconds=0.01)
+
+
+def _offline_http_pages(monkeypatch, pages):
+    """Replace only network I/O; retain JSON decoding and real urllib headers."""
+    urls = []
+
+    class Response(io.BytesIO):
+        def __init__(self, payload, link):
+            body = json.dumps(payload).encode("utf-8")
+            super().__init__(body)
+            self.headers = HTTPMessage()
+            self.headers.add_header("Content-Length", str(len(body)))
+            if link is not None:
+                self.headers.add_header("Link", link)
+
+    class Opener:
+        def open(self, request, *, timeout):
+            urls.append(request.full_url)
+            return Response(*pages.pop(0))
+
+    monkeypatch.setattr(urllib.request, "build_opener", lambda _handler: Opener())
+    return urls
+
+
+@pytest.mark.parametrize("repository_id", ["1272624457", "987654321"])
+def test_observed_numeric_main_links_reconstruct_pinned_requests(
+    monkeypatch, repository_id
+):
+    # Rejecting GitHub's numeric path breaks admission; following it changes authority.
+    numeric = f"https://api.github.com/repositories/{repository_id}/code-scanning/"
+    named = "https://api.github.com/repos/CaspianG/wavemind/code-scanning/"
+    query = "ref=refs%2Fheads%2Fmain&per_page=100"
+    current_sha = "f8e0a167fe85b88c7a6c8f3a144294344507bc4a"
+    analyses = [
+        _analysis(category, 201 + index, sha=current_sha, ref=MAIN_REF)
+        for index, category in enumerate(
+            (*SAFE_PRODUCT_CATEGORIES, *CODEQL_WORKFLOW_CATEGORIES)
+        )
+    ]
+    analysis_next = f"{numeric}analyses?{query}&page=2"
+    pages = [
+        (analyses[:2], f'<{analysis_next}>; rel="next", <{analysis_next}>; rel="last"'),
+        (
+            analyses[2:],
+            f'<{numeric}analyses?{query}&page=1>; rel="prev", '
+            f'<{numeric}analyses?{query}&page=1>; rel="first"',
+        ),
+        ([], None),
+        (
+            [
+                _alert(
+                    30,
+                    "high",
+                    "dismissed",
+                    sha=current_sha,
+                    ref=MAIN_REF,
+                    top_state="dismissed",
+                    instance_state="open",
+                )
+            ],
+            f'<{numeric}alerts?ref=refs%2Fheads%2Fmain&state=dismissed&per_page=100&page=2>; rel="next"',
+        ),
+        ([], None),
+        (
+            [
+                _alert(
+                    29, "high", "fixed", sha="4" * 40, ref=MAIN_REF, top_state="fixed"
+                )
+            ],
+            f'<{numeric}alerts?ref=refs%2Fheads%2Fmain&state=fixed&per_page=100&page=2>; rel="next"',
+        ),
+        (
+            [
+                _alert(
+                    31,
+                    "high",
+                    "fixed",
+                    sha="3" * 40,
+                    ref=MAIN_REF,
+                    category="/language:python",
+                    top_state="fixed",
+                )
+            ],
+            f'<{numeric}alerts?ref=refs%2Fheads%2Fmain&state=fixed&per_page=100&page=1>; rel="prev"',
+        ),
+    ]
+    urls = _offline_http_pages(monkeypatch, pages)
+
+    report = verify_codeql_results(
+        repository=REPOSITORY,
+        ref=MAIN_REF,
+        sha=current_sha,
+        token="synthetic-token-not-for-output",
+        deadline_seconds=1,
+    )
+
+    assert report["status"] == "admitted"
+    assert report["alerts"] == {
+        "total": 3,
+        "open_high": 0,
+        "open_critical": 0,
+        "open_other": 0,
+        "dismissed": 1,
+        "historical_fixed": 2,
+    }
+    assert {item["id"] for item in report["analyzed_configurations"]} == {
+        201,
+        202,
+        203,
+        204,
+    }
+    assert (
+        validate_codeql_admission(
+            report, repository=REPOSITORY, ref=MAIN_REF, sha=current_sha
+        )
+        == []
+    )
+    assert urls == [
+        f"{named}analyses?{query}",
+        f"{named}analyses?{query}&page=2",
+        f"{named}alerts?ref=refs%2Fheads%2Fmain&state=open&per_page=100",
+        f"{named}alerts?ref=refs%2Fheads%2Fmain&state=dismissed&per_page=100",
+        f"{named}alerts?ref=refs%2Fheads%2Fmain&state=dismissed&per_page=100&page=2",
+        f"{named}alerts?ref=refs%2Fheads%2Fmain&state=fixed&per_page=100",
+        f"{named}alerts?ref=refs%2Fheads%2Fmain&state=fixed&per_page=100&page=2",
+    ]
+    assert pages == []
+
+
+def test_numeric_alert_pagination_cannot_hide_later_high_finding(monkeypatch):
+    pages = [
+        (
+            [
+                _analysis(category, index + 1)
+                for index, category in enumerate(
+                    (*SAFE_PRODUCT_CATEGORIES, *CODEQL_WORKFLOW_CATEGORIES)
+                )
+            ],
+            None,
+        ),
+        (
+            [_alert(31, "low", "open")],
+            "<https://api.github.com/repositories/1272624457/code-scanning/alerts"
+            '?ref=refs%2Fpull%2F121%2Fmerge&state=open&per_page=100&page=2>; rel="next"',
+        ),
+        ([_alert(32, "high", "open", category="/language:python")], None),
+        ([], None),
+        ([], None),
+    ]
+    urls = _offline_http_pages(monkeypatch, pages)
+
+    report = verify_codeql_results(
+        repository=REPOSITORY,
+        ref=REF,
+        sha=SHA,
+        token="synthetic-token-not-for-output",
+        deadline_seconds=1,
+    )
+
+    assert report["status"] == "blocked"
+    assert report["alerts"]["open_high"] == 1
+    assert report["alerts"]["total"] == 2
+    assert urls[2] == (
+        "https://api.github.com/repos/CaspianG/wavemind/code-scanning/alerts"
+        "?ref=refs%2Fpull%2F121%2Fmerge&state=open&per_page=100&page=2"
+    )
+    assert pages == []
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/repos/CaspianG/wavemind/code-scanning/alerts",
+        "/repositories/1272624457/code-scanning/alerts",
+    ],
+)
+@pytest.mark.parametrize(
+    "query",
+    [
+        "ref=refs%2Fheads%2Fmain&state=open&per_page=100&page=2",
+        "ref=refs%2Fpull%2F121%2Fmerge&state=fixed&per_page=100&page=2",
+        "ref=refs%2Fpull%2F121%2Fmerge&state=open&per_page=10&page=2",
+        "ref=refs%2Fpull%2F121%2Fmerge&state=open&per_page=100&page=2&extra=1",
+        "ref=refs%2Fpull%2F121%2Fmerge&state=open&per_page=100&page=2&page=3",
+        "ref=refs%2Fpull%2F121%2Fmerge&state=open&state=open&per_page=100&page=2",
+        "ref=refs%2Fpull%2F121%2Fmerge&state=open&per_page=100&page=2&%70age=2",
+        "ref=refs%2Fpull%2F121%2Fmerge&state=open&per_page=100&page=0",
+        "ref=refs%2Fpull%2F121%2Fmerge&state=open&per_page=100&page=-1",
+        "ref=refs%2Fpull%2F121%2Fmerge&state=open&per_page=100&page=01",
+        "ref=refs%2Fpull%2F121%2Fmerge&state=open&per_page=100&page=1",
+        "ref=refs%2Fpull%2F121%2Fmerge&state=open&per_page=100&page=3",
+        "ref=refs%2Fpull%2F121%2Fmerge&state=open&per_page=100&page=101",
+        "ref=refs%2Fpull%2F121%2Fmerge&state=open&per_page=100&page=2.0",
+        "ref=refs%2Fpull%2F121%2Fmerge&state=open&per_page=100&page=",
+        "ref=refs%2Fpull%2F121%2Fmerge&state=open&per_page=100",
+        "page=2",
+    ],
+)
+def test_pagination_rejects_changed_or_ambiguous_query_before_fetch(
+    monkeypatch, path, query
+):
+    _assert_hostile_pagination(monkeypatch, f"https://api.github.com{path}?{query}")
+
+
+@pytest.mark.parametrize(
+    "target",
+    [
+        "http://api.github.com/repositories/1272624457/code-scanning/alerts",
+        "https://evil.example/repositories/1272624457/code-scanning/alerts",
+        "https://api.github.com:443/repositories/1272624457/code-scanning/alerts",
+        "https://user@api.github.com/repositories/1272624457/code-scanning/alerts",
+        "https://api.github.com/repos/other/repo/code-scanning/alerts",
+        "https://api.github.com/repos/CaspianG/wavemind/code-scanning/analyses",
+        "https://api.github.com/repositories/1272624457/code-scanning/analyses",
+        "https://api.github.com/repos/CaspianG/wavemind/code-scanning/alerts/../analyses",
+        "https://api.github.com/repos/CaspianG/wavemind/code-scanning/alerts/extra",
+        "https://api.github.com/repositories/1272624457/code-scanning/%61lerts",
+        "https://api.github.com/repositories/0/code-scanning/alerts",
+        "https://api.github.com/repositories/0123/code-scanning/alerts",
+        "https://api.github.com/repositories/-1/code-scanning/alerts",
+        "https://api.github.com/repositories/123.0/code-scanning/alerts",
+        "https://api.github.com/repositories/123/code-scanning//alerts",
+        "https://api.github.com/repositories/123/code-scanning/alerts/",
+    ],
+)
+def test_pagination_rejects_endpoint_or_origin_confusion_before_fetch(
+    monkeypatch, target
+):
+    _assert_hostile_pagination(
+        monkeypatch,
+        f"{target}?ref=refs%2Fpull%2F121%2Fmerge&state=open&per_page=100&page=2",
+    )
+
+
+def _assert_hostile_pagination(monkeypatch, target):
+    pages = [
+        (
+            [
+                _analysis(SAFE_PRODUCT_CATEGORIES[0], 1, results_count=0),
+                _analysis(SAFE_PRODUCT_CATEGORIES[1], 2, results_count=0),
+            ],
+            None,
+        ),
+        ([], f'<{target}>; rel="next"'),
+        ([], None),
+        ([], None),
+        ([], None),
+    ]
+    urls = _offline_http_pages(monkeypatch, pages)
+    with pytest.raises(CodeQLAdmissionError, match="invalid_pagination"):
+        verify_codeql_results(
+            repository=REPOSITORY,
+            ref=REF,
+            sha=SHA,
+            token="synthetic-token-not-for-output",
+            deadline_seconds=1,
+        )
+    assert len(urls) == 2
+
+
+@pytest.mark.parametrize("suffix", ["#fragment", "#", "\n", "\t"])
+def test_pagination_rejects_fragment_and_control_characters(monkeypatch, suffix):
+    _assert_hostile_pagination(
+        monkeypatch,
+        "https://api.github.com/repos/CaspianG/wavemind/code-scanning/alerts"
+        "?ref=refs%2Fpull%2F121%2Fmerge&state=open&per_page=100&page=2" + suffix,
+    )
+
+
+def test_numeric_pagination_loop_is_rejected_before_repeated_fetch(monkeypatch):
+    link = (
+        "<https://api.github.com/repositories/1272624457/code-scanning/analyses"
+        '?ref=refs%2Fpull%2F121%2Fmerge&per_page=100&page=2>; rel="next"'
+    )
+    pages = [([], link), ([], link)]
+    urls = _offline_http_pages(monkeypatch, pages)
+    with pytest.raises(CodeQLAdmissionError, match="invalid_pagination"):
+        verify_codeql_results(
+            repository=REPOSITORY,
+            ref=REF,
+            sha=SHA,
+            token="synthetic-token-not-for-output",
+            deadline_seconds=1,
+        )
+    assert len(urls) == 2
+
+
+def test_numeric_pagination_is_bounded_to_100_pages(monkeypatch):
+    pages = [
+        (
+            [],
+            (
+                "<https://api.github.com/repositories/1272624457/code-scanning/analyses"
+                f'?ref=refs%2Fpull%2F121%2Fmerge&per_page=100&page={page + 1}>; rel="next"'
+            ),
+        )
+        for page in range(1, 101)
+    ]
+    urls = _offline_http_pages(monkeypatch, pages)
+    with pytest.raises(
+        CodeQLAdmissionError, match="pagination_limit|invalid_pagination"
+    ):
+        verify_codeql_results(
+            repository=REPOSITORY,
+            ref=REF,
+            sha=SHA,
+            token="synthetic-token-not-for-output",
+            deadline_seconds=5,
+        )
+    assert len(urls) == 100
