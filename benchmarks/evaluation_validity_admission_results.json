@@ -1,8 +1,8 @@
 {
   "schema": "wavemind.evaluation_validity_admission.v1",
-  "generated_at": "2026-09-10T20:43:40Z",
-  "source_sha": "2c79a6e2113ddda67f4119592be846b115eaf69a",
-  "expected_source_sha": "2c79a6e2113ddda67f4119592be846b115eaf69a",
+  "generated_at": "2026-09-10T21:59:10Z",
+  "source_sha": "b39245ae2219e28405d4663bb051146995e2eaef",
+  "expected_source_sha": "b39245ae2219e28405d4663bb051146995e2eaef",
   "status": "blocked",
   "admitted": false,
   "implemented_rows": 15,
@@ -269,8 +269,8 @@
       "status": "implemented",
       "requirement": "Admission is tied to the exact source SHA and a current source manifest.",
       "evidence": {
-        "source_sha": "2c79a6e2113ddda67f4119592be846b115eaf69a",
-        "expected_source_sha": "2c79a6e2113ddda67f4119592be846b115eaf69a",
+        "source_sha": "b39245ae2219e28405d4663bb051146995e2eaef",
+        "expected_source_sha": "b39245ae2219e28405d4663bb051146995e2eaef",
         "source_manifest": {
           "schema": "wavemind.source_manifest.v1",
           "algorithm": "sha256",
@@ -408,6 +408,6 @@
   "integrity": {
     "schema": "wavemind.artifact_integrity.v1",
     "algorithm": "sha256",
-    "payload_sha256": "cae731491f319c741a3332eeff882d647a32f9c8116f237cc3df800b9a1bf1cd"
+    "payload_sha256": "0a5d57bd3983d05936727b0701d0c3958d0aab6277dedc0456ac89ace633413c"
   }
 }
