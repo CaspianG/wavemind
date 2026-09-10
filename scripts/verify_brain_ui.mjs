@@ -234,6 +234,8 @@ try {
   await click('Client workspace');
   await fill('Project name', variant ? 'Larch client' : 'Maple client');
   const other = await action('/brains', () => click('Create memory'));
+  await page.locator('main[aria-busy="false"]').waitFor();
+  assert.equal((await page.getByTestId('brain-id').textContent()).trim(), other.id);
   const otherSource = await importText('other-client.txt', 'DEMO cross-client private limit 999999.');
   assert.equal((await oldB.client.get(`/brain/api/${other.id}/citations/${otherSource.citations[0].id}`)).status(), 404);
   await click('Projects'); await click('Переезд');

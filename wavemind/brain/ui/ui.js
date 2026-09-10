@@ -2,6 +2,7 @@
 let language = 'ru';
 export function setLanguage(value) { language = value === 'en' ? 'en' : 'ru'; document.documentElement.lang = language; }
 const ru = {
+  'Loading selected memory…': 'Загружается выбранная память…',
   'An update accepts exactly one pasted text or one file.': 'Для обновления нужен ровно один текст или один файл.',
   'Cancellation discards a received preview. An interrupted request may leave an uncommitted draft until its 15-minute expiry; it is never saved automatically.': 'Отмена удаляет полученный предпросмотр. Прерванный запрос может оставить несохранённый черновик на 15 минут; автоматически он не сохраняется.',
   'Technical packet details': 'Технические сведения пакета', 'Current facts': 'Текущие факты', 'Reusable experience': 'Доступный опыт', 'Source quotations': 'Цитаты источников', 'No current facts in this selection.': 'В этой выборке нет текущих фактов.',
@@ -89,6 +90,7 @@ export function button(text, action, secondary = false) {
   const node = el('button', t(text), {type: 'button'});
   if (secondary) node.className = 'secondary';
   node.addEventListener('click', async event => {
+    if (node.disabled || !node.isConnected) return;
     node.disabled = true;
     try { await action(event); } finally { node.disabled = false; }
   }); return node;

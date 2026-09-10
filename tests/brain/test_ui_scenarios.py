@@ -85,6 +85,102 @@ class LocalServer:
         assert not self.thread.is_alive(), "Owned test HTTP server did not stop"
 
 
+@pytest.mark.parametrize("transition", ["mutation", "input"])
+def test_brain_transition_rejects_stale_mutation_and_waits_for_complete_reads(
+    tmp_path, transition
+):
+    node = os.environ.get("BRAIN_UI_NODE") or shutil.which("node")
+    if not node:
+        pytest.skip("UNEXECUTED browser gate: Node/Playwright runtime unavailable")
+    state = tmp_path / "state"
+    auth = BrainAuth(state)
+    secret = auth.bootstrap_owner()
+    owner = auth.authenticate(secret)
+    service = BrainService(state, bootstrap_owner=owner.identity)
+    brains = {}
+    try:
+        for name in ["A", "B"]:
+            brain = service.create_brain(principal=owner, title=f"DEMO Brain {name}")[
+                "id"
+            ]
+            brains[name.lower()] = brain
+            draft = service.preview_import(
+                principal=owner,
+                brain_id=brain,
+                files=[
+                    {
+                        "name": "budget.txt",
+                        "content": f"Only Brain {name} budget".encode(),
+                    }
+                ],
+                new_source_readers=[],
+            )
+            source = service.commit_import(
+                principal=owner,
+                brain_id=brain,
+                preview_id=draft["id"],
+                accepted_ids=[draft["files"][0]["id"]],
+            )["sources"][0]
+            service.propose_claims(
+                principal=owner,
+                brain_id=brain,
+                claims=[
+                    {
+                        "id": "budget",
+                        "kind": "constraint",
+                        "key": "budget",
+                        "content": f"Only Brain {name} budget",
+                        "citation_ids": [source["citations"][0]["id"]],
+                    }
+                ],
+            )
+    finally:
+        service.close()
+        auth.close()
+    with socket.socket() as listener:
+        listener.bind(("127.0.0.1", 0))
+        port = listener.getsockname()[1]
+    server = LocalServer(state, port)
+    evidence = tmp_path / "evidence"
+    evidence.mkdir()
+    print(f"Transition evidence: {evidence}")
+    env = {
+        **os.environ,
+        "BRAIN_UI_ORIGIN": f"http://127.0.0.1:{port}",
+        "BRAIN_UI_OWNER_KEY": secret,
+        "BRAIN_UI_FIXTURE": json.dumps(brains),
+        "BRAIN_UI_TRANSITION": transition,
+        "BRAIN_UI_EVIDENCE": str(evidence),
+    }
+    server.start()
+    try:
+        process = subprocess.run(
+            [node, "tests/brain/ui_transition.mjs"],
+            env=env,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            timeout=60,
+        )
+        assert secret not in process.stdout + process.stderr
+        if process.returncode == 77:
+            pytest.skip("UNEXECUTED browser gate: " + process.stderr.strip())
+        assert process.returncode == 0, process.stdout + process.stderr
+    finally:
+        server.stop()
+    reopened = BrainService(state)
+    try:
+        for brain in brains.values():
+            assert (
+                reopened.review_memory(principal=owner, brain_id=brain)["claims"][0][
+                    "status"
+                ]
+                == "proposed"
+            )
+    finally:
+        reopened.close()
+
+
 @pytest.mark.parametrize(
     "scenario,variant", [("P1", 0), ("P1", 1), ("B1", 0), ("B1", 1)]
 )
