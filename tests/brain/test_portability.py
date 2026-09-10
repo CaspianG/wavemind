@@ -274,8 +274,10 @@ def test_legacy_upgrade_refuses_selected_brain_profile(
     assert not (tmp_path / "incomplete.zip").exists()
 
 
-def verified_runs(service, owner, brain_id, count=3):
-    for index in range(count):
+def verified_runs(
+    service, owner, brain_id, count=3, *, start=0, procedure="Inspect orchard"
+):
+    for index in range(start, start + count):
         packet = service.build_context(
             principal=owner, brain_id=brain_id, question="orchard"
         )
@@ -297,7 +299,7 @@ def verified_runs(service, owner, brain_id, count=3):
             outcome={
                 "idempotency_key": "attempt",
                 "summary": "Inspection done",
-                "procedure": ["Inspect orchard"],
+                "procedure": [procedure],
                 "evidence_citation_ids": [citation],
             },
         )
@@ -1411,5 +1413,464 @@ def test_preview_drafts_are_not_portable_and_repreview_deduplicates(
             assert (
                 conn.execute("SELECT COUNT(*) FROM source_versions").fetchone()[0] == 1
             )
+    finally:
+        restored.close()
+
+
+def test_current_history_pending_gate_survives_restore_and_restart(
+    populated_brain_fixture, tmp_path
+):
+    from wavemind.brain.sources import mark_context_pending
+    from wavemind.brain.store import record_change
+
+    service, owner, brain_id = populated_brain_fixture
+    verified_runs(service, owner, brain_id)
+    archive = tmp_path / "before-pending.wmb"
+    service.backup_brain(principal=owner, brain_id=brain_id, destination=archive)
+    with service.store.transaction(write=True) as conn:
+        mark_context_pending(conn, brain_id=brain_id, reason="dependency_limit")
+        record_change(
+            conn, brain_id=brain_id, kind="context_pending", record_id=brain_id
+        )
+    current = service.build_context(
+        principal=owner, brain_id=brain_id, question="orchard"
+    )
+    assert current["coverage"]["status"] == "pending"
+    assert current["claims"] == current["experiences"] == []
+    profile = tmp_path / "restored"
+    restored = BrainService(profile, bootstrap_owner=owner.identity)
+    try:
+        result = restored.restore_brain(
+            principal=owner,
+            archive=archive,
+            current_state_dir=service.store.path.parent,
+        )
+        assert result["current_history_verified"] is True
+        packet = restored.build_context(
+            principal=owner, brain_id=brain_id, question="orchard"
+        )
+        assert packet["coverage"]["status"] == "pending"
+        assert packet["claims"] == packet["experiences"] == []
+    finally:
+        restored.close()
+    reopened = BrainService(profile)
+    try:
+        packet = reopened.build_context(
+            principal=owner, brain_id=brain_id, question="orchard"
+        )
+        assert packet["coverage"]["status"] == "pending"
+        assert packet["claims"] == packet["experiences"] == []
+        assert (
+            reopened.recheck_dependencies(principal=owner, brain_id=brain_id)["pending"]
+            is False
+        )
+        assert (
+            reopened.build_context(
+                principal=owner, brain_id=brain_id, question="orchard"
+            )["coverage"]["status"]
+            != "pending"
+        )
+    finally:
+        reopened.close()
+
+
+@pytest.mark.parametrize("action", ["revoke", "delete"])
+def test_shared_scope_pending_cleanup_backup_preserves_permitted_history(
+    populated_brain_fixture, tmp_path, action, monkeypatch
+):
+    service, owner, brain_id = populated_brain_fixture
+    verified_runs(service, owner, brain_id)
+    with service.store.transaction() as conn:
+        newest = conn.execute(
+            "SELECT id,payload_json FROM outcomes ORDER BY created_at DESC,id DESC LIMIT 1"
+        ).fetchone()
+        newest_id = newest["id"]
+        citation_id = json.loads(newest["payload_json"])["verification"][
+            "evidence_citation_ids"
+        ][0]
+    evidence_source = service.read_citation(
+        principal=owner, brain_id=brain_id, citation_id=citation_id
+    )["source_id"]
+    with monkeypatch.context() as patch:
+        if action == "delete":
+
+            def unavailable_disk(_):
+                raise OSError("private cleanup unavailable")
+
+            patch.setattr(service.experience.private, "purge", unavailable_disk)
+        changed = service.change_source(
+            principal=owner, brain_id=brain_id, source_id=evidence_source, action=action
+        )
+        if action == "delete":
+            assert changed["private_cleanup"] == "pending"
+    with service.store.transaction() as conn:
+        originals = {
+            row["id"]: json.loads(row["payload_json"])
+            for row in conn.execute("SELECT id,payload_json FROM outcomes")
+        }
+        pending_ids = {
+            row[0]
+            for row in conn.execute("SELECT id FROM outbox WHERE status='pending'")
+        }
+        replay = [
+            tuple(r)
+            for r in conn.execute(
+                "SELECT * FROM brain_experience_evidence ORDER BY key"
+            )
+        ]
+    assert len(pending_ids) == 1
+    archive = tmp_path / "pending-cleanup.wmb"
+    backup = service.backup_brain(
+        principal=owner, brain_id=brain_id, destination=archive
+    )
+    assert set(backup["pending_ids"]) == pending_ids
+    assert "private_cleanup_pending" in backup["warnings"]
+    with service.store.transaction() as conn:
+        assert {
+            row["id"]: json.loads(row["payload_json"])
+            for row in conn.execute("SELECT id,payload_json FROM outcomes")
+        } == originals
+    with zipfile.ZipFile(archive) as opened:
+        assert all(
+            b"Independent successful inspection 2" not in opened.read(name)
+            for name in opened.namelist()
+        )
+    profile = tmp_path / "restored"
+    restored = BrainService(profile, bootstrap_owner=owner.identity)
+    try:
+        result = restored.restore_brain(principal=owner, archive=archive)
+        assert "private_cleanup_pending" in result["warnings"]
+        with restored.store.transaction() as conn:
+            for row in conn.execute("SELECT id,status,payload_json FROM outcomes"):
+                data = json.loads(row["payload_json"])
+                if row["id"] == newest_id:
+                    assert data == {}
+                    assert row["status"] == "revoked"
+                else:
+                    assert row["status"] == "verified"
+                    assert data == {
+                        **originals[row["id"]],
+                        "integration_status": "cleanup_pending",
+                    }
+            assert {
+                r[0]
+                for r in conn.execute("SELECT id FROM outbox WHERE status='pending'")
+            } == pending_ids
+            assert [
+                tuple(r)
+                for r in conn.execute(
+                    "SELECT * FROM brain_experience_evidence ORDER BY key"
+                )
+            ] == replay
+    finally:
+        restored.close()
+    reopened = BrainService(profile)
+    try:
+        pending_backup = reopened.backup_brain(
+            principal=owner,
+            brain_id=brain_id,
+            destination=tmp_path / "still-pending.wmb",
+        )
+        assert "private_cleanup_pending" in pending_backup["warnings"]
+        assert reopened.drain_outbox()["pending"] == 0
+        with reopened.store.transaction() as conn:
+            assert (
+                conn.execute("SELECT COUNT(*) FROM brain_experience_links").fetchone()[
+                    0
+                ]
+                == 0
+            )
+            assert [
+                tuple(r)
+                for r in conn.execute(
+                    "SELECT * FROM brain_experience_evidence ORDER BY key"
+                )
+            ] == replay
+            for row in conn.execute(
+                "SELECT id,payload_json FROM outcomes WHERE payload_json!='{}'"
+            ):
+                assert json.loads(row["payload_json"]) == {
+                    **originals[row["id"]],
+                    "integration_status": "purged",
+                }
+        assert reopened.experience.private.store.candidate_validations() == []
+        drained_backup = reopened.backup_brain(
+            principal=owner, brain_id=brain_id, destination=tmp_path / "drained.wmb"
+        )
+        assert "private_cleanup_pending" not in drained_backup["warnings"]
+        with zipfile.ZipFile(archive) as opened:
+            # An immutable old manifest describes its snapshot, not live state.
+            assert (
+                "private_cleanup_pending"
+                in json.loads(opened.read("manifest.json"))["warnings"]
+            )
+    finally:
+        reopened.close()
+
+
+def test_archive_pending_gate_and_semantic_recheck_are_not_cleared(
+    populated_brain_fixture, tmp_path
+):
+    from wavemind.brain.sources import mark_context_pending
+
+    service, owner, brain_id = populated_brain_fixture
+    source_id = service.list_sources(principal=owner, brain_id=brain_id)[0]["id"]
+    preview = service.preview_import(
+        principal=owner,
+        brain_id=brain_id,
+        files=[
+            {
+                "name": "plan.md",
+                "source_id": source_id,
+                "content": b"Updated orchard plan",
+            }
+        ],
+    )
+    service.commit_import(
+        principal=owner,
+        brain_id=brain_id,
+        preview_id=preview["id"],
+        accepted_ids=[preview["files"][0]["id"]],
+    )
+    with service.store.transaction(write=True) as conn:
+        mark_context_pending(conn, brain_id=brain_id)
+    archive = tmp_path / "pending.wmb"
+    service.backup_brain(principal=owner, brain_id=brain_id, destination=archive)
+    assert (
+        service.recheck_dependencies(principal=owner, brain_id=brain_id)["pending"]
+        is False
+    )
+    restored = BrainService(tmp_path / "restored", bootstrap_owner=owner.identity)
+    try:
+        restored.restore_brain(
+            principal=owner,
+            archive=archive,
+            current_state_dir=service.store.path.parent,
+        )
+        assert (
+            restored.build_context(
+                principal=owner, brain_id=brain_id, question="orchard"
+            )["coverage"]["status"]
+            == "pending"
+        )
+        assert (
+            restored.recheck_dependencies(principal=owner, brain_id=brain_id)["pending"]
+            is False
+        )
+        with restored.store.transaction() as conn:
+            row = conn.execute(
+                "SELECT status,payload_json FROM claims WHERE id='inspection'"
+            ).fetchone()
+            assert row["status"] == "proposed"
+            assert json.loads(row["payload_json"])["needs_recheck"] is True
+        assert (
+            restored.build_context(
+                principal=owner, brain_id=brain_id, question="orchard"
+            )["claims"]
+            == []
+        )
+    finally:
+        restored.close()
+
+
+def test_current_semantic_recheck_restriction_survives_stale_archive(
+    populated_brain_fixture, tmp_path
+):
+    service, owner, brain_id = populated_brain_fixture
+    archive = tmp_path / "before-recheck.wmb"
+    service.backup_brain(principal=owner, brain_id=brain_id, destination=archive)
+    source_id = service.list_sources(principal=owner, brain_id=brain_id)[0]["id"]
+    preview = service.preview_import(
+        principal=owner,
+        brain_id=brain_id,
+        files=[
+            {
+                "name": "plan.md",
+                "source_id": source_id,
+                "content": b"Updated orchard plan",
+            }
+        ],
+    )
+    service.commit_import(
+        principal=owner,
+        brain_id=brain_id,
+        preview_id=preview["id"],
+        accepted_ids=[preview["files"][0]["id"]],
+    )
+    restored = BrainService(tmp_path / "restored", bootstrap_owner=owner.identity)
+    try:
+        restored.restore_brain(
+            principal=owner,
+            archive=archive,
+            current_state_dir=service.store.path.parent,
+        )
+        with restored.store.transaction() as conn:
+            row = conn.execute(
+                "SELECT status,payload_json FROM claims WHERE id='inspection'"
+            ).fetchone()
+            assert json.loads(row["payload_json"]).get("needs_recheck") is True
+            assert row["status"] == "proposed"
+    finally:
+        restored.close()
+
+
+@pytest.mark.parametrize(
+    "action,mutation",
+    [
+        ("revoke", "UPDATE outbox SET status='completed' WHERE kind='source_revoked'"),
+        (
+            "revoke",
+            "DELETE FROM brain_experience_links WHERE outcome_id IN (SELECT id FROM outcomes WHERE status='revoked')",
+        ),
+        ("revoke", "UPDATE sources SET status='active' WHERE status='revoked'"),
+        (
+            "revoke",
+            "DELETE FROM dependencies WHERE dependent_type='outcome' AND source_id IN (SELECT id FROM sources WHERE status='revoked')",
+        ),
+        ("delete", "DELETE FROM tombstones WHERE kind='source_deleted'"),
+    ],
+)
+def test_cleanup_pending_label_requires_real_same_scope_maintenance(
+    populated_brain_fixture, tmp_path, action, mutation, monkeypatch
+):
+    service, owner, brain_id = populated_brain_fixture
+    verified_runs(service, owner, brain_id)
+    with service.store.transaction() as conn:
+        latest = json.loads(
+            conn.execute(
+                "SELECT payload_json FROM outcomes ORDER BY created_at DESC,id DESC LIMIT 1"
+            ).fetchone()[0]
+        )
+    citation = latest["verification"]["evidence_citation_ids"][0]
+    source = service.read_citation(
+        principal=owner, brain_id=brain_id, citation_id=citation
+    )["source_id"]
+    with monkeypatch.context() as patch:
+        if action == "delete":
+
+            def unavailable_disk(_):
+                raise OSError("private cleanup unavailable")
+
+            patch.setattr(service.experience.private, "purge", unavailable_disk)
+        service.change_source(
+            principal=owner, brain_id=brain_id, source_id=source, action=action
+        )
+    archive, invalid = tmp_path / "pending.wmb", tmp_path / "invalid.wmb"
+    service.backup_brain(principal=owner, brain_id=brain_id, destination=archive)
+    rewrite_archive(archive, invalid, tmp_path, sql=[(mutation, ())])
+    restored = BrainService(tmp_path / "restored", bootstrap_owner=owner.identity)
+    try:
+        with pytest.raises(BrainError) as error:
+            restored.restore_brain(principal=owner, archive=invalid)
+        assert error.value.code == "invalid_archive"
+        assert restored.list_brains(principal=owner) == []
+        assert not restored.experience.private.path.exists()
+    finally:
+        restored.close()
+
+
+def test_cleanup_snapshot_preserves_unrelated_scope_and_allows_fresh_learning(
+    populated_brain_fixture, tmp_path
+):
+    from wavemind.brain.portability_archive import private_rows
+
+    service, owner, brain_id = populated_brain_fixture
+    verified_runs(service, owner, brain_id, start=10, procedure="Water orchard")
+    with service.store.transaction() as conn:
+        unrelated_links = [
+            tuple(r)
+            for r in conn.execute("SELECT * FROM brain_experience_links ORDER BY rowid")
+        ]
+        unrelated_namespace = conn.execute(
+            "SELECT namespace FROM brain_experience_links LIMIT 1"
+        ).fetchone()[0]
+    verified_runs(service, owner, brain_id)
+    private_before = private_rows(
+        service.experience.private.store.conn, {unrelated_namespace}
+    )
+    with service.store.transaction() as conn:
+        latest = json.loads(
+            conn.execute(
+                "SELECT payload_json FROM outcomes ORDER BY created_at DESC,id DESC LIMIT 1"
+            ).fetchone()[0]
+        )
+        old_outcomes = {r[0] for r in conn.execute("SELECT id FROM outcomes")}
+        replay = {
+            tuple(r) for r in conn.execute("SELECT * FROM brain_experience_evidence")
+        }
+    source = service.read_citation(
+        principal=owner,
+        brain_id=brain_id,
+        citation_id=latest["verification"]["evidence_citation_ids"][0],
+    )["source_id"]
+    service.change_source(
+        principal=owner, brain_id=brain_id, source_id=source, action="revoke"
+    )
+    live_export = service.export_brain(principal=owner, brain_id=brain_id)
+    assert "cleanup_pending" not in json.dumps(live_export)
+    archive = tmp_path / "pending.wmb"
+    service.backup_brain(principal=owner, brain_id=brain_id, destination=archive)
+    profile = tmp_path / "restored"
+    restored = BrainService(profile, bootstrap_owner=owner.identity)
+    restored.restore_brain(principal=owner, archive=archive)
+    restored.close()
+    restored = BrainService(profile)
+    try:
+        assert (
+            private_rows(restored.experience.private.store.conn, {unrelated_namespace})
+            == private_before
+        )
+        assert restored.drain_outbox()["pending"] == 0
+        assert (
+            private_rows(restored.experience.private.store.conn, {unrelated_namespace})
+            == private_before
+        )
+        with restored.store.transaction() as conn:
+            assert [
+                tuple(r)
+                for r in conn.execute(
+                    "SELECT * FROM brain_experience_links ORDER BY rowid"
+                )
+            ] == unrelated_links
+            assert {
+                tuple(r)
+                for r in conn.execute("SELECT * FROM brain_experience_evidence")
+            } == replay
+        sources = restored.list_managed_sources(principal=owner, brain_id=brain_id)[
+            "sources"
+        ]
+        restored.admit_restored_sources(
+            principal=owner,
+            brain_id=brain_id,
+            source_ids=[r["id"] for r in sources if r["status"] == "quarantined"],
+        )
+        restored.review_claims(
+            principal=owner,
+            brain_id=brain_id,
+            claim_ids=["inspection"],
+            action="recheck",
+        )
+        restored.recheck_dependencies(principal=owner, brain_id=brain_id)
+        verified_runs(restored, owner, brain_id, count=1, start=20)
+        procedures = restored.review_experience(principal=owner, brain_id=brain_id)[
+            "procedures"
+        ]
+        assert len(procedures) == 1
+        assert (
+            procedures[0]["status"] == "shadow" and procedures[0]["eligible"] is False
+        )
+        assert not old_outcomes.intersection(procedures[0]["outcome_ids"])
+        verified_runs(restored, owner, brain_id, count=2, start=21)
+        procedures = restored.review_experience(principal=owner, brain_id=brain_id)[
+            "procedures"
+        ]
+        assert len(procedures) == 1 and procedures[0]["eligible"] is True
+        assert not old_outcomes.intersection(procedures[0]["outcome_ids"])
+        assert len(restored.experience.private.store.candidate_validations()) == 3
+        with restored.store.transaction() as conn:
+            assert replay <= {
+                tuple(r)
+                for r in conn.execute("SELECT * FROM brain_experience_evidence")
+            }
     finally:
         restored.close()

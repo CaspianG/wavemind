@@ -10,7 +10,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from .access import _not_found, allowed_sources, require_access
-from .experience_records import digest, origins_for
+from .experience_records import digest, encode, origins_for
 from .experience_bridge import public_experience_id
 from .models import BrainError, Principal
 from .store import record_change
@@ -254,6 +254,8 @@ def backup_brain(service, *, principal, brain_id, destination):
             warnings = ["import_previews_not_restored"]
             if forbidden:
                 warnings.append("unavailable_content_omitted")
+            if archive_io.pending_cleanup_namespaces(data):
+                warnings.append("private_cleanup_pending")
             private_state = (
                 "included"
                 if private_data is not None
@@ -292,6 +294,8 @@ def backup_brain(service, *, principal, brain_id, destination):
 
 def _same_history(archived, current, private, current_private):
     for table, values in archived.items():
+        # Durable context restrictions are merged independently at activation;
+        # matching historical records never grants permission to clear a gate.
         if table in {"brains", "members", "audit", "previews", "brain_context_state"}:
             continue
         present = {digest(r) for r in current[table]}
@@ -327,8 +331,17 @@ def _current_history(path, principal, brain_id, data, private_data):
         proved = _same_history(data, current, private_data, current_private)
         lifecycle = {r["id"]: r["status"] for r in current["sources"]}
         tombstones = current["tombstones"]
+        context_state = current["brain_context_state"]
+        recheck = {
+            table: {
+                row["id"]
+                for row in current[table]
+                if json.loads(row["payload_json"]).get("needs_recheck") is True
+            }
+            for table in ("entities", "claims", "relations")
+        }
         conn.rollback()
-        return proved, lifecycle, tombstones
+        return proved, lifecycle, tombstones, context_state, recheck
 
 
 def _recovery_error():
@@ -491,9 +504,21 @@ def _restore_brain(service, *, principal, archive, current_state_dir=None):
                         "invalid_input",
                         "Current history must be a separate authorized profile.",
                     )
-                proved, lifecycle, tombstones = _current_history(
-                    current_state_dir, principal, brain_id, data, private_data
+                proved, lifecycle, tombstones, current_context_state, recheck = (
+                    _current_history(
+                        current_state_dir, principal, brain_id, data, private_data
+                    )
                 )
+                if any(row["pending"] for row in current_context_state):
+                    data["brain_context_state"] = current_context_state
+                for table, record_ids in recheck.items():
+                    for row in data[table]:
+                        if row["id"] in record_ids and row["status"] != "revoked":
+                            payload = json.loads(row["payload_json"])
+                            if payload:
+                                payload["needs_recheck"] = True
+                                row["payload_json"] = encode(payload)
+                                row["status"] = "proposed"
             deleted = {
                 r["record_id"]
                 for r in [*tombstones, *data["tombstones"]]
@@ -565,6 +590,8 @@ def _restore_brain(service, *, principal, archive, current_state_dir=None):
                 raise
     recover_restore(profile)
     warnings = ["import_previews_not_restored"]
+    if archive_io.pending_cleanup_namespaces(data):
+        warnings.append("private_cleanup_pending")
     if any(row["status"] == "quarantined" for row in data["sources"]):
         warnings += [
             "restored_sources_quarantined",

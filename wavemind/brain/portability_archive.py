@@ -243,10 +243,75 @@ def scrub_unavailable(data):
         for r in data["brain_experience_links"]
         if ("outcome", r["outcome_id"]) in affected
     }
+    # A source cleanup drains the whole dirty private scope. Deletion has
+    # already erased source dependency rows, but the opaque dirty mappings
+    # and real pending operation remain the durable maintenance authority.
+    pending_namespaces = pending_cleanup_namespaces(data)
+    blocked_namespaces.update(pending_namespaces)
+    pending_outcomes = {
+        r["outcome_id"]
+        for r in data["brain_experience_links"]
+        if r["namespace"] in pending_namespaces
+    }
+    for value in data["outcomes"]:
+        if value["id"] in pending_outcomes and value["status"] in {
+            "verified",
+            "failed",
+        }:
+            payload = json.loads(value["payload_json"])
+            if payload:
+                payload["integration_status"] = "cleanup_pending"
+                value["payload_json"] = encode(payload)
     for value in data["outbox"]:
         if value["source_id"] in forbidden:
             value["payload_json"] = "{}"
     return forbidden, blocked_namespaces
+
+
+def pending_cleanup_namespaces(data):
+    """Scopes covered by actual pending unavailable-source maintenance.
+
+    The existing drain handles every dirty scope in the same Brain; this is
+    not a new source-to-scope claim, nor a caller-supplied integration label.
+    """
+    sources = {r["id"]: r["status"] for r in data["sources"]}
+    deleted = {
+        r["record_id"] for r in data["tombstones"] if r["kind"] == "source_deleted"
+    }
+    revoked_pending = {
+        r["source_id"]
+        for r in data["outbox"]
+        if r["status"] == "pending"
+        and r["kind"] == "source_revoked"
+        and sources.get(r["source_id"]) == "revoked"
+    }
+    deletion_pending = any(
+        r["status"] == "pending"
+        and r["kind"] == "source_deleted"
+        and sources.get(r["source_id"]) == "deleted"
+        and r["source_id"] in deleted
+        for r in data["outbox"]
+    )
+    revoked_contributors = {
+        r["dependent_id"]
+        for r in data["dependencies"]
+        if r["dependent_type"] == "outcome" and r["source_id"] in revoked_pending
+    }
+    dirty = {
+        r["id"]
+        for r in data["outcomes"]
+        if (r["status"] == "revoked" or r["payload_json"] == "{}")
+        and (
+            r["id"] in revoked_contributors
+            or deletion_pending
+            and r["payload_json"] == "{}"
+        )
+    }
+    return {
+        r["namespace"]
+        for r in data["brain_experience_links"]
+        if r["outcome_id"] in dirty
+    }
 
 
 def private_rows(conn, namespaces):
@@ -418,18 +483,28 @@ def validate_private_support(data, private_data):
         if private_data is None
         else {r["id"]: r for r in private_data["experience_records"]}
     )
+    pending_namespaces = pending_cleanup_namespaces(data)
     for outcome in data["outcomes"]:
         payload = json.loads(outcome["payload_json"])
-        if (
-            outcome["status"] not in {"verified", "failed"}
-            or payload.get("integration_status") != "completed"
-        ):
-            continue
         mappings = [
             r
             for r in data["brain_experience_links"]
             if r["outcome_id"] == outcome["id"] and r["experience_id"]
         ]
+        if payload.get("integration_status") == "cleanup_pending":
+            if (
+                outcome["status"] not in {"verified", "failed"}
+                or not mappings
+                or any(r["namespace"] not in pending_namespaces for r in mappings)
+                or any(r["namespace"] in pending_namespaces for r in records.values())
+            ):
+                raise invalid_archive()
+            continue
+        if (
+            outcome["status"] not in {"verified", "failed"}
+            or payload.get("integration_status") != "completed"
+        ):
+            continue
         if not mappings or any(
             r["experience_id"] not in records
             or records[r["experience_id"]]["namespace"] != r["namespace"]
