@@ -3,10 +3,12 @@
 import base64
 import binascii
 import json
+from contextlib import asynccontextmanager
+from importlib.resources import files
 from typing import Annotated, Literal
 
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from starlette.concurrency import run_in_threadpool
 
@@ -124,6 +126,12 @@ class ManagedSources(Strict):
     cursor: Text | None = None
 
 
+class SourceCitations(Strict):
+    limit: Page = 50
+    cursor: Text | None = None
+    versions: Literal["current", "all"] = "current"
+
+
 class RestoredSource(Strict):
     limit: Page = 100
     version_cursor: Text | None = None
@@ -163,6 +171,7 @@ OPERATIONS = {
     "preview_import": Preview,
     "commit_import": Commit,
     "list_sources": Empty,
+    "list_source_citations": SourceCitations,
     "propose_claims": Claims,
     "review_claims": ReviewClaims,
     "review_records": ReviewRecords,
@@ -261,6 +270,26 @@ class BrainBoundary:
         if scope["type"] != "http" or not scope["path"].startswith("/brain"):
             return await self.app(scope, receive, send)
         headers = {}
+
+        async def private_send(message):
+            if message["type"] == "http.response.start":
+                privacy = {
+                    b"cache-control": b"no-store",
+                    b"referrer-policy": b"no-referrer",
+                    b"x-content-type-options": b"nosniff",
+                    b"content-security-policy": (
+                        b"default-src 'none'; script-src 'self'; style-src 'self'; "
+                        b"connect-src 'self'; img-src 'self'; base-uri 'none'; "
+                        b"form-action 'self'; frame-ancestors 'none'"
+                    ),
+                }
+                message["headers"] = [
+                    (k, v)
+                    for k, v in message.get("headers", [])
+                    if k.lower() not in privacy
+                ] + list(privacy.items())
+            await send(message)
+
         try:
             for key, value in scope["headers"]:
                 if key in headers and key in (
@@ -307,19 +336,9 @@ class BrainBoundary:
                 delivered = True
                 return {"type": "http.request", "body": bytes(body), "more_body": False}
 
-            async def private_send(message):
-                if message["type"] == "http.response.start":
-                    message["headers"] = [
-                        *message.get("headers", []),
-                        (b"cache-control", b"no-store"),
-                        (b"referrer-policy", b"no-referrer"),
-                        (b"x-content-type-options", b"nosniff"),
-                    ]
-                await send(message)
-
             await self.app(scope, bounded_receive, private_send)
         except BrainError as error:
-            await error_response(error)(scope, receive, send)
+            await error_response(error)(scope, receive, private_send)
 
 
 ROUTES = [
@@ -328,6 +347,7 @@ ROUTES = [
     ("POST", "/{brain_id}/sources/preview", "preview_import"),
     ("POST", "/{brain_id}/sources/commit", "commit_import"),
     ("GET", "/{brain_id}/sources", "list_sources"),
+    ("GET", "/{brain_id}/sources/{source_id}/citations", "list_source_citations"),
     ("GET", "/{brain_id}/sources/managed", "list_managed_sources"),
     ("POST", "/{brain_id}/sources/admit", "admit_restored_sources"),
     ("GET", "/{brain_id}/sources/{source_id}/review", "review_restored_source"),
@@ -360,6 +380,34 @@ def mount_brain(app: FastAPI, service, auth) -> None:
         auth, "allowed_hosts", ("127.0.0.1:8000", "localhost:8000", "[::1]:8000")
     )
     app.add_middleware(BrainBoundary, hosts=hosts)
+
+    async def owner_page():
+        return Response(
+            files("wavemind.brain").joinpath("ui", "index.html").read_bytes(),
+            media_type="text/html",
+        )
+
+    app.add_api_route("/brain", owner_page, methods=["GET"], include_in_schema=False)
+    app.add_api_route("/brain/", owner_page, methods=["GET"], include_in_schema=False)
+
+    @app.get("/brain/favicon.ico", include_in_schema=False)
+    async def owner_icon():
+        return Response(status_code=204)
+
+    @app.get("/brain/ui/{asset}", include_in_schema=False)
+    async def owner_asset(asset: str):
+        media = {
+            "app.js": "text/javascript",
+            "ui.js": "text/javascript",
+            "panels.js": "text/javascript",
+            "style.css": "text/css",
+        }
+        if asset not in media:
+            raise BrainError("not_found", "Resource not found.")
+        return Response(
+            files("wavemind.brain").joinpath("ui", asset).read_bytes(),
+            media_type=media[asset],
+        )
 
     @app.exception_handler(BrainError)
     async def handle_error(request, error):
@@ -474,5 +522,22 @@ def mount_brain(app: FastAPI, service, auth) -> None:
             methods=[method],
             name="brain_" + operation,
         )
-    app.router.add_event_handler("shutdown", service.close)
-    app.router.add_event_handler("shutdown", auth.close)
+    from .maintenance import BrainMaintenance
+
+    previous_lifespan = app.router.lifespan_context
+
+    @asynccontextmanager
+    async def brain_lifespan(application):
+        maintenance = BrainMaintenance(service)
+        try:
+            async with previous_lifespan(application) as state:
+                await maintenance.start()
+                try:
+                    yield state
+                finally:
+                    await maintenance.stop()
+        finally:
+            service.close()
+            auth.close()
+
+    app.router.lifespan_context = brain_lifespan

@@ -227,6 +227,227 @@ def test_three_independent_results_activate_and_survive_restart(
     reopened.close()
 
 
+@pytest.mark.parametrize("reverse", [False, True])
+def test_corrected_basis_learns_after_three_new_runs_and_keeps_lineage(
+    action_fixture, tmp_path, reverse
+):
+    s, owner, agent, brain, old_receipt, original_citation = action_fixture
+    independent_runs(s, owner, agent, brain, prefix="before-correction")
+    assert s.review_experience(principal=owner, brain_id=brain)["procedures"][0][
+        "eligible"
+    ]
+    citation = import_text(s, owner, brain, "Corrected orchard requirement.")[
+        "citations"
+    ][0]["id"]
+    claims = [
+        {
+            "id": "middle",
+            "kind": "goal",
+            "key": "orchard",
+            "content": "Check revised orchard.",
+            "citation_ids": [citation],
+            "supersedes": "goal",
+            "valid_from": 1,
+        },
+        {
+            "id": "latest",
+            "kind": "goal",
+            "key": "orchard",
+            "content": "Check final orchard.",
+            "citation_ids": [citation],
+            "supersedes": "middle",
+            "valid_from": 2,
+        },
+    ]
+    s.propose_claims(
+        principal=owner,
+        brain_id=brain,
+        claims=list(reversed(claims)) if reverse else claims,
+    )
+    s.review_claims(
+        principal=owner,
+        brain_id=brain,
+        claim_ids=["middle", "latest"],
+        action="approve",
+    )
+    assert (
+        s.build_context(principal=owner, brain_id=brain, question="orchard")[
+            "experiences"
+        ]
+        == []
+    )
+    s.drain_outbox()
+    late_evidence = import_text(
+        s, owner, brain, "Late report on old pre-correction basis."
+    )["citations"][0]["id"]
+    late = outcome(s, agent, brain, old_receipt, late_evidence)
+    with pytest.raises(BrainError) as old_scope:
+        verify(s, owner, brain, late, late_evidence)
+    assert old_scope.value.code == "cleanup_pending"
+    s.drain_outbox()
+    assert not any(
+        p["eligible"]
+        for p in s.review_experience(principal=owner, brain_id=brain)["procedures"]
+    )
+    independent_runs(s, owner, agent, brain, prefix="after-correction")
+    assert any(
+        p["eligible"]
+        for p in s.review_experience(principal=owner, brain_id=brain)["procedures"]
+    )
+    s.close()
+    reopened = BrainService(tmp_path)
+    try:
+        assert (
+            len(
+                reopened.build_context(
+                    principal=owner, brain_id=brain, question="orchard"
+                )["experiences"]
+            )
+            == 1
+        )
+        source = reopened.read_citation(
+            principal=owner, brain_id=brain, citation_id=original_citation
+        )["source_id"]
+        reopened.change_source(
+            principal=owner, brain_id=brain, source_id=source, action="revoke"
+        )
+        assert (
+            reopened.build_context(principal=owner, brain_id=brain, question="orchard")[
+                "experiences"
+            ]
+            == []
+        )
+    finally:
+        reopened.close()
+
+
+def test_lineage_also_ordinary_dependency_cannot_bypass_time_or_recheck(action_fixture):
+    from wavemind.brain.experience_records import live_basis
+
+    s, owner, agent, brain, _, citation = action_fixture
+    boundary = time.time() + 300
+    s.propose_claims(
+        principal=owner,
+        brain_id=brain,
+        claims=[
+            {
+                "id": "future-correction",
+                "kind": "goal",
+                "key": "orchard",
+                "content": "Future orchard correction.",
+                "citation_ids": [citation],
+                "supersedes": "goal",
+                "depends_on": ["goal"],
+                "valid_from": boundary,
+            }
+        ],
+    )
+    s.review_claims(
+        principal=owner,
+        brain_id=brain,
+        claim_ids=["future-correction"],
+        action="approve",
+    )
+    packet = s.build_context(
+        principal=agent, brain_id=brain, question="orchard", max_bytes=1024
+    )
+    assert packet["claims"] == []  # Trimmed semantic origins still constrain reuse.
+    receipt = s.begin_action(
+        principal=agent,
+        brain_id=brain,
+        packet_id=packet["id"],
+        run_id="trimmed-basis",
+        action="Check orchard",
+    )
+    recorded = outcome(s, agent, brain, receipt["id"], citation)
+    with s.store.transaction() as conn:
+        data = json.loads(
+            conn.execute(
+                "SELECT payload_json FROM outcomes WHERE id=?", (recorded["id"],)
+            ).fetchone()[0]
+        )
+        assert not live_basis(
+            conn, principal=owner, brain_id=brain, data=data, moment=boundary - 1
+        )[0]
+        assert not live_basis(
+            conn, principal=owner, brain_id=brain, data=data, moment=boundary + 1
+        )[0]
+
+
+@pytest.mark.parametrize("control", ["recheck", "cycle", "missing_coverage"])
+def test_lineage_root_reduction_fails_closed_on_unusable_provenance(
+    action_fixture, monkeypatch, control
+):
+    from wavemind.brain import reconcile
+    from wavemind.brain.experience_records import basis_fingerprint, live_basis
+
+    s, owner, agent, brain, _, citation = action_fixture
+    s.propose_claims(
+        principal=owner,
+        brain_id=brain,
+        claims=[
+            {
+                "id": "corrected",
+                "kind": "goal",
+                "key": "orchard",
+                "content": "Corrected orchard.",
+                "citation_ids": [citation],
+                "supersedes": "goal",
+                "valid_from": 1,
+            }
+        ],
+    )
+    s.review_claims(
+        principal=owner, brain_id=brain, claim_ids=["corrected"], action="approve"
+    )
+    receipt = action(s, agent, brain, run="guard-control")
+    recorded = outcome(s, agent, brain, receipt["id"], citation)
+    with s.store.transaction(write=True) as conn:
+        data = json.loads(
+            conn.execute(
+                "SELECT payload_json FROM outcomes WHERE id=?", (recorded["id"],)
+            ).fetchone()[0]
+        )
+        assert live_basis(
+            conn, principal=owner, brain_id=brain, data=data, moment=time.time()
+        )[0]
+        if control == "missing_coverage":
+            original = reconcile.context_record_state
+
+            def incomplete(*args, **kwargs):
+                eligible, bounds, origins = original(*args, **kwargs)
+                return (
+                    eligible,
+                    bounds,
+                    {o for o in origins if o[:2] != ("claim", "goal")},
+                )
+
+            monkeypatch.setattr(reconcile, "context_record_state", incomplete)
+        else:
+            row = json.loads(
+                conn.execute(
+                    "SELECT payload_json FROM claims WHERE id='goal'"
+                ).fetchone()[0]
+            )
+            row["needs_recheck" if control == "recheck" else "supersedes"] = (
+                True if control == "recheck" else "corrected"
+            )
+            conn.execute(
+                "UPDATE claims SET payload_json=? WHERE id='goal'", (json.dumps(row),)
+            )
+            # Recompute only the local test argument so the live traversal/root guard,
+            # not an already-covered immutable fingerprint mismatch, rejects it.
+            data["_basis"] = basis_fingerprint(
+                conn,
+                brain_id=brain,
+                project_id=data["project_id"],
+                origins={tuple(o) for o in data["_basis_origins"]},
+            )
+        assert not live_basis(
+            conn, principal=owner, brain_id=brain, data=data, moment=time.time()
+        )[0]
+
+
 def test_replay_with_new_outcome_keys_packets_or_run_evidence_cannot_promote(
     action_fixture,
 ):
@@ -279,9 +500,7 @@ def test_distinct_citations_with_identical_content_reserve_once(action_fixture):
     replay_cid = import_text(s, owner, brain, texts[0])["citations"][0]["id"]
     assert replay_cid not in evidence
     replay = outcome(s, agent, brain, other_receipt["id"], replay_cid)
-    assert (
-        verify(s, owner, brain, replay, replay_cid)["integration_status"] == "replay"
-    )
+    assert verify(s, owner, brain, replay, replay_cid)["integration_status"] == "replay"
     s.drain_outbox()
     assert len(s.experience.private.store.candidate_validations()) == 1
     assert [

@@ -144,6 +144,9 @@ include = ["wavemind*"]
 wavemind = [
   "THIRD_PARTY_NOTICES.md",
   "licenses/*.txt",
+  "brain/ui/*.html",
+  "brain/ui/*.js",
+  "brain/ui/*.css",
 ]
 
 [tool.ruff]

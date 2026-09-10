@@ -1,6 +1,7 @@
 """Credential-bound Brain MCP tools with strict shared JSON schemas."""
 
 import json
+from contextlib import asynccontextmanager
 from typing import Literal
 
 from pydantic import create_model
@@ -22,7 +23,11 @@ def _models():
             fields["citation_id"] = (Text, ...)
         if operation in ("verify_outcome", "verify_outcome_with"):
             fields["outcome_id"] = (Text, ...)
-        if operation in ("review_restored_source", "change_source"):
+        if operation in (
+            "review_restored_source",
+            "change_source",
+            "list_source_citations",
+        ):
             fields["source_id"] = (Text, ...)
         if operation == "change_source":
             fields["action"] = (Literal["pause", "resume", "revoke", "delete"], ...)
@@ -66,7 +71,7 @@ class BrainMCPAdapter:
         for field in ("brain_id", "citation_id", "outcome_id"):
             if field in values:
                 path[field] = values.pop(field)
-        if name in ("change_source", "review_restored_source"):
+        if name in ("change_source", "review_restored_source", "list_source_citations"):
             path["source_id"] = values.pop("source_id")
         if name == "change_source":
             path["action"] = values.pop("action")
@@ -124,6 +129,16 @@ def build_brain_mcp_server(service, auth, token: str):
     from mcp.types import Tool, CallToolResult, TextContent
 
     adapter = BrainMCPAdapter(service, auth.authenticate(token), auth=auth, token=token)
+    from .maintenance import BrainMaintenance
+
+    @asynccontextmanager
+    async def lifespan(server):
+        maintenance = BrainMaintenance(service)
+        await maintenance.start()
+        try:
+            yield {}
+        finally:
+            await maintenance.stop()
 
     class AuthenticatedBrainMCP(FastMCP):
         # Public FastMCP handlers are overridden deliberately: its default
@@ -163,5 +178,5 @@ def build_brain_mcp_server(service, auth, token: str):
                 )
 
     return AuthenticatedBrainMCP(
-        name="WaveMind Brain", json_response=True, log_level="ERROR"
+        name="WaveMind Brain", json_response=True, log_level="ERROR", lifespan=lifespan
     )

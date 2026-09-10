@@ -204,9 +204,30 @@ def live_basis(conn, *, principal, brain_id, data, moment):
         packet is not None and packet[0] == "active" and data["_basis"] is not None
     )
     transitions, reached = set(), set(origins)
-    for kind, rid in sorted(
-        {(o[0], o[1]) for o in origins if o[0] in reconcile.TABLES}
-    ):
+    candidates = {(o[0], o[1]) for o in origins if o[0] in reconcile.TABLES}
+    roots = set(candidates)
+    # Full provenance includes supersession predecessors. Only the shared
+    # traversal may decide whether they are temporal ordinary prerequisites or
+    # non-temporal lineage; do not independently re-root lineage-only records.
+    for kind, rid in candidates:
+        if kind != "claim":
+            continue
+        row = conn.execute(
+            "SELECT payload_json FROM claims WHERE brain_id=? AND id=?", (brain_id, rid)
+        ).fetchone()
+        if row is None:
+            raise _not_found()
+        try:
+            predecessor = json.loads(row[0]).get("supersedes")
+        except (ValueError, AttributeError):
+            raise _not_found() from None
+        if predecessor is not None:
+            if not isinstance(predecessor, str) or not predecessor:
+                raise _not_found()
+            roots.discard(("claim", predecessor))
+    covered = set()
+    eligible &= not candidates or bool(roots)
+    for kind, rid in sorted(roots):
         current, bounds, dependencies = reconcile.context_record_state(
             conn,
             principal=principal,
@@ -218,6 +239,8 @@ def live_basis(conn, *, principal, brain_id, data, moment):
         eligible &= current
         transitions.update(bounds)
         reached.update(dependencies)
+        covered.update((origin[0], origin[1]) for origin in dependencies)
+    eligible &= candidates <= covered
     eligible &= (
         basis_fingerprint(
             conn, brain_id=brain_id, project_id=data["project_id"], origins=origins

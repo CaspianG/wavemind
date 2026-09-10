@@ -696,6 +696,71 @@ class Sources:
                 conn, principal=principal, brain_id=brain_id, citation_id=citation_id
             )
 
+    def list_source_citations(
+        self,
+        *,
+        principal: Principal,
+        brain_id: str,
+        source_id: str,
+        limit: int = 50,
+        cursor: str | None = None,
+        versions: str = "current",
+    ) -> dict:
+        if (
+            type(limit) is not int
+            or not 1 <= limit <= 100
+            or versions not in ("current", "all")
+        ):
+            raise _invalid()
+        if cursor is not None:
+            bounded_text(cursor)
+        with self.store.transaction() as conn:
+            require_access(conn, principal, brain_id, "read", [source_id])
+            version = conn.execute(
+                "SELECT max(version) FROM source_versions WHERE brain_id=? AND source_id=?",
+                (brain_id, source_id),
+            ).fetchone()[0]
+            selected = " AND v.version=?" if versions == "current" else ""
+            params = [brain_id, source_id] + (
+                [version] if versions == "current" else []
+            )
+            base = (
+                """FROM chunks c JOIN source_versions v
+                ON c.brain_id=v.brain_id AND c.source_id=v.source_id AND c.version_id=v.id
+                WHERE c.brain_id=? AND c.source_id=?"""
+                + selected
+            )
+            keyset = ""
+            if cursor is not None:
+                row = conn.execute(
+                    "SELECT v.version,c.ordinal,c.id " + base + " AND c.id=?",
+                    [*params, cursor],
+                ).fetchone()
+                if row is None:
+                    raise _not_found()
+                keyset = " AND (v.version,c.ordinal,c.id) > (?,?,?)"
+                params.extend(row)
+            rows = conn.execute(
+                "SELECT c.id "
+                + base
+                + keyset
+                + " ORDER BY v.version,c.ordinal,c.id LIMIT ?",
+                [*params, limit + 1],
+            ).fetchall()
+            return {
+                "source_id": source_id,
+                "citations": [
+                    resolve_citation(
+                        conn,
+                        principal=principal,
+                        brain_id=brain_id,
+                        citation_id=row["id"],
+                    )
+                    for row in rows[:limit]
+                ],
+                "next_cursor": rows[limit - 1]["id"] if len(rows) > limit else None,
+            }
+
     def list_sources(self, *, principal: Principal, brain_id: str) -> list[dict]:
         with self.store.transaction() as conn:
             visible = allowed_sources(conn, principal, brain_id)

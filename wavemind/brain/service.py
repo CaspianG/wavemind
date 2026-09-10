@@ -323,6 +323,25 @@ class BrainService:
     def list_sources(self, *, principal: Principal, brain_id: str) -> list[dict]:
         return self.sources.list_sources(principal=principal, brain_id=brain_id)
 
+    def list_source_citations(
+        self,
+        *,
+        principal: Principal,
+        brain_id: str,
+        source_id: str,
+        limit: int = 50,
+        cursor: str | None = None,
+        versions: str = "current",
+    ) -> dict:
+        return self.sources.list_source_citations(
+            principal=principal,
+            brain_id=brain_id,
+            source_id=source_id,
+            limit=limit,
+            cursor=cursor,
+            versions=versions,
+        )
+
     def change_source(
         self, *, principal: Principal, brain_id: str, source_id: str, action: str
     ) -> dict:
