@@ -14,7 +14,13 @@ from .experience_bridge import ExperienceBridge
 
 
 class BrainService:
-    def __init__(self, state_dir: Path):
+    def __init__(self, state_dir: Path, *, bootstrap_owner: str | None = None):
+        from .portability import recover_restore
+
+        if bootstrap_owner is not None:
+            bounded_text(bootstrap_owner)
+        self.bootstrap_owner = bootstrap_owner
+        recover_restore(state_dir)
         self.store = BrainStore(state_dir)
         self.sources = Sources(self.store)
         self.reconciliation = Reconciliation(self.store)
@@ -22,6 +28,81 @@ class BrainService:
         self.experience = ExperienceBridge(self.store, state_dir)
         self._private_experience_provider = self.experience.eligible_experiences
         self.context.experience_provider = self._private_experience_provider
+
+    def export_brain(self, *, principal: Principal, brain_id: str) -> dict:
+        from .portability import export_brain
+
+        return export_brain(self, principal=principal, brain_id=brain_id)
+
+    def backup_brain(
+        self, *, principal: Principal, brain_id: str, destination: Path
+    ) -> dict:
+        from .portability import backup_brain
+
+        return backup_brain(
+            self, principal=principal, brain_id=brain_id, destination=destination
+        )
+
+    def restore_brain(
+        self,
+        *,
+        principal: Principal,
+        archive: Path,
+        current_state_dir: Path | None = None,
+    ) -> dict:
+        from .portability import restore_brain
+
+        return restore_brain(
+            self,
+            principal=principal,
+            archive=archive,
+            current_state_dir=current_state_dir,
+        )
+
+    def list_managed_sources(
+        self,
+        *,
+        principal: Principal,
+        brain_id: str,
+        limit: int = 100,
+        cursor: str | None = None,
+    ) -> dict:
+        from .portability import list_managed_sources
+
+        return list_managed_sources(
+            self, principal=principal, brain_id=brain_id, limit=limit, cursor=cursor
+        )
+
+    def review_restored_source(
+        self,
+        *,
+        principal: Principal,
+        brain_id: str,
+        source_id: str,
+        limit: int = 100,
+        version_cursor: str | None = None,
+        citation_cursor: str | None = None,
+    ) -> dict:
+        from .portability import review_restored_source
+
+        return review_restored_source(
+            self,
+            principal=principal,
+            brain_id=brain_id,
+            source_id=source_id,
+            limit=limit,
+            version_cursor=version_cursor,
+            citation_cursor=citation_cursor,
+        )
+
+    def admit_restored_sources(
+        self, *, principal: Principal, brain_id: str, source_ids: list[str]
+    ) -> dict:
+        from .portability import admit_restored_sources
+
+        return admit_restored_sources(
+            self, principal=principal, brain_id=brain_id, source_ids=source_ids
+        )
 
     def record_outcome(
         self, *, principal: Principal, brain_id: str, receipt_id: str, outcome: dict

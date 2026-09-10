@@ -225,8 +225,8 @@ def test_no_scope_or_operation_grant_creates_membership(tmp_path):
                 "restore",
             },
         ),
-        ("editor", {"read", "import", "propose", "record_outcome"}),
-        ("reader", {"read"}),
+        ("editor", {"read", "import", "propose", "record_outcome", "export"}),
+        ("reader", {"read", "export"}),
     ],
 )
 def test_live_human_role_operation_matrix(tmp_path, role, allowed):

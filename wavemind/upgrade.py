@@ -657,6 +657,14 @@ def _backup_assets(options: UpgradeOptions) -> list[tuple[str, Path, str]]:
     return assets
 
 
+def _reject_brain_profile(options: UpgradeOptions) -> None:
+    for database in (options.core_db, options.experience_db):
+        if (database.resolve().parent / "brain.sqlite3").exists():
+            raise UpgradeBlocked(
+                "Brain profiles require the Brain backup and migration commands; legacy upgrade is incomplete"
+            )
+
+
 def create_upgrade_backup(
     options: UpgradeOptions,
     destination: Path,
@@ -664,6 +672,7 @@ def create_upgrade_backup(
     source_version: str,
     target_version: str,
 ) -> Path:
+    _reject_brain_profile(options)
     destination.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="wavemind-upgrade-backup-", dir=destination.parent) as raw:
         staging = Path(raw)
@@ -747,6 +756,9 @@ def verify_upgrade_backup(path: Path) -> dict[str, Any]:
 
 def restore_upgrade_backup(path: Path) -> None:
     manifest = verify_upgrade_backup(path)
+    for entry in manifest["files"]:
+        if str(entry["kind"]).startswith("sqlite") and (Path(str(entry["target_path"])).resolve().parent / "brain.sqlite3").exists():
+            raise UpgradeBlocked("Brain profiles require the Brain restore command; legacy restore is incomplete")
     with contextlib.ExitStack() as stack:
         prepared: list[tuple[Path, Path | None, Path]] = []
         with zipfile.ZipFile(path, "r") as archive:
@@ -1231,6 +1243,7 @@ def run_upgrade(
     *,
     runner: CommandRunner = _run_command,
 ) -> UpgradeReport:
+    _reject_brain_profile(options)
     if options.mode not in {"python", "docker-compose"}:
         raise UpgradeBlocked(f"unsupported upgrade mode: {options.mode}")
     core = options.core_db.resolve()

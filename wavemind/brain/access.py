@@ -9,8 +9,8 @@ from .models import OPERATIONS, BrainError, Principal
 
 _ROLE_OPERATIONS = {
     "owner": OPERATIONS,
-    "editor": frozenset({"read", "import", "propose", "record_outcome"}),
-    "reader": frozenset({"read"}),
+    "editor": frozenset({"read", "import", "propose", "record_outcome", "export"}),
+    "reader": frozenset({"read", "export"}),
 }
 _AGENT_OPERATIONS = frozenset({"read", "import", "propose", "record_outcome", "export"})
 

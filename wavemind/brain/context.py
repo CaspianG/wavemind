@@ -549,6 +549,15 @@ class Context:
             )
             if pending:
                 packet["warnings"].append("context_pending_no_action")
+            # Only an independently authorized owner-management view may reveal
+            # that unavailable sources await restore inspection.
+            try:
+                require_access(conn, principal, brain_id, "manage_access")
+            except BrainError:
+                pass
+            else:
+                if conn.execute("SELECT 1 FROM sources WHERE brain_id=? AND status='quarantined' LIMIT 1", (brain_id,)).fetchone():
+                    packet["warnings"].append("restored_sources_quarantined")
             _assemble(packet, groups)
             while packet["cost"]["bytes"] > max_bytes and groups:
                 groups.pop()
