@@ -51,6 +51,10 @@ establish delivery of D1, a signed Windows installer, or a team deployment.
 The following library and benchmark sections describe the established runtime.
 Brain's authenticated storage and agent contract are documented separately above.
 
+The legacy `consolidate_concepts()` API, `wavemind consolidate` and
+`POST /consolidate` turn active graph clusters into memories with source IDs.
+This library consolidation path does not replace Brain's owner review.
+
 Most agent memory stores what an agent **saw**. WaveMind reuses what independent
 evidence says **worked**. A test, operator, tool or downstream state must verify
 the outcome first; without valid evidence, a procedure is not promoted.
@@ -154,6 +158,8 @@ The [personal guide](docs/brain/personal.md) covers setup, correction, access,
 backup and errors. This is a developer launch, not a bundled installer.
 
 For the published legacy library, the separate recall quick start is:
+
+[Legacy terminal demonstration](docs/assets/wavemind-demo.gif) · [Demo script](docs/DEMO_SCRIPT.md).
 
 ```sh
 python -m pip install wavemind
