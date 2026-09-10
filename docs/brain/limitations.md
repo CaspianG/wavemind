@@ -87,12 +87,14 @@ authenticated target owner is missing; archive/body identity cannot supply one.
 `recovery_required` requires resolving the recovery state before ordinary use.
 No lost-owner-secret reset is provided.
 
-The protected key file is flushed before the owner credential is committed.
-There is no atomic transaction spanning the file and SQLite. A write or flush
-failure leaves no newly usable owner. A crash after file creation but before the
-database commit can leave an ambiguous file; a later `init` refuses to overwrite
-it, reports incomplete initialization, and requires manual inspection rather
-than inventing a reset or deleting user data. Repeated `init` never replaces an
+The protected key file is flushed before the owner credential is committed; on
+POSIX, its containing directory is also flushed so the new directory entry is
+durable. There is no atomic transaction spanning the file and SQLite. A write,
+file-flush or directory-flush failure leaves no newly usable owner, but can leave
+an ambiguous protected partial file. A crash after file creation but before the
+database commit can do the same. A later `init` refuses to overwrite that file,
+reports incomplete initialization, and requires manual inspection rather than
+inventing a reset or deleting user data. Repeated `init` never replaces an
 existing owner or key file.
 
 Sanitized backups can preserve readable history as `cleanup_pending` while
@@ -215,10 +217,12 @@ WaveMind. Старый успех не доказывает пользу пам�
 проверки зависимостей. `bootstrap_required` означает отсутствие доверенного
 владельца назначения, `recovery_required` требует разрешить состояние
 восстановления. Ключ владельца нельзя сбросить архивом или повторным `init`.
-Файл ключа сбрасывается на диск до фиксации владельца в SQLite, но общей атомарной
-транзакции нет. Сбой записи не создаёт действующего владельца. После аварии может
-остаться неоднозначный файл без зафиксированного владельца; повторный `init` его
-не удаляет и не перезаписывает, а сообщает о незавершённой инициализации.
+Файл ключа сбрасывается на диск до фиксации владельца в SQLite; в POSIX отдельно
+сбрасывается и содержащий его каталог. Общей атомарной транзакции нет. Сбой
+записи или синхронизации не создаёт действующего владельца, но может оставить
+неоднозначный защищённый частичный файл. То же возможно после аварии. Повторный
+`init` такой файл не удаляет и не перезаписывает, а сообщает о незавершённой
+инициализации.
 
 Команда проверки выше запускает настоящие тесты с привязкой к чистому SHA.
 Неисполненный обязательный тест не становится успешным. Только закрытый список

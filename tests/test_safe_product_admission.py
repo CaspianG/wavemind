@@ -43,7 +43,7 @@ def _codeql_results(source_sha: str, *, admitted=True):
                 "open_critical": 0,
                 "open_other": 0,
                 "dismissed": 0,
-                "fixed": 0,
+                "historical_fixed": 0,
             },
         }
     )

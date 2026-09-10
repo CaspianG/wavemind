@@ -18,8 +18,8 @@ SAFE_PRODUCT_CATEGORIES = (
     ".github/workflows/safe-product.yml:sast/language:javascript-typescript",
 )
 CODEQL_WORKFLOW_CATEGORIES = (
-    ".github/workflows/codeql.yml:analyze/language:python",
-    ".github/workflows/codeql.yml:analyze/language:javascript-typescript",
+    "/language:python",
+    "/language:javascript-typescript",
 )
 SCHEMA = "wavemind.codeql_admission.v1"
 API_ORIGIN = "https://api.github.com"
@@ -46,6 +46,13 @@ class CodeQLAdmissionError(RuntimeError):
     """Sanitized, fail-closed CodeQL verification failure."""
 
 
+class _RejectRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, request, fp, code, message, headers, new_url):
+        raise urllib.error.HTTPError(
+            request.full_url, code, "redirect rejected", headers, fp
+        )
+
+
 def _validated_inputs(repository: str, ref: str, sha: str, token: str) -> None:
     if not isinstance(repository, str) or not REPOSITORY_RE.fullmatch(repository):
         raise CodeQLAdmissionError("invalid_repository")
@@ -65,7 +72,8 @@ def fetch_github_json(
     """Fetch one pinned GitHub API page without exposing remote response bodies."""
     try:
         request = urllib.request.Request(url, headers=dict(headers), method="GET")
-        with urllib.request.urlopen(request, timeout=timeout) as response:
+        opener = urllib.request.build_opener(_RejectRedirect())
+        with opener.open(request, timeout=timeout) as response:
             length = response.headers.get("Content-Length")
             if length is not None and int(length) > max_body:
                 raise CodeQLAdmissionError("response_too_large")
@@ -73,7 +81,7 @@ def fetch_github_json(
             if len(body) > max_body:
                 raise CodeQLAdmissionError("response_too_large")
             value = json.loads(body.decode("utf-8"))
-            return value, dict(response.headers.items())
+            return value, response.headers
     except CodeQLAdmissionError:
         raise
     except urllib.error.HTTPError as error:
@@ -91,10 +99,14 @@ def _next_page(link: str | None, repository: str) -> str | None:
     next_urls = []
     for item in link.split(","):
         match = re.fullmatch(r'\s*<([^>]+)>\s*;\s*rel="([^"]+)"\s*', item)
-        if match and match.group(2) == "next":
+        if match is None:
+            raise CodeQLAdmissionError("invalid_pagination")
+        if "next" in match.group(2).split():
             next_urls.append(match.group(1))
-    if len(next_urls) != 1:
+    if len(next_urls) > 1:
         raise CodeQLAdmissionError("invalid_pagination")
+    if not next_urls:
+        return None
     url = next_urls[0]
     parsed = urllib.parse.urlsplit(url)
     prefix = f"/repos/{repository}/code-scanning/"
@@ -109,12 +121,31 @@ def _next_page(link: str | None, repository: str) -> str | None:
     return url
 
 
+def _header(headers: Mapping[str, str], name: str) -> str | None:
+    matches = [
+        value
+        for key, value in headers.items()
+        if isinstance(key, str) and key.casefold() == name.casefold()
+    ]
+    if len(matches) > 1 or any(not isinstance(value, str) for value in matches):
+        raise CodeQLAdmissionError("invalid_pagination")
+    return matches[0] if matches else None
+
+
+def _remaining(deadline: float) -> float:
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise CodeQLAdmissionError("deadline_exceeded")
+    return remaining
+
+
 def _pages(
     url: str,
     *,
     repository: str,
     token: str,
     fetch_json: Callable,
+    deadline: float,
 ) -> list[dict]:
     headers = {
         "Accept": "application/vnd.github+json",
@@ -125,6 +156,7 @@ def _pages(
     values: list[dict] = []
     seen = set()
     for _ in range(100):
+        timeout = min(REQUEST_TIMEOUT_SECONDS, _remaining(deadline))
         if url in seen:
             raise CodeQLAdmissionError("invalid_pagination")
         seen.add(url)
@@ -132,15 +164,24 @@ def _pages(
             page, response_headers = fetch_json(
                 url,
                 headers=headers,
-                timeout=REQUEST_TIMEOUT_SECONDS,
+                timeout=timeout,
                 max_body=MAX_BODY_BYTES,
             )
         except CodeQLAdmissionError:
+            if time.monotonic() >= deadline:
+                raise CodeQLAdmissionError("deadline_exceeded") from None
             raise
         except (TimeoutError, OSError):
+            if time.monotonic() >= deadline:
+                raise CodeQLAdmissionError("deadline_exceeded") from None
             raise CodeQLAdmissionError("api_failure") from None
         except Exception:
+            if time.monotonic() >= deadline:
+                raise CodeQLAdmissionError("deadline_exceeded") from None
             raise CodeQLAdmissionError("malformed_response") from None
+        _remaining(deadline)
+        if not isinstance(response_headers, Mapping):
+            raise CodeQLAdmissionError("malformed_response")
         if not isinstance(page, list) or not all(
             isinstance(item, dict) for item in page
         ):
@@ -148,8 +189,9 @@ def _pages(
         values.extend(page)
         if len(values) > 10_000:
             raise CodeQLAdmissionError("response_limit")
-        url = _next_page(response_headers.get("Link"), repository)
+        url = _next_page(_header(response_headers, "Link"), repository)
         if url is None:
+            _remaining(deadline)
             return values
     raise CodeQLAdmissionError("pagination_limit")
 
@@ -195,14 +237,20 @@ def _analysis_configurations(analyses: list[dict], *, ref: str, sha: str) -> lis
     return configurations
 
 
-def _alert_counts(alerts: list[dict], *, ref: str, sha: str) -> dict[str, int]:
+def _alert_counts(
+    alerts: list[dict],
+    *,
+    ref: str,
+    sha: str,
+    current_categories: set[str],
+) -> tuple[dict[str, int], int]:
     counts = {
         "total": 0,
         "open_high": 0,
         "open_critical": 0,
         "open_other": 0,
         "dismissed": 0,
-        "fixed": 0,
+        "historical_fixed": 0,
     }
     known_categories = set(SAFE_PRODUCT_CATEGORIES) | set(CODEQL_WORKFLOW_CATEGORIES)
     numbers = set()
@@ -216,9 +264,9 @@ def _alert_counts(alerts: list[dict], *, ref: str, sha: str) -> dict[str, int]:
             or number in numbers
             or not isinstance(rule, dict)
             or not isinstance(rule.get("id"), str)
+            or not rule["id"]
             or not isinstance(instance, dict)
             or instance.get("ref") != ref
-            or instance.get("commit_sha") != sha
             or instance.get("category") not in known_categories
         ):
             raise CodeQLAdmissionError("malformed_alert")
@@ -234,6 +282,30 @@ def _alert_counts(alerts: list[dict], *, ref: str, sha: str) -> dict[str, int]:
             or top_state not in {None, query_state}
         ):
             raise CodeQLAdmissionError("unknown_alert_value")
+        historical_fixed = query_state == "fixed"
+        if historical_fixed:
+            instance_sha = instance.get("commit_sha")
+            fixed_at = alert.get("fixed_at")
+            if (
+                instance_state != "fixed"
+                or not isinstance(instance_sha, str)
+                or not SHA_RE.fullmatch(instance_sha)
+                or (
+                    fixed_at is not None
+                    and (not isinstance(fixed_at, str) or not fixed_at)
+                )
+            ):
+                raise CodeQLAdmissionError("malformed_fix")
+        elif (
+            instance.get("commit_sha") != sha
+            or instance.get("category") not in current_categories
+            or (query_state == "open" and instance_state != "open")
+            or (
+                query_state == "dismissed"
+                and instance_state not in {"open", "dismissed"}
+            )
+        ):
+            raise CodeQLAdmissionError("malformed_alert")
         counts["total"] += 1
         if query_state == "dismissed":
             if not isinstance(alert.get("dismissed_at"), str) or alert.get(
@@ -241,17 +313,15 @@ def _alert_counts(alerts: list[dict], *, ref: str, sha: str) -> dict[str, int]:
             ) not in {"false positive", "won't fix", "used in tests"}:
                 raise CodeQLAdmissionError("malformed_dismissal")
             counts["dismissed"] += 1
-        elif query_state == "fixed":
-            if not isinstance(alert.get("fixed_at"), str):
-                raise CodeQLAdmissionError("malformed_fix")
-            counts["fixed"] += 1
+        elif historical_fixed:
+            counts["historical_fixed"] += 1
         elif severity == "critical":
             counts["open_critical"] += 1
         elif severity == "high":
             counts["open_high"] += 1
         else:
             counts["open_other"] += 1
-    return counts
+    return counts, counts["total"] - counts["historical_fixed"]
 
 
 def verify_codeql_results(
@@ -276,38 +346,50 @@ def verify_codeql_results(
             repository=repository,
             token=token,
             fetch_json=fetch_json,
+            deadline=deadline,
         )
         try:
             configurations = _analysis_configurations(analyses, ref=ref, sha=sha)
             break
         except CodeQLAdmissionError as error:
-            if str(error) != "missing_analysis" or time.monotonic() >= deadline:
+            if str(error) != "missing_analysis":
                 raise
-            time.sleep(min(retry_seconds, max(0, deadline - time.monotonic())))
-    expected_any_results = any(
-        config["results_count"] > 0
-        for config in configurations
-        if config["category"] in SAFE_PRODUCT_CATEGORIES
-    )
+            time.sleep(min(retry_seconds, _remaining(deadline)))
+    expected_any_results = any(config["results_count"] > 0 for config in configurations)
+    current_categories = {config["category"] for config in configurations}
     while True:
         alerts = []
         for state in ("open", "dismissed", "fixed"):
             alert_query = urllib.parse.urlencode(
                 {"ref": ref, "state": state, "per_page": 100}
             )
-            state_alerts = _pages(
-                f"{API_ORIGIN}/repos/{repository}/code-scanning/alerts?{alert_query}",
-                repository=repository,
-                token=token,
-                fetch_json=fetch_json,
-            )
+            try:
+                state_alerts = _pages(
+                    f"{API_ORIGIN}/repos/{repository}/code-scanning/alerts?{alert_query}",
+                    repository=repository,
+                    token=token,
+                    fetch_json=fetch_json,
+                    deadline=deadline,
+                )
+            except CodeQLAdmissionError as error:
+                if str(error) == "deadline_exceeded" and expected_any_results:
+                    raise CodeQLAdmissionError("missing_alert_results") from None
+                raise
             alerts.extend({**alert, "_query_state": state} for alert in state_alerts)
-        if alerts or not expected_any_results:
+        _remaining(deadline)
+        counts, current_alert_count = _alert_counts(
+            alerts,
+            ref=ref,
+            sha=sha,
+            current_categories=current_categories,
+        )
+        if current_alert_count or not expected_any_results:
             break
-        if time.monotonic() >= deadline:
+        remaining = _remaining(deadline)
+        if remaining <= retry_seconds:
             raise CodeQLAdmissionError("missing_alert_results")
-        time.sleep(min(retry_seconds, max(0, deadline - time.monotonic())))
-    counts = _alert_counts(alerts, ref=ref, sha=sha)
+        time.sleep(min(retry_seconds, remaining))
+    _remaining(deadline)
     admitted = not counts["open_high"] and not counts["open_critical"]
     return attach_artifact_integrity(
         {
@@ -354,7 +436,7 @@ def validate_codeql_admission(
         "open_critical",
         "open_other",
         "dismissed",
-        "fixed",
+        "historical_fixed",
     }
     if (
         not isinstance(counts, Mapping)
