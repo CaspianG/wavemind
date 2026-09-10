@@ -100,6 +100,31 @@ def test_missing_result_failure_and_partial_suite_are_not_passes():
     )
 
 
+@pytest.mark.parametrize(
+    "gate,case",
+    [
+        ("F08", "test_private_reported_candidate_retains_identity_and_evidence"),
+        ("F13", "test_legacy_runtime_does_not_derive_reported_procedure"),
+    ],
+)
+def test_private_candidate_identity_is_required_evidence(gate, case):
+    from scripts.verify_brain_d1 import build_report
+
+    source = {"sha": "a" * 40, "clean": True, "manifest_sha256": "b" * 64}
+    execution = _execution()
+    case = "tests/brain/test_private_runtime.py::" + case
+    execution["outcomes"][case] = "fail"
+    assert (
+        build_report(source, source, source["sha"], execution)["gates"][gate] == "fail"
+    )
+    execution["collected"] = [node for node in execution["collected"] if node != case]
+    execution["outcomes"].pop(case, None)
+    assert (
+        build_report(source, source, source["sha"], execution)["gates"][gate]
+        == "unexecuted"
+    )
+
+
 def test_pytest_collector_keeps_teardown_failure_and_never_serializes_failure_text():
     from types import SimpleNamespace
     from scripts.verify_brain_d1 import ExecutionCollector

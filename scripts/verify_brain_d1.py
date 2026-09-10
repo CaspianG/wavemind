@@ -62,6 +62,10 @@ REQUIRED_CASES = {
         _case("maintenance", "retry_real_queued_outcome_and_await_inflight_shutdown"),
     ],
     "F08": [
+        _case(
+            "private_runtime",
+            "private_reported_candidate_retains_identity_and_evidence",
+        ),
         _case("experience_bridge", "owner_attestation_does_not_activate_one_run"),
         _case(
             "experience_bridge",
@@ -98,6 +102,7 @@ REQUIRED_CASES = {
         ),
     ],
     "F13": [
+        _case("private_runtime", "legacy_runtime_does_not_derive_reported_procedure"),
         "tests/test_api_process_persistence.py::test_api_persists_10_memories_across_process_restart",
         "tests/test_cli_smoke.py::test_module_cli_remember_query_stats_and_backup",
         "tests/test_mcp_server.py::test_mcp_stdio_persists_across_restart_and_isolates_namespaces",
@@ -119,11 +124,12 @@ GATE_MODULES = {
     "F05": "sources source_citations context http mcp_cli",
     "F06": "store_access sources reconcile context experience_bridge portability http mcp_cli source_citations ui_scenarios",
     "F07": "sources reconcile context experience_bridge maintenance source_citations ui_scenarios",
-    "F08": "context experience_bridge maintenance source_citations ui_scenarios",
+    "F08": "context experience_bridge private_runtime maintenance source_citations ui_scenarios",
     "F09": "sources reconcile experience_bridge portability ui_scenarios",
     "F10": "portability mcp_cli",
     "F11": "sources http mcp_cli ui_scenarios",
     "F12": "ui_scenarios mcp_cli source_citations",
+    "F13": "private_runtime",
     "F14": "sources context experience_bridge http mcp_cli ui_scenarios",
 }
 
