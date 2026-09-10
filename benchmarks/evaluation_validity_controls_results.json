@@ -378,8 +378,8 @@
     ]
   },
   "schema": "wavemind.evaluation_validity_controls.v1",
-  "generated_at": "2026-09-10T16:40:47Z",
-  "source_sha": "07e470be883762f1543791438fce1c6a843071aa",
+  "generated_at": "2026-09-10T20:43:36Z",
+  "source_sha": "2c79a6e2113ddda67f4119592be846b115eaf69a",
   "source_manifest": {
     "schema": "wavemind.source_manifest.v1",
     "algorithm": "sha256",
@@ -420,6 +420,6 @@
   "integrity": {
     "schema": "wavemind.artifact_integrity.v1",
     "algorithm": "sha256",
-    "payload_sha256": "b2342b6f82405d1c2efafe4576ca8becfbb5207164b43bf1cfd8798b96a4b515"
+    "payload_sha256": "9ce42ebb58b38fc667357f73778e8b5aaaeb38fd52d9cede264c802e2416c257"
   }
 }
