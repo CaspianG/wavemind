@@ -329,7 +329,9 @@ def build_experience_mcp_server(
     name: str = "WaveMind Experience",
 ) -> Any:
     try:
-        from mcp.server.fastmcp import FastMCP
+        from .mcp_compat import require_fastmcp
+
+        FastMCP, _ = require_fastmcp()
     except ImportError as exc:
         raise RuntimeError(
             'MCP support requires: pip install "wavemind[mcp]"'

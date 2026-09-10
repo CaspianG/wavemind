@@ -10,6 +10,7 @@ claim boundaries consistent across GitHub, the product site, demos, and posts.
 
 | Product truth | Status | Evidence |
 |---|---|---|
+| Brain D1 | `source_preview`; source-only; Python required, plaintext nonsecret pilot | [Local owner workflow](brain/personal.md); exact-candidate D1 evidence required |
 | Public release | `v2.14.0`; runtime source `e93954d40285` | PyPI package `wavemind` and `ghcr.io/caspiang/wavemind:2.14.0` |
 | Current release | `v2.14.0` at `e93954d40285`; `published` | Upgrade admission `admitted_19_of_19`; GitHub Release, PyPI, and GHCR verified |
 | Safe Product snapshot | `historical`, 18/18 checks at `92c539d0a069` | [`benchmarks/safe_product_admission_results.json`](../benchmarks/safe_product_admission_results.json) |

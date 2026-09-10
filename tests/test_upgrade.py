@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import errno
 import hashlib
 import json
 import sqlite3
@@ -528,6 +529,153 @@ def test_tampered_upgrade_backup_is_rejected(tmp_path):
 
     with pytest.raises(UpgradeArtifactError, match="size mismatch"):
         restore_upgrade_backup(tampered)
+
+
+def _volume_replace(*roots):
+    real_replace = upgrade.os.replace
+
+    def volume(path):
+        resolved = Path(path).resolve()
+        return next((root for root in roots if resolved.is_relative_to(root)), None)
+
+    def same_volume_only(source, target):
+        if volume(source) != volume(target):
+            raise OSError(errno.EXDEV, "cross-device replacement")
+        return real_replace(source, target)
+
+    return same_volume_only
+
+
+def test_restore_stages_each_asset_on_its_target_volume(tmp_path, monkeypatch):
+    first, second = tmp_path / "volume-a", tmp_path / "volume-b"
+    first.mkdir()
+    second.mkdir()
+    core, experience, _, _ = _state(first)
+    config = second / "client.json"
+    config.write_text('{"saved": true}', encoding="utf-8")
+    wheel, digest = _wheel(first / "wavemind-2.12.1-py3-none-any.whl", "2.12.1")
+    options = _options(first, core, experience, wheel, digest, config_paths=(config,))
+    archive = create_upgrade_backup(
+        options, first / "backup.zip", source_version="2.12.1", target_version="2.12.1"
+    )
+    config.write_text("changed", encoding="utf-8")
+    monkeypatch.setattr(upgrade.os, "replace", _volume_replace(first, second))
+
+    restore_upgrade_backup(archive)
+
+    assert config.read_text(encoding="utf-8") == '{"saved": true}'
+    assert database_inventory(core)["tables"]["memories"]["rows"] == 1
+    assert database_inventory(experience)["tables"]["experience_records"]["rows"] == 1
+    assert not list(tmp_path.rglob(".wavemind-restore-*"))
+
+
+@pytest.mark.parametrize("rollback_fails", [False, True])
+def test_restore_late_failure_rolls_back_bytes_and_absence_across_volumes(
+    tmp_path, monkeypatch, rollback_fails,
+):
+    first, second = tmp_path / "volume-a", tmp_path / "volume-b"
+    first.mkdir()
+    second.mkdir()
+    core, experience, _, _ = _state(first)
+    config = second / "client.json"
+    removed = second / "formerly-absent.json"
+    last = first / "objects.json"
+    config.write_bytes(b"saved config")
+    last.write_bytes(b"saved objects")
+    wheel, digest = _wheel(first / "wavemind-2.12.1-py3-none-any.whl", "2.12.1")
+    options = _options(
+        first, core, experience, wheel, digest,
+        config_paths=(config, removed), object_manifest_paths=(last,),
+    )
+    archive = create_upgrade_backup(
+        options, first / "backup.zip", source_version="2.12.1", target_version="2.12.1"
+    )
+    connection = sqlite3.connect(core)
+    try:
+        connection.execute("DELETE FROM memories")
+        connection.commit()
+    finally:
+        connection.close()
+    before = {path: path.read_bytes() for path in (core, experience)}
+    config.unlink()
+    removed.write_bytes(b"current config\x00\xff")
+    last.write_bytes(b"current objects")
+    before.update({removed: b"current config\x00\xff", last: b"current objects"})
+    unrelated = second / ".wavemind-restore-unrelated"
+    unrelated.mkdir()
+    (unrelated / "keep").write_bytes(b"unrelated")
+    same_volume_only = _volume_replace(first, second)
+    failure = OSError("injected later asset failure")
+
+    def fail_late(source, target):
+        if Path(target) == last and Path(source).read_bytes() == b"saved objects":
+            raise failure
+        if rollback_fails and Path(target) == removed:
+            raise OSError("injected recovery failure")
+        return same_volume_only(source, target)
+
+    real_copy2 = upgrade.shutil.copy2
+
+    def no_direct_target_copy(source, target, *args, **kwargs):
+        if Path(target) in before:
+            raise AssertionError("rollback must replace targets atomically")
+        return real_copy2(source, target, *args, **kwargs)
+
+    monkeypatch.setattr(upgrade.os, "replace", fail_late)
+    monkeypatch.setattr(upgrade.shutil, "copy2", no_direct_target_copy)
+
+    if rollback_fails:
+        with pytest.raises(upgrade.UpgradeRollbackError, match="injected recovery failure") as caught:
+            restore_upgrade_backup(archive)
+        assert caught.value.__cause__ is failure
+        assert not removed.exists()
+        before.pop(removed)
+    else:
+        with pytest.raises(OSError, match="injected later asset failure") as caught:
+            restore_upgrade_backup(archive)
+        assert caught.value is failure
+    assert {path: path.read_bytes() for path in before} == before
+    assert not config.exists()
+    assert list(tmp_path.rglob(".wavemind-restore-*")) == [unrelated]
+    assert (unrelated / "keep").read_bytes() == b"unrelated"
+    monkeypatch.setattr(upgrade.os, "replace", same_volume_only)
+    restore_upgrade_backup(archive)
+    assert config.read_bytes() == b"saved config"
+    assert not removed.exists()
+    assert last.read_bytes() == b"saved objects"
+    assert database_inventory(core)["tables"]["memories"]["rows"] == 1
+    assert list(tmp_path.rglob(".wavemind-restore-*")) == [unrelated]
+
+
+def test_restore_validates_all_sqlite_candidates_before_replacement(tmp_path, monkeypatch):
+    core, experience, _, _ = _state(tmp_path)
+    wheel, digest = _wheel(tmp_path / "wavemind-2.12.1-py3-none-any.whl", "2.12.1")
+    archive = create_upgrade_backup(
+        _options(tmp_path, core, experience, wheel, digest),
+        tmp_path / "backup.zip", source_version="2.12.1", target_version="2.12.1",
+    )
+    invalid = tmp_path / "invalid.zip"
+    with zipfile.ZipFile(archive) as source, zipfile.ZipFile(invalid, "w") as target:
+        manifest = json.loads(source.read("manifest.json"))
+        for entry in manifest["files"]:
+            payload = source.read(entry["archive_path"])
+            if entry["kind"] == "sqlite-experience":
+                payload = b"not a SQLite database"
+                entry["size_bytes"] = len(payload)
+                entry["sha256"] = hashlib.sha256(payload).hexdigest()
+            target.writestr(entry["archive_path"], payload)
+        target.writestr("manifest.json", json.dumps(manifest))
+    before = {path: path.read_bytes() for path in (core, experience)}
+
+    def no_replacement_before_validation(*_args):
+        raise AssertionError("all candidates must be validated before replacement")
+
+    monkeypatch.setattr(upgrade.os, "replace", no_replacement_before_validation)
+    with pytest.raises(sqlite3.DatabaseError):
+        restore_upgrade_backup(invalid)
+
+    assert {path: path.read_bytes() for path in before} == before
+    assert not list(tmp_path.rglob(".wavemind-restore-*"))
 
 
 def test_interrupted_recovery_rejects_backup_whose_outer_digest_changed(tmp_path):

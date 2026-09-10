@@ -15,6 +15,7 @@ from fastapi.testclient import TestClient
 
 from .api import create_app
 from .cli import build_parser, enforce_safe_serve_bind
+from .codeql_admission import validate_codeql_admission
 from .core import WaveMind
 from .encoders import HashingTextEncoder
 from .evidence import (
@@ -38,7 +39,7 @@ from .quickstart_admission import validate_quickstart_artifact
 from .safe_retrieval_admission import validate_safe_retrieval_artifact
 
 
-SCHEMA = "wavemind.safe_product_admission.v1"
+SCHEMA = "wavemind.safe_product_admission.v2"
 EXPECTED_CHECKS = {
     "evidence-truth",
     "benchmark-freshness-model",
@@ -71,8 +72,10 @@ SAFE_PRODUCT_SOURCE_FILES = (
     "docker-compose.yml",
     "docs/data/product-status.json",
     "scripts/sync_product_status.py",
+    "scripts/verify_codeql_admission.py",
     "wavemind/api.py",
     "wavemind/cli.py",
+    "wavemind/codeql_admission.py",
     "wavemind/core.py",
     "wavemind/evidence.py",
     "wavemind/onboarding.py",
@@ -335,7 +338,10 @@ def _repository_confidence(
     root: Path,
     *,
     ci_matrix_passed: bool,
-    sast_passed: bool,
+    codeql_results: Mapping[str, Any],
+    expected_repository: str,
+    expected_ref: str,
+    expected_sha: str,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     tests_workflow = (root / ".github/workflows/tests.yml").read_text(encoding="utf-8")
     codeql = root / ".github/workflows/codeql.yml"
@@ -349,11 +355,21 @@ def _repository_confidence(
         "windows_configured": windows,
         "dependency_jobs_passed": bool(ci_matrix_passed),
     }
+    result_errors = validate_codeql_admission(
+        codeql_results,
+        repository=expected_repository,
+        ref=expected_ref,
+        sha=expected_sha,
+    )
     sast = {
         "workflow_present": codeql.is_file(),
         "codeql_v4": "github/codeql-action" in codeql.read_text(encoding="utf-8")
         and "@v4" in codeql.read_text(encoding="utf-8"),
-        "dependency_jobs_passed": bool(sast_passed),
+        "actual_results_admitted": not result_errors,
+        "result_errors": result_errors,
+        "source": codeql_results.get("source"),
+        "analyzed_configurations": codeql_results.get("analyzed_configurations"),
+        "alerts": codeql_results.get("alerts"),
     }
     return matrix, sast
 
@@ -421,14 +437,17 @@ def run_safe_product_admission(
     safe_retrieval_artifact: str | Path,
     product_persistence_artifact: str | Path,
     quickstart_artifact: str | Path,
+    codeql_results_artifact: str | Path,
     ci_matrix_passed: bool,
-    sast_passed: bool,
+    expected_repository: str,
+    expected_ref: str,
 ) -> dict[str, Any]:
     root = Path(project_root).resolve()
     source_sha = repository_commit(root)
     safe_retrieval = _load_json(safe_retrieval_artifact)
     product_persistence = _load_json(product_persistence_artifact)
     quickstarts = _load_json(quickstart_artifact)
+    codeql_results = _load_json(codeql_results_artifact)
     safe_errors = validate_safe_retrieval_artifact(
         safe_retrieval,
         project_root=root,
@@ -451,7 +470,10 @@ def run_safe_product_admission(
     python_matrix, sast = _repository_confidence(
         root,
         ci_matrix_passed=ci_matrix_passed,
-        sast_passed=sast_passed,
+        codeql_results=codeql_results,
+        expected_repository=expected_repository,
+        expected_ref=expected_ref,
+        expected_sha=source_sha,
     )
     product_status = _canonical_product_status_check(root)
     safe_metrics = safe_retrieval.get("metrics") or {}
@@ -557,7 +579,14 @@ def run_safe_product_admission(
                 and python_matrix["dependency_jobs_passed"],
                 python_matrix,
             ),
-            _check("repository-sast", all(sast.values()), sast),
+            _check(
+                "repository-sast",
+                sast["workflow_present"]
+                and sast["codeql_v4"]
+                and sast["actual_results_admitted"]
+                and not sast["result_errors"],
+                sast,
+            ),
             _check(
                 "canonical-product-status",
                 product_status["status_schema"] == "wavemind.product_status.v1"
@@ -589,6 +618,7 @@ def run_safe_product_admission(
                 "payload_sha256"
             ),
             "quickstarts": quickstarts.get("integrity", {}).get("payload_sha256"),
+            "codeql_results": codeql_results.get("integrity", {}).get("payload_sha256"),
         },
         "source_manifest": manifest,
         "claim_boundary": (

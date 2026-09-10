@@ -1,5 +1,8 @@
 from pathlib import Path
 import re
+import subprocess
+import sys
+import tarfile
 
 import wavemind
 
@@ -652,3 +655,42 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "examples/qdrant-sharded-streaming/docker-compose.yml" in benchmark_brief
     assert "pgvector iterative tuning recall@10: 0.970" in benchmark_brief
     assert "cost $1.39 / 1M queries" in benchmark_brief
+
+
+def test_sdist_contains_brain_guides_and_assets_byte_for_byte(tmp_path):
+    expected = (
+        "docs/brain/personal.md",
+        "docs/brain/teams.md",
+        "docs/brain/agent-contract.md",
+        "docs/brain/limitations.md",
+        "docs/assets/brain/personal-context.png",
+        "docs/assets/brain/company-context.png",
+        "docs/assets/brain/owned-memory-loop.svg",
+        "docs/assets/brain/owned-memory-loop-en.svg",
+        "docs/assets/brain/owned-memory-loop.html",
+        "docs/assets/brain/owned-memory-loop-en.html",
+    )
+    output = tmp_path / "dist"
+    subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "build",
+            "--sdist",
+            "--no-isolation",
+            "--outdir",
+            str(output),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    archive = next(output.glob("*.tar.gz"))
+    with tarfile.open(archive, "r:gz") as source_distribution:
+        names = source_distribution.getnames()
+        for relative_path in expected:
+            matches = [name for name in names if name.endswith(f"/{relative_path}")]
+            assert len(matches) == 1, relative_path
+            member = source_distribution.extractfile(matches[0])
+            assert member is not None
+            assert member.read() == Path(relative_path).read_bytes()

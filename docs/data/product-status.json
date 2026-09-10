@@ -1,6 +1,15 @@
 {
   "schema": "wavemind.product_status.v1",
   "category_statement": "WaveMind is the trust layer that lets agents learn from completed work without silently learning incorrect behavior.",
+  "brain_preview": {
+    "status": "source_preview",
+    "distribution": "source-only; Python required, plaintext nonsecret pilot",
+    "evidence_schema": "wavemind.brain_d1_evidence.v1",
+    "current_claim_source": ".github/workflows/brain-d1.yml",
+    "mass_release": "not_evaluated",
+    "user_benefit": "not_measured",
+    "scientific_breakthrough": "not_established"
+  },
   "stable_release": {
     "version": "2.14.0",
     "source_sha": "e93954d4028561944937f70754d5928229930cb4",

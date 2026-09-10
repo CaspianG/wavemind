@@ -32,6 +32,8 @@ def render_status(status: dict, *, docs_path: bool) -> str:
     release = status["public_release"]
     release_candidate = status["release_candidate"]
     safe = status["safe_product"]
+    brain = status["brain_preview"]
+    brain_guide = ("" if docs_path else "docs/") + "brain/personal.md"
     artifact = (
         "../" + safe["artifact"] if docs_path else safe["artifact"]
     )
@@ -64,6 +66,7 @@ def render_status(status: dict, *, docs_path: bool) -> str:
             "",
             "| Product truth | Status | Evidence |",
             "|---|---|---|",
+            f"| Brain D1 | `{brain['status']}`; {brain['distribution']} | [Local owner workflow]({brain_guide}); exact-candidate D1 evidence required |",
             f"| Public release | `v{release['version']}`; runtime source `{release['source_sha'][:12]}` | PyPI package `{release['python_package']}` and `{release['container']}` |",
             release_state,
             f"| Safe Product snapshot | `{safe['checked_in_status']}`, {safe['checked_in_checks_passed']}/{safe['checked_in_checks_total']} checks at `{safe['checked_in_source_sha'][:12]}` | [`{safe['artifact']}`]({artifact}) |",

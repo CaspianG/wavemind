@@ -1,5 +1,20 @@
 # WaveMind Roadmap
 
+The [Brain D1 source preview](brain/personal.md) supports owner-controlled project
+and client memory with a RU/EN local interface. D1 engineering acceptance must
+bind actual service, browser and client execution to the candidate source SHA.
+The published legacy 2.14.0 release remains a separate distribution.
+
+| Next stage | Evidence still required |
+|---|---|
+| D2 Windows delivery | Bundled signed install/update/uninstall and clean-machine verification |
+| D3 team deployment | TLS/authentication/backup deployment and operational checks |
+| D4 usefulness and research | 10 novice users, 14-day retention, 3 real team pilots, frozen scientific comparison |
+
+Synthetic D1 scenarios cannot satisfy these stages. Windows SDK tools have been
+located, but no publisher certificate, signed artifact or clean-install evidence
+has been established. [Current limits and reproduction](brain/limitations.md).
+
 WaveMind is a local-first verified-experience layer for agents that repeat
 consequential work. SQLite and optional service indexes provide durable memory;
 the product focus is the governed lifecycle from trace and independent
@@ -17,6 +32,7 @@ or large-scale infrastructure work.
 
 | Product truth | Status | Evidence |
 |---|---|---|
+| Brain D1 | `source_preview`; source-only; Python required, plaintext nonsecret pilot | [Local owner workflow](brain/personal.md); exact-candidate D1 evidence required |
 | Public release | `v2.14.0`; runtime source `e93954d40285` | PyPI package `wavemind` and `ghcr.io/caspiang/wavemind:2.14.0` |
 | Current release | `v2.14.0` at `e93954d40285`; `published` | Upgrade admission `admitted_19_of_19`; GitHub Release, PyPI, and GHCR verified |
 | Safe Product snapshot | `historical`, 18/18 checks at `92c539d0a069` | [`benchmarks/safe_product_admission_results.json`](../benchmarks/safe_product_admission_results.json) |

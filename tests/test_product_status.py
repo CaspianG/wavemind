@@ -14,8 +14,7 @@ def test_canonical_product_status_matches_packages_and_public_docs():
     assert status["stable_release"]["publication_status"] == "published"
     assert status["public_release"]["version"] == "2.14.0"
     assert (
-        status["public_release"]["source_sha"]
-        == status["stable_release"]["source_sha"]
+        status["public_release"]["source_sha"] == status["stable_release"]["source_sha"]
     )
     assert status["release_candidate"]["version"] == "2.14.0"
     assert status["release_candidate"]["upgrade_admission"] == "admitted_19_of_19"
@@ -35,3 +34,17 @@ def test_product_status_rejects_version_and_npm_claim_drift():
 
     assert any("expected 999.0.0" in error for error in errors)
     assert "npm publication claim must remain disabled until verified" in errors
+
+
+def test_brain_preview_is_rendered_separately_from_published_release():
+    from scripts.sync_product_status import render_status
+
+    status = load_status()
+    block = render_status(status, docs_path=False)
+    assert "| Brain D1 | `source_preview`" in block
+    assert "docs/brain/personal.md" in block
+    assert "source-only" in block
+    assert (
+        status["public_release"]["source_sha"]
+        == "e93954d4028561944937f70754d5928229930cb4"
+    )

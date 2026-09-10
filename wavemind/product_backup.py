@@ -48,6 +48,11 @@ def create_product_backup(
     experience_store: SQLiteExperienceStore,
     destination: str | Path,
 ) -> Path:
+    for database in (getattr(mind.store, "path", None), experience_store.path):
+        if database and str(database) != ":memory:" and (Path(database).resolve().parent / "brain.sqlite3").exists():
+            raise ProductBackupError(
+                "Brain profiles require the Brain backup command; legacy backup is incomplete"
+            )
     target = Path(destination).resolve()
     target.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="wavemind-product-backup-", dir=target.parent) as raw:
@@ -161,6 +166,9 @@ def restore_product_backup(
     experience_target = Path(experience_destination).resolve()
     if core_target == experience_target:
         raise ProductBackupError("core and experience destinations must differ")
+    for target in (core_target, experience_target):
+        if (target.parent / "brain.sqlite3").exists():
+            raise ProductBackupError("Brain profiles require the Brain restore command; legacy restore is incomplete")
     for target in (core_target, experience_target):
         if target.exists() and not overwrite:
             raise FileExistsError(target)
