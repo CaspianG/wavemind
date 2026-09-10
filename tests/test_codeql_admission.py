@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import copy
 import io
+import json
 import urllib.request
+from http.client import HTTPMessage
 
 import pytest
 
@@ -608,6 +610,85 @@ def test_production_transport_rejects_redirect_before_forwarding_authorization(
     assert forwarded == []
 
 
+def test_production_httpmessage_headers_reach_admission_and_preserve_pagination(
+    monkeypatch,
+):
+    analyses = [
+        _analysis(SAFE_PRODUCT_CATEGORIES[0], 101, results_count=0),
+        _analysis(SAFE_PRODUCT_CATEGORIES[1], 102, results_count=0),
+    ]
+    next_url = (
+        "https://api.github.com/repos/CaspianG/wavemind/code-scanning/alerts"
+        "?ref=refs%2Fpull%2F121%2Fmerge&state=open&per_page=100&page=2"
+    )
+    bodies_and_headers = [
+        (analyses, []),
+        ([_alert(31, "low", "open")], [("link", f'<{next_url}>; rel="next"')]),
+        ([_alert(32, "high", "open")], []),
+        ([], []),
+        ([], []),
+    ]
+
+    class Response(io.BytesIO):
+        def __init__(self, payload, fields):
+            body = json.dumps(payload).encode("utf-8")
+            super().__init__(body)
+            self.headers = HTTPMessage()
+            self.headers.add_header("Content-Length", str(len(body)))
+            for name, value in fields:
+                self.headers.add_header(name, value)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+    class InMemoryOpener:
+        def __init__(self):
+            self.urls = []
+
+        def open(self, request, *, timeout):
+            self.urls.append(request.full_url)
+            payload, fields = bodies_and_headers.pop(0)
+            return Response(payload, fields)
+
+    opener = InMemoryOpener()
+    monkeypatch.setattr(urllib.request, "build_opener", lambda _handler: opener)
+
+    report = verify_codeql_results(
+        repository=REPOSITORY,
+        ref=REF,
+        sha=SHA,
+        token="synthetic-token-not-for-output",
+        deadline_seconds=1,
+    )
+
+    assert report["status"] == "blocked"
+    assert report["alerts"]["open_high"] == 1
+    assert len(opener.urls) == 5
+    assert bodies_and_headers == []
+
+    bodies_and_headers.append(
+        (
+            analyses,
+            [
+                ("Link", f'<{next_url}>; rel="next"'),
+                ("link", f'<{next_url}>; rel="next"'),
+            ],
+        )
+    )
+    with pytest.raises(CodeQLAdmissionError, match="invalid_pagination"):
+        verify_codeql_results(
+            repository=REPOSITORY,
+            ref=REF,
+            sha=SHA,
+            token="synthetic-token-not-for-output",
+            deadline_seconds=1,
+        )
+    assert bodies_and_headers == []
+
+
 def test_one_deadline_caps_each_request_and_rejects_successful_late_responses(
     monkeypatch,
 ):
@@ -643,6 +724,93 @@ def test_one_deadline_caps_each_request_and_rejects_successful_late_responses(
         )
     assert timeouts
     assert all(0 < timeout <= 0.1 for timeout in timeouts)
+
+
+def test_shared_deadline_decreases_across_pages_and_stops_after_late_page(
+    monkeypatch,
+):
+    from wavemind import codeql_admission
+
+    now = [20.0]
+    calls = []
+    next_url = (
+        "https://api.github.com/repos/CaspianG/wavemind/code-scanning/analyses"
+        "?ref=refs%2Fpull%2F121%2Fmerge&per_page=100&page=2"
+    )
+
+    def clock():
+        return now[0]
+
+    def paged_fetch(url, *, headers, timeout, max_body):
+        calls.append((url, timeout))
+        if len(calls) == 1:
+            now[0] += 0.03
+            return [_analysis(SAFE_PRODUCT_CATEGORIES[0], 101)], {
+                "Link": f'<{next_url}>; rel="next"'
+            }
+        now[0] += 0.08
+        return [_analysis(SAFE_PRODUCT_CATEGORIES[1], 102)], {}
+
+    monkeypatch.setattr(codeql_admission.time, "monotonic", clock)
+
+    with pytest.raises(CodeQLAdmissionError, match="deadline_exceeded"):
+        verify_codeql_results(
+            repository=REPOSITORY,
+            ref=REF,
+            sha=SHA,
+            token="synthetic-token-not-for-output",
+            fetch_json=paged_fetch,
+            deadline_seconds=0.1,
+            retry_seconds=0.01,
+        )
+
+    assert len(calls) == 2
+    assert calls[1][1] < calls[0][1]
+    assert calls[0][1] == pytest.approx(0.1)
+
+
+def test_shared_deadline_decreases_across_retry_and_stops_after_late_result(
+    monkeypatch,
+):
+    from wavemind import codeql_admission
+
+    now = [30.0]
+    calls = []
+
+    def clock():
+        return now[0]
+
+    def advance_sleep(seconds):
+        now[0] += seconds
+
+    def retrying_fetch(url, *, headers, timeout, max_body):
+        calls.append((url, timeout))
+        if len(calls) == 1:
+            now[0] += 0.03
+            return [], {}
+        now[0] += 0.04
+        return [
+            _analysis(SAFE_PRODUCT_CATEGORIES[0], 101, results_count=0),
+            _analysis(SAFE_PRODUCT_CATEGORIES[1], 102, results_count=0),
+        ], {}
+
+    monkeypatch.setattr(codeql_admission.time, "monotonic", clock)
+    monkeypatch.setattr(codeql_admission.time, "sleep", advance_sleep)
+
+    with pytest.raises(CodeQLAdmissionError, match="deadline_exceeded"):
+        verify_codeql_results(
+            repository=REPOSITORY,
+            ref=REF,
+            sha=SHA,
+            token="synthetic-token-not-for-output",
+            fetch_json=retrying_fetch,
+            deadline_seconds=0.1,
+            retry_seconds=0.04,
+        )
+
+    assert len(calls) == 2
+    assert calls[1][1] < calls[0][1]
+    assert calls[0][1] == pytest.approx(0.1)
 
 
 def test_timeout_and_rate_limit_fail_closed_without_secret_in_error():

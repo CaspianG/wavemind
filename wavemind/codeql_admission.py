@@ -68,7 +68,7 @@ def _validated_inputs(repository: str, ref: str, sha: str, token: str) -> None:
 
 def fetch_github_json(
     url: str, *, headers: Mapping[str, str], timeout: float, max_body: int
-) -> tuple[object, Mapping[str, str]]:
+) -> tuple[object, object]:
     """Fetch one pinned GitHub API page without exposing remote response bodies."""
     try:
         request = urllib.request.Request(url, headers=dict(headers), method="GET")
@@ -121,12 +121,19 @@ def _next_page(link: str | None, repository: str) -> str | None:
     return url
 
 
-def _header(headers: Mapping[str, str], name: str) -> str | None:
-    matches = [
-        value
-        for key, value in headers.items()
-        if isinstance(key, str) and key.casefold() == name.casefold()
-    ]
+def _header(headers: object, name: str) -> str | None:
+    items = getattr(headers, "items", None)
+    if not callable(items):
+        raise CodeQLAdmissionError("malformed_response")
+    try:
+        pairs = list(items())
+        matches = [
+            value
+            for key, value in pairs
+            if isinstance(key, str) and key.casefold() == name.casefold()
+        ]
+    except (TypeError, ValueError):
+        raise CodeQLAdmissionError("malformed_response") from None
     if len(matches) > 1 or any(not isinstance(value, str) for value in matches):
         raise CodeQLAdmissionError("invalid_pagination")
     return matches[0] if matches else None
@@ -180,8 +187,6 @@ def _pages(
                 raise CodeQLAdmissionError("deadline_exceeded") from None
             raise CodeQLAdmissionError("malformed_response") from None
         _remaining(deadline)
-        if not isinstance(response_headers, Mapping):
-            raise CodeQLAdmissionError("malformed_response")
         if not isinstance(page, list) or not all(
             isinstance(item, dict) for item in page
         ):

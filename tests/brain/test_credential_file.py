@@ -222,6 +222,135 @@ def _intercept_windows_native_call(monkeypatch, library, name, action):
     monkeypatch.setattr(ctypes, "WinDLL", load_dll)
 
 
+def _replace_windows_native_call(monkeypatch, library, name, replacement):
+    import ctypes
+
+    native_dll = ctypes.WinDLL
+    native_library = native_dll(library, use_last_error=True)
+    native_function = getattr(native_library, name)
+
+    class NativeCall:
+        def __setattr__(self, attribute, value):
+            setattr(native_function, attribute, value)
+
+        def __call__(self, *args):
+            return replacement(native_function, *args)
+
+    class LibraryProxy:
+        def __getattr__(self, attribute):
+            return (
+                NativeCall()
+                if attribute == name
+                else getattr(native_library, attribute)
+            )
+
+    def load_dll(requested_library, **kwargs):
+        if requested_library == library:
+            return LibraryProxy()
+        return native_dll(requested_library, **kwargs)
+
+    monkeypatch.setattr(ctypes, "WinDLL", load_dll)
+
+
+def _assert_native_private_protection(path: Path) -> None:
+    if os.name != "nt":
+        info = path.stat()
+        assert stat.S_IMODE(info.st_mode) == 0o600
+        assert info.st_uid == os.geteuid()
+        return
+
+    import ctypes
+    from ctypes import wintypes
+
+    class AclSizeInformation(ctypes.Structure):
+        _fields_ = [
+            ("AceCount", wintypes.DWORD),
+            ("AclBytesInUse", wintypes.DWORD),
+            ("AclBytesFree", wintypes.DWORD),
+        ]
+
+    advapi32 = ctypes.WinDLL("advapi32", use_last_error=True)
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    dacl, descriptor = wintypes.LPVOID(), wintypes.LPVOID()
+    status = advapi32.GetNamedSecurityInfoW(
+        str(path),
+        1,
+        0x00000004,
+        None,
+        None,
+        ctypes.byref(dacl),
+        None,
+        ctypes.byref(descriptor),
+    )
+    assert status == 0
+    try:
+        control, revision = wintypes.WORD(), wintypes.DWORD()
+        assert advapi32.GetSecurityDescriptorControl(
+            descriptor, ctypes.byref(control), ctypes.byref(revision)
+        )
+        assert control.value & 0x1000
+        size = AclSizeInformation()
+        assert advapi32.GetAclInformation(
+            dacl, ctypes.byref(size), ctypes.sizeof(size), 2
+        )
+        assert size.AceCount == 1
+    finally:
+        kernel32.LocalFree(descriptor)
+
+
+def test_native_write_failures_preserve_private_partial_file_and_roll_back_owner(
+    tmp_path, monkeypatch
+):
+    from wavemind.brain import credential_file
+
+    for mode in ("immediate", "partial"):
+        profile = tmp_path / f"write-profile-{mode}"
+        key_file = tmp_path / f"write-owner-{mode}.key"
+        auth = BrainAuth(profile)
+        issued = []
+
+        with monkeypatch.context() as scoped:
+            if os.name == "nt":
+                calls = [0]
+
+                def replace_write(native, handle, buffer, length, written, overlapped):
+                    calls[0] += 1
+                    if mode == "partial" and calls[0] == 1:
+                        return native(handle, buffer, 5, written, overlapped)
+                    written._obj.value = 0
+                    return 0
+
+                _replace_windows_native_call(
+                    scoped, "kernel32", "WriteFile", replace_write
+                )
+            else:
+                native_write = credential_file.os.write
+                calls = [0]
+
+                def replace_write(fd, content):
+                    calls[0] += 1
+                    if mode == "partial" and calls[0] == 1:
+                        return native_write(fd, content[:5])
+                    raise OSError("simulated native write failure")
+
+                scoped.setattr(credential_file.os, "write", replace_write)
+
+            def handoff(token):
+                issued.append(token)
+                persist_owner_key(key_file, token)
+
+            with pytest.raises(BrainError) as error:
+                auth.bootstrap_owner(persist=handoff)
+
+        assert error.value.code == "private_file_failed"
+        assert issued and issued[0] not in str(error.value)
+        expected = (issued[0] + "\n").encode("utf-8")[:5] if mode == "partial" else b""
+        assert key_file.read_bytes() == expected
+        _assert_native_private_protection(key_file)
+        _assert_no_owner(auth, profile)
+        auth.close()
+
+
 def test_parent_replacement_is_pinned_through_native_creation(tmp_path, monkeypatch):
     from wavemind.brain import credential_file
 
