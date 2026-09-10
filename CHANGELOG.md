@@ -6,6 +6,15 @@ authoritative release sources.
 
 ## Unreleased
 
+- Added the source-only Brain D1 preview: local owner-reviewed project/client
+  memory, exact source grants, cited context, corrections, action receipts,
+  verified-result history, deletion, export and quarantine-aware recovery.
+  The RU/EN owner interface includes actual HTTP/stdio MCP client checks and
+  synthetic browser acceptance. Python is required; storage is plaintext for
+  nonsecret pilot materials. D2 installation, D3 team deployment and D4 real
+  usefulness/scientific validation remain separate. Published 2.14.0 is unchanged.
+- Added exact-source D1 evidence collection and a required browser/MCP CI lane;
+  missing execution and optional integration gaps remain explicit in its report.
 - Hardened replicated snapshot extraction against unsafe tar entry types,
   tightened sample-host parsing and API audit logging, and removed a
   potentially super-linear trailing-slash expression from the TypeScript SDK.

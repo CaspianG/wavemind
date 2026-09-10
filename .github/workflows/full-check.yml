@@ -633,6 +633,11 @@ jobs:
           grep -q "WAVEMIND_REDIS_URL" /tmp/wavemind-chart.yaml
           grep -q "ghcr.io/caspiang/wavemind:ci" /tmp/wavemind-chart.yaml
 
+  brain-d1:
+    uses: ./.github/workflows/brain-d1.yml
+    permissions:
+      contents: read
+
   required:
     name: required / full-check
     if: always()
@@ -651,6 +656,7 @@ jobs:
       - qdrant-sharded-streaming-smoke
       - docker
       - helm
+      - brain-d1
     runs-on: ubuntu-latest
 
     steps:

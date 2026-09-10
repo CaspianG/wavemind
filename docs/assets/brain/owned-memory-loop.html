@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WaveMind — память между задачами</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root { --paper:#f5f5f5; --ink:#2d3142; --muted:#4f5d75; --accent:#eb6c36; }
+body { background:var(--paper); color:var(--ink); font-family:'Geist','Segoe UI',sans-serif; padding:32px; }
+main { max-width:1280px; margin:auto; }
+.eyebrow { font:12px 'Geist Mono',Consolas,monospace; color:var(--muted); letter-spacing:0.08em; }
+h1 { font:400 40px/1.2 'Instrument Serif',Georgia,serif; margin:12px 0 16px; }
+.intro,.note { max-width:880px; font-size:16px; line-height:1.6; color:var(--muted); }
+figure { margin:24px 0; overflow:auto; }
+svg { display:block; width:100%; min-width:768px; height:auto; }
+.notes { display:grid; grid-template-columns:1.1fr 1fr; gap:32px; border-top:1px solid #bfc0c0; padding-top:24px; }
+h2 { font-size:20px; margin-bottom:8px; }
+footer { margin-top:32px; font-size:12px; line-height:1.5; color:var(--muted); }
+@media(max-width:720px) { body { padding:20px; } h1 { font-size:32px; } .notes { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<main>
+<p class="eyebrow">WAVEMIND · ЛОКАЛЬНАЯ ЦИФРОВАЯ ПАМЯТЬ · D1</p>
+<h1>Помощник меняется. Основания решений остаются.</h1>
+<p class="intro">Вы храните выбранные источники и историю работы отдельно от AI-клиента. Следующий помощник получает разрешённый контекст с цитатами — и видит, что ещё неизвестно.</p>
+<figure aria-label="Цикл работы с памятью">
+<svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="owned-memory-loop-title owned-memory-loop-desc">
+<title id="owned-memory-loop-title">WaveMind: память между задачами</title>
+<desc id="owned-memory-loop-desc">Контекст и квитанция предшествуют внешнему действию; результат сохраняется и проверяется, а следующий запрос заново учитывает права, актуальность и допуск опыта.</desc>
+<!--
+Layout template adapted from diagram-design by Cathryn Lavery.
+MIT License
+
+Copyright (c) 2025 Cathryn Lavery
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+-->
+<defs>
+<style>
+.node-name { font-family:'Geist','Segoe UI',sans-serif; font-size:16px; font-weight:600; fill:#2d3142; }
+.node-copy { font-family:'Geist','Segoe UI',sans-serif; font-size:12px; fill:#4f5d75; }
+.hub-name { font-family:'Geist','Segoe UI',sans-serif; font-size:24px; font-weight:600; fill:#f5f5f5; }
+.hub-copy { font-family:'Geist','Segoe UI',sans-serif; font-size:12px; fill:#f5f5f5; }
+.figure-title { font-family:'Instrument Serif',Georgia,serif; font-size:32px; fill:#2d3142; }
+.legend { font-family:'Geist','Segoe UI',sans-serif; font-size:16px; fill:#4f5d75; }
+</style>
+<marker id="owned-memory-loop-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+<marker id="owned-memory-loop-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+<marker id="owned-memory-loop-arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+<marker id="owned-memory-loop-arrow-soft" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#7a8399"/></marker>
+</defs>
+<rect width="1280" height="720" fill="#f5f5f5"/>
+<text class="figure-title" x="48" y="56">Память между задачами</text>
+<text class="legend" x="48" y="88">Проверка результата не гарантирует допуск опыта</text>
+<path data-ring="1" d="M 744 161.606 A 224 224 0 0 1 810.807 215.083" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#owned-memory-loop-arrow)"/>
+<path data-ring="2" d="M 849.227 280 A 224 224 0 0 1 849.653 438.878" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#owned-memory-loop-arrow)"/>
+<path data-ring="3" d="M 811.581 504 A 224 224 0 0 1 745.061 557.834" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#owned-memory-loop-arrow)"/>
+<path data-ring="4" d="M 536 558.394 A 224 224 0 0 1 469.193 504.917" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#owned-memory-loop-arrow)"/>
+<path data-ring="5" d="M 430.773 440 A 224 224 0 0 1 430.347 281.122" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#owned-memory-loop-arrow)"/>
+<path data-ring="6" d="M 468.419 216 A 224 224 0 0 1 534.939 162.166" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#owned-memory-loop-arrow)"/>
+<path data-writeback="1" d="M 640 168 L 640 306" fill="none" stroke="#7a8399" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#owned-memory-loop-arrow-soft)"/>
+<path data-writeback="2" d="M 778.564 280 L 728.335 309" fill="none" stroke="#7a8399" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#owned-memory-loop-arrow-soft)"/>
+<path data-writeback="4" d="M 640 552 L 640 414" fill="none" stroke="#7a8399" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#owned-memory-loop-arrow-soft)"/>
+<path data-writeback="5" d="M 501.436 440 L 551.665 411" fill="none" stroke="#7a8399" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#owned-memory-loop-arrow-soft)"/>
+<g data-station="1">
+<rect x="536" y="104" width="208" height="64" rx="8" fill="#f5f5f5"/>
+<rect x="536" y="104" width="208" height="64" rx="8" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
+<text class="node-name" x="640" y="132" text-anchor="middle">Собрать контекст</text>
+<text class="node-copy" x="640" y="152" text-anchor="middle">Цитаты и открытые вопросы</text>
+</g>
+<g data-station="2">
+<rect x="728" y="216" width="208" height="64" rx="8" fill="#f5f5f5"/>
+<rect x="728" y="216" width="208" height="64" rx="8" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
+<text class="node-name" x="832" y="244" text-anchor="middle">Создать квитанцию</text>
+<text class="node-copy" x="832" y="264" text-anchor="middle">До действия агента</text>
+</g>
+<g data-station="3">
+<rect x="728" y="440" width="208" height="64" rx="8" fill="#f5f5f5"/>
+<rect x="728" y="440" width="208" height="64" rx="8" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
+<text class="node-name" x="832" y="468" text-anchor="middle">Выполнить действие</text>
+<text class="node-copy" x="832" y="488" text-anchor="middle">Во внешнем AI-клиенте</text>
+</g>
+<g data-station="4">
+<rect x="536" y="552" width="208" height="64" rx="8" fill="#f5f5f5"/>
+<rect x="536" y="552" width="208" height="64" rx="8" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
+<text class="node-name" x="640" y="580" text-anchor="middle">Записать результат</text>
+<text class="node-copy" x="640" y="600" text-anchor="middle">Пока без подтверждения</text>
+</g>
+<g data-station="5">
+<rect x="344" y="440" width="208" height="64" rx="8" fill="#f5f5f5"/>
+<rect x="344" y="440" width="208" height="64" rx="8" fill="#eb6c36" fill-opacity="0.08" stroke="#eb6c36" stroke-width="1.2"/>
+<text class="node-name" x="448" y="468" text-anchor="middle">Проверить результат</text>
+<text class="node-copy" x="448" y="488" text-anchor="middle">Владелец или проверяющий</text>
+</g>
+<g data-station="6">
+<rect x="344" y="216" width="208" height="64" rx="8" fill="#f5f5f5"/>
+<rect x="344" y="216" width="208" height="64" rx="8" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
+<text class="node-name" x="448" y="244" text-anchor="middle">Следующий запрос</text>
+<text class="node-copy" x="448" y="264" text-anchor="middle">С новой проверкой допуска</text>
+</g>
+<g data-hub="true">
+<rect x="524" y="312" width="232" height="96" rx="8" fill="#2d3142"/>
+<text class="hub-name" x="640" y="352" text-anchor="middle">Общая память</text>
+<text class="hub-copy" x="640" y="380" text-anchor="middle">Источники, решения, история</text>
+</g>
+<line x1="48" y1="648" x2="1232" y2="648" stroke="#bfc0c0" stroke-width="0.8"/>
+<line x1="48" y1="676" x2="88" y2="676" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#owned-memory-loop-arrow)"/>
+<text class="legend" x="104" y="680">Ход работы</text>
+<line x1="304" y1="676" x2="344" y2="676" stroke="#7a8399" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#owned-memory-loop-arrow-soft)"/>
+<text class="legend" x="360" y="680">Сохранение в памяти</text>
+<text class="legend" x="720" y="680">Действия и модель — вне WaveMind</text>
+</svg>
+</figure>
+<section class="notes" aria-label="Границы схемы">
+<div><h2>История не равна проверенному опыту</h2><p class="note">Непроверенные и неудачные результаты остаются историей. Подтверждение одного результата не гарантирует допуск процедуры: нужны повторные независимые прогоны и действующие основания. Успех действия не доказывает, что его вызвала память.</p></div>
+<div><h2>Контекст не выдаётся навсегда</h2><p class="note">Права и актуальность проверяются снова. Изменение или отзыв источника закрывает зависимый контекст. Уже отправленные внешнему агенту сведения нельзя забрать из его истории.</p></div>
+</section>
+<footer>Инженерная схема D1, не результаты пользовательского исследования. Показан рабочий цикл; импорт, исправления, ветви ошибок и восстановление описываются отдельно. Оформление: diagram-design 2.6, согласованные светлые цвета. Автономные шрифты: Georgia / Segoe UI / Consolas вместо недоступных Instrument Serif / Geist / Geist Mono. Сетевых шрифтов, изображений и скриптов нет.</footer>
+</main>
+</body>
+</html>

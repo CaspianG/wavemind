@@ -1,40 +1,55 @@
-<div align="center">
-
 # WaveMind
 
-**Verified experience for coding, support, and operations agents that repeat consequential work.**
+Keep a project's sources, decisions and work history under your control, so you
+can continue with another assistant without rebuilding the context from scratch.
+The local Brain preview lets you review facts, correct them, choose what each
+agent may read, and export or delete your material.
 
-WaveMind turns independently verified tool work into compact Experience Packets.
-Each packet keeps its source, scope, corrections and rollback path.
+For a personal move, keep the budget, deadline and reason for choosing a mover.
+After the budget changes, the next client can request the corrected context and
+see the unresolved question about who signs. For a company, keep each client's
+instructions and results in a separate Brain, then grant an agent access to the
+specific sources needed for that client's next task.
 
-<p><a href="https://pypi.org/project/wavemind/"><strong>PyPI</strong></a> &middot; <a href="https://github.com/CaspianG/wavemind/actions/workflows/full-check.yml">Build status</a> &middot; <a href="https://github.com/CaspianG/wavemind/releases/latest">Latest release</a> &middot; <a href="https://github.com/CaspianG/wavemind/blob/main/pyproject.toml">Python &gt;=3.10</a> &middot; <a href="LICENSE">MIT</a></p>
+**D1 is a source preview for nonsecret pilot material.** It requires Python 3.10+
+and a local browser; MCP also requires the optional MCP package. Storage is
+plaintext. You enter and approve records yourself. WaveMind does not select an
+account, connect an AI model, read your chats automatically or perform external
+actions. Its usefulness to real people has not yet been measured.
 
-<img src="https://raw.githubusercontent.com/CaspianG/wavemind/main/docs/assets/wavemind-social-card.svg" alt="WaveMind verified experience loop: capture, verify, promote, and reuse" width="820">
+[Start the preview](#quick-start) · [Personal guide / Личная память](docs/brain/personal.md)
+· [Company guide / Для команды](docs/brain/teams.md) · [Agent contract](docs/brain/agent-contract.md)
+· [Limits and evidence](docs/brain/limitations.md)
 
-<p>
-  <a href="#quick-start"><strong>Quick Start</strong></a> &middot;
-  <a href="docs/WHY_WAVEMIND.md"><strong>Why WaveMind</strong></a> &middot;
-  <a href="docs/README.md">Documentation</a> &middot;
-  <a href="#quantum-sensing-research"><strong>Quantum research / Исследование</strong></a> &middot; <a href="#wavemind-studio">Studio</a> &middot;
-  <a href="https://caspiang.github.io/wavemind/"><strong>Product site</strong></a> &middot; <a href="https://caspiang.github.io/wavemind/evidence/">Evidence</a> &middot;
-  <a href="docs/ROADMAP.md">Roadmap</a> &middot;
-  <a href="#contributing">Contributing</a>
-</p>
+![Actual D1 owner interface showing a corrected project budget and an open question.](docs/assets/brain/personal-context.png)
 
-</div>
+Actual owner UI with synthetic nonsecret fixtures: corrected budget, cited facts
+and partial coverage. This is an engineering demonstration, with no connected
+model or measured user benefit. [Company screenshot](docs/assets/brain/company-context.png).
 
-## Quantum Sensing Research
+По-русски: храните выбранные документы, решения и результаты отдельно от одного
+чата. Вы сами подтверждаете записи и выбираете источники для агента. После
+исправления бюджета следующий запрос получает актуальное ограничение и открытые
+вопросы. Это локальный исходный D1-прототип: нужен Python, данные не шифруются,
+модель не подключена, польза для реальных пользователей пока не измерена.
 
-![Conceptual illustration: a transparent crystal on a copper mount, not a built sensor.](research/breakthrough/assets/quantum-sensing-concept.png)
+![Context, receipt, external action, reported outcome, verification and the next request around persistent memory.](docs/assets/brain/owned-memory-loop-en.svg)
 
-Can control make a weak signal easier to read? *Cover: conceptual illustration.* [Visual research guide](research/breakthrough/README.md) · [По-русски](research/breakthrough/START_HERE_RU.md).
+Explanatory diagram, not a product screenshot. Verifying a result does not
+automatically admit a procedure. [HTML source](docs/assets/brain/owned-memory-loop-en.html)
+· [Схема на русском](docs/assets/brain/owned-memory-loop.svg).
 
-![Frozen simulation: pulse compensation improves both methods; DRAG3 with RXY8 remains above DRAG3 with RS.](research/breakthrough/assets/pulse-comparison.svg)
+The published **2.14.0 library**, its Studio, container and
+[legacy public site](https://caspiang.github.io/wavemind/) are separate from this
+Brain source preview. A PyPI install or the existing Docker image does not
+establish delivery of D1, a signed Windows installer, or a team deployment.
+[Release facts](#verified-today) · [Research](#quantum-sensing-research)
+· [Documentation](docs/README.md) · [Roadmap](docs/ROADMAP.md).
 
-Simulation only: the candidate does **not** beat the strongest known control.
-This separate research track is not a proven breakthrough, built sensor or library feature. [Results and limits](research/breakthrough/sensing_rs/RESULTS_V3_RU.md).
+## Existing agent-memory library
 
-## The Idea, In Plain English
+The following library and benchmark sections describe the established runtime.
+Brain's authenticated storage and agent contract are documented separately above.
 
 Most agent memory stores what an agent **saw**. WaveMind reuses what independent
 evidence says **worked**. A test, operator, tool or downstream state must verify
@@ -83,6 +98,7 @@ WaveMind complements FAISS, Qdrant, pgvector, Chroma, and other candidate indexe
 
 | Product truth | Status | Evidence |
 |---|---|---|
+| Brain D1 | `source_preview`; source-only; Python required, plaintext nonsecret pilot | [Local owner workflow](docs/brain/personal.md); exact-candidate D1 evidence required |
 | Public release | `v2.14.0`; runtime source `e93954d40285` | PyPI package `wavemind` and `ghcr.io/caspiang/wavemind:2.14.0` |
 | Current release | `v2.14.0` at `e93954d40285`; `published` | Upgrade admission `admitted_19_of_19`; GitHub Release, PyPI, and GHCR verified |
 | Safe Product snapshot | `historical`, 18/18 checks at `92c539d0a069` | [`benchmarks/safe_product_admission_results.json`](benchmarks/safe_product_admission_results.json) |
@@ -119,7 +135,25 @@ multimodal admission remain explicitly gated. See
 
 ## Quick Start
 
-The shortest path from install to first recall:
+For the Brain source preview, use a checkout that contains `wavemind/brain`.
+In a project virtual environment, install that checkout and initialize a new
+ordinary local profile outside the repository:
+
+```sh
+python -m pip install -e ".[mcp]"
+python -m wavemind brain init --state-dir /absolute/local/brain-profile
+python -m wavemind brain serve --state-dir /absolute/local/brain-profile
+```
+
+Replace the example path with your selected local directory (on Windows,
+`C:\WaveMindPilot\profile` is an example). `init` shows the owner key once;
+save it privately. `serve` asks for that key in an interactive terminal.
+Open [the local owner UI](http://127.0.0.1:8000/brain), sign in with the same key,
+select RU or EN and create a project. Preview an import before saving it.
+The [personal guide](docs/brain/personal.md) covers setup, correction, access,
+backup and errors. This is a developer launch, not a bundled installer.
+
+For the published legacy library, the separate recall quick start is:
 
 ```sh
 python -m pip install wavemind
@@ -372,90 +406,6 @@ For migrations from existing local vector memory, start with
 [`docs/CHROMA_MIGRATION.md`](docs/CHROMA_MIGRATION.md). The guide has a tested
 offline fixture at [`examples/chroma_migration.py`](examples/chroma_migration.py).
 
-## Minimal Agent Loop
-
-```python
-from wavemind import WaveMind
-
-memory = WaveMind(db_path="./state/agent.sqlite3")
-
-def run_turn(user_id: str, user_text: str) -> str:
-    namespace = f"user:{user_id}"
-    hits = memory.query(user_text, namespace=namespace, top_k=5, min_score=0.25)
-    recalled = "\n".join(f"- {hit.text}" for hit in hits)
-
-    answer = call_your_llm(f"Relevant memory:\n{recalled}\n\nUser: {user_text}")
-
-    memory.remember(f"User said: {user_text}", namespace=namespace, tags=["conversation"])
-    memory.remember(f"Assistant answered: {answer}", namespace=namespace, tags=["conversation"])
-    return answer
-```
-
-## Terminal Demo
-
-<img src="https://raw.githubusercontent.com/CaspianG/wavemind/main/docs/assets/wavemind-demo.gif" alt="WaveMind dynamic memory terminal demo" width="820">
-
-From a cloned repository:
-
-```text
-$ python examples/demo.py
-[ok] Remembered: "Andrey is a trader who tracks market breakouts."
-[ok] Remembered: "Andrey prefers short practical answers about product decisions."
-
-Query: "Andrey trader preferences"
--> Result 1 (0.60): "Andrey is a trader who tracks market breakouts."
--> Result 2 (0.30): "Andrey prefers short practical answers about product decisions."
-```
-
-The demo is offline, keyless, and uses the built-in hash encoder.
-
-For correction, TTL, support/CRM, and research variants, use the linked examples
-in [Common Ways To Use It](#common-ways-to-use-it) or the
-[demo script](docs/DEMO_SCRIPT.md).
-
-## How The Memory Field Works
-
-```mermaid
-flowchart LR
-    A["Text, event, note, document, or agent turn"] --> S["remember()"]
-    S --> D[("SQLite: text + metadata + vectors + memory state")]
-    Q["query()"] --> K["k-NN candidate search"]
-    D --> K
-    K --> W["wave-field re-rank"]
-    W --> R["small ranked recall set"]
-    R --> P["app, search UI, prompt, API, or tool"]
-    P --> F["recall feedback updates hotness / priority"]
-    F --> D
-    F --> C["consolidate active clusters"]
-    C --> D
-```
-
-The wave field is the dynamic layer around stored memories. It is not a
-replacement for embeddings; it is the policy that decides which candidate
-memories should still matter.
-
-| signal | Plain meaning | Effect |
-|---|---|---|
-| vector similarity | This text is semantically close to the query. | Gets into the candidate set. |
-| hotness | This memory has been useful before. | Moves upward during recall. |
-| decay | This memory has not mattered recently. | Slowly loses influence. |
-| priority | The app says this fact is important. | Raises ranking even before repetition. |
-| TTL | This fact is temporary. | Drops out after expiry. |
-| namespace and tags | This belongs to one user/project/type. | Prevents cross-user or cross-topic leakage. |
-| graph dynamics | Related memories can excite or inhibit each other. | Helps clusters and corrections behave like memory, not a flat list. |
-| consolidation | Active clusters can become durable concept memories. | Turns repeated patterns into inspectable higher-level memories with provenance. |
-
-Technically, the current `MemoryFieldGraph` is a discrete graph over stored
-memories, not a continuous mathematical physics field. It supports adaptive
-recall inside the broader verified-experience lifecycle; the research path is
-to make its dynamics more explicit, measurable, and scalable.
-
-Self-organization is now part of the core surface. `consolidate_concepts()`,
-`wavemind consolidate`, and `POST /consolidate` can turn an active graph cluster
-into a new stored memory such as `Consolidated memory: systems...` without an
-LLM call. The generated memory keeps the source memory ids in metadata, so it is
-auditable instead of being a hidden summary.
-
 ## Optional Embeddings
 
 The base install is offline and keyless. Add sentence-transformers when you
@@ -624,8 +574,24 @@ correction, forgetting, and rollback. See the practical
 [Chroma migration guide](docs/CHROMA_MIGRATION.md) and
 [index backend guide](docs/INDEX_BACKENDS.md).
 
+## Quantum Sensing Research
+
+![Conceptual illustration: a transparent crystal on a copper mount, not a built sensor.](research/breakthrough/assets/quantum-sensing-concept.png)
+
+Can control make a weak signal easier to read? Cover: conceptual illustration.
+[Visual research guide](research/breakthrough/README.md) · [По-русски](research/breakthrough/START_HERE_RU.md).
+
+![Frozen simulation: pulse compensation improves both methods; DRAG3 with RXY8 remains above DRAG3 with RS.](research/breakthrough/assets/pulse-comparison.svg)
+
+Simulation only: the candidate does **not** beat the strongest known control.
+This separate research track is not a proven breakthrough, built sensor or
+library feature. [Results and limits](research/breakthrough/sensing_rs/RESULTS_V3_RU.md).
+
 ## Known Limitations
 
+- Brain D1 uses plaintext local storage and synthetic engineering scenarios.
+  Signed installation (D2), team deployment (D3), real user usefulness and frozen
+  scientific comparison (D4) remain separate. Read [Brain limits](docs/brain/limitations.md).
 - The default NumPy exact index is intended for local memory streams. Run
   `wavemind scale-plan` and move to FAISS, Qdrant, or pgvector before treating it
   as a large-N production index.

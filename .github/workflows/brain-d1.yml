@@ -1,0 +1,44 @@
+name: Brain D1 evidence
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Install required test and isolated browser tooling
+        shell: bash
+        run: |
+          python -m pip install -e ".[dev,providers]"
+          npm install --prefix "$RUNNER_TEMP/brain-browser" --no-audit --no-fund playwright@1.62.1
+          "$RUNNER_TEMP/brain-browser/node_modules/.bin/playwright" install --with-deps chromium
+          echo "BRAIN_UI_NODE=$(command -v node)" >> "$GITHUB_ENV"
+          echo "BRAIN_UI_PLAYWRIGHT=$RUNNER_TEMP/brain-browser/node_modules/playwright" >> "$GITHUB_ENV"
+          echo "BRAIN_UI_CHROME=$(node -e "console.log(require('$RUNNER_TEMP/brain-browser/node_modules/playwright').chromium.executablePath())")" >> "$GITHUB_ENV"
+      - name: Execute complete source-bound D1 suite
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python scripts/verify_brain_d1.py --expected-source-sha "$GITHUB_SHA" --output "$RUNNER_TEMP/brain-d1-evidence.json"
+      - name: Preserve sanitized evidence for this candidate
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: brain-d1-${{ github.sha }}
+          path: ${{ runner.temp }}/brain-d1-evidence.json
+          if-no-files-found: error

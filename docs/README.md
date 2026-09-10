@@ -8,6 +8,9 @@ benchmarks only when the deployment requires them.
 
 | Goal | Guide |
 |---|---|
+| Continue a personal project with owner-controlled D1 memory | [Brain personal guide, RU/EN](brain/personal.md) |
+| Keep client handoffs and source access separate | [Brain company guide, RU/EN](brain/teams.md) |
+| Connect an agent to the source preview | [Brain contract](brain/agent-contract.md) and [limits/evidence](brain/limitations.md) |
 | Understand the product idea without reading the code | [Why WaveMind](WHY_WAVEMIND.md) |
 | Install and recall the first memory | [Quick Start](../README.md#quick-start) |
 | Generate a Python, TypeScript, MCP, or Docker starter | `wavemind init` in the [Quick Start](../README.md#quick-start) |
