@@ -581,3 +581,17 @@ Add one reusable `.github/workflows/brain-d1.yml` with `workflow_call`, Python3.
 Add one caller job to existing `.github/workflows/full-check.yml` and include it in `required.needs`, retaining all14 existing dependency jobs and their success-only aggregation unchanged. This extends the already protected required check instead of making browser acceptance optional. Do not alter branch-protection/account settings, repurpose compatibility/SAST/Safe Product jobs or add duplicate standalone triggers. Existing full-check runs on main PR/main push/manual request; this caller supplies the D1 gate on those actual revisions. A local run is not GitHub CI evidence, and a pull-request merge SHA is not silently relabelled as branch/main SHA.
 
 Node20 was rejected for new CI because it is EOL. Primary checks2026-09-10: [Node release status](https://nodejs.org/en/about/previous-releases) and [Playwright supported Node versions](https://playwright.dev/docs/intro); Node24 is also the existing pages.yml selection. Existing unrelated Node22 lanes are unchanged. This scope adds only the new workflow, minimal caller/needs extension and acceptance implementation/tests/docs. It does not admit D2/D3/D4 or change historical research conclusions.
+
+### Predeclared optional historical upstream checks
+
+Exactly these existing test nodes may be classified `missing_optional_upstream` only when their corresponding fixed upstream path is independently absent before and after execution and their actual fixed existing skip reason matches. LongMemEval path is `ROOT.parents[1]/scientific-evidence/upstreams/longmemeval-v2`; MemOps is sibling `memops`. The fixed reasons are `official LongMemEval v2 upstream is not included in this repository` and `official MemOps upstream is not included in this repository`. A present-but-invalid upstream, different reason, unrelated node, missing required Brain test or absent required core contract does not qualify. Local available checkouts must execute these tests; no automatic cloning or historical candidate checkout is added. Counts/classification remain explicit unexecuted historical external coverage, not scientific admission.
+
+| Exact legacy node | Upstream |
+|---|---|
+| `tests/test_scientific_frozen_lexical_index.py::test_indexed_prototype_matches_v31_backend_across_worker_threads` | LongMemEval |
+| `tests/test_scientific_longmemeval_v2_backend.py::test_registered_backend_is_gold_blind_atomic_and_production_empty` | LongMemEval |
+| `tests/test_scientific_memops_v6_validation.py::test_frozen_memops_validation_subjects_and_operation_matrix_are_untouched` | MemOps |
+| `tests/test_scientific_v19_final_harnesses.py::test_v19_longmemeval_backend_registers_exact_candidate_without_gold` | LongMemEval |
+| `tests/test_scientific_v31_final_harnesses.py::test_v31_longmemeval_backend_registers_exact_candidate_without_gold` | LongMemEval |
+| `tests/test_scientific_v31_final_harnesses.py::test_v31_longmemeval_backend_serializes_shared_queries_and_keeps_metadata_local` | LongMemEval |
+| `tests/test_scientific_v31_longmem_binary_judgement_compatibility.py::test_binary_compatibility_wraps_exact_official_parser_without_changing_existing_forms` | LongMemEval |
