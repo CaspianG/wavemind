@@ -19,7 +19,9 @@ _MAX_TOP_K = 100
 
 def _require_mcp() -> tuple[type[Any], type[Any]]:
     try:
-        from mcp.server.fastmcp import Context, FastMCP
+        from .integrations.mcp_compat import require_fastmcp
+
+        FastMCP, Context = require_fastmcp()
     except ImportError as exc:  # pragma: no cover - exercised without the extra
         raise RuntimeError(
             'MCP support is not installed. Run: pip install "wavemind[mcp]"'

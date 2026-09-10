@@ -124,6 +124,7 @@ dev = [
 
 [project.scripts]
 wavemind = "wavemind.cli:main"
+wavemind-brain = "wavemind.brain.cli:main"
 wavemind-mcp = "wavemind.mcp_server:main"
 
 [project.urls]

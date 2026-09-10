@@ -3183,6 +3183,11 @@ def handle_workspace_command(args: argparse.Namespace) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     configure_stdio()
+    selected = sys.argv[1:] if argv is None else argv
+    if selected and selected[0] == "brain":
+        from .brain.cli import main as brain_main
+
+        return brain_main(selected[1:])
     parser = build_parser()
     args = parser.parse_args(argv)
     if args.command is None:

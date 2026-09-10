@@ -64,6 +64,9 @@ def principal_data(principal):
         "operations": sorted(principal.operations)
         if principal.operations is not None
         else None,
+        "source_refs": sorted(principal.source_refs)
+        if principal.source_refs is not None
+        else None,
     }
 
 

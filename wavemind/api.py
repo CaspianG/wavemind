@@ -1662,7 +1662,21 @@ def create_app(
     experience_store: SQLiteExperienceStore | None = None,
     workspace_registry: Mapping[str, str | Path] | None = None,
     workspace_base_roots: Sequence[str | Path] | None = None,
+    brain_service=None,
+    brain_auth=None,
+    brain_only: bool = False,
 ) -> FastAPI:
+    if (brain_service is None) != (brain_auth is None) or (brain_only and brain_service is None):
+        raise ValueError("Brain service and auth must be explicitly configured together.")
+    if brain_only:
+        from .brain.http import mount_brain
+        from .encoders import HashingTextEncoder
+
+        app = FastAPI(title="WaveMind Brain", version=__version__, docs_url=None, redoc_url=None)
+        app.state.mind = WaveMind(db_path=":memory:", store_kind="sqlite", encoder=HashingTextEncoder())
+        mount_brain(app, brain_service, brain_auth)
+        app.router.add_event_handler("shutdown", app.state.mind.close)
+        return app
     logging.basicConfig(level=os.environ.get("WAVEMIND_LOG_LEVEL", "INFO"))
     app = FastAPI(title="WaveMind", version=__version__)
     observability = configure_observability(service_version=__version__)
@@ -3520,4 +3534,8 @@ def create_app(
             )
         return BackupResponse(path=str(path))
 
+    if brain_service is not None:
+        from .brain.http import mount_brain
+
+        mount_brain(app, brain_service, brain_auth)
     return app

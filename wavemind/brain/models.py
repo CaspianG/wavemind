@@ -63,6 +63,7 @@ class Principal:
     kind: str = "human"
     brain_ids: frozenset[str] | None = None
     operations: frozenset[str] | None = None
+    source_refs: frozenset[tuple[str, str]] | None = None
 
     def __post_init__(self):
         bounded_text(self.identity)
@@ -72,6 +73,15 @@ class Principal:
         object.__setattr__(
             self, "operations", _grants(self.operations, operations=True)
         )
+        if self.source_refs is not None:
+            if not isinstance(self.source_refs, (list, tuple, set, frozenset)):
+                raise BrainError("invalid_input", "Invalid source grant.")
+            refs = set()
+            for ref in self.source_refs:
+                if not isinstance(ref, (list, tuple)) or len(ref) != 2:
+                    raise BrainError("invalid_input", "Invalid source grant.")
+                refs.add((bounded_text(ref[0]), bounded_text(ref[1])))
+            object.__setattr__(self, "source_refs", frozenset(refs))
         if self.kind == "agent" and (not self.brain_ids or not self.operations):
             raise BrainError(
                 "invalid_input", "Agent grants must be explicit and nonempty."

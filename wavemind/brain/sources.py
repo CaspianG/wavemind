@@ -299,7 +299,44 @@ def _version_result(conn, *, principal, brain_id, source_id, version):
         citations.append(
             {"id": row["id"], "text": row["text"], **json.loads(row["locator_json"])}
         )
-    return {"id": source_id, "version": version, "citations": citations}
+    acl = conn.execute(
+        "SELECT readers_json FROM sources WHERE brain_id=? AND id=?",
+        (brain_id, source_id),
+    ).fetchone()[0]
+    return {
+        "id": source_id,
+        "version": version,
+        "citations": citations,
+        "access": _audience(None if acl is None else json.loads(acl)),
+    }
+
+
+def _audience(readers):
+    return {
+        "mode": "all_live_members" if readers is None else "restricted",
+        "readers": readers,
+    }
+
+
+def _initial_readers(conn, principal, brain_id, readers):
+    if readers is None:
+        return None
+    require_access(conn, principal, brain_id, "manage_access")
+    if principal.kind != "human" or not isinstance(readers, list) or len(readers) > 100:
+        raise _invalid()
+    return sorted({bounded_text(reader) for reader in readers})
+
+
+def _existing_audience(conn, brain_id, source_id, readers):
+    if source_id is not None and readers is not None:
+        current = conn.execute(
+            "SELECT readers_json FROM sources WHERE brain_id=? AND id=?",
+            (brain_id, source_id),
+        ).fetchone()[0]
+        if current is None or sorted(json.loads(current)) != readers:
+            raise BrainError(
+                "invalid_input", "Existing source audience differs from preview."
+            )
 
 
 def _resolve_source(conn, *, principal, brain_id, item):
@@ -332,10 +369,18 @@ class Sources:
         self.store = store
 
     def preview_import(
-        self, *, principal: Principal, brain_id: str, files: list[dict]
+        self,
+        *,
+        principal: Principal,
+        brain_id: str,
+        files: list[dict],
+        new_source_readers: list[str] | None = None,
     ) -> dict:
         with self.store.transaction() as conn:
             require_access(conn, principal, brain_id, "import")
+            if principal.source_refs is not None:
+                raise _not_found()
+            readers = _initial_readers(conn, principal, brain_id, new_source_readers)
             if not isinstance(files, list) or not 1 <= len(files) <= MAX_FILES:
                 raise _invalid()
             total = 0
@@ -392,11 +437,21 @@ class Sources:
         now, preview_id = time.time(), uuid4().hex
         with self.store.transaction(write=True) as conn:
             require_access(conn, principal, brain_id, "import")
+            readers = _initial_readers(conn, principal, brain_id, readers)
             for item in parsed:
                 if item["status"] == "valid":
                     item["source_id"] = _resolve_source(
                         conn, principal=principal, brain_id=brain_id, item=item
                     )
+                    _existing_audience(conn, brain_id, item["source_id"], readers)
+                    current_readers = readers
+                    if item["source_id"] is not None:
+                        acl = conn.execute(
+                            "SELECT readers_json FROM sources WHERE brain_id=? AND id=?",
+                            (brain_id, item["source_id"]),
+                        ).fetchone()[0]
+                        current_readers = None if acl is None else json.loads(acl)
+                    item["access"] = _audience(current_readers)
                 elif item["source_id"] is not None:
                     require_access(
                         conn, principal, brain_id, "import", [item["source_id"]]
@@ -428,7 +483,10 @@ class Sources:
                     revision,
                     now,
                     now + PREVIEW_SECONDS,
-                    json.dumps({"files": parsed}, ensure_ascii=False),
+                    json.dumps(
+                        {"files": parsed, "new_source_readers": readers},
+                        ensure_ascii=False,
+                    ),
                 ),
             )
         public = [
@@ -440,6 +498,7 @@ class Sources:
             "files": public,
             "network_calls": 0,
             "model_connected": False,
+            "new_source_access": _audience(readers),
         }
 
     def commit_import(
@@ -497,6 +556,11 @@ class Sources:
                         [item["id"] for item in payload["result"]["sources"]],
                     )
                 return payload["result"]
+            readers = _initial_readers(
+                conn, principal, brain_id, payload.get("new_source_readers")
+            )
+            if principal.source_refs is not None:
+                raise _not_found()
             if row["expires_at"] is None or row["expires_at"] <= time.time():
                 raise BrainError("preview_expired", "Import preview expired.")
             selected = [item for item in payload["files"] if item["id"] in accepted]
@@ -512,6 +576,7 @@ class Sources:
                     conn, principal=principal, brain_id=brain_id, item=item
                 )
                 sid = item["source_id"]
+                _existing_audience(conn, brain_id, sid, readers)
                 if (
                     sid is not None
                     and sid in targets
@@ -527,7 +592,7 @@ class Sources:
                 if sid is None:
                     sid = uuid4().hex
                     conn.execute(
-                        "INSERT INTO sources(brain_id,id,title,kind,created_at,updated_at) VALUES (?,?,?,?,?,?)",
+                        "INSERT INTO sources(brain_id,id,title,kind,created_at,updated_at,readers_json) VALUES (?,?,?,?,?,?,?)",
                         (
                             brain_id,
                             sid,
@@ -535,6 +600,7 @@ class Sources:
                             item["kind"],
                             time.time(),
                             time.time(),
+                            None if readers is None else json.dumps(readers),
                         ),
                     )
                 existing = conn.execute(

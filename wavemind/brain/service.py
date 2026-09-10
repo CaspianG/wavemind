@@ -284,10 +284,18 @@ class BrainService:
         )
 
     def preview_import(
-        self, *, principal: Principal, brain_id: str, files: list[dict]
+        self,
+        *,
+        principal: Principal,
+        brain_id: str,
+        files: list[dict],
+        new_source_readers: list[str] | None = None,
     ) -> dict:
         return self.sources.preview_import(
-            principal=principal, brain_id=brain_id, files=files
+            principal=principal,
+            brain_id=brain_id,
+            files=files,
+            new_source_readers=new_source_readers,
         )
 
     def commit_import(

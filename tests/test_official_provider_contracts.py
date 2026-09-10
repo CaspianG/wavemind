@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import sys
+import subprocess
 from typing import TypedDict
 
 import pytest
@@ -21,6 +22,46 @@ from wavemind.integrations.anthropic import ANTHROPIC_MEMORY_TOOL
 from wavemind.integrations.langgraph import make_experience_recall_node
 from wavemind.integrations.mcp_experience import build_experience_mcp_server
 from wavemind.integrations.openai_agents import WaveMindAgentsSession
+
+
+@pytest.mark.parametrize("builder", ["memory", "experience"])
+def test_mcp_builders_initialize_in_cold_process_without_incomplete_settings(builder):
+    pytest.importorskip("mcp.server.fastmcp")
+    script = """
+import asyncio, json, warnings
+from pydantic_settings import IncompleteFieldDefinitionWarning
+warnings.simplefilter("error", IncompleteFieldDefinitionWarning)
+from wavemind import WaveMind, ExperienceCompiler, MemoryFirewall, MemoryFirewallPolicy, SQLiteExperienceStore
+from wavemind.mcp_server import build_mcp_server
+from wavemind.integrations.mcp_experience import build_experience_mcp_server
+import sys
+if sys.argv[1] == "memory":
+    resource = WaveMind(db_path=":memory:")
+    server = build_mcp_server(resource)
+else:
+    resource = SQLiteExperienceStore(":memory:")
+    server = build_experience_mcp_server(ExperienceCompiler(resource, MemoryFirewall(MemoryFirewallPolicy(namespace="agent"))))
+try:
+    print(json.dumps([{ "name": t.name, "schema": t.inputSchema } for t in asyncio.run(server.list_tools())]))
+finally:
+    resource.close()
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script, builder], capture_output=True, text=True
+    )
+    assert result.returncode == 0, result.stderr
+    import json
+
+    tools = json.loads(result.stdout)
+    names = {tool["name"] for tool in tools}
+    expected = (
+        {"compile_experience_packet", "expand_experience"}
+        if builder == "experience"
+        else {"remember", "recall"}
+    )
+    assert expected <= names
+    assert all(tool["schema"]["type"] == "object" for tool in tools)
+    assert result.stderr == ""
 
 
 @pytest.fixture
@@ -120,6 +161,5 @@ def test_langgraph_compiles_and_invokes_experience_node(compiler) -> None:
     result = graph.invoke({"input": "official provider contract"})
     assert "Official provider contract" in result["experience_packet"]
     assert (
-        result["experience_packet_data"]["items"][0]["experience_id"]
-        == "exp_official"
+        result["experience_packet_data"]["items"][0]["experience_id"] == "exp_official"
     )

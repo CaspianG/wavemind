@@ -77,6 +77,11 @@ def require_access(
     for source_id in source_ids:
         if not isinstance(source_id, str):
             raise _not_found()
+        if (
+            principal.source_refs is not None
+            and (brain_id, source_id) not in principal.source_refs
+        ):
+            raise _not_found()
         row = conn.execute(
             "SELECT status,readers_json FROM sources WHERE brain_id=? AND id=?",
             (brain_id, source_id),
@@ -95,5 +100,9 @@ def allowed_sources(
         for row in conn.execute(
             "SELECT id,status,readers_json FROM sources WHERE brain_id=?", (brain_id,)
         )
-        if _readable(row, principal, role)
+        if (
+            principal.source_refs is None
+            or (brain_id, row["id"]) in principal.source_refs
+        )
+        and _readable(row, principal, role)
     }
