@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 
 from .auth import BrainAuth
+from .credential_file import owner_key_path, persist_owner_key
 from .models import BrainError
 from .portability_archive import safe_path
 from .service import BrainService
@@ -38,7 +39,9 @@ def _parser():
     for name in ("init", "serve", "mcp", "backup", "restore", "export", "doctor"):
         command = commands.add_parser(name)
         command.add_argument("--state-dir", type=Path, required=True)
-        if name != "init":
+        if name == "init":
+            command.add_argument("--owner-key-file", type=Path, required=True)
+        else:
             command.add_argument(
                 "--token-file",
                 type=Path,
@@ -87,16 +90,21 @@ def main(argv=None):
                 "D1 serve is loopback-only. Nonlocal hosting requires the separate D3/TLS deployment stage.",
             )
         state_dir = local_path(args.state_dir)
+        selected_owner_key = (
+            owner_key_path(args.owner_key_file) if args.command == "init" else None
+        )
         auth = BrainAuth(state_dir)
         if args.command == "init":
+            auth.bootstrap_owner(
+                persist=lambda token: persist_owner_key(selected_owner_key, token)
+            )
             service = BrainService(state_dir)
-            secret = auth.bootstrap_owner()
             service.bootstrap_owner = auth.owner_identity
             print(
                 json.dumps(
                     {
-                        "schema": "wavemind.brain_init.v1",
-                        "owner_secret": secret,
+                        "schema": "wavemind.brain_init.v2",
+                        "owner_key_file": str(selected_owner_key),
                         "notice": NOTICE,
                     }
                 )

@@ -79,10 +79,12 @@ REQUIRED_CASES = {
             "portability", "current_history_pending_gate_survives_restore_and_restart"
         ),
         _case("portability", "current_deletion_overrides_stale_backup"),
+        _case("credential_file", "owner_key_has_native_private_permissions"),
     ],
     "F11": [
         _case("sources", "literal_count_input_and_extracted_boundaries"),
         _case("mcp_cli", "cli_refuses_linked_profile_and_credential_file"),
+        _case("credential_file", "owner_key_has_native_private_permissions"),
     ],
     "F12": [
         _case("ui_scenarios", f"real_owner_browser_journey[{scenario}-{variant}]")
@@ -112,6 +114,7 @@ REQUIRED_CASES = {
             "experience_bridge", "reported_steps_are_state_events_never_tool_execution"
         ),
         _case("mcp_cli", "cli_init_restart_doctor_and_loopback_gate"),
+        _case("credential_file", "owner_key_has_native_private_permissions"),
     ],
 }
 
@@ -126,11 +129,11 @@ GATE_MODULES = {
     "F07": "sources reconcile context experience_bridge maintenance source_citations ui_scenarios",
     "F08": "context experience_bridge private_runtime maintenance source_citations ui_scenarios",
     "F09": "sources reconcile experience_bridge portability ui_scenarios",
-    "F10": "portability mcp_cli",
-    "F11": "sources http mcp_cli ui_scenarios",
+    "F10": "portability mcp_cli credential_file",
+    "F11": "sources http mcp_cli ui_scenarios credential_file",
     "F12": "ui_scenarios mcp_cli source_citations",
     "F13": "private_runtime",
-    "F14": "sources context experience_bridge http mcp_cli ui_scenarios",
+    "F14": "sources context experience_bridge http mcp_cli ui_scenarios credential_file",
 }
 
 # Closed baseline exceptions. Installed-but-broken distributions are NOT absent.

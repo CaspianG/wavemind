@@ -162,6 +162,18 @@ def test_optional_skip_allowlist_requires_actual_absence_and_exact_case(monkeypa
     assert classify_skip("tests/brain/test_new.py", reason) == "unexpected_skip"
 
 
+def test_protected_owner_key_is_mandatory_in_each_relevant_gate():
+    from scripts.verify_brain_d1 import GATE_MODULES, REQUIRED_CASES
+
+    case = (
+        "tests/brain/test_credential_file.py::"
+        "test_owner_key_has_native_private_permissions"
+    )
+    for gate in ("F10", "F11", "F14"):
+        assert "credential_file" in GATE_MODULES[gate].split()
+        assert case in REQUIRED_CASES[gate]
+
+
 def test_collection_skip_and_error_are_retained_without_raw_messages(monkeypatch):
     from types import SimpleNamespace
     from scripts.verify_brain_d1 import ExecutionCollector

@@ -20,8 +20,10 @@ def main() -> int:
     parser.add_argument("--safe-retrieval", type=Path, required=True)
     parser.add_argument("--product-persistence", type=Path, required=True)
     parser.add_argument("--quickstarts", type=Path, required=True)
+    parser.add_argument("--codeql-results", type=Path, required=True)
+    parser.add_argument("--expected-repository", required=True)
+    parser.add_argument("--expected-ref", required=True)
     parser.add_argument("--ci-matrix-passed", action="store_true")
-    parser.add_argument("--sast-passed", action="store_true")
     parser.add_argument(
         "--output",
         type=Path,
@@ -39,8 +41,10 @@ def main() -> int:
         safe_retrieval_artifact=args.safe_retrieval,
         product_persistence_artifact=args.product_persistence,
         quickstart_artifact=args.quickstarts,
+        codeql_results_artifact=args.codeql_results,
         ci_matrix_passed=args.ci_matrix_passed,
-        sast_passed=args.sast_passed,
+        expected_repository=args.expected_repository,
+        expected_ref=args.expected_ref,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(

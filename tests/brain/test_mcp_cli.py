@@ -34,16 +34,22 @@ def run_cli(profile, *args, token=None):
 
 
 def test_cli_init_restart_doctor_and_loopback_gate(tmp_path):
-    first = run_cli(tmp_path, "init")
+    owner_key = tmp_path / "owner.key"
+    first = run_cli(tmp_path, "init", "--owner-key-file", str(owner_key))
     assert first.returncode == 0
     payload = json.loads(first.stdout)
-    assert payload["schema"] == "wavemind.brain_init.v1"
-    token = payload["owner_secret"]
+    assert payload["schema"] == "wavemind.brain_init.v2"
+    assert payload["owner_key_file"] == str(owner_key.absolute())
+    assert "owner_secret" not in payload
+    token = owner_key.read_text(encoding="utf-8").strip()
     assert token and "Python" in payload["notice"] and "D2" in payload["notice"]
-    second = run_cli(tmp_path, "init")
+    assert token not in first.stdout + first.stderr
+    second_key = tmp_path / "second-owner.key"
+    second = run_cli(tmp_path, "init", "--owner-key-file", str(second_key))
     assert second.returncode == 2
     assert token not in second.stdout + second.stderr
-    doctor = run_cli(tmp_path, "doctor", token=token)
+    assert not second_key.exists()
+    doctor = run_cli(tmp_path, "doctor", "--token-file", str(owner_key))
     assert doctor.returncode == 0
     assert json.loads(doctor.stdout)["network_calls"] == 0
     assert token not in doctor.stdout + doctor.stderr
@@ -51,6 +57,15 @@ def test_cli_init_restart_doctor_and_loopback_gate(tmp_path):
     assert denied.returncode == 2
     assert "D3" in denied.stderr and token not in denied.stderr
     assert not (tmp_path / "brain-experience.sqlite3").exists()
+
+
+def test_cli_init_requires_key_destination_before_profile_mutation(tmp_path):
+    profile = tmp_path / "profile"
+
+    result = run_cli(profile, "init")
+
+    assert result.returncode == 2
+    assert not profile.exists()
 
 
 def test_cli_backup_restore_export_and_new_destination(tmp_path):
@@ -113,9 +128,10 @@ def test_cli_backup_restore_export_and_new_destination(tmp_path):
     assert result.returncode == 0
     assert "import_previews_not_restored" in json.loads(result.stdout)["warnings"]
     target = tmp_path / "target"
-    initialized = run_cli(target, "init")
+    target_key = tmp_path / "target-owner.key"
+    initialized = run_cli(target, "init", "--owner-key-file", str(target_key))
     assert initialized.returncode == 0
-    target_secret = json.loads(initialized.stdout)["owner_secret"]
+    target_secret = target_key.read_text(encoding="utf-8").strip()
     restored = run_cli(
         target, "restore", "--archive", str(archive), token=target_secret
     )
@@ -145,11 +161,15 @@ def test_cli_refuses_linked_profile_and_credential_file(tmp_path):
             pytest.skip("Windows does not permit test symlink or junction creation")
         junction = True
     try:
-        rejected = run_cli(link, "init")
+        rejected = run_cli(
+            link, "init", "--owner-key-file", str(tmp_path / "linked-owner.key")
+        )
         assert rejected.returncode == 2
         assert "invalid_path" in rejected.stderr
         assert not (target / "brain-auth.sqlite3").exists()
-        initialized = run_cli(target, "init")
+        initialized = run_cli(
+            target, "init", "--owner-key-file", str(tmp_path / "owner.key")
+        )
         assert initialized.returncode == 0
         rejected = run_cli(
             target, "doctor", "--token-file", str(link / "credential.txt")
@@ -182,7 +202,9 @@ def test_cli_rejects_linked_internal_database_before_bootstrap(tmp_path):
             pytest.skip("Windows does not permit test symlink or junction creation")
         junction = True
     try:
-        result = run_cli(profile, "init")
+        result = run_cli(
+            profile, "init", "--owner-key-file", str(tmp_path / "owner.key")
+        )
         assert result.returncode == 2
         assert "invalid_path" in result.stderr
         assert sentinel.read_bytes() == b"unrelated sentinel"

@@ -13,6 +13,16 @@ content. This is not OS-account isolation or protection against a privileged
 local process. The dedicated Brain launch does not expose these stores on
 legacy generic memory/experience routes.
 
+Owner initialization requires an explicit new local key-file destination. The
+key is 32 random bytes encoded with `token_urlsafe`, while authentication stores
+only a SHA-256 lookup digest; terminal `getpass` reads an already issued key and
+does not enroll a chosen password. This is why the password-hashing alert for
+that exact flow is a documented false positive. If chosen passwords or weaker
+issuance are introduced, this conclusion no longer applies. The key file is
+protected plaintext, not encryption: POSIX creates it as the current owner with
+mode 0600, and Windows creates a protected noninherited current-user-only DACL.
+Unsupported private creation fails closed.
+
 The owner chooses each new UI import's audience; it starts owner-private.
 Service callers that omit `new_source_readers` or supply null use all live Brain
 members for a new source. Existing-source updates and deduplication preserve the
@@ -76,6 +86,14 @@ scores. Fresh private learning is required. `bootstrap_required` means a trusted
 authenticated target owner is missing; archive/body identity cannot supply one.
 `recovery_required` requires resolving the recovery state before ordinary use.
 No lost-owner-secret reset is provided.
+
+The protected key file is flushed before the owner credential is committed.
+There is no atomic transaction spanning the file and SQLite. A write or flush
+failure leaves no newly usable owner. A crash after file creation but before the
+database commit can leave an ambiguous file; a later `init` refuses to overwrite
+it, reports incomplete initialization, and requires manual inspection rather
+than inventing a reset or deleting user data. Repeated `init` never replaces an
+existing owner or key file.
 
 Sanitized backups can preserve readable history as `cleanup_pending` while
 omitting an unavailable shared private namespace. `private_cleanup_pending`
@@ -164,6 +182,15 @@ D1 является локальным инженерным прототипом
 массовой установки, автоматического чтения чатов, выбранного аккаунта или
 подключённой модели.
 
+Для инициализации нужен явно выбранный новый локальный файл ключа. Ключ создаётся
+из 32 случайных байтов через `token_urlsafe`; в базе хранится только поисковый
+SHA-256-дайджест. `getpass` лишь читает уже выданный ключ, а не регистрирует пароль
+пользователя, поэтому предупреждение о слабом хешировании пароля ложно только для
+этого контракта. Файл содержит открытый текст: в POSIX он создаётся с режимом
+0600 для текущего владельца, а в Windows — с защищённым ненаследуемым DACL только
+для текущего пользователя. Если такую защиту создать нельзя, операция закрывается
+с ошибкой.
+
 Импорт ограничен 20 файлами, 10 МиБ на файл, 50 МиБ суммарно, 2 МиБ извлечённого
 UTF-8 текста на файл и 30 секундами разбора. Архивы, ссылки/reparse-переходы и
 чтение серверного пути через HTTP запрещены. Цитаты относятся к нормализованному
@@ -188,6 +215,10 @@ WaveMind. Старый успех не доказывает пользу пам�
 проверки зависимостей. `bootstrap_required` означает отсутствие доверенного
 владельца назначения, `recovery_required` требует разрешить состояние
 восстановления. Ключ владельца нельзя сбросить архивом или повторным `init`.
+Файл ключа сбрасывается на диск до фиксации владельца в SQLite, но общей атомарной
+транзакции нет. Сбой записи не создаёт действующего владельца. После аварии может
+остаться неоднозначный файл без зафиксированного владельца; повторный `init` его
+не удаляет и не перезаписывает, а сообщает о незавершённой инициализации.
 
 Команда проверки выше запускает настоящие тесты с привязкой к чистому SHA.
 Неисполненный обязательный тест не становится успешным. Только закрытый список

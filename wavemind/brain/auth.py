@@ -97,13 +97,15 @@ class BrainAuth:
                 )
             return row[0]
 
-    def bootstrap_owner(self) -> str:
+    def bootstrap_owner(self, *, persist=None) -> str:
         token, identity = secrets.token_urlsafe(32), "owner:" + uuid4().hex
         with self._transaction() as conn:
             if conn.execute("SELECT 1 FROM bootstrap").fetchone():
                 raise BrainError(
                     "already_initialized", "Local owner already initialized."
                 )
+            if persist is not None:
+                persist(token)
             conn.execute("INSERT INTO bootstrap VALUES (1,?)", (identity,))
             conn.execute(
                 "INSERT INTO credentials VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",

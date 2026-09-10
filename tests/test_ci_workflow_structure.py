@@ -107,19 +107,32 @@ def test_safe_product_admission_depends_on_real_compatibility_and_sast_jobs():
     ]
     admission = jobs["admission"]
     assert admission["needs"] == ["compatibility", "sast"]
-    commands = "\n".join(
-        step.get("run", "") for step in admission["steps"]
+    verifier = next(
+        step
+        for step in admission["steps"]
+        if step.get("name") == "Verify actual CodeQL results"
     )
+    assert verifier["env"] == {"GITHUB_TOKEN": "${{ github.token }}"}
+    assert "scripts/verify_codeql_admission.py" in verifier["run"]
+    assert "--require-admitted" in verifier["run"]
+    commands = "\n".join(step.get("run", "") for step in admission["steps"])
     for command in (
         "safe_retrieval_admission.py",
         "product_persistence_admission.py",
         "quickstart_admission.py",
         "safe_product_admission.py",
         "--ci-matrix-passed",
-        "--sast-passed",
+        "--codeql-results",
         "--require-admitted",
     ):
         assert command in commands
+    assert "--sast-passed" not in commands
+    upload = next(
+        step
+        for step in admission["steps"]
+        if step.get("name") == "Upload exact-SHA admission evidence"
+    )
+    assert "codeql-results.json" in upload["with"]["path"]
 
     workspace = jobs["workspace-experience"]
     assert workspace["name"] == "workspace-experience exact-SHA admission"

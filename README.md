@@ -145,13 +145,15 @@ ordinary local profile outside the repository:
 
 ```sh
 python -m pip install -e ".[mcp]"
-python -m wavemind brain init --state-dir /absolute/local/brain-profile
-python -m wavemind brain serve --state-dir /absolute/local/brain-profile
+python -m wavemind brain init --state-dir /absolute/local/brain-profile --owner-key-file /absolute/local/brain-owner.key
+python -m wavemind brain serve --state-dir /absolute/local/brain-profile --token-file /absolute/local/brain-owner.key
 ```
 
 Replace the example path with your selected local directory (on Windows,
-`C:\WaveMindPilot\profile` is an example). `init` shows the owner key once;
-save it privately. `serve` asks for that key in an interactive terminal.
+`C:\WaveMindPilot\profile` is an example). `init` creates the explicitly selected
+new owner-key file with private OS access and never prints the key. Keep that
+plaintext key file private; `serve --token-file` reads it without placing the key
+in a command argument or terminal transcript.
 Open [the local owner UI](http://127.0.0.1:8000/brain), sign in with the same key,
 select RU or EN and create a project. Preview an import before saving it.
 The [personal guide](docs/brain/personal.md) covers setup, correction, access,

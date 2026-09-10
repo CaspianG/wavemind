@@ -106,6 +106,14 @@ jobs:
       - name: Build the exact candidate image
         run: docker build --build-arg INSTALL_PRODUCTION=true --tag "wavemind:safe-product-${GITHUB_SHA}" .
 
+      - name: Verify actual CodeQL results
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/verify_codeql_admission.py \
+            --output "${RUNNER_TEMP}/codeql-results.json" \
+            --require-admitted
+
       - name: Generate exact-SHA component evidence
         run: |
           python benchmarks/safe_retrieval_admission.py \
@@ -126,8 +134,10 @@ jobs:
             --safe-retrieval "${RUNNER_TEMP}/safe-retrieval.json" \
             --product-persistence "${RUNNER_TEMP}/product-persistence.json" \
             --quickstarts "${RUNNER_TEMP}/quickstarts.json" \
+            --codeql-results "${RUNNER_TEMP}/codeql-results.json" \
+            --expected-repository "${GITHUB_REPOSITORY}" \
+            --expected-ref "${GITHUB_REF}" \
             --ci-matrix-passed \
-            --sast-passed \
             --output "${RUNNER_TEMP}/safe-product.json" \
             --markdown-output "${RUNNER_TEMP}/SAFE_PRODUCT_ADMISSION.md" \
             --require-admitted
@@ -140,6 +150,7 @@ jobs:
             ${{ runner.temp }}/safe-retrieval.json
             ${{ runner.temp }}/product-persistence.json
             ${{ runner.temp }}/quickstarts.json
+            ${{ runner.temp }}/codeql-results.json
             ${{ runner.temp }}/safe-product.json
             ${{ runner.temp }}/SAFE_PRODUCT_ADMISSION.md
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 from pathlib import Path
 
+from wavemind.codeql_admission import SAFE_PRODUCT_CATEGORIES, SCHEMA as CODEQL_SCHEMA
 from wavemind.evidence import attach_artifact_integrity, build_source_manifest
 from wavemind.safe_product_admission import (
     EXPECTED_CHECKS,
@@ -10,9 +11,42 @@ from wavemind.safe_product_admission import (
     SCHEMA,
     _backup_restore_rollback_check,
     _canonical_product_status_check,
+    _repository_confidence,
     render_safe_product_markdown,
     validate_safe_product_artifact,
 )
+
+
+def _codeql_results(source_sha: str, *, admitted=True):
+    return attach_artifact_integrity(
+        {
+            "schema": CODEQL_SCHEMA,
+            "status": "admitted" if admitted else "blocked",
+            "admitted": admitted,
+            "source": {
+                "repository": "CaspianG/wavemind",
+                "ref": "refs/pull/121/merge",
+                "sha": source_sha,
+            },
+            "analyzed_configurations": [
+                {
+                    "id": index,
+                    "category": category,
+                    "results_count": 0,
+                    "rules_count": 100,
+                }
+                for index, category in enumerate(SAFE_PRODUCT_CATEGORIES, start=1)
+            ],
+            "alerts": {
+                "total": 0 if admitted else 1,
+                "open_high": 0 if admitted else 1,
+                "open_critical": 0,
+                "open_other": 0,
+                "dismissed": 0,
+                "fixed": 0,
+            },
+        }
+    )
 
 
 def _artifact(root: Path, source_sha: str):
@@ -105,3 +139,36 @@ def test_safe_product_reads_the_canonical_public_status():
     assert evidence["status_schema"] == "wavemind.product_status.v1"
     assert evidence["expected_version"] == "2.14.0"
     assert evidence["errors"] == []
+
+
+def test_repository_confidence_requires_source_bound_admitted_codeql_results(tmp_path):
+    (tmp_path / ".github" / "workflows").mkdir(parents=True)
+    (tmp_path / ".github" / "workflows" / "tests.yml").write_text(
+        "3.10 3.11 3.12 3.13 windows-latest", encoding="utf-8"
+    )
+    (tmp_path / ".github" / "workflows" / "codeql.yml").write_text(
+        "github/codeql-action/init@v4", encoding="utf-8"
+    )
+    source_sha = "5" * 40
+
+    _, passing = _repository_confidence(
+        tmp_path,
+        ci_matrix_passed=True,
+        codeql_results=_codeql_results(source_sha),
+        expected_repository="CaspianG/wavemind",
+        expected_ref="refs/pull/121/merge",
+        expected_sha=source_sha,
+    )
+    _, blocked = _repository_confidence(
+        tmp_path,
+        ci_matrix_passed=True,
+        codeql_results=_codeql_results(source_sha, admitted=False),
+        expected_repository="CaspianG/wavemind",
+        expected_ref="refs/pull/121/merge",
+        expected_sha=source_sha,
+    )
+
+    assert passing["actual_results_admitted"] is True
+    assert passing["result_errors"] == []
+    assert blocked["actual_results_admitted"] is False
+    assert blocked["result_errors"] == ["CodeQL result status is not admitted"]

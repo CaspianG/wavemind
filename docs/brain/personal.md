@@ -21,8 +21,8 @@ PowerShell, from that checkout, create a project virtual environment:
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -e ".[mcp]"
-.\.venv\Scripts\python.exe -m wavemind brain init --state-dir C:\WaveMindPilot\profile
-.\.venv\Scripts\python.exe -m wavemind brain serve --state-dir C:\WaveMindPilot\profile
+.\.venv\Scripts\python.exe -m wavemind brain init --state-dir C:\WaveMindPilot\profile --owner-key-file C:\WaveMindPilot\owner.key
+.\.venv\Scripts\python.exe -m wavemind brain serve --state-dir C:\WaveMindPilot\profile --token-file C:\WaveMindPilot\owner.key
 ```
 
 Choose your own ordinary local profile path outside the checkout. On Linux or
@@ -31,12 +31,14 @@ package includes the HTTP server, SQLite support and PDF parser; `[mcp]` adds
 stdio MCP. Dependency installation can access package registries. Running this
 Brain workflow does not download a model or call a provider.
 
-`init` prints `owner_secret` once. Store it privately and keep it out of source
-documents, screenshots, chat messages and Git. `serve` prompts for the owner key
-in an interactive terminal. Open `http://127.0.0.1:8000/brain` and sign in with
-the same key. Keep that server terminal open; stop it with Ctrl+C when finished.
-For a noninteractive local process, the CLI accepts `--token-file` or
-`WAVEMIND_BRAIN_TOKEN`; neither is an HTTP request parameter.
+`init` requires a deliberate new `--owner-key-file`, creates it with private OS
+access from the start, and never prints the key. The file is ACL-protected
+plaintext, not encrypted. Keep it out of source documents, screenshots, chat
+messages and Git. Use `serve --token-file` as above. To sign in in the browser,
+open the protected file privately in a local editor and paste its one line into
+the login form; do not print it in a terminal. Keep the server terminal open and
+stop it with Ctrl+C. The CLI also accepts `WAVEMIND_BRAIN_TOKEN` or an interactive
+prompt; none of these credentials is an HTTP request parameter.
 
 The existing `install.bat`, `wavemind studio`, public 2.14.0 package and Docker
 image belong to the legacy library. They are not a bundled D1 installer. A
@@ -95,7 +97,7 @@ UI and choose new destinations; existing destinations are rejected.
 ```powershell
 .\.venv\Scripts\python.exe -m wavemind brain export --state-dir C:\WaveMindPilot\profile --brain-id BRAIN_ID --destination C:\WaveMindPilot\export.json
 .\.venv\Scripts\python.exe -m wavemind brain backup --state-dir C:\WaveMindPilot\profile --brain-id BRAIN_ID --destination C:\WaveMindPilot\backup.zip
-.\.venv\Scripts\python.exe -m wavemind brain init --state-dir C:\WaveMindPilot\restored-profile
+.\.venv\Scripts\python.exe -m wavemind brain init --state-dir C:\WaveMindPilot\restored-profile --owner-key-file C:\WaveMindPilot\restored-owner.key
 .\.venv\Scripts\python.exe -m wavemind brain restore --state-dir C:\WaveMindPilot\restored-profile --archive C:\WaveMindPilot\backup.zip
 ```
 
@@ -144,11 +146,14 @@ PowerShell в разделе выше создают окружение, уст�
 провайдер не вызывается. Данные хранятся открытым текстом; используйте только
 несекретные материалы. Польза для реальных людей пока не измерена.
 
-`init` один раз выводит `owner_secret`. Сохраните ключ приватно. `serve`
-запрашивает его в терминале; затем откройте `http://127.0.0.1:8000/brain` и
-войдите с тем же ключом. Терминал сервера должен оставаться открытым. Для
-остановки нажмите Ctrl+C. Это запуск для разработчика, а не готовый подписанный
-установщик. Старые Studio, `install.bat` и пакет 2.14.0 относятся к библиотеке.
+Укажите для `init` новый локальный файл параметром `--owner-key-file`, например
+`C:\WaveMindPilot\owner.key`. Команда создаёт его сразу с приватными правами ОС и
+не выводит ключ. Это защищённый ACL, но незашифрованный текстовый файл. Запускайте
+`serve --token-file C:\WaveMindPilot\owner.key`. Для входа откройте файл приватно
+в локальном редакторе и вставьте одну строку в форму; не печатайте ключ в
+терминале. Терминал сервера должен оставаться открытым. Для остановки нажмите
+Ctrl+C. Это запуск для разработчика, а не готовый подписанный установщик. Старые
+Studio, `install.bat` и пакет 2.14.0 относятся к библиотеке.
 
 Создайте личный проект, вставьте заметку или выберите файл и посмотрите
 предпросмотр. Новые импорты через интерфейс изначально видны только владельцу;
