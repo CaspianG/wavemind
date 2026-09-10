@@ -453,6 +453,12 @@ HTTP route: `GET /brain/api/{brain_id}/sources/{source_id}/citations` with only 
 
 Before implementation observe failing behavioral domain/HTTP/MCP tests for bounded multi-page traversal, current/all versions, restart, current-version update/stale cursor, exact-source/Brain cap denial, live revocation, paused readability, and malformed/duplicate query. These and the UI restart picker become Task8 review inputs; full export remains an explicit portability action, not normal page bootstrap.
 
+### Controller refinement: owner UI module responsibilities
+
+The initial three-file UI sketch would combine session authority, forms, translations and all daily workflows in one large app.js. Task8 may create two additional native ES modules, retaining static/no-build installation: `app.js` owns session/navigation/controller state; `ui.js` owns safe DOM/form/citation helpers and RU/EN copy; `panels.js` owns daily memory/context/experience/access/recovery rendering through injected state/API callbacks. `index.html` and `style.css` keep their existing roles. No framework, build pipeline, generic plugin architecture or scenario-specific production behavior.
+
+The fixed static asset allowlist and correct JavaScript MIME must cover these modules, and wheel package data remains `brain/ui/*.js` plus HTML/CSS. Session/Brain changes clear sensitive displayed/selected state and abort or discard stale asynchronous results through the controller's generation/cancellation boundary. Imported data still renders only as text. Real browser journeys and wheel resource inspection cover the actual module graph; the split itself is not passing evidence.
+
 ### Task 8: Usable RU/EN owner workflow and real browser scenarios
 
 **Task5 integration handoff:** Experience UI must use paginated `review_experience`, including permitted failed/unverified/replay/integration-pending history after restart, and distinguish current procedure eligibility from historical outcome verification. Show explicit manual operator attestation versus configured verifier, report-only procedure steps rather than observed execution/causality, and actual reporter separately from receipt issuer when displayed. Owner verification selects only server-registered verifiers; no arbitrary code/URL configuration in UI. Exact finalized contracts come from task-5-report.md.
