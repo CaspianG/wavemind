@@ -1,8 +1,8 @@
 {
   "schema": "wavemind.evaluation_validity_admission.v1",
-  "generated_at": "2026-09-09T12:06:54Z",
-  "source_sha": "5860da00bf73142edbf7a94035333c908242355c",
-  "expected_source_sha": "5860da00bf73142edbf7a94035333c908242355c",
+  "generated_at": "2026-09-10T15:06:33Z",
+  "source_sha": "15694621fb848f7ac700a059f98294038261578e",
+  "expected_source_sha": "15694621fb848f7ac700a059f98294038261578e",
   "status": "blocked",
   "admitted": false,
   "implemented_rows": 15,
@@ -269,8 +269,8 @@
       "status": "implemented",
       "requirement": "Admission is tied to the exact source SHA and a current source manifest.",
       "evidence": {
-        "source_sha": "5860da00bf73142edbf7a94035333c908242355c",
-        "expected_source_sha": "5860da00bf73142edbf7a94035333c908242355c",
+        "source_sha": "15694621fb848f7ac700a059f98294038261578e",
+        "expected_source_sha": "15694621fb848f7ac700a059f98294038261578e",
         "source_manifest": {
           "schema": "wavemind.source_manifest.v1",
           "algorithm": "sha256",
@@ -282,7 +282,7 @@
             },
             {
               "path": "README.md",
-              "sha256": "244d407afdb73f32f6c0c064003fe76b4b06a7ef1153a1e6a33e057a3f1f05d7"
+              "sha256": "0d8fbc86fc03cf6af2e91b71194777cf4ce014908743e5d76552bb3167192322"
             },
             {
               "path": "benchmarks/evaluation_dataset_manifest_v1.json",
@@ -310,7 +310,7 @@
             },
             {
               "path": "docs/ROADMAP.md",
-              "sha256": "672550008fd90c39f0ebcf0d35dce21906d1de87037f4bbf1f366af3c58cefc9"
+              "sha256": "3e102483f8c0f2419fdd39195a5a91f2abe60b9b0b712edf691cbd387150050a"
             },
             {
               "path": "docs/adr/0001-task-native-evaluation-science.md",
@@ -369,7 +369,7 @@
               "sha256": "4bd3ee49396e05e0380b19889dda10d553fec9a90b5debed217311a416f4bba4"
             }
           ],
-          "digest": "83294e6668f0da28f5f7d975c1fc62ab6d072dca7925703393deae6da41c0247"
+          "digest": "0e70569f74d0c6972c6b404d572fb1d93b722d94515236b27fd7cc27b832d0e2"
         }
       }
     },
@@ -408,6 +408,6 @@
   "integrity": {
     "schema": "wavemind.artifact_integrity.v1",
     "algorithm": "sha256",
-    "payload_sha256": "70f8c52cf3cca7d1b9d71dd3b73db93b2896937885f29aeab3e310a5398ae3fb"
+    "payload_sha256": "4f2b571dc26182cc8322c2ab2d87951cbf0134986103ae58d27ad7a64d6ef1bc"
   }
 }
