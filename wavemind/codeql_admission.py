@@ -93,32 +93,59 @@ def fetch_github_json(
         raise CodeQLAdmissionError("malformed_response") from None
 
 
-def _next_page(link: str | None, repository: str) -> str | None:
+def _next_page(link: str | None, repository: str, current_url: str) -> str | None:
+    """Read a page transition, never delegate request authority to a Link URL."""
     if not link:
         return None
-    next_urls = []
+    current = urllib.parse.urlsplit(current_url)
+    filters = dict(urllib.parse.parse_qsl(current.query))
+    current_page = int(filters.pop("page", "1"))
+    endpoint = current.path.rsplit("/", 1)[-1]
+    named_path = f"/repos/{repository}/code-scanning/{endpoint}"
+    numeric_path = rf"/repositories/[1-9][0-9]*/code-scanning/{endpoint}"
+    next_pages = []
     for item in link.split(","):
         match = re.fullmatch(r'\s*<([^>]+)>\s*;\s*rel="([^"]+)"\s*', item)
         if match is None:
             raise CodeQLAdmissionError("invalid_pagination")
-        if "next" in match.group(2).split():
-            next_urls.append(match.group(1))
-    if len(next_urls) > 1:
+        target = match.group(1)
+        if "#" in target or any(char.isspace() or ord(char) < 32 for char in target):
+            raise CodeQLAdmissionError("invalid_pagination")
+        try:
+            parsed = urllib.parse.urlsplit(target)
+            pairs = urllib.parse.parse_qsl(
+                parsed.query,
+                keep_blank_values=True,
+                strict_parsing=True,
+                max_num_fields=5,
+            )
+        except ValueError:
+            raise CodeQLAdmissionError("invalid_pagination") from None
+        query = dict(pairs)
+        page = query.pop("page", "")
+        if (
+            parsed.scheme != "https"
+            or parsed.netloc != "api.github.com"
+            or parsed.username is not None
+            or parsed.path != named_path
+            and re.fullmatch(numeric_path, parsed.path) is None
+            or re.search(r"%(?![0-9A-Fa-f]{2})", parsed.query)
+            or len(pairs) != len(dict(pairs))
+            or query != filters
+            or re.fullmatch(r"[1-9][0-9]{0,2}", page) is None
+        ):
+            raise CodeQLAdmissionError("invalid_pagination")
+        relations = match.group(2).split()
+        if "next" in relations:
+            if relations.count("next") != 1 or int(page) != current_page + 1:
+                raise CodeQLAdmissionError("invalid_pagination")
+            next_pages.append(page)
+    if len(next_pages) > 1:
         raise CodeQLAdmissionError("invalid_pagination")
-    if not next_urls:
+    if not next_pages:
         return None
-    url = next_urls[0]
-    parsed = urllib.parse.urlsplit(url)
-    prefix = f"/repos/{repository}/code-scanning/"
-    if (
-        parsed.scheme != "https"
-        or parsed.netloc != "api.github.com"
-        or parsed.username is not None
-        or parsed.fragment
-        or not parsed.path.startswith(prefix)
-    ):
-        raise CodeQLAdmissionError("invalid_pagination")
-    return url
+    query = urllib.parse.urlencode({**filters, "page": next_pages[0]})
+    return f"{API_ORIGIN}{named_path}?{query}"
 
 
 def _header(headers: object, name: str) -> str | None:
@@ -194,7 +221,7 @@ def _pages(
         values.extend(page)
         if len(values) > 10_000:
             raise CodeQLAdmissionError("response_limit")
-        url = _next_page(_header(response_headers, "Link"), repository)
+        url = _next_page(_header(response_headers, "Link"), repository, url)
         if url is None:
             _remaining(deadline)
             return values
