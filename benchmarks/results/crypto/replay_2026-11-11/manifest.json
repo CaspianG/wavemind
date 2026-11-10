@@ -1,0 +1,41 @@
+{
+  "protocol": {
+    "name": "Unchanged live weekly forecast, daily historical replay",
+    "start_utc": "2026-08-11T00:00:00+00:00",
+    "end_utc_exclusive": "2026-11-11T00:00:00+00:00",
+    "symbols": [
+      "BTC/USDT:USDT",
+      "ETH/USDT:USDT",
+      "SOL/USDT:USDT",
+      "GRAM/USDT:USDT",
+      "XRP/USDT:USDT",
+      "ADA/USDT:USDT",
+      "DOGE/USDT:USDT",
+      "AVAX/USDT:USDT"
+    ],
+    "exchange": "okx",
+    "timeframe": "1d",
+    "history_bars": 800,
+    "download_bars": 900,
+    "window": 32,
+    "horizon_bars": 7,
+    "top_k": 5,
+    "fee_bps": 10.0,
+    "slippage_bps": 5.0,
+    "parameter_search": false,
+    "forecast_function": "benchmarks.crypto_current_forecast.forecast_from_bars",
+    "gram_migration": "GRAM/USDT:USDT=binance|TON/USDT:USDT|2026-06-17T00:00:00Z",
+    "baselines": [
+      "Last price",
+      "Always up",
+      "Weekly momentum",
+      "Weekly mean reversion"
+    ],
+    "dependency_check": "Seven origin-date phases, each using non-overlapping seven-day targets within each asset"
+  },
+  "protocol_sha256": "0ce70c40d7d826c697e9c97f563d113dab671b0e31d9ea8f20956f189f5133e0",
+  "model_source_sha256": "b8341ec5b2ba4d28a6b71c7cbb32aaf1b23ae9ba540e1a5b5186cb495a768a5e",
+  "as_of_utc": "2026-11-10T23:15:49.365007+00:00",
+  "source_commit": "1c36d9d",
+  "replay_source_sha256": "ce9d04f1b07461da04ac8fab3e0e8e78dd6b8c707e09ccbab0974a23f3fb4525"
+}

@@ -1,0 +1,9 @@
+{
+  "checked_daily_forecasts": 736,
+  "checked_exact_live_runner_reproductions": 16,
+  "seven_day_target_alignment": "passed",
+  "closed_prefix_and_input_fingerprints": "passed",
+  "positive_finite_targets": "passed",
+  "non_overlapping_phase_spacing": "passed",
+  "recomputed_results_identical": true
+}

@@ -1,0 +1,20 @@
+{
+  "name": "Unchanged live weekly forecast, daily historical replay",
+  "start_utc": "2026-08-11T00:00:00+00:00",
+  "end_utc_exclusive": "2026-11-11T00:00:00+00:00",
+  "symbols": ["BTC/USDT:USDT", "ETH/USDT:USDT", "SOL/USDT:USDT", "GRAM/USDT:USDT", "XRP/USDT:USDT", "ADA/USDT:USDT", "DOGE/USDT:USDT", "AVAX/USDT:USDT"],
+  "exchange": "okx",
+  "timeframe": "1d",
+  "history_bars": 800,
+  "download_bars": 900,
+  "window": 32,
+  "horizon_bars": 7,
+  "top_k": 5,
+  "fee_bps": 10.0,
+  "slippage_bps": 5.0,
+  "parameter_search": false,
+  "forecast_function": "benchmarks.crypto_current_forecast.forecast_from_bars",
+  "gram_migration": "GRAM/USDT:USDT=binance|TON/USDT:USDT|2026-06-17T00:00:00Z",
+  "baselines": ["Last price", "Always up", "Weekly momentum", "Weekly mean reversion"],
+  "dependency_check": "Seven origin-date phases, each using non-overlapping seven-day targets within each asset"
+}

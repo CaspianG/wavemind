@@ -1366,3 +1366,55 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
     recalibration, then freeze the interval policy for a second exchange. Do
     not restore a point target for `no_trade` rows unless a directional gate
     passes independent OOS admission.
+53. Done, negative weekly replay: the unchanged live weekly research forecast
+    was reconstructed daily on eight markets over August-November 2026. It
+    reaches 325/680 correct directions (47.8%) with 7.09% target-price MAPE.
+    Weekly momentum reaches 51.3%; the unchanged-price control has 6.72% MAPE.
+    The unsupported weekly entry policy admits zero trades.
+
+## Three-Month Daily Weekly Replay (November 2026)
+
+This measures the exact weekly research estimate used by the current forecast
+CLI, rather than the separate sparse capitulation event detector. Each daily
+origin from 2026-08-11 through 2026-11-10 receives only its previous 800 completed
+daily candles. The model implementation was last changed on 2026-08-04, before
+this evaluation window. The replay protocol performs no parameter search.
+
+Eight OKX perpetual markets are included: BTC, ETH, SOL, GRAM, XRP, ADA, DOGE,
+and AVAX. The established TON predecessor is explicitly merged for GRAM.
+The 736 daily asset forecasts include 680 matured targets and 56 pending
+targets; pending targets never enter the accuracy denominator.
+
+| measure | WaveMind research | fixed control |
+|---|---:|---:|
+| direction accuracy | 47.8% | weekly momentum 51.3% |
+| target-price MAPE (lower is better) | 7.09% | unchanged price 6.72% |
+| nominal 80% terminal-price interval coverage | 77.9% | not evaluated |
+| admitted weekly trades | 0 | weekly entry policy unsupported |
+
+Direction accuracy ranges from 37.6% on GRAM to 60.0% on SOL. The seven
+non-overlapping weekly phases range from 40.6% to 58.3%. These phases remove
+within-asset horizon overlap, but assets still share market exposure. The
+daily forecast rows must not be described as 680 independent market events.
+The November monthly slice has only three matured origin dates.
+
+The current weekly research target does not outperform either a direction
+momentum control or the simplest price control on this period. The 73.1%
+capitulation transfer result above does not describe this weekly forecasting
+task. Historical reconstruction also does not replace a prospective log of
+predictions actually published at each origin.
+
+![Daily weekly forecast replay](../benchmarks/results/crypto/replay_2026-11-11/overview.png)
+
+Reproduction (frozen source candles and outcomes are included):
+
+```bash
+python benchmarks/crypto_daily_weekly_replay.py --workers 2
+python benchmarks/crypto_daily_weekly_replay_plot.py benchmarks/results/crypto/replay_2026-11-11/summary.json
+```
+
+The runner checks daily continuity, freezes source and protocol fingerprints,
+and requires explicit `--recompute` if replay or feature code changes. A missing
+already-matured target fails the replay instead of shrinking its denominator.
+Per-asset forecasts, input snapshots, monthly and observable-regime breakdowns
+are in [the full report](../benchmarks/results/crypto/replay_2026-11-11/report.md).
